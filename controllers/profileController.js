@@ -23,9 +23,31 @@ const getProfile = (req, res) => {
       });
     }
 
+    // Преобразуем структуру для совместимости с HTML
+    const flatProfile = {
+      id: user.id,
+      telegramId: user.telegramId,
+      // Плоские балансы для совместимости
+      usdt: user.wallets?.USDT?.balance || 0,
+      rub: user.wallets?.RUB?.balance || 0,
+      btc: user.wallets?.BTC?.balance || 0,
+      eth: user.wallets?.ETH?.balance || 0,
+      ton: user.wallets?.TON?.balance || 0,
+      // Статистика
+      total_trades: user.stats?.totalTrades || 0,
+      success_trades: user.stats?.successfulTrades || 0,
+      failed_trades: user.stats?.failedTrades || 0,
+      trading_volume: user.stats?.totalTradeVolume || 0,
+      verified: user.verification?.status === 'verified',
+      // Оригинальная структура
+      wallets: user.wallets,
+      stats: user.stats,
+      verification: user.verification,
+    };
+
     res.json({
       success: true,
-      data: user,
+      data: flatProfile,
     });
   } catch (error) {
     res.status(500).json({

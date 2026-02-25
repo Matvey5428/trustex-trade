@@ -80,6 +80,9 @@ class DatabaseManager {
         wallets: {
           USDT: { balance: 0, currency: 'USDT' },
           RUB: { balance: 0, currency: 'RUB' },
+          BTC: { balance: 0, currency: 'BTC' },
+          ETH: { balance: 0, currency: 'ETH' },
+          TON: { balance: 0, currency: 'TON' },
         },
         stats: {
           totalTrades: 0,
@@ -183,6 +186,13 @@ class DatabaseManager {
     this.writeDB(db);
 
     return user.wallets[currency].balance;
+  }
+
+  /**
+   * Алиас для changeBalance (для совместимости)
+   */
+  updateBalance(userId, currency, amount) {
+    return this.changeBalance(userId, currency, amount);
   }
 
   /**
