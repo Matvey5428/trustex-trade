@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Page</title>
+    <style>
+        body {
+            background: #1a1a2e;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: #16213e;
+            border-radius: 20px;
+        }
+        h1 { color: #00ff88; }
+        .status { margin: 20px 0; font-size: 18px; }
+        .btn {
+            background: #0f4c75;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ Сервер работает!</h1>
+        <div class="status">
+            <p>🌐 Deployment: <strong>Active</strong></p>
+            <p>⏰ Time: <span id="time"></span></p>
+            <p>👤 User ID: <span id="userId"></span></p>
+        </div>
+        <button class="btn" onclick="testAPI()">Тест API</button>
+        <div id="result" style="margin-top: 20px;"></div>
+    </div>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+        }
+        
+        const userId = tg?.initDataUnsafe?.user?.id || 703924219;
+        document.getElementById('userId').textContent = userId;
+        document.getElementById('time').textContent = new Date().toLocaleString();
+
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>⏳ Проверка...</p>';
+            
+            try {
+                const res = await fetch(`/api/profile/${userId}`);
+                const data = await res.json();
+                
+                resultDiv.innerHTML = `
+                    <div style="background: #0f4c75; padding: 15px; border-radius: 10px; text-align: left;">
+                        <p><strong>✅ API работает!</strong></p>
+                        <p>Status: ${res.status}</p>
+                        <p>USDT: ${data.usdt || 0}</p>
+                        <p>RUB: ${data.rub || 0}</p>
+                    </div>
+                `;
+            } catch (e) {
+                resultDiv.innerHTML = `
+                    <div style="background: #d9363e; padding: 15px; border-radius: 10px;">
+                        <p><strong>❌ Ошибка API</strong></p>
+                        <p>${e.message}</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
