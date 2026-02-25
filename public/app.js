@@ -6,10 +6,16 @@
 const API_BASE = window.location.origin + '/api';
 
 // Инициализация по Telegram WebApp
-const tg = window.Telegram.WebApp;
+const tg = window.Telegram?.WebApp;
 
-tg.ready();
-tg.expand();
+if (tg) {
+  try {
+    tg.ready();
+    tg.expand();
+  } catch (e) {
+    console.warn('Telegram WebApp initialization error:', e);
+  }
+}
 
 // ===== ОСНОВНЫЕ ПЕРЕМЕННЫЕ =====
 let userId = null;
@@ -17,14 +23,23 @@ let currentUser = null;
 
 // ===== ИНИЦИАЛИЗАЦИЯ =====
 async function init() {
-  const initData = tg.initData;
-  if (!initData) {
+  try {
+    console.log('🚀 Запуск приложения...');
+    console.log('📱 Telegram WebApp:', !!tg);
+    
+    const initData = tg?.initData;
+    if (!initData) {
+      console.log('⚠️ Нет Telegram initData, показываю экран входа');
+      showLoginScreen();
+      return;
+    }
+    
+    await createOrGetUser();
+    showMainApp();
+  } catch (error) {
+    console.error('❌ Ошибка инициализации приложения:', error);
     showLoginScreen();
-    return;
   }
-  
-  await createOrGetUser();
-  showMainApp();
 }
 
 async function createOrGetUser() {
@@ -258,3 +273,16 @@ async function showAnalytics() {
 
 // Инициализация при загрузке
 window.addEventListener('load', init);
+
+// Глобальный обработчик ошибок
+window.addEventListener('error', (event) => {
+  console.error('❌ Глобальная ошибка:', event.error);
+  // Не даём ошибкам ломать приложение
+  event.preventDefault();
+});
+
+// Обработчик unhandled promise rejections
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('❌ Unhandled Promise Rejection:', event.reason);
+  event.preventDefault();
+});

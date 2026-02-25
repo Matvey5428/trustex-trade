@@ -164,7 +164,7 @@ class BinanceClient {
     // Фиксированные курсы для демонстрации
     const rates = {
       'USDRUB': 90,
-      'RUBHSD': 1 / 90,
+      'RUBUSD': 1 / 90,
       'USDEUR': 0.92,
       'EURUSD': 1 / 0.92,
     };

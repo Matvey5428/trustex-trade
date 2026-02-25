@@ -14,6 +14,22 @@ const analyticsController = require('../controllers/analyticsController');
 
 const router = express.Router();
 
+// ===== HEALTH CHECK =====
+
+/**
+ * @route   GET /api/
+ * @desc    Health check endpoint для Render.com
+ * @access  Public
+ */
+router.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'TrustEx API',
+    version: '1.0.0',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // ===== ВЕРИФИКАЦИЯ И ПРОФИЛЬ =====
 
 /**
