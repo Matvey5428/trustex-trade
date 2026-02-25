@@ -37,13 +37,18 @@ console.log('✅ API Routes загружены, тип:', typeof apiRoutes);
 
 // ===== МАРШРУТЫ =====
 
-// Главная страница - редирект на trading
+// Главная страница - index.html (главный экран с активами)
 app.get('/', (req, res) => {
-  res.redirect('/trading');
+  res.sendFile(require('path').join(PATHS.PUBLIC, 'index.html'));
 });
 
-// Торговля - раздача terminal.html
+// Торговля - trading.html (список валют для торговли)
 app.get('/trading', (req, res) => {
+  res.sendFile(require('path').join(PATHS.PUBLIC, 'trading.html'));
+});
+
+// Терминал торговли - terminal.html (график и сделки)
+app.get('/terminal', (req, res) => {
   res.sendFile(require('path').join(PATHS.PUBLIC, 'terminal.html'));
 });
 
