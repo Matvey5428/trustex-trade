@@ -207,9 +207,30 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Пытаемся получить ID из Telegram, иначе используем ваш тестовый
-    const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || 703924219;
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+        tg.ready();
+        tg.expand();
+    }
+
+    const telegramId = tg?.initDataUnsafe?.user?.id || 703924219;
+    let userId = null;
     let currentSymbol = 'RUB';
+
+    async function getOrCreateUserId() {
+        const res = await fetch('/api/user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telegramId })
+        });
+
+        const payload = await res.json();
+        if (!res.ok || !payload?.data?.id) {
+            throw new Error(payload?.error || 'Не удалось создать пользователя');
+        }
+
+        return payload.data.id;
+    }
 
     const presets = {
         'RUB': [5000, 10000, 25000, 50000],
@@ -233,9 +254,11 @@
     }
 
     async function loadUserBalances() {
+        if (!userId) return;
         try {
             const res = await fetch(`/api/profile/${userId}`);
-            const data = await res.json();
+            const payload = await res.json();
+            const data = payload.data || {};
             
             document.getElementById('bal-RUB').innerText = `${(data.rub || 0).toFixed(2)} ₽`;
             document.getElementById('bal-BTC').innerText = `${(data.btc || 0).toFixed(6)} BTC`;
@@ -285,7 +308,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    user_id: userId,
+                    userId: userId,
                     amount: amount,
                     currency: currentSymbol
                 })
@@ -307,10 +330,15 @@
         }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        loadUserBalances();
-        updateMarketPrices();
-        setInterval(updateMarketPrices, 15000); // Обновлять цены раз в 15 сек
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            userId = await getOrCreateUserId();
+            loadUserBalances();
+            updateMarketPrices();
+            setInterval(updateMarketPrices, 15000); // Обновлять цены раз в 15 сек
+        } catch (e) {
+            console.error('❌ Ошибка инициализации пользователя:', e);
+        }
     });
 </script>
 

@@ -181,8 +181,23 @@ if (tg) {
     tg.ready();
 }
 
-// ИСПРАВЛЕНИЕ: Относительный путь для API
-const userId = tg?.initDataUnsafe?.user?.id || 703924219;
+const telegramId = tg?.initDataUnsafe?.user?.id || 703924219;
+let userId = null;
+
+async function getOrCreateUserId() {
+    const res = await fetch('/api/user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegramId })
+    });
+
+    const payload = await res.json();
+    if (!res.ok || !payload?.data?.id) {
+        throw new Error(payload?.error || 'Не удалось создать пользователя');
+    }
+
+    return payload.data.id;
+}
 const amountInput = document.getElementById('amountInput');
 const rateText = document.getElementById('rateText');
 const exchangeTitle = document.getElementById('exchangeTitle');
@@ -230,12 +245,14 @@ swapBtn.addEventListener('click', () => {
 });
 
 async function loadData() {
+    if (!userId) return;
     try {
         refreshBtn.innerText = "Обновление...";
         // ИСПРАВЛЕНИЕ: Относительный путь
         const response = await fetch(`/api/profile/${userId}?t=${new Date().getTime()}`);
-        const data = await response.json();
-        if (!data.error) {
+        const payload = await response.json();
+        const data = payload.data || {};
+        if (!payload.error) {
             rubBalance = parseFloat(data.rub) || 0;
             usdtBalance = parseFloat(data.usdt) || 0;
             rubBalanceText.innerText = rubBalance.toFixed(2) + ' ₽';
@@ -294,7 +311,14 @@ document.getElementById('selectAllBtn').onclick = () => {
 };
 
 // Запуск при загрузке
-document.addEventListener('DOMContentLoaded', loadData);
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        userId = await getOrCreateUserId();
+        loadData();
+    } catch (e) {
+        console.error('❌ Ошибка инициализации пользователя:', e);
+    }
+});
 </script>
 </body>
 </html>
