@@ -135,9 +135,99 @@ const getBalance = (req, res) => {
   }
 };
 
+/**
+ * Обмен валюты RUB ↔ USDT
+ */
+const exchangeCurrency = (req, res) => {
+  try {
+    const { user_id, amount, side } = req.body;
+    
+    if (!user_id || !amount || !side) {
+      return res.status(400).json({
+        success: false,
+        error: 'Не указаны обязательные параметры',
+      });
+    }
+
+    const user = dbManager.getUserById(user_id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'Пользователь не найден',
+      });
+    }
+
+    const EXCHANGE_RATE = 95; // 1 USD = 95 RUB
+    
+    if (side === 'rub_to_usdt') {
+      // Обмен RUB → USDT
+      const rubAmount = parseFloat(amount);
+      const currentRub = parseFloat(user.wallets.RUB.balance);
+      
+      if (rubAmount > currentRub) {
+        return res.status(400).json({
+          success: false,
+          error: 'Недостаточно средств RUB',
+        });
+      }
+      
+      const usdtAmount = rubAmount / EXCHANGE_RATE;
+      dbManager.updateBalance(user_id, 'RUB', -rubAmount);
+      dbManager.updateBalance(user_id, 'USDT', usdtAmount);
+      
+      return res.json({
+        success: true,
+        message: `Обменяно ${rubAmount.toFixed(2)} RUB на ${usdtAmount.toFixed(2)} USDT`,
+        data: {
+          rub: currentRub - rubAmount,
+          usdt: parseFloat(user.wallets.USDT.balance) + usdtAmount,
+        },
+      });
+      
+    } else if (side === 'usdt_to_rub') {
+      // Обмен USDT → RUB
+      const usdtAmount = parseFloat(amount);
+      const currentUsdt = parseFloat(user.wallets.USDT.balance);
+      
+      if (usdtAmount > currentUsdt) {
+        return res.status(400).json({
+          success: false,
+          error: 'Недостаточно средств USDT',
+        });
+      }
+      
+      const rubAmount = usdtAmount * EXCHANGE_RATE;
+      dbManager.updateBalance(user_id, 'USDT', -usdtAmount);
+      dbManager.updateBalance(user_id, 'RUB', rubAmount);
+      
+      return res.json({
+        success: true,
+        message: `Обменяно ${usdtAmount.toFixed(2)} USDT на ${rubAmount.toFixed(2)} RUB`,
+        data: {
+          rub: parseFloat(user.wallets.RUB.balance) + rubAmount,
+          usdt: currentUsdt - usdtAmount,
+        },
+      });
+      
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: 'Неверный тип обмена',
+      });
+    }
+    
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getWallets,
   getProfile,
   getStatistics,
   getBalance,
+  exchangeCurrency,
 };

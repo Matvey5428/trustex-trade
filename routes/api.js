@@ -6,6 +6,7 @@
 
 const express = require('express');
 const profileController = require('../controllers/profileController');
+const portfolioController = require('../controllers/portfolioController');
 const tradeController = require('../controllers/tradeController');
 const transactionController = require('../controllers/transactionController');
 const verificationController = require('../controllers/verificationController');
@@ -51,6 +52,13 @@ router.get('/portfolio/wallets/:userId', profileController.getWallets);
  * @access  Public
  */
 router.get('/portfolio/balance/:userId/:currency', profileController.getBalance);
+
+/**
+ * @route   POST /api/exchange
+ * @desc    Обмен валюты RUB ↔ USDT
+ * @access  Public
+ */
+router.post('/exchange', portfolioController.exchangeCurrency);
 
 // ===== ТОРГОВЛЯ =====
 

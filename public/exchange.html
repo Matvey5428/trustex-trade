@@ -233,7 +233,7 @@ async function loadData() {
     try {
         refreshBtn.innerText = "Обновление...";
         // ИСПРАВЛЕНИЕ: Относительный путь
-        const response = await fetch(`/user/${userId}?t=${new Date().getTime()}`);
+        const response = await fetch(`/api/profile/${userId}?t=${new Date().getTime()}`);
         const data = await response.json();
         if (!data.error) {
             rubBalance = parseFloat(data.rub) || 0;

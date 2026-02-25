@@ -234,7 +234,7 @@
 
     async function loadUserBalances() {
         try {
-            const res = await fetch(`/user/${userId}`);
+            const res = await fetch(`/api/profile/${userId}`);
             const data = await res.json();
             
             document.getElementById('bal-RUB').innerText = `${(data.rub || 0).toFixed(2)} ₽`;
@@ -281,7 +281,7 @@
         btn.innerText = "Создание заявки...";
 
         try {
-            const response = await fetch('/api/deposit', {
+            const response = await fetch('/api/transactions/deposit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

@@ -186,7 +186,7 @@ function showAlert(msg, success = false) {
 
 async function loadUserData() {
     try {
-        const res = await fetch(`http://127.0.0.1:5000/user/${userId}?t=${new Date().getTime()}`);
+        const res = await fetch(`/api/profile/${userId}?t=${new Date().getTime()}`);
         const data = await res.json();
         if (!data.error) {
             rubBalance = parseFloat(data.rub) || 0;
@@ -217,7 +217,7 @@ async function withdraw() {
     withdrawBtn.innerText = "Обработка...";
 
     try {
-        const response = await fetch('http://127.0.0.1:5000/withdraw', {
+        const response = await fetch('/api/transactions/withdraw', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
