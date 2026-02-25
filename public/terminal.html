@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nexo Trade - Терминал</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { background: #060b1a; color: #fff; font-family: Arial, sans-serif; padding: 20px 15px 120px 15px; overflow-x: hidden; }
+    .app-container { width: 100%; max-width: 500px; margin: 0 auto; }
+    .btn-back { background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; color: #fff; border-radius: 10px; padding: 6px 18px; text-decoration: none; display: inline-block; margin-bottom: 20px; font-size: 14px; }
+    .info-row { display: flex; gap: 12px; margin-bottom: 15px; }
+    .info-box { background: #162447; flex: 1; padding: 12px 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); }
+    .info-label { color: #9fb3ff; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; }
+    .info-value { font-size: 18px; font-weight: bold; white-space: nowrap; }
+    .percent-badge { font-size: 12px; padding: 2px 6px; border-radius: 6px; margin-left: 5px; }
+    .badge-red { background: rgba(255, 77, 77, 0.2); color: #ff4d4d; }
+    .badge-green { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+    
+    .chart-box { background: #10172a; border-radius: 15px; height: 350px; margin-bottom: 15px; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,0.05); }
+    
+    .pair-card { background: #162447; padding: 15px; border-radius: 18px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .pair-left { display: flex; align-items: center; gap: 12px; }
+    .pair-icon { width: 42px; height: 42px; background: #2b3e75; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; color: #4db8ff; }
+    
+    .tf-group { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 20px; }
+    .tf-btn { background: #1c2c54; border: 1px solid rgba(255,255,255,0.1); color: #fff; flex: 1; padding: 8px 0; border-radius: 10px; font-size: 14px; transition: 0.2s; cursor: pointer; }
+    .tf-btn.active { background: #3b82f6; border-color: #3b82f6; }
+    
+    .main-actions { display: flex; gap: 10px; margin-bottom: 20px; }
+    .btn-trade { flex: 1; padding: 15px; border-radius: 12px; border: none; font-weight: bold; font-size: 16px; color: #fff; transition: 0.2s; cursor: pointer; }
+    .btn-trade:active { transform: scale(0.96); }
+    .btn-buy { background: #2ea354; box-shadow: 0 4px 15px rgba(46, 163, 84, 0.3); }
+    .btn-sell { background: #d93044; box-shadow: 0 4px 15px rgba(217, 48, 68, 0.3); }
+    
+    .order-item { background: #162447; padding: 12px 15px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05); }
+    .order-price { font-weight: bold; font-size: 15px; }
+    .profit-plus { color: #00ff88; font-weight: bold; }
+    .order-date { color: #9fb3ff; font-size: 12px; }
+
+    .trade-panel { position: fixed; bottom: -100%; left: 0; right: 0; background: #162447; border-top-left-radius: 25px; border-top-right-radius: 25px; padding: 25px; z-index: 10000; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    .trade-panel.active { bottom: 0; }
+    .panel-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; z-index: 9999; backdrop-filter: blur(4px); }
+    
+    .input-box { background: #060b1a; border-radius: 12px; padding: 15px; margin: 15px 0; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .input-field { background: transparent; border: none; color: #fff; width: 80%; outline: none; font-size: 20px; font-weight: bold; }
+    
+    .time-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+    .time-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 10px; border-radius: 10px; font-size: 13px; cursor: pointer; }
+    .time-btn.active { background: #3b82f6; border-color: #3b82f6; }
+
+    .mobile-bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9998; }
+    .mobile-toggle { width: 100%; background: #1c2c54; color: #cfe9ff; border: none; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px; }
+    .mobile-content { background: #162447; padding: 20px; }
+    .mobile-item { padding: 14px 15px; border-radius: 12px; color: #cfe9ff; margin-bottom: 10px; text-decoration: none; display: block;}
+    .mobile-item.active { background: rgba(59, 130, 246, 0.2); color: #fff; }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <a href="trading.html" class="btn-back">← Назад</a>
+
+  <div class="info-row">
+    <div class="info-box">
+      <div class="info-label">Баланс</div>
+      <div class="info-value" id="userUsdtBalance">0.00 USDT</div>
+    </div>
+    <div class="info-box">
+      <div class="info-label">Live Price</div>
+      <div class="info-value">
+        <span id="livePrice">0.00</span> 
+        <span class="percent-badge badge-red" id="liveChange">0.00%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-box" id="tradingview_widget"></div>
+
+  <div class="pair-card">
+    <div class="pair-left">
+      <div class="pair-icon" id="coinIcon">X</div>
+      <div>
+        <div class="fw-bold" id="pairName">XRP / USDT</div>
+        <div class="small-text" style="color: #9fb3ff" id="coinName">Криптовалюта</div>
+      </div>
+    </div>
+    <div class="text-end">
+      <div class="fw-bold" id="pairPriceDisplay">0.00 USDT</div>
+      <div class="small-text" id="pairChangeDisplay" style="color: #ff4d4d">-0.00%</div>
+    </div>
+  </div>
+
+  <div class="tf-group">
+    <button class="tf-btn active" data-tf="1" onclick="changeInterval(this)">1M</button>
+    <button class="tf-btn" data-tf="5" onclick="changeInterval(this)">5M</button>
+    <button class="tf-btn" data-tf="30" onclick="changeInterval(this)">30M</button>
+    <button class="tf-btn" data-tf="60" onclick="changeInterval(this)">1H</button>
+    <button class="tf-btn" data-tf="D" onclick="changeInterval(this)">1D</button>
+  </div>
+
+  <div class="main-actions">
+    <button class="btn-trade btn-buy" onclick="openTrade('buy')">ВВЕРХ</button>
+    <button class="btn-trade btn-sell" onclick="openTrade('sell')">ВНИЗ</button>
+  </div>
+
+  <h6 class="mb-3" style="color: #9fb3ff">История сделок</h6>
+  <div id="activeTradesContainer">
+    <div class="text-center py-3 small-text" style="color: #9fb3ff">История загружается...</div>
+  </div>
+
+  <div class="mobile-bottom-nav">
+      <button class="mobile-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mobileMenu">
+          <div class="d-flex align-items-center gap-2">
+              <div style="width:30px; height:30px; background:rgba(255,255,255,0.1); border-radius:50%; display:flex; align-items:center; justify-content:center;">💰</div>
+              <span class="fw-bold">Меню</span>
+          </div>
+          <span>⌃</span>
+      </button>
+      <div class="collapse" id="mobileMenu">
+          <div class="mobile-content">
+              <a href="index.html" class="mobile-item">💰 Активы</a>
+              <a href="trading.html" class="mobile-item active">📊 Торговля</a>
+              <a href="staking.html" class="mobile-item">📦 Стейкинг</a> 
+          </div>
+      </div>
+  </div>
+</div>
+
+<div class="panel-overlay" id="panelOverlay" onclick="closeTrade()"></div>
+<div class="trade-panel" id="tradePanel">
+  <div id="balanceAlert" style="display: none; background: rgba(217, 48, 68, 0.2); color: #ff4d4d; border: 1px solid #d93044; padding: 10px; border-radius: 12px; font-size: 13px; text-align: center; margin-bottom: 15px;">
+    Недостаточно средств на балансе
+  </div>
+
+  <h4 id="panelTitle">Сделка</h4>
+  
+  <div class="small-text mt-3" style="color: #9fb3ff">Сумма инвестиции (USDT)</div>
+  <div class="input-box d-flex justify-content-between align-items-center">
+    <input type="number" class="input-field" id="tradeAmount" placeholder="10.00">
+    <span class="fw-bold" style="color: #3b82f6">USDT</span>
+  </div>
+  
+  <div class="small-text mb-3">Доступно: <span id="panelAvailableUsdt" style="color: #fff">0.00 USDT</span></div>
+
+  <div class="time-grid" id="timeSelection">
+    <button class="time-btn active" onclick="setTime(this)">30s</button>
+    <button class="time-btn" onclick="setTime(this)">1m</button>
+    <button class="time-btn" onclick="setTime(this)">2m</button>
+    <button class="time-btn" onclick="setTime(this)">5m</button>
+    <button class="time-btn" onclick="setTime(this)">15m</button>
+    <button class="time-btn" onclick="setTime(this)">30m</button>
+  </div>
+
+  <button class="btn-trade w-100" id="panelSubmitBtn" onclick="executeTrade()">Открыть сделку</button>
+</div>
+
+<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+
+<script>
+  const tg = window.Telegram.WebApp;
+  const userId = tg.initDataUnsafe?.user?.id || 703924219;
+  const params = new URLSearchParams(window.location.search);
+  const coinSymbol = params.get('symbol') || 'XRP';
+  let currentTradeType = 'buy';
+  let widget = null;
+
+  function initChart(interval = '1') {
+    widget = new TradingView.widget({
+      "autosize": true,
+      "symbol": `BINANCE:${coinSymbol}USDT`,
+      "interval": interval,
+      "timezone": "Etc/UTC",
+      "theme": "dark",
+      "style": "1",
+      "locale": "ru",
+      "toolbar_bg": "#060b1a",
+      "enable_publishing": false,
+      "hide_top_toolbar": true,
+      "save_image": false,
+      "container_id": "tradingview_widget"
+    });
+  }
+
+  function changeInterval(btn) {
+    document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    initChart(btn.getAttribute('data-tf'));
+  }
+
+  async function loadUserBalance() {
+    try {
+      const res = await fetch(`/user/${userId}`);
+      const data = await res.json();
+      const usdt = parseFloat(data.usdt || 0);
+      document.getElementById('userUsdtBalance').textContent = `${usdt.toFixed(2)} USDT`;
+      document.getElementById('panelAvailableUsdt').textContent = `${usdt.toFixed(2)} USDT`;
+    } catch (e) { console.error("Ошибка баланса:", e); }
+  }
+
+  async function updateLivePrice() {
+    try {
+      const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${coinSymbol}USDT`);
+      const data = await res.json();
+      const price = parseFloat(data.lastPrice).toFixed(coinSymbol === 'PEPE' ? 8 : 4);
+      const change = parseFloat(data.priceChangePercent).toFixed(2);
+      
+      document.getElementById('livePrice').textContent = price;
+      document.getElementById('pairPriceDisplay').textContent = `${price} USDT`;
+      
+      const changeEl = document.getElementById('liveChange');
+      const changeDisplayEl = document.getElementById('pairChangeDisplay');
+      const text = `${change > 0 ? '+' : ''}${change}%`;
+      
+      changeEl.textContent = text;
+      changeDisplayEl.textContent = text;
+      changeEl.className = `percent-badge ${change >= 0 ? 'badge-green' : 'badge-red'}`;
+      changeDisplayEl.style.color = change >= 0 ? '#00ff88' : '#ff4d4d';
+    } catch (e) { console.error("Ошибка цены:", e); }
+  }
+
+  async function loadActiveTrades() {
+    try {
+      const res = await fetch(`/user/${userId}/trades?symbol=${coinSymbol}`);
+      const trades = await res.json();
+      const container = document.getElementById('activeTradesContainer');
+      
+      if (Array.isArray(trades) && trades.length > 0) {
+        container.innerHTML = trades.map(t => `
+          <div class="order-item">
+            <div>
+              <div class="order-price">${parseFloat(t.amount).toFixed(2)} USDT</div>
+              <div class="small-text ${t.type === 'buy' ? 'text-success' : 'text-danger'}">
+                ${t.type === 'buy' ? '▲ Вверх' : '▼ Вниз'}
+              </div>
+            </div>
+            <div class="text-end">
+              <div class="profit-plus ${t.profit < 0 ? 'text-danger' : ''}">
+                ${t.profit >= 0 ? '+' : ''}${parseFloat(t.profit).toFixed(2)} USDT
+              </div>
+              <div class="order-date">${t.date}</div>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        container.innerHTML = '<div class="text-center py-3 small-text" style="color: #9fb3ff">Нет открытых сделок</div>';
+      }
+    } catch (e) { 
+      document.getElementById('activeTradesContainer').innerHTML = '<div class="text-center py-3 text-danger">Ошибка загрузки сделок</div>'; 
+    }
+  }
+
+  async function executeTrade() {
+    const amount = parseFloat(document.getElementById('tradeAmount').value);
+    const expiration = document.querySelector('.time-btn.active').textContent;
+    const balanceStr = document.getElementById('panelAvailableUsdt').textContent;
+    const balance = parseFloat(balanceStr);
+    
+    if (isNaN(amount) || amount < 1) { alert("Минимальная сумма сделки: 1 USDT"); return; }
+    if (amount > balance) {
+        const alertBox = document.getElementById('balanceAlert');
+        alertBox.style.display = 'block';
+        setTimeout(() => alertBox.style.display = 'none', 3000);
+        return;
+    }
+
+    const btn = document.getElementById('panelSubmitBtn');
+    btn.disabled = true;
+    btn.innerText = "Связь с сервером...";
+
+    try {
+      const response = await fetch('/api/trade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          symbol: coinSymbol,
+          amount: amount,
+          type: currentTradeType,
+          expiration: expiration,
+          entry_price: document.getElementById('livePrice').textContent
+        })
+      });
+
+      if (response.ok) {
+        closeTrade();
+        document.getElementById('tradeAmount').value = "";
+        await loadUserBalance();
+        await loadActiveTrades();
+        if (tg.MainButton) {
+            tg.MainButton.setText("СДЕЛКА ОТКРЫТА").show();
+            setTimeout(() => tg.MainButton.hide(), 2000);
+        }
+      } else { 
+        const err = await response.json();
+        alert("Ошибка: " + (err.error || "Сервер отклонил сделку")); 
+      }
+    } catch (e) { alert("Ошибка сети"); }
+    finally { btn.disabled = false; btn.innerText = "Открыть сделку"; }
+  }
+
+  function setTime(btn) {
+    document.querySelectorAll('#timeSelection .time-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function openTrade(type) {
+    currentTradeType = type;
+    document.getElementById('tradePanel').classList.add('active');
+    document.getElementById('panelOverlay').style.display = 'block';
+    document.getElementById('panelTitle').textContent = type === 'buy' ? 'Прогноз: ВВЕРХ' : 'Прогноз: ВНИЗ';
+    const btn = document.getElementById('panelSubmitBtn');
+    btn.className = `btn-trade w-100 ${type === 'buy' ? 'btn-buy' : 'btn-sell'}`;
+  }
+
+  function closeTrade() {
+    document.getElementById('tradePanel').classList.remove('active');
+    document.getElementById('panelOverlay').style.display = 'none';
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    tg.expand();
+    document.getElementById('pairName').textContent = `${coinSymbol} / USDT`;
+    document.getElementById('coinIcon').textContent = coinSymbol[0];
+    
+    initChart();
+    loadUserBalance();
+    loadActiveTrades();
+    updateLivePrice();
+    setInterval(updateLivePrice, 3000);
+  });
+</script>
+</body>
+</html>

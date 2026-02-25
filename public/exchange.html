@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexo Trade Card</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<style>
+/* --- ТВОЙ ОРИГИНАЛЬНЫЙ ДИЗАЙН (БЕЗ ИЗМЕНЕНИЙ) --- */
+body{
+    background: radial-gradient(circle at top, #101a34, #060b1a 70%);
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    padding:40px 15px 140px 15px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color:#e8f1ff;
+    margin: 0;
+}
+.exchange-card{
+    width:100%;
+    max-width:380px;
+    background: linear-gradient(180deg,#16254d,#0f1b3a);
+    border-radius:24px;
+    padding:18px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.6), inset 0 0 0 1px rgba(120,170,255,.15);
+}
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+}
+.back-btn{
+    background:linear-gradient(180deg,#3a6cff,#2b4ed1);
+    border:none; color:white; border-radius:12px; padding:8px 16px; font-weight:500;
+}
+.refresh-btn{
+    background:transparent; border:1px solid rgba(120,170,255,.4);
+    color:#8fb3ff; border-radius:12px; padding:8px 14px; cursor: pointer;
+}
+.title{ font-size:18px; font-weight:600; margin-bottom:15px; text-align:center; }
+.currency-row{
+    background:rgba(255,255,255,.04); border-radius:16px;
+    padding:14px; display:flex; align-items:center; justify-content:space-between;
+}
+.currency{ display:flex; align-items:center; gap:10px; }
+.circle-icon{
+    width:38px; height:38px; border-radius:50%; background:#1f3366;
+    display:flex; align-items:center; justify-content:center; font-weight:700;
+}
+.swap-btn{
+    width:42px; height:42px; border-radius:12px;
+    background:linear-gradient(180deg,#3a6cff,#2b4ed1);
+    color:white; display:flex; align-items:center; justify-content:center;
+    font-size:20px; cursor:pointer; transition: 0.3s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.rate{
+    margin-top:12px; background:rgba(255,255,255,.05);
+    border-radius:14px; padding:10px; text-align:center;
+    color:#9bb6ff; font-size:14px; min-height: 44px;
+}
+.input-wrap{ margin-top:14px; display:flex; align-items:flex-end; justify-content:space-between; }
+.amount-input {
+    background:transparent; border:none; border-bottom:2px solid rgba(150,190,255,.3);
+    border-radius:0; color:white; font-size:20px; padding-left:0;
+}
+.amount-input:focus{ box-shadow:none; border-color:#6fa2ff; background:transparent; color:white; }
+.select-all{
+    border:1px solid rgba(120,170,255,.4); border-radius:12px;
+    padding:8px 12px; color:#9ec0ff; background:transparent; cursor: pointer;
+}
+.exchange-btn{
+    margin-top:18px; width:100%; padding:14px; border:none; border-radius:16px;
+    font-size:18px; font-weight:600; color:#0c1a3a;
+    background:linear-gradient(180deg,#9dd0ff,#6ba9ff);
+    box-shadow:0 8px 20px rgba(80,140,255,.5); cursor: pointer;
+}
+
+#topAlert{
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-20px);
+    min-width: 320px; padding: 14px 18px; color: white; font-weight: 500;
+    text-align: center; border-radius: 14px; opacity: 0; pointer-events: none;
+    transition: all 0.3s ease; z-index: 9999;
+}
+#topAlert.show{ opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.mobile-bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; }
+.mobile-toggle {
+    width: 100%; background: linear-gradient(180deg, #2a3f6b, #243b63);
+    color: #cfe9ff; border: none; padding: 18px 20px; display: flex;
+    justify-content: space-between; align-items: center;
+    border-top-left-radius: 20px; border-top-right-radius: 20px;
+}
+.mobile-icon {
+    width: 32px; height: 32px; background: rgba(255,255,255,0.1);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+}
+.mobile-arrow { transition: 0.3s; }
+.mobile-toggle[aria-expanded="true"] .mobile-arrow { transform: rotate(180deg); }
+.mobile-content { background: linear-gradient(180deg, #182848 0%, #101c3a 100%); padding: 20px; }
+.mobile-item { padding: 14px 15px; border-radius: 12px; color: #cfe9ff; margin-bottom: 10px; text-decoration: none; display: block;}
+.mobile-item.active { background: rgba(100, 170, 255, 0.2); }
+.mobile-badge { background: rgba(255, 140, 0, 0.15); color: #ff9800; padding: 4px 10px; border-radius: 20px; font-size: 12px; }
+</style>
+</head>
+
+<body>
+<div id="topAlert"></div>
+
+<div class="exchange-card">
+    <div class="header">
+        <button class="back-btn" onclick="window.location.href='index.html'">Назад</button>
+        <button class="refresh-btn" id="refreshBtn">Обновить балансы</button>
+    </div>
+
+    <div class="title" id="exchangeTitle">Обменять RUB на USDT</div>
+
+    <div class="currency-row">
+        <div class="currency">
+            <div class="circle-icon">₽</div>
+            <div>
+                <div>Российский рубль</div>
+                <small class="text-secondary" id="rubBalanceText">0.00 ₽</small>
+            </div>
+        </div>
+
+        <div class="swap-btn" id="swapBtn" role="button">⇄</div>
+
+        <div class="currency text-end">
+            <div>
+                <div>USDT</div>
+                <small class="text-secondary" id="usdtBalanceText">0.00 $</small>
+            </div>
+            <div class="circle-icon">T</div>
+        </div>
+    </div>
+
+    <div class="rate" id="rateText">Курс: 1 RUB = 0.012642 USDT | Получите: 0.00 USDT</div>
+
+    <div class="input-wrap">
+        <div class="w-100 me-2">
+            <div style="font-size:13px; color:#9bb6ff; margin-bottom:6px;">Сумма</div>
+            <input type="number" class="form-control amount-input" id="amountInput" placeholder="0" step="any">
+        </div>
+        <button class="select-all" id="selectAllBtn">Все</button>
+    </div>
+
+    <button class="exchange-btn" id="exchangeBtn">Обменять</button>
+</div>
+
+<div class="mobile-bottom-nav">
+    <button class="mobile-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mobileMenu" aria-expanded="false">
+        <div class="d-flex align-items-center gap-2">
+            <div class="mobile-icon">💰</div>
+            <span class="fw-bold">Активы</span>
+        </div>
+        <div class="mobile-arrow">⌃</div>
+    </button>
+    <div class="collapse" id="mobileMenu">
+        <div class="mobile-content">
+            <a href="index.html" class="mobile-item">💰 Активы</a>
+            <a href="trading.html" class="mobile-item">📊 Торговля</a>
+            <a href="staking.html" class="mobile-item">📦 Стейкинг</a>
+            <div class="mobile-item disabled d-flex justify-content-between">
+                <span>📦 Бинарные опционы</span><span class="mobile-badge">В разработке</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if (tg) {
+    tg.expand();
+    tg.ready();
+}
+
+// ИСПРАВЛЕНИЕ: Относительный путь для API
+const userId = tg?.initDataUnsafe?.user?.id || 703924219;
+const amountInput = document.getElementById('amountInput');
+const rateText = document.getElementById('rateText');
+const exchangeTitle = document.getElementById('exchangeTitle');
+const swapBtn = document.getElementById('swapBtn');
+const rubBalanceText = document.getElementById('rubBalanceText');
+const usdtBalanceText = document.getElementById('usdtBalanceText');
+const exchangeBtn = document.getElementById('exchangeBtn');
+const refreshBtn = document.getElementById('refreshBtn');
+const topAlert = document.getElementById('topAlert');
+
+let rubBalance = 0;
+let usdtBalance = 0;
+let rate = 0.012642; 
+let isSwapped = false;
+
+function showAlert(msg, success = false) {
+    topAlert.innerText = msg;
+    topAlert.style.background = success
+        ? 'linear-gradient(180deg,#28a745,#218838)'
+        : 'linear-gradient(180deg,#ff4d4f,#d9363e)';
+    topAlert.classList.add('show');
+    setTimeout(() => topAlert.classList.remove('show'), 3000);
+}
+
+function updateDisplay() {
+    const val = parseFloat(amountInput.value) || 0;
+    if (isSwapped) {
+        exchangeTitle.innerText = "Обменять USDT на RUB";
+        const reverseRate = (1 / rate);
+        const result = val * reverseRate;
+        rateText.innerText = `Курс: 1 USDT = ${reverseRate.toFixed(2)} ₽ | Получите: ${result.toFixed(2)} ₽`;
+        swapBtn.style.transform = "rotate(180deg)";
+    } else {
+        exchangeTitle.innerText = "Обменять RUB на USDT";
+        const result = val * rate;
+        rateText.innerText = `Курс: 1 RUB = ${rate.toFixed(6)} USDT | Получите: ${result.toFixed(2)} USDT`;
+        swapBtn.style.transform = "rotate(0deg)";
+    }
+}
+
+swapBtn.addEventListener('click', () => { 
+    isSwapped = !isSwapped; 
+    amountInput.value = ""; // Очищаем ввод при смене стороны для безопасности
+    updateDisplay(); 
+});
+
+async function loadData() {
+    try {
+        refreshBtn.innerText = "Обновление...";
+        // ИСПРАВЛЕНИЕ: Относительный путь
+        const response = await fetch(`/user/${userId}?t=${new Date().getTime()}`);
+        const data = await response.json();
+        if (!data.error) {
+            rubBalance = parseFloat(data.rub) || 0;
+            usdtBalance = parseFloat(data.usdt) || 0;
+            rubBalanceText.innerText = rubBalance.toFixed(2) + ' ₽';
+            usdtBalanceText.innerText = usdtBalance.toFixed(2) + ' $';
+        }
+    } catch (e) { 
+        console.error("Ошибка загрузки:", e); 
+    } finally { 
+        refreshBtn.innerText = "Обновить балансы"; 
+        updateDisplay(); 
+    }
+}
+
+exchangeBtn.onclick = async function () {
+    const amount = parseFloat(amountInput.value) || 0;
+    if (amount <= 0) return showAlert("Введите сумму");
+    
+    const side = isSwapped ? 'usdt_to_rub' : 'rub_to_usdt';
+    const currentMax = isSwapped ? usdtBalance : rubBalance;
+    
+    if (amount > currentMax) return showAlert("Недостаточно средств");
+
+    try {
+        exchangeBtn.disabled = true;
+        exchangeBtn.style.opacity = "0.7";
+        
+        // ИСПРАВЛЕНИЕ: Путь /api/exchange
+        const response = await fetch('/api/exchange', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId, amount: amount, side: side })
+        });
+
+        const res = await response.json();
+
+        if (response.ok) {
+            showAlert("Успешный обмен!", true);
+            amountInput.value = "";
+            await loadData(); // Обновляем балансы после успеха
+        } else {
+            showAlert(res.error || "Ошибка сервера");
+        }
+    } catch (err) { 
+        showAlert("Нет связи с сервером"); 
+    } finally { 
+        exchangeBtn.disabled = false; 
+        exchangeBtn.style.opacity = "1"; 
+    }
+};
+
+amountInput.addEventListener('input', updateDisplay);
+refreshBtn.onclick = loadData;
+document.getElementById('selectAllBtn').onclick = () => { 
+    amountInput.value = isSwapped ? usdtBalance : rubBalance; 
+    updateDisplay(); 
+};
+
+// Запуск при загрузке
+document.addEventListener('DOMContentLoaded', loadData);
+</script>
+</body>
+</html>

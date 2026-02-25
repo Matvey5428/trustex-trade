@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Nexo Trade - Торговля</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #060b1a; color: #fff; font-family: Arial, sans-serif; margin: 0; padding: 20px 15px 140px 15px; display: flex; justify-content: center; }
+        .app-container { width: 100%; max-width: 500px; }
+        .section-title { font-size: 24px; font-weight: bold; margin-bottom: 25px; color: #4db8ff; padding-left: 5px; }
+        .trade-card { background: #162447 !important; border: none !important; border-radius: 20px !important; padding: 15px 20px !important; margin-bottom: 12px !important; display: flex; align-items: center; justify-content: space-between; width: 100%; transition: transform 0.2s; cursor: pointer; text-decoration: none; }
+        .trade-card:active { transform: scale(0.98); }
+        .coin-info { display: flex; align-items: center; gap: 15px; }
+        .coin-logo { width: 44px; height: 44px; border-radius: 50%; }
+        .coin-name-group .pair-label { font-size: 11px; color: #9fb3ff; display: block; }
+        .coin-name-group .symbol { font-size: 19px; font-weight: bold; color: #fff; }
+        .price-info { text-align: right; }
+        .current-price { font-size: 16px; font-weight: bold; display: block; color: #fff; }
+        .change-percent { font-size: 14px; font-weight: 500; }
+        .up { color: #00ff88 !important; }
+        .down { color: #ff4d4d !important; }
+        .mobile-bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; }
+        .mobile-toggle { width: 100%; background: linear-gradient(180deg, #2a3f6b, #243b63); color: #cfe9ff; border: none; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px; }
+        .mobile-icon { width: 32px; height: 32px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .mobile-content { background: linear-gradient(180deg, #182848 0%, #101c3a 100%); padding: 20px; }
+        .mobile-item { padding: 14px 15px; border-radius: 12px; color: #cfe9ff; margin-bottom: 10px; text-decoration: none; display: block;}
+        .mobile-item.active { background: rgba(100, 170, 255, 0.2); }
+        .mobile-badge { background: #333; font-size: 10px; padding: 4px 8px; border-radius: 10px; color: #aaa; }
+        .mobile-arrow { transition: 0.3s; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <h2 class="section-title">Торговая пара</h2>
+
+    <div id="pairsContainer">
+        <a href="terminal.html?symbol=XRP" class="trade-card" data-symbol="XRPUSDT">
+            <div class="coin-info">
+                <img src="https://cryptologos.cc/logos/ripple-xrp-logo.png" class="coin-logo">
+                <div class="coin-name-group"><span class="pair-label">XRP / USDT</span><span class="symbol">XRP</span></div>
+            </div>
+            <div class="price-info"><span class="current-price" id="price-XRPUSDT">...</span><span class="change-percent" id="change-XRPUSDT">...</span></div>
+        </a>
+
+        <a href="terminal.html?symbol=BNB" class="trade-card" data-symbol="BNBUSDT">
+            <div class="coin-info">
+                <img src="https://cryptologos.cc/logos/binance-coin-bnb-logo.png" class="coin-logo">
+                <div class="coin-name-group"><span class="pair-label">BNB / USDT</span><span class="symbol">BNB</span></div>
+            </div>
+            <div class="price-info"><span class="current-price" id="price-BNBUSDT">...</span><span class="change-percent" id="change-BNBUSDT">...</span></div>
+        </a>
+
+        <a href="terminal.html?symbol=PEPE" class="trade-card" data-symbol="PEPEUSDT">
+            <div class="coin-info">
+                <img src="https://cryptologos.cc/logos/pepe-pepe-logo.png" class="coin-logo">
+                <div class="coin-name-group"><span class="pair-label">PEPE / USDT</span><span class="symbol">Pepe</span></div>
+            </div>
+            <div class="price-info"><span class="current-price" id="price-PEPEUSDT">...</span><span class="change-percent" id="change-PEPEUSDT">...</span></div>
+        </a>
+
+        <a href="terminal.html?symbol=BTC" class="trade-card" data-symbol="BTCUSDT">
+            <div class="coin-info">
+                <img src="https://cryptologos.cc/logos/bitcoin-btc-logo.png" class="coin-logo">
+                <div class="coin-name-group"><span class="pair-label">BTC / USDT</span><span class="symbol">BTC</span></div>
+            </div>
+            <div class="price-info"><span class="current-price" id="price-BTCUSDT">...</span><span class="change-percent" id="change-BTCUSDT">...</span></div>
+        </a>
+
+        <a href="terminal.html?symbol=TRX" class="trade-card" data-symbol="TRXUSDT">
+            <div class="coin-info">
+                <img src="https://cryptologos.cc/logos/tron-trx-logo.png" class="coin-logo">
+                <div class="coin-name-group"><span class="pair-label">TRX / USDT</span><span class="symbol">Trx</span></div>
+            </div>
+            <div class="price-info"><span class="current-price" id="price-TRXUSDT">...</span><span class="change-percent" id="change-TRXUSDT">...</span></div>
+        </a>
+
+        <a href="terminal.html?symbol=ETH" class="trade-card" data-symbol="ETHUSDT">
+            <div class="coin-info">
+                <img src="https://cryptologos.cc/logos/ethereum-eth-logo.png" class="coin-logo">
+                <div class="coin-name-group"><span class="pair-label">ETH / USDT</span><span class="symbol">ETH</span></div>
+            </div>
+            <div class="price-info"><span class="current-price" id="price-ETHUSDT">...</span><span class="change-percent" id="change-ETHUSDT">...</span></div>
+        </a>
+
+        <a href="terminal.html?symbol=SOL" class="trade-card" data-symbol="SOLUSDT">
+            <div class="coin-info">
+                <img src="https://cryptologos.cc/logos/solana-sol-logo.png" class="coin-logo">
+                <div class="coin-name-group"><span class="pair-label">SOL / USDT</span><span class="symbol">SOL</span></div>
+            </div>
+            <div class="price-info"><span class="current-price" id="price-SOLUSDT">...</span><span class="change-percent" id="change-SOLUSDT">...</span></div>
+        </a>
+
+        <a href="terminal.html?symbol=TON" class="trade-card" data-symbol="TONUSDT">
+            <div class="coin-info">
+                <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" class="coin-logo">
+                <div class="coin-name-group"><span class="pair-label">TON / USDT</span><span class="symbol">Ton</span></div>
+            </div>
+            <div class="price-info"><span class="current-price" id="price-TONUSDT">...</span><span class="change-percent" id="change-TONUSDT">...</span></div>
+        </a>
+
+        <a href="terminal.html?symbol=DOGE" class="trade-card" data-symbol="DOGEUSDT">
+            <div class="coin-info">
+                <img src="https://cryptologos.cc/logos/dogecoin-doge-logo.png" class="coin-logo">
+                <div class="coin-name-group"><span class="pair-label">DOGE / USDT</span><span class="symbol">DOGE</span></div>
+            </div>
+            <div class="price-info"><span class="current-price" id="price-DOGEUSDT">...</span><span class="change-percent" id="change-DOGEUSDT">...</span></div>
+        </a>
+
+        <a href="terminal.html?symbol=ADA" class="trade-card" data-symbol="ADAUSDT">
+            <div class="coin-info">
+                <img src="https://cryptologos.cc/logos/cardano-ada-logo.png" class="coin-logo">
+                <div class="coin-name-group"><span class="pair-label">ADA / USDT</span><span class="symbol">Ada</span></div>
+            </div>
+            <div class="price-info"><span class="current-price" id="price-ADAUSDT">...</span><span class="change-percent" id="change-ADAUSDT">...</span></div>
+        </a>
+
+        <a href="terminal.html?symbol=LINK" class="trade-card" data-symbol="LINKUSDT">
+            <div class="coin-info">
+                <img src="https://cryptologos.cc/logos/chainlink-link-logo.png" class="coin-logo">
+                <div class="coin-name-group"><span class="pair-label">LINK / USDT</span><span class="symbol">link</span></div>
+            </div>
+            <div class="price-info"><span class="current-price" id="price-LINKUSDT">...</span><span class="change-percent" id="change-LINKUSDT">...</span></div>
+        </a>
+
+        <a href="terminal.html?symbol=SUI" class="trade-card" data-symbol="SUIUSDT">
+            <div class="coin-info">
+                <img src="https://cryptologos.cc/logos/sui-sui-logo.png" class="coin-logo">
+                <div class="coin-name-group"><span class="pair-label">SUI / USDT</span><span class="symbol">Sui</span></div>
+            </div>
+            <div class="price-info"><span class="current-price" id="price-SUIUSDT">...</span><span class="change-percent" id="change-SUIUSDT">...</span></div>
+        </a>
+
+        <a href="terminal.html?symbol=MAGA" class="trade-card" data-symbol="MAGAUSDT">
+            <div class="coin-info">
+                <img src="https://cryptologos.cc/logos/magacoin-magacoin-logo.png" class="coin-logo">
+                <div class="coin-name-group"><span class="pair-label">TRUMP / USDT</span><span class="symbol">TRUMP</span></div>
+            </div>
+            <div class="price-info"><span class="current-price" id="price-MAGAUSDT">...</span><span class="change-percent" id="change-MAGAUSDT">...</span></div>
+        </a>
+
+        <a href="terminal.html?symbol=NEAR" class="trade-card" data-symbol="NEARUSDT">
+            <div class="coin-info">
+                <img src="https://cryptologos.cc/logos/near-protocol-near-logo.png" class="coin-logo">
+                <div class="coin-name-group"><span class="pair-label">NEAR / USDT</span><span class="symbol">Near</span></div>
+            </div>
+            <div class="price-info"><span class="current-price" id="price-NEARUSDT">...</span><span class="change-percent" id="change-NEARUSDT">...</span></div>
+        </a>
+
+        <a href="terminal.html?symbol=APT" class="trade-card" data-symbol="APTUSDT">
+            <div class="coin-info">
+                <img src="https://cryptologos.cc/logos/aptos-apt-logo.png" class="coin-logo">
+                <div class="coin-name-group"><span class="pair-label">APT / USDT</span><span class="symbol">APT</span></div>
+            </div>
+            <div class="price-info"><span class="current-price" id="price-APTUSDT">...</span><span class="change-percent" id="change-APTUSDT">...</span></div>
+        </a>
+
+        <a href="terminal.html?symbol=CAKE" class="trade-card" data-symbol="CAKEUSDT">
+            <div class="coin-info">
+                <img src="https://cryptologos.cc/logos/pancakeswap-cake-logo.png" class="coin-logo">
+                <div class="coin-name-group"><span class="pair-label">CAKE / USDT</span><span class="symbol">CAKE</span></div>
+            </div>
+            <div class="price-info"><span class="current-price" id="price-CAKEUSDT">...</span><span class="change-percent" id="change-CAKEUSDT">...</span></div>
+        </a>
+
+        <a href="terminal.html?symbol=NEXO" class="trade-card" data-symbol="NEXOUSDT">
+            <div class="coin-info">
+                <img src="https://cryptologos.cc/logos/nexo-nexo-logo.png" class="coin-logo">
+                <div class="coin-name-group"><span class="pair-label">NEXO / USDT</span><span class="symbol">NEXO</span></div>
+            </div>
+            <div class="price-info"><span class="current-price" id="price-NEXOUSDT">...</span><span class="change-percent" id="change-NEXOUSDT">...</span></div>
+        </a>
+
+        <a href="terminal.html?symbol=OG" class="trade-card" data-symbol="OGUSDT">
+            <div class="coin-info">
+                <img src="https://cryptologos.cc/logos/og-fan-token-og-logo.png" class="coin-logo">
+                <div class="coin-name-group"><span class="pair-label">OG / USDT</span><span class="symbol">OG</span></div>
+            </div>
+            <div class="price-info"><span class="current-price" id="price-OGUSDT">...</span><span class="change-percent" id="change-OGUSDT">...</span></div>
+        </a>
+
+        <a href="terminal.html?symbol=WLD" class="trade-card" data-symbol="WLDUSDT">
+            <div class="coin-info">
+                <img src="https://cryptologos.cc/logos/worldcoin-wld-logo.png" class="coin-logo">
+                <div class="coin-name-group"><span class="pair-label">WLD / USDT</span><span class="symbol">WLD</span></div>
+            </div>
+            <div class="price-info"><span class="current-price" id="price-WLDUSDT">...</span><span class="change-percent" id="change-WLDUSDT">...</span></div>
+        </a>
+    </div>
+
+    <div class="mobile-bottom-nav">
+        <button class="mobile-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mobileMenu">
+            <div class="d-flex align-items-center gap-2">
+                <div class="mobile-icon">📊</div>
+                <span>Торговля</span>
+            </div>
+            <div class="mobile-arrow">⌃</div>
+        </button>
+        <div class="collapse" id="mobileMenu">
+            <div class="mobile-content">
+                <a href="index.html" class="mobile-item">💰 Активы</a>
+                <a href="trading.html" class="mobile-item active">📊 Торговля</a>
+                <a href="staking.html" class="mobile-item">📦 Стейкинг</a>
+                <div class="mobile-item disabled d-flex justify-content-between">
+                    <span>📦 Бинарные опционы</span><span class="mobile-badge">В разработке</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    async function updatePrices() {
+        const cards = document.querySelectorAll('.trade-card');
+        const symbols = Array.from(cards).map(card => card.dataset.symbol);
+        
+        try {
+            const response = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${encodeURIComponent(JSON.stringify(symbols))}`);
+            if (!response.ok) return;
+            const data = await response.json();
+
+            data.forEach(coin => {
+                const priceEl = document.getElementById(`price-${coin.symbol}`);
+                const changeEl = document.getElementById(`change-${coin.symbol}`);
+                
+                if (priceEl && changeEl) {
+                    const price = parseFloat(coin.lastPrice);
+                    // Логика форматирования: мелкие монеты (PEPE) до 8 знаков, крупные - с запятыми
+                    priceEl.innerText = price < 0.0001 ? price.toFixed(8) + ' USDT' : 
+                                       (price < 1 ? price.toFixed(4) + ' USDT' : price.toLocaleString() + ' USDT');
+                    
+                    const change = parseFloat(coin.priceChangePercent).toFixed(2);
+                    changeEl.innerText = (change > 0 ? '+' : '') + change + '%';
+                    changeEl.className = 'change-percent ' + (change >= 0 ? 'up' : 'down');
+                }
+            });
+        } catch (error) { 
+            console.error('API Connection Error:', error); 
+        }
+    }
+    
+    // Запуск и цикл
+    updatePrices();
+    setInterval(updatePrices, 5000);
+</script>
+<script src="app.js"></script>
+</body>
+</html>

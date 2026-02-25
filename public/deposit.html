@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Пополнение - Nexo Trade</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #060b1a;
+            --card-bg-solid: #162447; 
+            --accent-blue: #4db8ff;
+            --text-main: #ffffff;
+            --text-secondary: #9fb3ff;
+        }
+
+        body {
+            background: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px 15px 140px 15px;
+        }
+
+        .app-container { width: 100%; max-width: 500px; margin: 0 auto; }
+
+        .main-card {
+            background: var(--card-bg-solid) !important;
+            border-radius: 25px !important;
+            padding: 25px !important;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            border: none;
+        }
+
+        .back-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(120,170,255,0.3);
+            color: var(--text-main);
+            border-radius: 12px;
+            padding: 8px 18px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        .section-title {
+            color: #69b7ff; margin-bottom: 25px; position: relative;
+            font-size: 1.2rem; font-weight: 600;
+        }
+        .section-title::after {
+            content: ""; width: 40px; height: 3px; background: #69b7ff;
+            position: absolute; bottom: -6px; left: 0; border-radius: 5px;
+        }
+
+        .asset-item {
+            background: #24366e; border-radius: 18px; padding: 15px;
+            margin-bottom: 12px; display: flex; justify-content: space-between;
+            align-items: center; cursor: pointer; border: 1px solid transparent;
+            transition: 0.2s;
+        }
+        .asset-item:active { transform: scale(0.98); background: #2b3e75; }
+
+        .asset-left { display: flex; align-items: center; gap: 12px; }
+        .coin {
+            width: 42px; height: 42px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold;
+        }
+        .gold { background: linear-gradient(45deg,#caa84f,#f4d06f); color: #000; }
+        .btc { background: #f7931a; }
+        .ton { background: #2da6ff; }
+        .eth { background: #888; }
+        .usdt { background: #26a17b; }
+
+        .asset-name { font-weight: bold; }
+        .asset-price { font-size: 12px; color: #9bbcff; }
+        .asset-right { text-align: right; font-weight: bold; }
+
+        #paymentScreen { display: none; animation: fadeIn 0.3s; }
+        .buy-title { font-size: 22px; font-weight: bold; margin-bottom: 20px; color: #4db8ff; }
+
+        .input-group-custom {
+            background: #060b1a; border-radius: 15px; padding: 15px;
+            margin-bottom: 15px; border: 1px solid rgba(77, 184, 255, 0.3);
+        }
+        .input-group-custom input {
+            background: transparent; border: none; color: white;
+            font-size: 24px; width: 100%; outline: none; font-weight: bold;
+        }
+
+        .presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 25px; }
+        .preset-btn {
+            background: #2b3e75; border: 1px solid #3b82f6;
+            color: white; border-radius: 10px; padding: 10px 5px; font-size: 13px;
+        }
+
+        .submit-btn {
+            width: 100%; padding: 16px; border-radius: 15px; border: none;
+            background: linear-gradient(90deg, #38bdf8, #3b82f6);
+            color: white; font-weight: bold; font-size: 16px;
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .mobile-bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; }
+        .mobile-toggle {
+            width: 100%; background: linear-gradient(180deg, #2a3f6b, #243b63);
+            color: #cfe9ff; border: none; padding: 18px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-top-left-radius: 20px; border-top-right-radius: 20px;
+        }
+        .mobile-content { background: linear-gradient(180deg, #182848 0%, #101c3a 100%); padding: 20px; }
+        .mobile-item { padding: 14px 15px; border-radius: 12px; color: #cfe9ff; margin-bottom: 10px; text-decoration: none; display: block; }
+        .mobile-item.active { background: rgba(100, 170, 255, 0.2); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+
+    <div id="selectionScreen">
+        <button class="back-btn" onclick="window.location.href='index.html'">← Назад</button>
+        
+        <div class="main-card">
+            <h5 class="section-title">Валютные счета</h5>
+            <div class="asset-item" onclick="openPayment('RUB')">
+                <div class="asset-left">
+                    <div class="coin gold">₽</div>
+                    <div>
+                        <div class="asset-name">Российский рубль</div>
+                        <div class="asset-price" id="price-RUB">загрузка...</div>
+                    </div>
+                </div>
+                <div class="asset-right" id="bal-RUB">0.00 ₽</div>
+            </div>
+        </div>
+
+        <div class="main-card">
+            <h5 class="section-title">Криптовалюты</h5>
+            <div class="asset-item" onclick="openPayment('BTC')">
+                <div class="asset-left">
+                    <div class="coin btc">₿</div>
+                    <div><div class="asset-name">Bitcoin</div><div class="asset-price" id="price-BTC">...</div></div>
+                </div>
+                <div class="asset-right" id="bal-BTC">0.00 BTC</div>
+            </div>
+            <div class="asset-item" onclick="openPayment('TON')">
+                <div class="asset-left">
+                    <div class="coin ton">T</div>
+                    <div><div class="asset-name">Toncoin</div><div class="asset-price" id="price-TON">...</div></div>
+                </div>
+                <div class="asset-right" id="bal-TON">0.00 TON</div>
+            </div>
+            <div class="asset-item" onclick="openPayment('ETH')">
+                <div class="asset-left">
+                    <div class="coin eth">◆</div>
+                    <div><div class="asset-name">Ethereum</div><div class="asset-price" id="price-ETH">...</div></div>
+                </div>
+                <div class="asset-right" id="bal-ETH">0.00 ETH</div>
+            </div>
+            <div class="asset-item" onclick="openPayment('USDT')">
+                <div class="asset-left">
+                    <div class="coin usdt">₮</div>
+                    <div><div class="asset-name">Tether</div><div class="asset-price">1.00 $</div></div>
+                </div>
+                <div class="asset-right" id="bal-USDT">0.00 USDT</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="paymentScreen">
+        <button class="back-btn" onclick="closePayment()">← К выбору</button>
+        <div class="main-card">
+            <div class="buy-title">Вы покупаете <span id="selectedCurrency">RUB</span></div>
+            <div class="small-text mb-2" style="color:#94a3b8; font-size: 14px;">Количество*</div>
+            <div class="input-group-custom">
+                <div class="d-flex justify-content-between align-items-center">
+                    <input type="number" id="amountInput" placeholder="0" inputmode="decimal">
+                    <span id="currencyTag" style="color:#4db8ff; font-weight:bold">RUB</span>
+                </div>
+            </div>
+            <div class="presets" id="presetContainer"></div>
+            <button class="submit-btn" id="submitBtn" onclick="submitDeposit()">Пополнить</button>
+        </div>
+    </div>
+
+    <div class="mobile-bottom-nav">
+        <button class="mobile-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mobileMenu">
+            <div class="d-flex align-items-center gap-2">
+                <div class="mobile-icon">💰</div>
+                <span class="fw-bold">Активы</span>
+            </div>
+            <div class="mobile-arrow">⌃</div>
+        </button>
+        <div class="collapse" id="mobileMenu">
+            <div class="mobile-content">
+                <a href="index.html" class="mobile-item">💰 Активы</a>
+                <a href="trading.html" class="mobile-item">📊 Торговля</a>
+                <a href="staking.html" class="mobile-item">📦 Стейкинг</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Пытаемся получить ID из Telegram, иначе используем ваш тестовый
+    const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id || 703924219;
+    let currentSymbol = 'RUB';
+
+    const presets = {
+        'RUB': [5000, 10000, 25000, 50000],
+        'USDT': [50, 100, 500, 1000],
+        'BTC': [0.001, 0.005, 0.01, 0.05],
+        'TON': [20, 100, 500, 1000],
+        'ETH': [0.1, 0.5, 1, 2]
+    };
+
+    async function updateMarketPrices() {
+        try {
+            const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbols=["BTCUSDT","ETHUSDT","TONUSDT"]');
+            const data = await res.json();
+            const prices = {};
+            data.forEach(item => prices[item.symbol] = parseFloat(item.price).toLocaleString());
+            
+            if(document.getElementById('price-BTC')) document.getElementById('price-BTC').innerText = `${prices['BTCUSDT']} $`;
+            if(document.getElementById('price-ETH')) document.getElementById('price-ETH').innerText = `${prices['ETHUSDT']} $`;
+            if(document.getElementById('price-TON')) document.getElementById('price-TON').innerText = `${prices['TONUSDT']} $`;
+        } catch (e) { console.log("Курсы не загружены"); }
+    }
+
+    async function loadUserBalances() {
+        try {
+            const res = await fetch(`/user/${userId}`);
+            const data = await res.json();
+            
+            document.getElementById('bal-RUB').innerText = `${(data.rub || 0).toFixed(2)} ₽`;
+            document.getElementById('bal-BTC').innerText = `${(data.btc || 0).toFixed(6)} BTC`;
+            document.getElementById('bal-ETH').innerText = `${(data.eth || 0).toFixed(6)} ETH`;
+            document.getElementById('bal-TON').innerText = `${(data.ton || 0).toFixed(2)} TON`;
+            document.getElementById('bal-USDT').innerText = `${(data.usdt || 0).toFixed(2)} USDT`;
+        } catch (e) { console.error("Ошибка баланса:", e); }
+    }
+
+    function openPayment(symbol) {
+        currentSymbol = symbol;
+        document.getElementById('selectionScreen').style.display = 'none';
+        document.getElementById('paymentScreen').style.display = 'block';
+        document.getElementById('selectedCurrency').innerText = symbol;
+        document.getElementById('currencyTag').innerText = symbol;
+        document.getElementById('amountInput').value = '';
+
+        const container = document.getElementById('presetContainer');
+        container.innerHTML = '';
+        (presets[symbol] || [10, 50, 100, 500]).forEach(val => {
+            const btn = document.createElement('button');
+            btn.className = 'preset-btn';
+            btn.innerText = val;
+            btn.onclick = () => document.getElementById('amountInput').value = val;
+            container.appendChild(btn);
+        });
+    }
+
+    function closePayment() {
+        document.getElementById('paymentScreen').style.display = 'none';
+        document.getElementById('selectionScreen').style.display = 'block';
+    }
+
+    async function submitDeposit() {
+        const amount = parseFloat(document.getElementById('amountInput').value);
+        if (!amount || amount <= 0) {
+            alert("Введите сумму");
+            return;
+        }
+
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerText = "Создание заявки...";
+
+        try {
+            const response = await fetch('/api/deposit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: userId,
+                    amount: amount,
+                    currency: currentSymbol
+                })
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert(`Заявка создана! Ожидайте подтверждения.`);
+                closePayment();
+                loadUserBalances();
+            } else {
+                alert("Ошибка: " + (result.error || "Попробуйте позже"));
+            }
+        } catch (e) {
+            alert("Ошибка сети");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Пополнить";
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadUserBalances();
+        updateMarketPrices();
+        setInterval(updateMarketPrices, 15000); // Обновлять цены раз в 15 сек
+    });
+</script>
+
+</body>
+</html>

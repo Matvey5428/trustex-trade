@@ -1,0 +1,10 @@
+node_modules/
+npm-debug.log
+.DS_Store
+*.log
+.env
+certs/
+bot_backup.js
+bot-webapp.js
+https-server.js
+selfsigned/
