@@ -191,7 +191,7 @@
 
   async function loadUserBalance() {
     try {
-      const res = await fetch(`/user/${userId}`);
+      const res = await fetch(`/api/profile/${userId}`);
       const data = await res.json();
       const usdt = parseFloat(data.usdt || 0);
       document.getElementById('userUsdtBalance').textContent = `${usdt.toFixed(2)} USDT`;
@@ -222,7 +222,7 @@
 
   async function loadActiveTrades() {
     try {
-      const res = await fetch(`/user/${userId}/trades?symbol=${coinSymbol}`);
+      const res = await fetch(`/api/trades/${userId}`);
       const trades = await res.json();
       const container = document.getElementById('activeTradesContainer');
       
@@ -270,7 +270,7 @@
     btn.innerText = "Связь с сервером...";
 
     try {
-      const response = await fetch('/api/trade', {
+      const response = await fetch('/api/trades/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
