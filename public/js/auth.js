@@ -12,15 +12,22 @@ const TelegramAuth = {
    * Получить initData из Telegram.WebApp
    */
   getInitData() {
+    // Попытаться получить из development mock
+    const mockInitData = localStorage.getItem('__MOCK_INIT_DATA__');
+    if (mockInitData) {
+      console.log('⚙️ Using mock initData for development');
+      return mockInitData;
+    }
+
     const tg = window.Telegram?.WebApp;
     if (!tg) {
-      console.warn('⚠️ Telegram.WebApp not available');
+      console.warn('⚠️ Telegram.WebApp not available - open this app through Telegram Mini App');
       return null;
     }
 
     const initData = tg.initData;
     if (!initData) {
-      console.warn('⚠️ initData not available');
+      console.warn('⚠️ initData not available - make sure this is opened in Telegram Mini App');
       return null;
     }
 
@@ -32,11 +39,18 @@ const TelegramAuth = {
    * Получить telegram_id из initData
    */
   getTelegramId() {
+    // Попытаться получить из mock
+    const mockId = localStorage.getItem('__MOCK_TELEGRAM_ID__');
+    if (mockId) {
+      console.log('⚙️ Using mock telegram_id for development:', mockId);
+      return parseInt(mockId);
+    }
+
     const tg = window.Telegram?.WebApp;
     const telegramId = tg?.initDataUnsafe?.user?.id;
     
     if (!telegramId) {
-      console.warn('⚠️ telegram_id not found in initData');
+      console.warn('⚠️ telegram_id not found - Telegram Mini App not available');
       return null;
     }
 
@@ -53,6 +67,13 @@ const TelegramAuth = {
       const telegramId = this.getTelegramId();
 
       if (!initData || !telegramId) {
+        const errorMsg = `❌ Telegram Mini App not available\n\n` +
+          `Это приложение может работать ТОЛЬКО внутри Telegram.\n\n` +
+          `Используй команду боту: /webapp\n\n` +
+          `Для локальной разработки используй Telegram Bot API или эмулятор.`;
+        
+        alert(errorMsg);
+        console.error(errorMsg);
         throw new Error('Telegram initData not available');
       }
 
@@ -152,3 +173,16 @@ const TelegramAuth = {
 // Глобальные переменные
 window.CURRENT_USER = null;
 window.AUTH_TOKEN = null;
+
+// ============ DEVELOPMENT HELPERS ============
+/**
+ * Для локальной разработки: эмулировать Telegram данные
+ * Используй в консоли браузера: setupDevAuth(123456789)
+ */
+window.setupDevAuth = (telegramId = 123456789) => {
+  const mockInitData = `user=%7B%22id%22%3A${telegramId}%2C%22first_name%22%3A%22Dev%22%2C%22last_name%22%3A%22User%22%2C%22username%22%3A%22devuser%22%2C%22language_code%22%3A%22en%22%7D`;
+  localStorage.setItem('__MOCK_INIT_DATA__', mockInitData);
+  localStorage.setItem('__MOCK_TELEGRAM_ID__', telegramId);
+  console.log('✅ Dev auth setup complete. Telegram ID:', telegramId);
+  console.log('📝 Now click "Login with Telegram" button');
+};
