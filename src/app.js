@@ -32,9 +32,13 @@ app.use('/api/auth', authRoutes);
 // app.use('/api/orders', require('./routes/orders'));
 // etc...
 
-// Serve frontend SPA
-app.get('/:path(.*)', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+// Serve frontend SPA (catch-all для остальных маршрутов)
+app.use((req, res, next) => {
+  // Если это не API запрос - отправляем index.html
+  if (!req.path.startsWith('/api')) {
+    return res.sendFile(path.join(__dirname, '../public/index.html'));
+  }
+  next();
 });
 
 // Error handler (должен быть в конце)
