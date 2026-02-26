@@ -170,7 +170,6 @@ if (tg) {
     tg.expand();
 }
 
-const telegramId = tg?.initDataUnsafe?.user?.id || 703924219;
 let userId = null;
 let rubBalance = 0;
 let usdtBalance = 0;
@@ -188,7 +187,19 @@ function showAlert(msg, success = false) {
     setTimeout(() => topAlert.classList.remove('show'), 3000);
 }
 
-async function getOrCreateUserId() {
+function getClientTelegramId() {
+    const telegramRawId = tg?.initDataUnsafe?.user?.id;
+    if (telegramRawId) return Number(telegramRawId);
+    const key = 'nexo_guest_telegram_id';
+    const stored = localStorage.getItem(key);
+    if (stored) return Number(stored);
+    const generated = Math.floor(800000000 + Math.random() * 100000000);
+    localStorage.setItem(key, String(generated));
+    return generated;
+}
+
+async function resolveUserId() {
+    const telegramId = getClientTelegramId();
     const res = await fetch('/api/user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -197,7 +208,7 @@ async function getOrCreateUserId() {
 
     const payload = await res.json();
     if (!res.ok || !payload?.data?.id) {
-        throw new Error(payload?.error || 'Не удалось создать пользователя');
+        throw new Error(payload?.error || 'Не удалось получить аккаунт');
     }
 
     return payload.data.id;
@@ -274,10 +285,11 @@ withdrawBtn.onclick = withdraw;
 document.getElementById('refreshBtn').onclick = loadUserData;
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        userId = await getOrCreateUserId();
+        userId = await resolveUserId();
         loadUserData();
     } catch (e) {
-        console.error('❌ Ошибка инициализации пользователя:', e);
+        console.error('init_error', e);
+        showAlert('Ошибка инициализации');
     }
 });
 </script>
