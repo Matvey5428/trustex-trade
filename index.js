@@ -1,7 +1,5 @@
 /**
- * index.js
- * Точка входа приложения
- * В продакшене запускает и API и бота, локально только API
+ * index.js - Entry point
  */
 
 const app = require('./app');
@@ -13,7 +11,6 @@ const SHOULD_START_BOT = Boolean(process.env.TELEGRAM_BOT_TOKEN);
 app.listen(PORT, () => {
     console.log(`\n🚀 Сервер запущен: http://localhost:${PORT}\n`);
     
-    // Автоматически запускаем бота, если задан TELEGRAM_BOT_TOKEN
     if (SHOULD_START_BOT) {
         console.log('🤖 Запуск Telegram бота...');
         setTimeout(() => {

@@ -26,7 +26,6 @@ class DatabaseManager {
         verifications: [],
       };
       this.writeDB(defaultData);
-      console.log('✅ База данных создана:', this.dbPath);
     }
   }
 
