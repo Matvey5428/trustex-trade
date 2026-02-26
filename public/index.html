@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Nexo Trade</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
@@ -32,93 +31,151 @@
     }
 
     .balance { font-size: 32px; font-weight: bold; color: #4db8ff; }
-    .section-title {
-      font-size: 20px; font-weight: bold;
-      margin: 25px 0 15px 0; color: #4db8ff;
+    .action-wrapper {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      flex-wrap: nowrap;
     }
-
-    .section-title::after {
-      content: '';
-      display: block;
-      width: 50px; height: 3px; background: #4db8ff;
-      border-radius: 2px; margin-top: 8px;
+    .action-box {
+      width: 70px; height: 70px; border-radius: 18px;
+      background: #2b3e75; border: none; color: white; font-size: 22px;
     }
-
-    .small-text { color: #9fb3ff; font-size: 14px; }
-    .coin {
-      width: 40px; height: 40px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      color: white; font-weight: bold; font-size: 18px;
-    }
-    .gold { background: linear-gradient(45deg,#caa84f,#f4d06f); color: #000; }
-    .btc { background: #f7931a; }
-    .ton { background: #2da6ff; }
-    .eth { background: #888; }
 
     .asset-item {
       background: #24366e; border-radius: 15px; padding: 15px;
       margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;
     }
 
-    .asset-name { font-weight: bold; }
-    .asset-price { font-size: 12px; color: #9bbcff; }
-    .asset-right { text-align: right; font-weight: bold; }
+    .section-title {
+      color: #69b7ff; margin-bottom: 20px; position: relative; font-size: 1.2rem;
+    }
+
+    .section-title::after {
+      content: ""; width: 40px; height: 3px; background: #69b7ff;
+      position: absolute; bottom: -6px; left: 0; border-radius: 5px;
+    }
+
+    .small-text { color: #9fb3ff; font-size: 14px; }
+    .coin {
+      width: 42px; height: 42px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; font-weight: bold;
+    }
+    .gold { background: linear-gradient(45deg,#caa84f,#f4d06f); color: #000; }
+    .btc { background: #f7931a; }
+    .ton { background: #2da6ff; }
+    .eth { background: #888; }
+    .usdt { background: #26a17b; }
+
+    .history-item {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: 15px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      text-align: left;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .history-icon {
+      width: 48px; height: 48px;
+      background: rgba(59, 130, 246, 0.15);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; margin-right: 15px;
+    }
+
+    .history-info { flex-grow: 1; }
+    .history-type { font-weight: bold; font-size: 16px; margin-bottom: 2px; }
+    .history-date { font-size: 12px; color: #9fb3ff; line-height: 1.2; }
+    
+    .history-amount { text-align: right; }
+    .amount-val { font-weight: bold; font-size: 17px; }
+    .amount-cur { font-size: 12px; color: #9fb3ff; text-transform: uppercase; }
+
+    .text-plus { color: #00ff88; }
+    .text-minus { color: #ff4d4d; }
 
     .reviews-section {
-      background: #162447 !important;
-      border: none !important;
-      border-radius: 25px !important;
-      padding: 25px !important;
-      margin-bottom: 20px !important;
-      overflow: hidden;
+      background: linear-gradient(180deg, #182848 0%, #0f1c3d 100%);
+      border-radius: 25px; padding: 40px 30px; color: #fff;
+      box-shadow: 0 0 40px rgba(0, 150, 255, 0.15); margin: 40px auto;
     }
-
+    .nav-btn {
+      width: 55px; height: 55px; border-radius: 12px; border: 2px solid #3b82f6;
+      background: transparent; color: #3b82f6; display: flex; align-items: center;
+      justify-content: center; font-size: 22px; transition: 0.3s;
+    }
     .review-card {
-      background: #24366e; padding: 15px; border-radius: 15px;
-      margin-bottom: 15px; display: none;
+      background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 25px;
+      margin: 20px 0; backdrop-filter: blur(10px);
+      display: none;
+    }
+    .review-card.active { display: block; animation: fadeIn 0.4s; }
+    .stars { color: #38bdf8; font-size: 18px; margin-top: 10px; }
+    .all-reviews-btn {
+      background: linear-gradient(90deg, #38bdf8, #3b82f6); border: none;
+      border-radius: 12px; padding: 12px 25px; color: white; font-weight: 500;
     }
 
-    .review-card.active { display: block; animation: fadeIn 0.3s; }
-
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-    .review-controls {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-top: 15px;
+    .analytics-btn-group, .history-btn-group {
+      display: flex; gap: 8px; flex-wrap: nowrap; margin-bottom: 20px;
+      overflow-x: auto; padding-bottom: 5px;
     }
+    .analytics-btn-group::-webkit-scrollbar,
+    .history-btn-group::-webkit-scrollbar { display: none; }    
 
-    .review-nav { border: none; background: #4db8ff; color: #000; width: 40px; height: 40px; border-radius: 50%; font-weight: bold; cursor: pointer; }
-
-    .mobile-bottom-nav {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      background: linear-gradient(180deg, #2a3f6b 0%, #1a2f5a 100%);
-      border-top: 1px solid rgba(100, 170, 255, 0.3);
-      padding: 0;
-      z-index: 9999;
-      display: flex;
-      justify-content: space-around;
+    .btn-period, .btn-filter {
+      background: rgba(255, 255, 255, 0.05); border: 1px solid #3b82f6;
+      color: #fff; padding: 8px 12px; border-radius: 10px;
+      font-size: 13px; transition: 0.3s; white-space: nowrap; flex: 1; text-align: center;
     }
-
-    .nav-item {
-      flex: 1; padding: 12px;
-      text-align: center; font-size: 12px;
-      color: #9fb3ff; cursor: pointer;
-      border: none; background: none;
+    .btn-period.active, .btn-filter.active { background: #3b82f6; }
+    
+    .stat-box {
+      background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 15px; padding: 15px; margin-bottom: 12px;
     }
+    .stat-label { color: #9fb3ff; font-size: 13px; margin-bottom: 4px; }
+    .stat-value { font-size: 18px; font-weight: bold; }
+    .text-success-custom { color: #00ff88; }
+    .text-danger-custom { color: #ff4d4d; }
 
-    .nav-item.active {
-      color: #4db8ff;
-      border-top: 3px solid #4db8ff;
+    .stat-period-box {
+      background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px; padding: 20px; margin-bottom: 15px;
     }
+    .period-name { font-size: 18px; font-weight: bold; color: #4db8ff; margin-bottom: 12px; }
+    .period-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .period-label { color: #9fb3ff; font-size: 14px; }
+    .period-value { font-weight: bold; font-size: 16px; }
+    .period-value small { color: #9fb3ff; font-weight: normal; margin-left: 5px; }
 
-    .btn-period { font-size: 12px; padding: 6px 12px; border: none; border-radius: 8px; }
-    .btn-period.active { background: #4db8ff !important; color: #000 !important; }
+    .mobile-bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; }
+    .mobile-toggle {
+        width: 100%; background: linear-gradient(180deg, #2a3f6b, #243b63);
+        color: #cfe9ff; border: none; padding: 18px 20px; display: flex;
+        justify-content: space-between; align-items: center;
+        border-top-left-radius: 20px; border-top-right-radius: 20px;
+    }
+    .mobile-icon {
+        width: 32px; height: 32px; background: rgba(255,255,255,0.1);
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    }
+    .mobile-content { background: linear-gradient(180deg, #182848 0%, #101c3a 100%); padding: 20px; }
+    .mobile-item { padding: 14px 15px; border-radius: 12px; color: #cfe9ff; margin-bottom: 10px; text-decoration: none; display: block;}
+    .mobile-item.active { background: rgba(100, 170, 255, 0.2); }
 
-    .review-name { font-weight: bold; font-size: 16px; }
-    .review-role { color: #9fb3ff; font-size: 13px; }
-    .review-date { color: #69b7ff; font-size: 12px; }
-    .stars { color: #38bdf8; font-size: 16px; margin-top: 8px; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 380px) {
+      .btn-period, .btn-filter { font-size: 11px; padding: 6px 4px; }
+      .history-btn-group { gap: 4px; }
+      .action-wrapper { gap: 15px; }
+      .action-box { width: 60px; height: 60px; font-size: 20px; }
+      .action-item .label { font-size: 12px; }
+    }
   </style>
 </head>
 <body>
@@ -126,122 +183,153 @@
 <div class="app-container">
 
     <div class="card-custom text-center">
-      <h1 style="margin: 0; color: #4db8ff; font-size: 28px;">💼 Nexo Trade</h1>
-      <p style="color: #9fb3ff; font-size: 13px; margin: 5px 0 0 0;">Торговая платформа</p>
-    </div>
-
-    <div class="profile-box">
-      <div style="color: #9fb3ff; font-size: 13px;">Баланс USDT</div>
-      <div class="balance" id="balanceUSDT">0.00</div>
-      <div style="color: #9fb3ff; font-size: 12px; margin-top: 10px;">ID: <span id="userIdDisplay">-</span></div>
-    </div>
-
-    <div class="section-card">
-      <div class="section-title">Активы</div>
-      <div id="assetsContainer">
-        <div class="asset-item">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div class="coin gold">₽</div>
-            <div><div class="asset-name">Рубль</div><div class="asset-price" id="rubPrice">... ₽</div></div>
-          </div>
-          <div class="asset-right" id="rubBalance">0.00</div>
+      <div class="small-text mb-2">Общий баланс</div>
+      <div class="balance" id="totalBalance">$0.00</div>
+      <div class="action-wrapper mt-4">      
+        <div class="action-item">
+          <button class="action-box" onclick="window.location.href='deposit.html'">↑</button>
+          <div class="label">Пополнить</div>
         </div>
-        <div class="asset-item">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div class="coin btc">₿</div>
-            <div><div class="asset-name">Bitcoin</div><div class="asset-price" id="btcPrice">... $</div></div>
-          </div>
-          <div class="asset-right" id="btcBalance">0.00</div>
+        <div class="action-item">
+          <button class="action-box" onclick="window.location.href='withdraw.html'">↓</button>
+          <div class="label">Вывести</div>
         </div>
-        <div class="asset-item">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div class="coin eth">◆</div>
-            <div><div class="asset-name">Ethereum</div><div class="asset-price" id="ethPrice">... $</div></div>
-          </div>
-          <div class="asset-right" id="ethBalance">0.00</div>
-        </div>
-        <div class="asset-item">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div class="coin ton">⟠</div>
-            <div><div class="asset-name">TON</div><div class="asset-price" id="tonPrice">... $</div></div>
-          </div>
-          <div class="asset-right" id="tonBalance">0.00</div>
+        <div class="action-item">
+          <button class="action-box" onclick="window.location.href='exchange.html'">⇄</button>
+          <div class="label">Обменять</div>
         </div>
       </div>
     </div>
 
+    <div class="profile-box">
+      <h6 class="mb-3">Профиль</h6>
+      <div class="mb-3"><div class="fw-bold" id="userIdDisplay">0</div><div class="small-text">ID аккаунта</div></div>
+      <div class="mb-3"><div class="fw-bold" id="stats">0 / 0 / 0</div><div class="small-text">Статистика</div></div>
+      <div class="mb-3"><div class="fw-bold" id="tradingVolume">0.00 USDT</div><div class="small-text">Объем торгов</div></div>
+      <div><div class="text-warning fw-bold" id="verification">Неизвестно</div><div class="small-text">Нажмите, чтобы пройти</div></div>
+    </div>
+
     <div class="section-card">
-      <div class="section-title">Статистика</div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <div style="background: #24366e; padding: 15px; border-radius: 12px;">
-          <div class="small-text">Сделок</div>
-          <div style="font-size: 24px; font-weight: bold; margin-top: 10px;" id="stats">0 / 0 / 0</div>
+      <h5 class="section-title">Валютные счета</h5>
+      <div class="asset-item">
+        <div class="asset-left d-flex align-items-center gap-3">
+          <div class="coin gold">₽</div>
+          <div><div class="asset-name">Российский рубль</div><div class="asset-price" id="rubPrice">... ₽</div></div>
         </div>
-        <div style="background: #24366e; padding: 15px; border-radius: 12px;">
-          <div class="small-text">Объем</div>
-          <div style="font-size: 24px; font-weight: bold; margin-top: 10px; color: #00ff88;" id="tradingVolume">0.00 USDT</div>
-        </div>
+        <div class="asset-right" id="rubBalance">0.00 ₽</div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <h5 class="section-title">Криптовалюты</h5>
+      <div class="asset-item">
+        <div class="asset-left d-flex align-items-center gap-3"><div class="coin btc">₿</div><div><div class="asset-name">Bitcoin</div><div class="asset-price" id="btcPrice">... $</div></div></div>
+        <div class="asset-right" id="btcBalance">0.00 $</div>
+      </div>
+      <div class="asset-item">
+        <div class="asset-left d-flex align-items-center gap-3"><div class="coin ton">T</div><div><div class="asset-name">Toncoin</div><div class="asset-price" id="tonPrice">... $</div></div></div>
+        <div class="asset-right" id="tonBalance">0.00 $</div>
+      </div>
+      <div class="asset-item">
+        <div class="asset-left d-flex align-items-center gap-3"><div class="coin eth">◆</div><div><div class="asset-name">Ethereum</div><div class="asset-price" id="ethPrice">... $</div></div></div>
+        <div class="asset-right" id="ethBalance">0.00 $</div>
+      </div>
+      <div class="asset-item">
+        <div class="asset-left d-flex align-items-center gap-3"><div class="coin usdt">₮</div><div><div class="asset-name">Tether</div><div class="asset-price" id="usdtPrice">1.00 $</div></div></div>
+        <div class="asset-right" id="usdtBalance">0.00 $</div>
       </div>
     </div>
 
     <div class="reviews-section">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h5 style="margin: 0;">Отзывы <span id="reviewCounter" style="color: #9fb3ff; font-size: 13px;">(1 из 36)</span></h5>
+      <div class="section-title">Отзывы клиентов</div>
+      <div class="section-subtitle">Что говорят пользователи о платформе.</div>
+      <div class="d-flex gap-2 mt-3">
+        <button class="nav-btn" id="prevReview">←</button>
+        <button class="nav-btn" id="nextReview">→</button>
       </div>
       <div id="reviewsContainer"></div>
-      <div class="review-controls">
-        <button class="review-nav" id="prevReview">←</button>
-        <span style="color: #9fb3ff; font-size: 12px;">Листай для просмотра</span>
-        <button class="review-nav" id="nextReview">→</button>
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="reviews-footer" id="reviewCounter">Отзывы 1 из 36</div>
+        <button class="all-reviews-btn" onclick="window.location.href='reviews.html'">Все отзывы</button>
       </div>
     </div>
 
     <div class="section-card">
-        <div class="section-title">Статус</div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div style="background: #24366e; padding: 12px; border-radius: 10px; text-align: center;">
-                <div class="small-text">Верификация</div>
-                <div id="verification" style="margin-top: 8px; font-weight: bold; color: #ffc107;">⏳ Не проверено</div>
-            </div>
-            <div style="background: #24366e; padding: 12px; border-radius: 10px; text-align: center;">
-                <div class="small-text">Статус</div>
-                <div style="margin-top: 8px; font-weight: bold; color: #00ff88;">✅ Активен</div>
-            </div>
+        <h5 class="section-title">Аналитика торговли</h5>
+        <div class="analytics-btn-group mt-3">
+            <button class="btn-period active">Все время</button>
+            <button class="btn-period">Год</button>
+            <button class="btn-period">Месяц</button>
+            <button class="btn-period">Неделя</button>
+            <button class="btn-period">День</button>
         </div>
-    </div>
-
-    <div class="section-card">
-        <div class="section-title">История операций</div>
-        <div style="display: flex; gap: 5px; margin-bottom: 15px; flex-wrap: wrap;">
-            <button class="btn-period active" style="background: #4db8ff; color: #000;">День</button>
-            <button class="btn-period" style="background: #2b3e75; color: #fff;">Неделя</button>
-            <button class="btn-period" style="background: #2b3e75; color: #fff;">Месяц</button>
-        </div>
-        <div id="transactionsContainer" style="max-height: 200px; overflow-y: auto;">
-            <div style="color: #9fb3ff; text-align: center; padding: 20px;">Нет операций</div>
-        </div>
+        <div class="stat-box"><div class="stat-label">Win Rate</div><div class="stat-value" id="winRate">0.0%</div></div>
+        <div class="stat-box"><div class="stat-label">Средняя прибыль</div><div class="stat-value text-success-custom" id="avgProfit">+0.00 USDT</div></div>
+        <div class="stat-box"><div class="stat-label">Средний убыток</div><div class="stat-value text-danger-custom" id="avgLoss">0.00 USDT</div></div>
+        <div class="stat-box"><div class="stat-label">Максимальный выигрыш</div><div class="stat-value text-success-custom" id="maxWin">+0.00 USDT</div></div>
+        <div class="stat-box"><div class="stat-label">Максимальный проигрыш</div><div class="stat-value text-danger-custom" id="maxLoss">0.00 USDT</div></div>
+        <div class="stat-box"><div class="stat-label">Profit Factor</div><div class="stat-value" id="profitFactor">0.00</div></div>
     </div>
 
     <div class="section-card text-center">
-        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-            <button onclick="location.href='trading.html'" style="background: #4db8ff; color: #000; border: none; padding: 12px 24px; border-radius: 12px; font-weight: bold; cursor: pointer;">📊 Торговля</button>
-            <button onclick="location.href='terminal.html'" style="background: #2da6ff; color: #fff; border: none; padding: 12px 24px; border-radius: 12px; font-weight: bold; cursor: pointer;">📈 Терминал</button>
+        <h5 class="section-title text-start">График доходности (P&L)</h5>
+        <div style="height: 150px; display: flex; align-items: center; justify-content: center; color: #9fb3ff;">
+            <span>Недостаточно данных для построения графика</span>
         </div>
     </div>
 
     <div class="section-card">
-        <div class="section-title">Операции</div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <button onclick="location.href='deposit.html'" style="background: #2ea354; border: none; padding: 15px; border-radius: 12px; color: white; font-weight: bold; cursor: pointer;">💰 Пополнить</button>
-            <button onclick="location.href='withdraw.html'" style="background: #d93044; border: none; padding: 15px; border-radius: 12px; color: white; font-weight: bold; cursor: pointer;">💸 Вывести</button>
+        <h5 class="section-title">Статистика по периодам</h5>
+        <div class="stat-period-box">
+            <div class="period-name">Сегодня</div>
+            <div class="period-row"><span class="period-label">Прибыль</span><span class="period-value text-success-custom" id="pProfitToday">+0.00 USDT</span></div>
+            <div class="period-row"><span class="period-label">Сделок</span><span class="period-value" id="pTradesToday">0 <small>(0W / 0L)</small></span></div>
+        </div>
+        <div class="stat-period-box">
+            <div class="period-name">Неделя</div>
+            <div class="period-row"><span class="period-label">Прибыль</span><span class="period-value text-success-custom" id="pProfitWeek">+0.00 USDT</span></div>
+            <div class="period-row"><span class="period-label">Сделок</span><span class="period-value" id="pTradesWeek">0 <small>(0W / 0L)</small></span></div>
+        </div>
+        <div class="stat-period-box">
+            <div class="period-name">Месяц</div>
+            <div class="period-row"><span class="period-label">Прибыль</span><span class="period-value text-success-custom" id="pProfitMonth">+0.00 USDT</span></div>
+            <div class="period-row"><span class="period-label">Сделок</span><span class="period-value" id="pTradesMonth">0 <small>(0W / 0L)</small></span></div>
+        </div>
+    </div>
+
+    <div class="section-card">
+        <h5 class="section-title">История транзакций</h5>
+        <div class="history-btn-group mt-3">
+            <button class="btn-filter active" onclick="filterHistory('all')">Все (0)</button>
+            <button class="btn-filter" onclick="filterHistory('withdraw')">Выводы (0)</button>
+            <button class="btn-filter" onclick="filterHistory('deposit')">Пополнения (0)</button>
+        </div>
+        <div id="historyContent" style="min-height: 150px; color: #9fb3ff;">
+            <div style="height: 150px; display: flex; align-items: center; justify-content: center;">
+                <span>История транзакций пуста</span>
+            </div>
         </div>
     </div>
 
     <div class="mobile-bottom-nav">
-        <button class="nav-item active" onclick="location.href='index.html'">📊 Главная</button>
-        <button class="nav-item" onclick="location.href='trading.html'">💹 Торговля</button>
-        <button class="nav-item" onclick="location.href='deposit.html'">💰 Депозит</button>
-        <button class="nav-item" onclick="location.href='withdraw.html'">💸 Вывод</button>
+        <button class="mobile-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mobileMenu">
+            <div class="d-flex align-items-center gap-2">
+                <div class="mobile-icon">💰</div>
+                <span class="fw-bold">Активы</span>
+            </div>
+            <div class="mobile-arrow">⌃</div>
+        </button>
+        <div class="collapse" id="mobileMenu">
+            <div class="mobile-content">
+                <a href="index.html" class="mobile-item active">💰 Активы</a>
+                <a href="trading.html" class="mobile-item">📊 Торговля</a>
+                <a href="staking.html" class="mobile-item">📦 Стейкинг</a>
+                <div class="mobile-item disabled d-flex justify-content-between">
+                    <span>📦 Бинарные опционы</span>
+                    <span class="mobile-badge">В разработке</span>
+                </div>
+            </div>
+        </div>
     </div>
 
 </div>
@@ -250,18 +338,27 @@
 <script>
   const tg = window.Telegram?.WebApp;
   if (tg) {
-    tg.expand();
     tg.ready();
+    tg.expand();
   }
-  
-  const telegramId = tg?.initDataUnsafe?.user?.id || 703924219;
-  let userId = null;
-  
-  console.log('🔵 Telegram ID:', telegramId);
-  
-  let RUB_RATE = 79.10;
 
-  async function getOrCreateUserId() {
+  let userId = null;
+  let RUB_RATE = 79.10;
+  let allTransactions = [];
+
+  function getClientTelegramId() {
+    const telegramRawId = tg?.initDataUnsafe?.user?.id;
+    if (telegramRawId) return Number(telegramRawId);
+    const key = 'nexo_guest_telegram_id';
+    const stored = localStorage.getItem(key);
+    if (stored) return Number(stored);
+    const generated = Math.floor(800000000 + Math.random() * 100000000);
+    localStorage.setItem(key, String(generated));
+    return generated;
+  }
+
+  async function resolveUserId() {
+    const telegramId = getClientTelegramId();
     const res = await fetch('/api/user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -269,64 +366,220 @@
     });
     const payload = await res.json();
     if (!res.ok || !payload?.data?.id) {
-      throw new Error(payload?.error || 'Ошибка создания пользователя');
+      throw new Error(payload?.error || 'Не удалось получить аккаунт');
     }
     return payload.data.id;
   }
 
-  const updateEl = (id, val) => { 
-    const el = document.getElementById(id); 
-    if(el) el.textContent = val; 
+  const updateEl = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
   };
 
   async function updateMarketPrices() {
     try {
-        const symbols = ["BTCUSDT", "ETHUSDT", "TONUSDT"];
-        const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbols=${JSON.stringify(symbols)}`);
-        const prices = await res.json();
-        
-        const rubRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-        const rubData = await rubRes.json();
-        RUB_RATE = rubData.rates.RUB;
+      const symbols = ['BTCUSDT', 'ETHUSDT', 'TONUSDT'];
+      const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbols=${JSON.stringify(symbols)}`);
+      const prices = await res.json();
 
-        const priceMap = {};
-        prices.forEach(p => priceMap[p.symbol] = parseFloat(p.price));
+      const rubRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+      const rubData = await rubRes.json();
+      RUB_RATE = rubData.rates.RUB;
 
-        updateEl('rubPrice', `${RUB_RATE.toFixed(2)} ₽`);
-        updateEl('btcPrice', `${priceMap['BTCUSDT'].toLocaleString()} $`);
-        updateEl('ethPrice', `${priceMap['ETHUSDT'].toLocaleString()} $`);
-        updateEl('tonPrice', `${priceMap['TONUSDT'].toFixed(2)} $`);
+      const priceMap = {};
+      prices.forEach(p => { priceMap[p.symbol] = parseFloat(p.price); });
 
-        return { btc: priceMap['BTCUSDT'], eth: priceMap['ETHUSDT'], ton: priceMap['TONUSDT'] };
-    } catch (e) { return null; }
+      updateEl('rubPrice', `${RUB_RATE.toFixed(2)} ₽`);
+      updateEl('btcPrice', `${priceMap.BTCUSDT.toLocaleString()} $`);
+      updateEl('ethPrice', `${priceMap.ETHUSDT.toLocaleString()} $`);
+      updateEl('tonPrice', `${priceMap.TONUSDT.toFixed(2)} $`);
+
+      return { btc: priceMap.BTCUSDT, eth: priceMap.ETHUSDT, ton: priceMap.TONUSDT };
+    } catch {
+      return null;
+    }
+  }
+
+  function mapUiPeriodToApi(periodLabel) {
+    const map = {
+      'День': 'day',
+      'Неделя': 'week',
+      'Месяц': 'month',
+      'Год': 'year',
+      'Все время': 'year'
+    };
+    return map[periodLabel] || 'month';
+  }
+
+  async function loadPeriodCards() {
+    const periods = ['day', 'week', 'month'];
+    const [dayPnl, weekPnl, monthPnl, dayStats, weekStats, monthStats] = await Promise.all([
+      fetch(`/api/analytics/${userId}/pnl/day`).then(r => r.json()),
+      fetch(`/api/analytics/${userId}/pnl/week`).then(r => r.json()),
+      fetch(`/api/analytics/${userId}/pnl/month`).then(r => r.json()),
+      fetch(`/api/trades/${userId}/stats/day`).then(r => r.json()),
+      fetch(`/api/trades/${userId}/stats/week`).then(r => r.json()),
+      fetch(`/api/trades/${userId}/stats/month`).then(r => r.json())
+    ]);
+
+    const pnlMap = { day: dayPnl?.data, week: weekPnl?.data, month: monthPnl?.data };
+    const statsMap = { day: dayStats?.data, week: weekStats?.data, month: monthStats?.data };
+
+    periods.forEach(period => {
+      const pnl = pnlMap[period] || {};
+      const stats = statsMap[period] || {};
+      const net = Number(pnl.netPnL || 0);
+      const total = Number(stats.totalTrades || 0);
+      const win = Number(stats.successfulTrades || 0);
+      const loss = Number(stats.failedTrades || 0);
+
+      if (period === 'day') {
+        updateEl('pProfitToday', `${net >= 0 ? '+' : ''}${net.toFixed(2)} USDT`);
+        updateEl('pTradesToday', `${total} (${win}W / ${loss}L)`);
+      }
+      if (period === 'week') {
+        updateEl('pProfitWeek', `${net >= 0 ? '+' : ''}${net.toFixed(2)} USDT`);
+        updateEl('pTradesWeek', `${total} (${win}W / ${loss}L)`);
+      }
+      if (period === 'month') {
+        updateEl('pProfitMonth', `${net >= 0 ? '+' : ''}${net.toFixed(2)} USDT`);
+        updateEl('pTradesMonth', `${total} (${win}W / ${loss}L)`);
+      }
+    });
+  }
+
+  async function loadAnalyticsData(periodLabel) {
+    try {
+      const period = mapUiPeriodToApi(periodLabel);
+      const [statsRes, pnlRes] = await Promise.all([
+        fetch(`/api/analytics/${userId}/stats`),
+        fetch(`/api/analytics/${userId}/pnl/${period}`)
+      ]);
+
+      const statsPayload = await statsRes.json();
+      const pnlPayload = await pnlRes.json();
+      const statistics = statsPayload?.data?.statistics || {};
+      const pnl = pnlPayload?.data || {};
+
+      const winRate = Number(statistics.winRate || 0);
+      const avgProfit = Number(statistics.avgProfit || 0);
+      const avgLoss = Number(statistics.avgLoss || 0);
+      const totalProfit = Number(pnl.totalProfit || 0);
+      const totalLoss = Number(pnl.totalLoss || 0);
+      const profitFactor = totalLoss > 0 ? (totalProfit / totalLoss) : totalProfit;
+
+      updateEl('winRate', `${winRate.toFixed(2)}%`);
+      updateEl('avgProfit', `+${avgProfit.toFixed(2)} USDT`);
+      updateEl('avgLoss', `${avgLoss.toFixed(2)} USDT`);
+      updateEl('maxWin', `+${totalProfit.toFixed(2)} USDT`);
+      updateEl('maxLoss', `${totalLoss.toFixed(2)} USDT`);
+      updateEl('profitFactor', profitFactor.toFixed(2));
+    } catch (e) {
+      console.error('analytics_error', e);
+    }
+  }
+
+  function updateFilterCounts() {
+    const counts = {
+      all: allTransactions.length,
+      deposit: allTransactions.filter(t => t.type === 'deposit').length,
+      withdraw: allTransactions.filter(t => t.type === 'withdrawal').length
+    };
+
+    const filters = document.querySelectorAll('.btn-filter');
+    if (filters.length >= 3) {
+      filters[0].innerText = `Все (${counts.all})`;
+      filters[1].innerText = `Выводы (${counts.withdraw})`;
+      filters[2].innerText = `Пополнения (${counts.deposit})`;
+    }
+  }
+
+  function filterHistory(type) {
+    const container = document.getElementById('historyContent');
+    document.querySelectorAll('.btn-filter').forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${type}'`));
+    });
+
+    const normalizedType = type === 'withdraw' ? 'withdrawal' : type;
+    const filtered = normalizedType === 'all'
+      ? allTransactions
+      : allTransactions.filter(tx => tx.type === normalizedType);
+
+    if (filtered.length === 0) {
+      container.innerHTML = '<div style="height: 150px; display: flex; align-items: center; justify-content: center;"><span>История пуста</span></div>';
+      return;
+    }
+
+    container.innerHTML = filtered.map(tx => {
+      const isDep = tx.type === 'deposit';
+      const created = tx.createdAt ? new Date(tx.createdAt) : null;
+      const dateStr = created ? created.toLocaleDateString('ru-RU') : '';
+      const timeStr = created ? created.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '';
+
+      return `
+        <div class="history-item">
+          <div class="history-icon">${isDep ? '📥' : '📤'}</div>
+          <div class="history-info">
+            <div class="history-type">${isDep ? 'Пополнение' : 'Вывод'}</div>
+            <div class="history-date">${dateStr},<br>${timeStr}</div>
+          </div>
+          <div class="history-amount">
+            <div class="amount-val ${isDep ? 'text-plus' : 'text-minus'}">${isDep ? '+' : '-'}${parseFloat(tx.amount || 0).toFixed(2)}</div>
+            <div class="amount-cur">${tx.currency || 'RUB'}</div>
+          </div>
+        </div>`;
+    }).join('');
   }
 
   async function loadUserData() {
     if (!userId) return;
     try {
-      const market = await updateMarketPrices();
-      const res = await fetch(`/api/profile/${userId}`);
-      if (!res.ok) throw new Error('API error');
-      
-      const payload = await res.json();
-      const data = payload.data || {};
-      
+      const [market, profileRes, txRes] = await Promise.all([
+        updateMarketPrices(),
+        fetch(`/api/profile/${userId}`),
+        fetch(`/api/transactions/${userId}`)
+      ]);
+
+      if (!profileRes.ok) throw new Error('Ошибка загрузки профиля');
+      const profilePayload = await profileRes.json();
+      const profile = profilePayload?.data || {};
+
+      const txPayload = txRes.ok ? await txRes.json() : { data: [] };
+      allTransactions = Array.isArray(txPayload?.data) ? txPayload.data : [];
+      updateFilterCounts();
+      filterHistory('all');
+
       updateEl('userIdDisplay', userId);
-      updateEl('stats', `${data.total_trades || 0} / ${data.success_trades || 0} / ${data.failed_trades || 0}`);
-      updateEl('tradingVolume', `${parseFloat(data.trading_volume || 0).toFixed(2)} USDT`);
-      
+      updateEl('stats', `${profile.total_trades || 0} / ${profile.success_trades || 0} / ${profile.failed_trades || 0}`);
+      updateEl('tradingVolume', `${parseFloat(profile.trading_volume || 0).toFixed(2)} USDT`);
+
       const verifEl = document.getElementById('verification');
       if (verifEl) {
-          verifEl.textContent = data.verified ? '✅ Верификация пройдена' : '⏳ В ожидании проверки';
-          verifEl.style.color = data.verified ? "#00ff88" : "#ffc107";
+        verifEl.textContent = profile.verified ? 'Верификация пройдена' : 'Верификация не пройдена';
+        verifEl.style.color = profile.verified ? '#00ff88' : '#ffc107';
       }
 
-      updateEl('rubBalance', `${parseFloat(data.rub || 0).toFixed(2)}`);
-      updateEl('balanceUSDT', `${parseFloat(data.usdt || 0).toFixed(2)}`);
-      updateEl('btcBalance', `${parseFloat(data.btc || 0).toFixed(6)}`);
-      updateEl('ethBalance', `${parseFloat(data.eth || 0).toFixed(6)}`);
-      updateEl('tonBalance', `${parseFloat(data.ton || 0).toFixed(6)}`);
-    } catch (e) { console.error('Ошибка:', e); }
+      const curRub = parseFloat(profile.rub || 0);
+      const curUsdt = parseFloat(profile.usdt || 0);
+      const btcInUsd = market ? parseFloat(profile.btc || 0) * market.btc : 0;
+      const ethInUsd = market ? parseFloat(profile.eth || 0) * market.eth : 0;
+      const tonInUsd = market ? parseFloat(profile.ton || 0) * market.ton : 0;
+      const total = (curRub / RUB_RATE) + curUsdt + btcInUsd + ethInUsd + tonInUsd;
+
+      updateEl('totalBalance', `$${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+      updateEl('rubBalance', `${curRub.toFixed(2)} ₽`);
+      updateEl('btcBalance', `${btcInUsd.toFixed(2)} $`);
+      updateEl('ethBalance', `${ethInUsd.toFixed(2)} $`);
+      updateEl('tonBalance', `${tonInUsd.toFixed(2)} $`);
+      updateEl('usdtBalance', `${curUsdt.toFixed(2)} $`);
+
+      await Promise.all([
+        loadPeriodCards(),
+        loadAnalyticsData(document.querySelector('.btn-period.active')?.innerText || 'Все время')
+      ]);
+    } catch (e) {
+      console.error('load_user_data_error', e);
+    }
   }
 
   const reviewsContainer = document.getElementById('reviewsContainer');
@@ -334,12 +587,13 @@
   const totalReviews = 36;
 
   function initReviews() {
-    for (let i = 0; i < totalReviews; i++) {
+    reviewsContainer.innerHTML = '';
+    for (let i = 1; i <= totalReviews; i++) {
       const card = document.createElement('div');
-      card.className = 'review-card' + (i === 0 ? ' active' : '');
+      card.className = `review-card ${i === 1 ? 'active' : ''}`;
       card.innerHTML = `
-        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-          <div><div class="review-name">Пользователь #${1000 + i}</div><div class="review-role">Клиент Nexo</div></div>
+        <div class="d-flex justify-content-between align-items-start">
+          <div><div class="review-name fw-bold">Пользователь #${1000 + i}</div><div class="review-role">Клиент Nexo</div></div>
           <div class="review-date">18.10.2025</div>
         </div>
         <p class="mt-3 mb-2">Отличная платформа! Все операции проходят быстро, интерфейс очень удобный и понятный.</p>
@@ -354,7 +608,7 @@
     cards[currentIdx].classList.remove('active');
     currentIdx = (currentIdx + dir + totalReviews) % totalReviews;
     cards[currentIdx].classList.add('active');
-    document.getElementById('reviewCounter').textContent = `${currentIdx + 1} из ${totalReviews}`;
+    document.getElementById('reviewCounter').textContent = `Отзывы ${currentIdx + 1} из ${totalReviews}`;
   }
 
   document.getElementById('nextReview').onclick = () => updateReview(1);
@@ -362,27 +616,25 @@
 
   window.addEventListener('DOMContentLoaded', async () => {
     try {
-      userId = await getOrCreateUserId();
+      userId = await resolveUserId();
       await loadUserData();
       initReviews();
-      setInterval(loadUserData, 5000);
     } catch (e) {
-      console.error('❌ Ошибка:', e);
+      console.error('init_error', e);
     }
   });
 
   document.querySelectorAll('.btn-period').forEach(button => {
     button.addEventListener('click', function() {
-        document.querySelectorAll('.btn-period').forEach(b => {
-          b.classList.remove('active');
-          b.style.background = '#2b3e75';
-          b.style.color = '#fff';
-        });
+        document.querySelectorAll('.btn-period').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
-        this.style.background = '#4db8ff';
-        this.style.color = '#000';
+        loadAnalyticsData(this.innerText);
     });
   });
+
+  setInterval(() => {
+    if (userId) loadUserData();
+  }, 5000);
 </script>
 </body>
 </html>

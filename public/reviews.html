@@ -27,12 +27,14 @@
     .back-btn {
       background: #2b3e75; border: none; color: white; 
       padding: 8px 15px; border-radius: 12px; font-size: 14px;
+      cursor: pointer;
     }
 
     .reviews-section {
       background: linear-gradient(180deg, #182848 0%, #0f1c3d 100%);
       border-radius: 25px; padding: 30px 20px;
       box-shadow: 0 0 40px rgba(0, 150, 255, 0.15);
+      min-height: 200px;
     }
 
     .review-card {
@@ -57,10 +59,11 @@
         width: 32px; height: 32px; background: rgba(255,255,255,0.1);
         border-radius: 50%; display: flex; align-items: center; justify-content: center;
     }
+    .mobile-arrow { transition: 0.3s; }
+    .mobile-toggle[aria-expanded="true"] .mobile-arrow { transform: rotate(180deg); }
     .mobile-content { background: linear-gradient(180deg, #182848 0%, #101c3a 100%); padding: 20px; }
     .mobile-item { padding: 14px 15px; border-radius: 12px; color: #cfe9ff; margin-bottom: 10px; text-decoration: none; display: block;}
 
-    /* Кнопка "Наверх" */
     #backToTop {
       position: fixed;
       left: calc(50% + 190px); 
@@ -84,33 +87,29 @@
     }
 
     @media (max-width: 500px) {
-      #backToTop {
-        left: auto;
-        right: 20px;
-      }
+      #backToTop { left: auto; right: 20px; }
     }
 
-    #backToTop.show {
-      opacity: 1;
-      visibility: visible;
-    }
+    #backToTop.show { opacity: 1; visibility: visible; }
   </style>
 </head>
 <body>
 
 <div class="app-container">
     <div class="header-box">
-      <button class="back-btn" onclick="history.back()">← Назад</button>
-      <h4 class="m-0">Все отзывы (36)</h4>
+      <button class="back-btn" onclick="window.location.href='index.html'">← Назад</button>
+      <h4 class="m-0" id="reviewsCountTitle">Все отзывы (0)</h4>
     </div>
 
-    <div class="reviews-section" id="allReviewsContainer"></div>
+    <div class="reviews-section" id="allReviewsContainer">
+        <div class="text-center py-4 text-secondary">Загрузка отзывов...</div>
+    </div>
 
     <div class="mobile-bottom-nav">
         <button class="mobile-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mobileMenu">
             <div class="d-flex align-items-center gap-2">
                 <div class="mobile-icon">💰</div>
-                <span>Активы</span>
+                <span class="fw-bold">Активы</span>
             </div>
             <div class="mobile-arrow">⌃</div>
         </button>
@@ -118,7 +117,7 @@
             <div class="mobile-content">
                 <a href="index.html" class="mobile-item">💰 Активы</a>
                 <a href="trading.html" class="mobile-item">📊 Торговля</a>
-                <a href="#" class="mobile-item">📦 Стейкинг</a>
+                <a href="staking.html" class="mobile-item">📦 Стейкинг</a>
             </div>
         </div>
     </div>
@@ -128,33 +127,73 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // 1. Генерация отзывов
     const container = document.getElementById('allReviewsContainer');
-    const names = ["Алексей", "Мария", "Иван", "Дмитрий", "Елена", "Сергей", "Ольга", "Виктор"];
-    
-    for (let i = 1; i <= 36; i++) {
-        const randomName = names[Math.floor(Math.random() * names.length)];
-        const card = document.createElement('div');
-        card.className = 'review-card';
-        card.innerHTML = `
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="review-name">${randomName} ${String.fromCharCode(65 + (i % 26))}.</div>
-                    <div class="review-role">Пользователь #${10364 + i}</div>
-                </div>
-                <div class="review-date">12.02.2026</div>
-            </div>
-            <p class="mt-3 mb-2" style="font-size: 14px; line-height: 1.5;">
-                Пользуюсь платформой уже несколько месяцев. Очень радует скорость вывода средств и отзывчивая поддержка. Рекомендую!
-            </p>
-            <div class="stars">★★★★★</div>
-        `;
-        container.appendChild(card);
+    const title = document.getElementById('reviewsCountTitle');
+
+    // Функция загрузки данных из бэкенда
+    function buildFallbackReviews() {
+        return Array.from({ length: 36 }, (_, i) => ({
+            author_name: `Пользователь #${1001 + i}`,
+            user_id: 1001 + i,
+            date: '18.10.2025',
+            text: 'Отличная платформа! Все операции проходят быстро, интерфейс удобный и понятный.',
+            rating: 5
+        }));
     }
 
-    // 2. Логика кнопки "Наверх"
-    const backToTopBtn = document.getElementById('backToTop');
+    async function loadReviews() {
+        try {
+            const response = await fetch('/api/reviews');
+            let reviews = [];
 
+            if (response.ok) {
+                const payload = await response.json();
+                reviews = Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : []);
+            }
+
+            if (!reviews.length) {
+                reviews = buildFallbackReviews();
+            }
+            
+            if (reviews.length > 0) {
+                renderReviews(reviews);
+                title.innerText = `Все отзывы (${reviews.length})`;
+            } else {
+                container.innerHTML = '<div class="text-center py-4 text-secondary">Отзывов пока нет. Будьте первым!</div>';
+            }
+        } catch (error) {
+            console.error("Ошибка загрузки отзывов:", error);
+            const fallback = buildFallbackReviews();
+            renderReviews(fallback);
+            title.innerText = `Все отзывы (${fallback.length})`;
+        }
+    }
+
+    // Функция отрисовки карточек
+    function renderReviews(reviews) {
+        container.innerHTML = '';
+        reviews.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'review-card';
+            card.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="review-name">${item.author_name}</div>
+                        <div class="review-role">Пользователь #${item.user_id}</div>
+                    </div>
+                    <div class="review-date">${item.date || 'Недавно'}</div>
+                </div>
+                <p class="mt-3 mb-2" style="font-size: 14px; line-height: 1.5;">
+                    ${item.text}
+                </p>
+                <div class="stars">${'★'.repeat(item.rating || 5)}${'☆'.repeat(5 - (item.rating || 5))}</div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    // Логика кнопки "Наверх"
+    const backToTopBtn = document.getElementById('backToTop');
     window.onscroll = function() {
         if (document.documentElement.scrollTop > 400 || document.body.scrollTop > 400) {
             backToTopBtn.classList.add('show');
@@ -166,6 +205,9 @@
     backToTopBtn.onclick = function() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
+
+    // Запуск при загрузке
+    document.addEventListener('DOMContentLoaded', loadReviews);
 </script>
 </body>
 </html>

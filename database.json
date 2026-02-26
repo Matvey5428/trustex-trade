@@ -199,6 +199,80 @@
         "status": "pending",
         "submittedAt": null
       }
+    },
+    {
+      "id": 1772069575707,
+      "telegramId": 12345,
+      "createdAt": "2026-02-26T01:32:55.707Z",
+      "wallets": {
+        "USDT": {
+          "balance": 0,
+          "currency": "USDT"
+        },
+        "RUB": {
+          "balance": 0,
+          "currency": "RUB"
+        },
+        "BTC": {
+          "balance": 0,
+          "currency": "BTC"
+        },
+        "ETH": {
+          "balance": 0,
+          "currency": "ETH"
+        },
+        "TON": {
+          "balance": 0,
+          "currency": "TON"
+        }
+      },
+      "stats": {
+        "totalTrades": 0,
+        "successfulTrades": 0,
+        "failedTrades": 0,
+        "totalTradeVolume": 0
+      },
+      "verification": {
+        "status": "pending",
+        "submittedAt": null
+      }
+    },
+    {
+      "id": 1772069958913,
+      "telegramId": 777888,
+      "createdAt": "2026-02-26T01:39:18.913Z",
+      "wallets": {
+        "USDT": {
+          "balance": 0,
+          "currency": "USDT"
+        },
+        "RUB": {
+          "balance": 0,
+          "currency": "RUB"
+        },
+        "BTC": {
+          "balance": 0,
+          "currency": "BTC"
+        },
+        "ETH": {
+          "balance": 0,
+          "currency": "ETH"
+        },
+        "TON": {
+          "balance": 0,
+          "currency": "TON"
+        }
+      },
+      "stats": {
+        "totalTrades": 0,
+        "successfulTrades": 0,
+        "failedTrades": 0,
+        "totalTradeVolume": 0
+      },
+      "verification": {
+        "status": "pending",
+        "submittedAt": null
+      }
     }
   ],
   "trades": [

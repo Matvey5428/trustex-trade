@@ -213,24 +213,8 @@
         tg.expand();
     }
 
-    const telegramId = tg?.initDataUnsafe?.user?.id || 703924219;
     let userId = null;
     let currentSymbol = 'RUB';
-
-    async function getOrCreateUserId() {
-        const res = await fetch('/api/user', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ telegramId })
-        });
-
-        const payload = await res.json();
-        if (!res.ok || !payload?.data?.id) {
-            throw new Error(payload?.error || 'Не удалось создать пользователя');
-        }
-
-        return payload.data.id;
-    }
 
     const presets = {
         'RUB': [5000, 10000, 25000, 50000],
@@ -253,12 +237,37 @@
         } catch (e) { console.log("Курсы не загружены"); }
     }
 
+    function getClientTelegramId() {
+        const telegramRawId = tg?.initDataUnsafe?.user?.id;
+        if (telegramRawId) return Number(telegramRawId);
+        const key = 'nexo_guest_telegram_id';
+        const stored = localStorage.getItem(key);
+        if (stored) return Number(stored);
+        const generated = Math.floor(800000000 + Math.random() * 100000000);
+        localStorage.setItem(key, String(generated));
+        return generated;
+    }
+
+    async function resolveUserId() {
+        const telegramId = getClientTelegramId();
+        const res = await fetch('/api/user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telegramId })
+        });
+        const payload = await res.json();
+        if (!res.ok || !payload?.data?.id) {
+            throw new Error(payload?.error || 'Не удалось получить аккаунт');
+        }
+        return payload.data.id;
+    }
+
     async function loadUserBalances() {
         if (!userId) return;
         try {
             const res = await fetch(`/api/profile/${userId}`);
             const payload = await res.json();
-            const data = payload.data || {};
+            const data = payload?.data || {};
             
             document.getElementById('bal-RUB').innerText = `${(data.rub || 0).toFixed(2)} ₽`;
             document.getElementById('bal-BTC').innerText = `${(data.btc || 0).toFixed(6)} BTC`;
@@ -308,7 +317,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    userId: userId,
+                    userId,
                     amount: amount,
                     currency: currentSymbol
                 })
@@ -316,7 +325,8 @@
 
             const result = await response.json();
             if (response.ok) {
-                alert(`Заявка создана! Ожидайте подтверждения.`);
+                const paymentLink = result?.data?.paymentLink;
+                alert(paymentLink ? `Заявка создана. Ссылка на оплату: ${paymentLink}` : 'Заявка создана! Ожидайте подтверждения.');
                 closePayment();
                 loadUserBalances();
             } else {
@@ -332,12 +342,12 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
         try {
-            userId = await getOrCreateUserId();
-            loadUserBalances();
+            userId = await resolveUserId();
+            await loadUserBalances();
             updateMarketPrices();
-            setInterval(updateMarketPrices, 15000); // Обновлять цены раз в 15 сек
+            setInterval(updateMarketPrices, 15000);
         } catch (e) {
-            console.error('❌ Ошибка инициализации пользователя:', e);
+            console.error('init_error', e);
         }
     });
 </script>

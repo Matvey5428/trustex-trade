@@ -65,7 +65,7 @@
   <div class="info-row">
     <div class="info-box">
       <div class="info-label">Баланс</div>
-      <div class="info-value" id="userUsdtBalance">0.00 USDT</div>
+      <div class="info-value" id="userUsdtBalance">Загрузка...</div>
     </div>
     <div class="info-box">
       <div class="info-label">Live Price</div>
@@ -107,7 +107,7 @@
 
   <h6 class="mb-3" style="color: #9fb3ff">История сделок</h6>
   <div id="activeTradesContainer">
-    <div class="text-center py-3 small-text" style="color: #9fb3ff">История загружается...</div>
+    <div class="text-center py-3 small-text" style="color: #9fb3ff">Нет сделок</div>
   </div>
 
   <div class="mobile-bottom-nav">
@@ -160,30 +160,34 @@
 
 <script>
   const tg = window.Telegram?.WebApp;
-  if (tg) {
-    tg.expand();
-    tg.ready();
-  }
-
-  const telegramId = tg?.initDataUnsafe?.user?.id || 703924219;
   let userId = null;
   const params = new URLSearchParams(window.location.search);
   const coinSymbol = params.get('symbol') || 'XRP';
   let currentTradeType = 'buy';
   let widget = null;
 
-  async function getOrCreateUserId() {
+  function getClientTelegramId() {
+    const telegramRawId = tg?.initDataUnsafe?.user?.id;
+    if (telegramRawId) return Number(telegramRawId);
+    const key = 'nexo_guest_telegram_id';
+    const stored = localStorage.getItem(key);
+    if (stored) return Number(stored);
+    const generated = Math.floor(800000000 + Math.random() * 100000000);
+    localStorage.setItem(key, String(generated));
+    return generated;
+  }
+
+  async function resolveUserId() {
+    const telegramId = getClientTelegramId();
     const res = await fetch('/api/user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ telegramId })
     });
-
     const payload = await res.json();
     if (!res.ok || !payload?.data?.id) {
-      throw new Error(payload?.error || 'Не удалось создать пользователя');
+      throw new Error(payload?.error || 'Не удалось получить аккаунт');
     }
-
     return payload.data.id;
   }
 
@@ -210,16 +214,26 @@
     initChart(btn.getAttribute('data-tf'));
   }
 
+  // ОБНОВЛЕННАЯ ФУНКЦИЯ БАЛАНСА
   async function loadUserBalance() {
     if (!userId) return;
     try {
       const res = await fetch(`/api/profile/${userId}`);
+      if (!res.ok) throw new Error("Server error");
       const payload = await res.json();
-      const data = payload.data || {};
+      const data = payload?.data || {};
+      
       const usdt = parseFloat(data.usdt || 0);
-      document.getElementById('userUsdtBalance').textContent = `${usdt.toFixed(2)} USDT`;
-      document.getElementById('panelAvailableUsdt').textContent = `${usdt.toFixed(2)} USDT`;
-    } catch (e) { console.error("Ошибка баланса:", e); }
+      const currency = 'USDT';
+      
+      const formatted = usdt.toLocaleString(undefined, { minimumFractionDigits: 2 });
+      
+      document.getElementById('userUsdtBalance').textContent = `${formatted} ${currency}`;
+      document.getElementById('panelAvailableUsdt').textContent = `${formatted} ${currency}`;
+    } catch (e) { 
+        console.error("Ошибка баланса:", e); 
+        document.getElementById('userUsdtBalance').textContent = "Ошибка сети";
+    }
   }
 
   async function updateLivePrice() {
@@ -245,43 +259,40 @@
 
   async function loadActiveTrades() {
     if (!userId) return;
+    const container = document.getElementById('activeTradesContainer');
     try {
       const res = await fetch(`/api/trades/${userId}`);
       const payload = await res.json();
-      const trades = payload.data || [];
-      const container = document.getElementById('activeTradesContainer');
-      
-      if (Array.isArray(trades) && trades.length > 0) {
-        container.innerHTML = trades.map(t => `
+      const trades = Array.isArray(payload?.data) ? payload.data : [];
+
+      if (!trades.length) {
+        container.innerHTML = '<div class="text-center py-3 small-text" style="color: #9fb3ff">Нет сделок</div>';
+        return;
+      }
+
+      container.innerHTML = trades.slice(0, 10).map((trade) => {
+        const sign = trade.status === 'successful' ? '+' : trade.status === 'failed' ? '-' : '•';
+        const cls = trade.status === 'successful' ? 'profit-plus' : '';
+        const created = trade.createdAt ? new Date(trade.createdAt) : new Date();
+        return `
           <div class="order-item">
             <div>
-              <div class="order-price">${parseFloat(t.amount).toFixed(2)} USDT</div>
-              <div class="small-text ${t.type === 'buy' ? 'text-success' : 'text-danger'}">
-                ${t.type === 'buy' ? '▲ Вверх' : '▼ Вниз'}
-              </div>
+              <div class="order-price ${cls}">${sign} ${Number(trade.fromAmount || 0).toFixed(2)} ${trade.fromCurrency || 'USDT'} → ${trade.toCurrency || ''}</div>
+              <div class="order-date">${created.toLocaleDateString('ru-RU')} ${created.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</div>
             </div>
-            <div class="text-end">
-              <div class="profit-plus ${t.profit < 0 ? 'text-danger' : ''}">
-                ${t.profit >= 0 ? '+' : ''}${parseFloat(t.profit).toFixed(2)} USDT
-              </div>
-              <div class="order-date">${t.date}</div>
-            </div>
+            <div class="small-text">${trade.status || 'pending'}</div>
           </div>
-        `).join('');
-      } else {
-        container.innerHTML = '<div class="text-center py-3 small-text" style="color: #9fb3ff">Нет открытых сделок</div>';
-      }
-    } catch (e) { 
-      document.getElementById('activeTradesContainer').innerHTML = '<div class="text-center py-3 text-danger">Ошибка загрузки сделок</div>'; 
+        `;
+      }).join('');
+    } catch {
+      container.innerHTML = '<div class="text-center py-3 small-text" style="color: #9fb3ff">Ошибка загрузки сделок</div>';
     }
   }
 
   async function executeTrade() {
-    if (!userId) return;
     const amount = parseFloat(document.getElementById('tradeAmount').value);
-    const expiration = document.querySelector('.time-btn.active').textContent;
     const balanceStr = document.getElementById('panelAvailableUsdt').textContent;
-    const balance = parseFloat(balanceStr);
+    const balance = parseFloat(balanceStr.replace(/[^0-9.]/g, ''));
     
     if (isNaN(amount) || amount < 1) { alert("Минимальная сумма сделки: 1 USDT"); return; }
     if (amount > balance) {
@@ -293,37 +304,35 @@
 
     const btn = document.getElementById('panelSubmitBtn');
     btn.disabled = true;
-    btn.innerText = "Связь с сервером...";
+    btn.innerText = "Обработка...";
 
     try {
       const response = await fetch('/api/trades/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: userId,
-          symbol: coinSymbol,
-          amount: amount,
-          type: currentTradeType,
-          expiration: expiration,
-          entry_price: document.getElementById('livePrice').textContent
+          userId,
+          fromCurrency: 'USDT',
+          toCurrency: coinSymbol,
+          fromAmount: amount
         })
       });
 
-      if (response.ok) {
+      const payload = await response.json();
+      if (!response.ok) {
+        alert(payload?.error || 'Не удалось открыть сделку');
+      } else {
+        alert(`Сделка создана (${payload?.data?.status || 'pending'})`);
+        document.getElementById('tradeAmount').value = '';
         closeTrade();
-        document.getElementById('tradeAmount').value = "";
-        await loadUserBalance();
-        await loadActiveTrades();
-        if (tg.MainButton) {
-            tg.MainButton.setText("СДЕЛКА ОТКРЫТА").show();
-            setTimeout(() => tg.MainButton.hide(), 2000);
-        }
-      } else { 
-        const err = await response.json();
-        alert("Ошибка: " + (err.error || "Сервер отклонил сделку")); 
+        await Promise.all([loadUserBalance(), loadActiveTrades()]);
       }
-    } catch (e) { alert("Ошибка сети"); }
-    finally { btn.disabled = false; btn.innerText = "Открыть сделку"; }
+    } catch {
+      alert('Ошибка сети');
+    } finally {
+      btn.disabled = false;
+      btn.innerText = 'Открыть сделку';
+    }
   }
 
   function setTime(btn) {
@@ -345,20 +354,23 @@
     document.getElementById('panelOverlay').style.display = 'none';
   }
 
-  window.addEventListener('DOMContentLoaded', async () => {
+  window.addEventListener('DOMContentLoaded', () => {
+    if (tg?.expand) tg.expand();
     document.getElementById('pairName').textContent = `${coinSymbol} / USDT`;
     document.getElementById('coinIcon').textContent = coinSymbol[0];
-    
-    try {
-      userId = await getOrCreateUserId();
-      initChart();
-      loadUserBalance();
-      loadActiveTrades();
-      updateLivePrice();
-      setInterval(updateLivePrice, 3000);
-    } catch (e) {
-      console.error('❌ Ошибка инициализации пользователя:', e);
-    }
+
+    initChart();
+    updateLivePrice();
+    setInterval(updateLivePrice, 3000);
+
+    resolveUserId()
+      .then((id) => {
+        userId = id;
+        return Promise.all([loadUserBalance(), loadActiveTrades()]);
+      })
+      .catch((e) => {
+        console.error('init_error', e);
+      });
   });
 </script>
 </body>
