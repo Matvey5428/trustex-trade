@@ -209,6 +209,15 @@
       <div><div class="text-warning fw-bold" id="verification">Неизвестно</div><div class="small-text">Нажмите, чтобы пройти</div></div>
     </div>
 
+    <div class="profile-box" style="background: #1a2d4d !important; font-size: 12px;">
+      <h6 class="mb-2" style="color: #69b7ff;">DEBUG INFO</h6>
+      <div style="color: #9fb3ff; line-height: 1.6;">
+        <div>Telegram ID: <span id="debugTelegramId">не зі доступен</span></div>
+        <div>User ID: <span id="debugUserId">загрузка...</span></div>
+        <div>Статус: <span id="debugStatus">инициализация...</span></div>
+      </div>
+    </div>
+
     <div class="section-card">
       <h5 class="section-title">Валютные счета</h5>
       <div class="asset-item">
@@ -348,17 +357,28 @@
 
   function getClientTelegramId() {
     const telegramRawId = tg?.initDataUnsafe?.user?.id;
-    if (telegramRawId) return Number(telegramRawId);
+    if (telegramRawId) {
+      console.log('✅ Real Telegram ID found:', telegramRawId);
+      document.getElementById('debugTelegramId').textContent = String(telegramRawId) + ' ✅ реальный';
+      return Number(telegramRawId);
+    }
     const key = 'nexo_guest_telegram_id';
     const stored = localStorage.getItem(key);
-    if (stored) return Number(stored);
+    if (stored) {
+      console.log('📦 Using stored Telegram ID:', stored);
+      document.getElementById('debugTelegramId').textContent = stored + ' (хранилище)';
+      return Number(stored);
+    }
     const generated = Math.floor(800000000 + Math.random() * 100000000);
     localStorage.setItem(key, String(generated));
+    console.log('🔄 Generated fallback ID:', generated);
+    document.getElementById('debugTelegramId').textContent = String(generated) + ' (генерирован)';
     return generated;
   }
 
   async function resolveUserId() {
     const telegramId = getClientTelegramId();
+    console.log('Sending Telegram ID to backend:', telegramId);
     const res = await fetch('/api/user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -368,6 +388,9 @@
     if (!res.ok || !payload?.data?.id) {
       throw new Error(payload?.error || 'Не удалось получить аккаунт');
     }
+    console.log('✅ User ID resolved:', payload.data.id);
+    document.getElementById('debugUserId').textContent = payload.data.id;
+    document.getElementById('debugStatus').textContent = '✅ успешно';
     return payload.data.id;
   }
 
@@ -550,11 +573,17 @@
 
   window.addEventListener('DOMContentLoaded', async () => {
     try {
+      console.log('🚀 Initializing...');
+      console.log('Telegram.WebApp available:', !!tg);
+      console.log('initDataUnsafe:', tg?.initDataUnsafe);
+      
       userId = await resolveUserId();
       loadUserData();
       initReviews();
+      console.log('✅ Init complete');
     } catch (e) {
-      console.error('Initialization error:', e);
+      console.error('❌ Initialization error:', e);
+      document.getElementById('debugStatus').textContent = '❌ ошибка: ' + e.message;
     }
   });
 
