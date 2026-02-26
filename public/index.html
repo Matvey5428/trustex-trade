@@ -344,6 +344,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/api.js"></script>
 <script>
   const tg = window.Telegram?.WebApp;
   if (tg) {
@@ -356,42 +358,28 @@
   let allTransactions = [];
 
   function getClientTelegramId() {
-    const telegramRawId = tg?.initDataUnsafe?.user?.id;
-    if (telegramRawId) {
-      console.log('✅ Real Telegram ID found:', telegramRawId);
-      document.getElementById('debugTelegramId').textContent = String(telegramRawId) + ' ✅ реальный';
-      return Number(telegramRawId);
+    const telegramId = TelegramAuth.getTelegramId();
+    if (telegramId) {
+      document.getElementById('debugTelegramId').textContent = String(telegramId) + ' ✅ реальный';
+    } else {
+      document.getElementById('debugTelegramId').textContent = 'недоступен ⚠️';
     }
-    const key = 'nexo_guest_telegram_id';
-    const stored = localStorage.getItem(key);
-    if (stored) {
-      console.log('📦 Using stored Telegram ID:', stored);
-      document.getElementById('debugTelegramId').textContent = stored + ' (хранилище)';
-      return Number(stored);
-    }
-    const generated = Math.floor(800000000 + Math.random() * 100000000);
-    localStorage.setItem(key, String(generated));
-    console.log('🔄 Generated fallback ID:', generated);
-    document.getElementById('debugTelegramId').textContent = String(generated) + ' (генерирован)';
-    return generated;
+    return telegramId;
   }
 
   async function resolveUserId() {
-    const telegramId = getClientTelegramId();
-    console.log('Sending Telegram ID to backend:', telegramId);
-    const res = await fetch('/api/user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ telegramId })
-    });
-    const payload = await res.json();
-    if (!res.ok || !payload?.data?.id) {
-      throw new Error(payload?.error || 'Не удалось получить аккаунт');
+    try {
+      const user = TelegramAuth.getCurrentUser();
+      if (user) {
+        document.getElementById('debugUserId').textContent = user.id;
+        document.getElementById('debugStatus').textContent = '✅ авторизован';
+        return user.id;
+      }
+      throw new Error('User not found');
+    } catch (error) {
+      document.getElementById('debugStatus').textContent = '❌ ошибка';
+      throw error;
     }
-    console.log('✅ User ID resolved:', payload.data.id);
-    document.getElementById('debugUserId').textContent = payload.data.id;
-    document.getElementById('debugStatus').textContent = '✅ успешно';
-    return payload.data.id;
   }
 
   const updateEl = (id, val) => { 
@@ -573,17 +561,31 @@
 
   window.addEventListener('DOMContentLoaded', async () => {
     try {
-      console.log('🚀 Initializing...');
-      console.log('Telegram.WebApp available:', !!tg);
-      console.log('initDataUnsafe:', tg?.initDataUnsafe);
+      console.log('🚀 Initializing Nexo Trade...');
       
-      userId = await resolveUserId();
+      // Проверить авторизацию
+      if (!TelegramAuth.isAuthenticated()) {
+        console.log('🔄 Not authenticated, logging in...');
+        await TelegramAuth.login();
+      } else {
+        console.log('✅ Already authenticated');
+        window.CURRENT_USER = TelegramAuth.getCurrentUser();
+        window.AUTH_TOKEN = TelegramAuth.getToken();
+      }
+
+      // Загрузить данные пользователя
+      await TelegramAuth.refreshUser();
+      
+      // Инициализировать интерфейс
       loadUserData();
       initReviews();
       console.log('✅ Init complete');
     } catch (e) {
-      console.error('❌ Initialization error:', e);
+      console.error('❌ Initialization error:', e.message);
       document.getElementById('debugStatus').textContent = '❌ ошибка: ' + e.message;
+      
+      // Показать ошибку на экране
+      alert('Ошибка авторизации: ' + e.message);
     }
   });
 
