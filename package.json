@@ -4,21 +4,16 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "api": "node index.js",
-    "bot": "node bot.js",
     "dev": "node index.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "express": "^5.2.1",
-    "axios": "^1.6.0",
-    "dotenv": "^16.3.1",
-    "node-telegram-bot-api": "^0.61.0"
-  },
-  "description": "",
-  "engines": {
-    "node": ">=18.0.0"
-  }
+  "description": ""
 }

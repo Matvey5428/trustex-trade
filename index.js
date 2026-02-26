@@ -1,29 +1,23 @@
-/**
- * index.js - Entry point
- */
+const express = require('express');
+const path = require('path');
 
-const app = require('./app');
-const { spawn } = require('child_process');
-
+const app = express();
 const PORT = process.env.PORT || 3000;
-const SHOULD_START_BOT = Boolean(process.env.TELEGRAM_BOT_TOKEN);
+
+// Middleware
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
+// Catch-all для SPA
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 app.listen(PORT, () => {
-    console.log(`\n🚀 Сервер запущен: http://localhost:${PORT}\n`);
-    
-    if (SHOULD_START_BOT) {
-        console.log('🤖 Запуск Telegram бота...');
-        setTimeout(() => {
-            const bot = spawn('node', ['bot.js'], {
-                stdio: 'inherit',
-                shell: true
-            });
-
-            bot.on('error', (error) => {
-                console.error('❌ Ошибка запуска бота:', error);
-            });
-        }, 2000);
-    } else {
-        console.warn('⚠️ TELEGRAM_BOT_TOKEN не задан, бот не будет запущен');
-    }
+  console.log(`✅ Server running on port ${PORT}`);
 });
