@@ -1,23 +1,36 @@
-const express = require('express');
-const path = require('path');
+/**
+ * index.js - Entry point
+ */
 
-const app = express();
+require('dotenv').config();
+const app = require('./src/app');
+const pool = require('./src/config/database');
+
 const PORT = process.env.PORT || 3000;
+const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// Middleware
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
+// Test database connection
+pool.query('SELECT NOW()', (err, res) => {
+  if (err) {
+    console.error('❌ Database connection error:', err.message);
+    process.exit(1);
+  } else {
+    console.log('✅ Database connected at', res.rows[0].now);
+  }
 });
 
-// Catch-all для SPA
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
+// Start server
 app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`\n🚀 Server running on port ${PORT} (${NODE_ENV})\n`);
+  console.log(`📍 Local: http://localhost:${PORT}`);
+  console.log(`🏥 Health: http://localhost:${PORT}/health\n`);
+});
+
+// Graceful shutdown
+process.on('SIGINT', () => {
+  console.log('\n⏹️ Shutting down...');
+  pool.end(() => {
+    console.log('✅ Database pool closed');
+    process.exit(0);
+  });
 });
