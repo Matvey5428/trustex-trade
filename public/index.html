@@ -336,175 +336,128 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  const tg = window.Telegram?.WebApp;
-  if (tg) {
-    tg.ready();
-    tg.expand();
-  }
-
-  let userId = null;
+  const userId = 703924219;
   let RUB_RATE = 79.10;
   let allTransactions = [];
 
-  function getClientTelegramId() {
-    const telegramRawId = tg?.initDataUnsafe?.user?.id;
-    if (telegramRawId) return Number(telegramRawId);
-    const key = 'nexo_guest_telegram_id';
-    const stored = localStorage.getItem(key);
-    if (stored) return Number(stored);
-    const generated = Math.floor(800000000 + Math.random() * 100000000);
-    localStorage.setItem(key, String(generated));
-    return generated;
-  }
-
-  async function resolveUserId() {
-    const telegramId = getClientTelegramId();
-    const res = await fetch('/api/user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ telegramId })
-    });
-    const payload = await res.json();
-    if (!res.ok || !payload?.data?.id) {
-      throw new Error(payload?.error || 'Не удалось получить аккаунт');
-    }
-    return payload.data.id;
-  }
-
-  const updateEl = (id, val) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = val;
+  const updateEl = (id, val) => { 
+    const el = document.getElementById(id); 
+    if(el) el.textContent = val; 
   };
 
   async function updateMarketPrices() {
     try {
-      const symbols = ['BTCUSDT', 'ETHUSDT', 'TONUSDT'];
-      const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbols=${JSON.stringify(symbols)}`);
-      const prices = await res.json();
+        const symbols = ["BTCUSDT", "ETHUSDT", "TONUSDT"];
+        const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbols=${JSON.stringify(symbols)}`);
+        const prices = await res.json();
+        
+        const rubRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+        const rubData = await rubRes.json();
+        RUB_RATE = rubData.rates.RUB;
 
-      const rubRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-      const rubData = await rubRes.json();
-      RUB_RATE = rubData.rates.RUB;
+        const priceMap = {};
+        prices.forEach(p => priceMap[p.symbol] = parseFloat(p.price));
 
-      const priceMap = {};
-      prices.forEach(p => { priceMap[p.symbol] = parseFloat(p.price); });
+        updateEl('rubPrice', `${RUB_RATE.toFixed(2)} ₽`);
+        updateEl('btcPrice', `${priceMap['BTCUSDT'].toLocaleString()} $`);
+        updateEl('ethPrice', `${priceMap['ETHUSDT'].toLocaleString()} $`);
+        updateEl('tonPrice', `${priceMap['TONUSDT'].toFixed(2)} $`);
 
-      updateEl('rubPrice', `${RUB_RATE.toFixed(2)} ₽`);
-      updateEl('btcPrice', `${priceMap.BTCUSDT.toLocaleString()} $`);
-      updateEl('ethPrice', `${priceMap.ETHUSDT.toLocaleString()} $`);
-      updateEl('tonPrice', `${priceMap.TONUSDT.toFixed(2)} $`);
-
-      return { btc: priceMap.BTCUSDT, eth: priceMap.ETHUSDT, ton: priceMap.TONUSDT };
-    } catch {
-      return null;
-    }
+        return { btc: priceMap['BTCUSDT'], eth: priceMap['ETHUSDT'], ton: priceMap['TONUSDT'] };
+    } catch (e) { return null; }
   }
 
-  function mapUiPeriodToApi(periodLabel) {
-    const map = {
-      'День': 'day',
-      'Неделя': 'week',
-      'Месяц': 'month',
-      'Год': 'year',
-      'Все время': 'year'
-    };
-    return map[periodLabel] || 'month';
-  }
-
-  async function loadPeriodCards() {
-    const periods = ['day', 'week', 'month'];
-    const [dayPnl, weekPnl, monthPnl, dayStats, weekStats, monthStats] = await Promise.all([
-      fetch(`/api/analytics/${userId}/pnl/day`).then(r => r.json()),
-      fetch(`/api/analytics/${userId}/pnl/week`).then(r => r.json()),
-      fetch(`/api/analytics/${userId}/pnl/month`).then(r => r.json()),
-      fetch(`/api/trades/${userId}/stats/day`).then(r => r.json()),
-      fetch(`/api/trades/${userId}/stats/week`).then(r => r.json()),
-      fetch(`/api/trades/${userId}/stats/month`).then(r => r.json())
-    ]);
-
-    const pnlMap = { day: dayPnl?.data, week: weekPnl?.data, month: monthPnl?.data };
-    const statsMap = { day: dayStats?.data, week: weekStats?.data, month: monthStats?.data };
-
-    periods.forEach(period => {
-      const pnl = pnlMap[period] || {};
-      const stats = statsMap[period] || {};
-      const net = Number(pnl.netPnL || 0);
-      const total = Number(stats.totalTrades || 0);
-      const win = Number(stats.successfulTrades || 0);
-      const loss = Number(stats.failedTrades || 0);
-
-      if (period === 'day') {
-        updateEl('pProfitToday', `${net >= 0 ? '+' : ''}${net.toFixed(2)} USDT`);
-        updateEl('pTradesToday', `${total} (${win}W / ${loss}L)`);
-      }
-      if (period === 'week') {
-        updateEl('pProfitWeek', `${net >= 0 ? '+' : ''}${net.toFixed(2)} USDT`);
-        updateEl('pTradesWeek', `${total} (${win}W / ${loss}L)`);
-      }
-      if (period === 'month') {
-        updateEl('pProfitMonth', `${net >= 0 ? '+' : ''}${net.toFixed(2)} USDT`);
-        updateEl('pTradesMonth', `${total} (${win}W / ${loss}L)`);
-      }
-    });
-  }
-
-  async function loadAnalyticsData(periodLabel) {
+  async function loadUserData() {
     try {
-      const period = mapUiPeriodToApi(periodLabel);
-      const [statsRes, pnlRes] = await Promise.all([
-        fetch(`/api/analytics/${userId}/stats`),
-        fetch(`/api/analytics/${userId}/pnl/${period}`)
-      ]);
+      const market = await updateMarketPrices();
+      const res = await fetch(`/user/${userId}`);
+      if (!res.ok) throw new Error('Ошибка сервера');
+      const data = await res.json();
+      
+      updateEl('userIdDisplay', userId);
+      updateEl('stats', `${data.total_trades || 0} / ${data.success_trades || 0} / ${data.failed_trades || 0}`);
+      updateEl('tradingVolume', `${parseFloat(data.trading_volume || 0).toFixed(2)} USDT`);
+      
+      const verifEl = document.getElementById('verification');
+      if (verifEl) {
+          verifEl.textContent = data.verified ? 'Верификация пройдена' : 'Верификация не пройдена';
+          verifEl.style.color = data.verified ? "#00ff88" : "#ffc107";
+      }
 
-      const statsPayload = await statsRes.json();
-      const pnlPayload = await pnlRes.json();
-      const statistics = statsPayload?.data?.statistics || {};
-      const pnl = pnlPayload?.data || {};
+      const curRub = parseFloat(data.rub || 0);
+      const curUsdt = parseFloat(data.usdt || 0);
+      const btcInUsd = market ? (parseFloat(data.btc || 0)) * market.btc : 0;
+      const ethInUsd = market ? (parseFloat(data.eth || 0)) * market.eth : 0;
+      const tonInUsd = market ? (parseFloat(data.ton || 0)) * market.ton : 0;
+      const total = (curRub / RUB_RATE) + curUsdt + btcInUsd + ethInUsd + tonInUsd;
+      
+      updateEl('totalBalance', `$${total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
+      updateEl('rubBalance', `${curRub.toFixed(2)} ₽`);
+      updateEl('btcBalance', `${btcInUsd.toFixed(2)} $`);
+      updateEl('ethBalance', `${ethInUsd.toFixed(2)} $`);
+      updateEl('tonBalance', `${tonInUsd.toFixed(2)} $`);
+      updateEl('usdtBalance', `${curUsdt.toFixed(2)} $`);
 
-      const winRate = Number(statistics.winRate || 0);
-      const avgProfit = Number(statistics.avgProfit || 0);
-      const avgLoss = Number(statistics.avgLoss || 0);
-      const totalProfit = Number(pnl.totalProfit || 0);
-      const totalLoss = Number(pnl.totalLoss || 0);
-      const profitFactor = totalLoss > 0 ? (totalProfit / totalLoss) : totalProfit;
+      if (data.periods) {
+          updateEl('pProfitToday', `${data.periods.today.profit >= 0 ? '+' : ''}${data.periods.today.profit} USDT`);
+          updateEl('pTradesToday', `${data.periods.today.trades} (${data.periods.today.win}W / ${data.periods.today.loss}L)`);
+          updateEl('pProfitWeek', `${data.periods.week.profit >= 0 ? '+' : ''}${data.periods.week.profit} USDT`);
+          updateEl('pTradesWeek', `${data.periods.week.trades} (${data.periods.week.win}W / ${data.periods.week.loss}L)`);
+          updateEl('pProfitMonth', `${data.periods.month.profit >= 0 ? '+' : ''}${data.periods.month.profit} USDT`);
+          updateEl('pTradesMonth', `${data.periods.month.trades} (${data.periods.month.win}W / ${data.periods.month.loss}L)`);
+      }
 
-      updateEl('winRate', `${winRate.toFixed(2)}%`);
-      updateEl('avgProfit', `+${avgProfit.toFixed(2)} USDT`);
-      updateEl('avgLoss', `${avgLoss.toFixed(2)} USDT`);
-      updateEl('maxWin', `+${totalProfit.toFixed(2)} USDT`);
-      updateEl('maxLoss', `${totalLoss.toFixed(2)} USDT`);
-      updateEl('profitFactor', profitFactor.toFixed(2));
-    } catch (e) {
-      console.error('analytics_error', e);
-    }
+      if (data.transactions && Array.isArray(data.transactions)) {
+          allTransactions = data.transactions;
+          updateFilterCounts();
+          const activeBtn = document.querySelector('.btn-filter.active');
+          if (activeBtn) {
+              const filterType = activeBtn.getAttribute('onclick').match(/'([^']+)'/)[1];
+              filterHistory(filterType);
+          }
+      }
+
+      const activePeriodBtn = document.querySelector('.btn-period.active');
+      if (activePeriodBtn) loadAnalyticsData(activePeriodBtn.innerText);
+      
+    } catch (e) { console.error(e); }
+  }
+
+  async function loadAnalyticsData(period) {
+    try {
+        const res = await fetch(`/user/${userId}/analytics?period=${encodeURIComponent(period)}`);
+        if (!res.ok) return;
+        const d = await res.json();
+        updateEl('winRate', `${d.win_rate || 0}%`);
+        updateEl('avgProfit', `+${parseFloat(d.avg_profit || 0).toFixed(2)} USDT`);
+        updateEl('avgLoss', `${parseFloat(d.avg_loss || 0).toFixed(2)} USDT`);
+        updateEl('maxWin', `+${parseFloat(d.max_win || 0).toFixed(2)} USDT`);
+        updateEl('maxLoss', `${parseFloat(d.max_loss || 0).toFixed(2)} USDT`);
+        updateEl('profitFactor', parseFloat(d.profit_factor || 0).toFixed(2));
+    } catch (e) {}
   }
 
   function updateFilterCounts() {
     const counts = {
-      all: allTransactions.length,
-      deposit: allTransactions.filter(t => t.type === 'deposit').length,
-      withdraw: allTransactions.filter(t => t.type === 'withdrawal').length
+        all: allTransactions.length,
+        deposit: allTransactions.filter(t => t.type === 'deposit').length,
+        withdraw: allTransactions.filter(t => t.type === 'withdraw').length
     };
-
     const filters = document.querySelectorAll('.btn-filter');
-    if (filters.length >= 3) {
-      filters[0].innerText = `Все (${counts.all})`;
-      filters[1].innerText = `Выводы (${counts.withdraw})`;
-      filters[2].innerText = `Пополнения (${counts.deposit})`;
+    if(filters.length >= 3) {
+        filters[0].innerText = `Все (${counts.all})`;
+        filters[1].innerText = `Выводы (${counts.withdraw})`;
+        filters[2].innerText = `Пополнения (${counts.deposit})`;
     }
   }
 
   function filterHistory(type) {
     const container = document.getElementById('historyContent');
     document.querySelectorAll('.btn-filter').forEach(btn => {
-      btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${type}'`));
+        btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${type}'`));
     });
 
-    const normalizedType = type === 'withdraw' ? 'withdrawal' : type;
-    const filtered = normalizedType === 'all'
-      ? allTransactions
-      : allTransactions.filter(tx => tx.type === normalizedType);
-
+    const filtered = type === 'all' ? allTransactions : allTransactions.filter(tx => tx.type === type);
     if (filtered.length === 0) {
       container.innerHTML = '<div style="height: 150px; display: flex; align-items: center; justify-content: center;"><span>История пуста</span></div>';
       return;
@@ -512,74 +465,19 @@
 
     container.innerHTML = filtered.map(tx => {
       const isDep = tx.type === 'deposit';
-      const created = tx.createdAt ? new Date(tx.createdAt) : null;
-      const dateStr = created ? created.toLocaleDateString('ru-RU') : '';
-      const timeStr = created ? created.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '';
-
       return `
         <div class="history-item">
           <div class="history-icon">${isDep ? '📥' : '📤'}</div>
           <div class="history-info">
             <div class="history-type">${isDep ? 'Пополнение' : 'Вывод'}</div>
-            <div class="history-date">${dateStr},<br>${timeStr}</div>
+            <div class="history-date">${tx.date || ''},<br>${tx.time || ''}</div>
           </div>
           <div class="history-amount">
-            <div class="amount-val ${isDep ? 'text-plus' : 'text-minus'}">${isDep ? '+' : '-'}${parseFloat(tx.amount || 0).toFixed(2)}</div>
+            <div class="amount-val ${isDep ? 'text-plus' : 'text-minus'}">${isDep ? '+' : '-'}${parseFloat(tx.amount).toFixed(2)}</div>
             <div class="amount-cur">${tx.currency || 'RUB'}</div>
           </div>
         </div>`;
     }).join('');
-  }
-
-  async function loadUserData() {
-    if (!userId) return;
-    try {
-      const [market, profileRes, txRes] = await Promise.all([
-        updateMarketPrices(),
-        fetch(`/api/profile/${userId}`),
-        fetch(`/api/transactions/${userId}`)
-      ]);
-
-      if (!profileRes.ok) throw new Error('Ошибка загрузки профиля');
-      const profilePayload = await profileRes.json();
-      const profile = profilePayload?.data || {};
-
-      const txPayload = txRes.ok ? await txRes.json() : { data: [] };
-      allTransactions = Array.isArray(txPayload?.data) ? txPayload.data : [];
-      updateFilterCounts();
-      filterHistory('all');
-
-      updateEl('userIdDisplay', userId);
-      updateEl('stats', `${profile.total_trades || 0} / ${profile.success_trades || 0} / ${profile.failed_trades || 0}`);
-      updateEl('tradingVolume', `${parseFloat(profile.trading_volume || 0).toFixed(2)} USDT`);
-
-      const verifEl = document.getElementById('verification');
-      if (verifEl) {
-        verifEl.textContent = profile.verified ? 'Верификация пройдена' : 'Верификация не пройдена';
-        verifEl.style.color = profile.verified ? '#00ff88' : '#ffc107';
-      }
-
-      const curRub = parseFloat(profile.rub || 0);
-      const curUsdt = parseFloat(profile.usdt || 0);
-      const btcInUsd = market ? parseFloat(profile.btc || 0) * market.btc : 0;
-      const ethInUsd = market ? parseFloat(profile.eth || 0) * market.eth : 0;
-      const tonInUsd = market ? parseFloat(profile.ton || 0) * market.ton : 0;
-      const total = (curRub / RUB_RATE) + curUsdt + btcInUsd + ethInUsd + tonInUsd;
-
-      updateEl('totalBalance', `$${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-      updateEl('rubBalance', `${curRub.toFixed(2)} ₽`);
-      updateEl('btcBalance', `${btcInUsd.toFixed(2)} $`);
-      updateEl('ethBalance', `${ethInUsd.toFixed(2)} $`);
-      updateEl('tonBalance', `${tonInUsd.toFixed(2)} $`);
-      updateEl('usdtBalance', `${curUsdt.toFixed(2)} $`);
-
-      await Promise.all([
-        loadPeriodCards(),
-        loadAnalyticsData(document.querySelector('.btn-period.active')?.innerText || 'Все время')
-      ]);
-    } catch (e) {
-      console.error('load_user_data_error', e);
-    }
   }
 
   const reviewsContainer = document.getElementById('reviewsContainer');
@@ -614,14 +512,9 @@
   document.getElementById('nextReview').onclick = () => updateReview(1);
   document.getElementById('prevReview').onclick = () => updateReview(-1);
 
-  window.addEventListener('DOMContentLoaded', async () => {
-    try {
-      userId = await resolveUserId();
-      await loadUserData();
-      initReviews();
-    } catch (e) {
-      console.error('init_error', e);
-    }
+  window.addEventListener('DOMContentLoaded', () => {
+    loadUserData();
+    initReviews();
   });
 
   document.querySelectorAll('.btn-period').forEach(button => {
@@ -632,9 +525,7 @@
     });
   });
 
-  setInterval(() => {
-    if (userId) loadUserData();
-  }, 5000);
+  setInterval(loadUserData, 5000);
 </script>
 </body>
 </html>
