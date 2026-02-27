@@ -14,10 +14,13 @@ async function verify(req, res, next) {
     const { initData } = req.body;
 
     if (!initData) {
+      console.error('❌ No initData in request body');
       return res.status(400).json({ error: 'initData is required' });
     }
 
     console.log('🔄 Verifying initData...');
+    console.log('📝 initData length:', initData.length);
+    console.log('🔑 TELEGRAM_BOT_TOKEN configured:', !!process.env.TELEGRAM_BOT_TOKEN);
 
     // Verify initData and get/create user
     const user = await authService.verifyAndGetUser(initData);

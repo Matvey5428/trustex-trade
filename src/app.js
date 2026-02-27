@@ -21,6 +21,14 @@ app.use(cors({
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Request logging для DEBUG
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    console.log(`📨 ${req.method} ${req.path}`);
+  }
+  next();
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -34,16 +42,27 @@ app.use('/api/auth', authRoutes);
 
 // Serve frontend SPA (catch-all для остальных маршрутов)
 app.use((req, res, next) => {
-  // Если это не API запрос - отправляем index.html
-  if (!req.path.startsWith('/api')) {
-    return res.sendFile(path.join(__dirname, '../public/index.html'));
+  // Если это API запрос что до сюда дошёл - это 404
+  if (req.path.startsWith('/api')) {
+    console.error(`❌ API endpoint not found: ${req.method} ${req.path}`);
+    return res.status(404).json({ 
+      error: `Endpoint not found: ${req.method} ${req.path}`, 
+      status: 404 
+    });
   }
-  next();
+  // Если это не API запрос - отправляем index.html для SPA
+  res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 // Error handler (должен быть в конце)
 app.use((error, req, res, next) => {
-  console.error('❌ Error:', error);
+  console.error('❌ Error:', {
+    message: error.message,
+    status: error.status || 500,
+    path: req.path,
+    method: req.method,
+    ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+  });
   
   const status = error.status || 500;
   const message = error.message || 'Internal server error';

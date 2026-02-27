@@ -19,14 +19,17 @@ async function verifyAndGetUser(initData) {
 
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   if (!botToken) {
+    console.error('❌ TELEGRAM_BOT_TOKEN is not configured!');
     throw new Error('TELEGRAM_BOT_TOKEN not configured');
   }
 
+  console.log('🔐 Verifying initData signature...');
   // Verify initData signature
   const verification = verifyInitData(initData, botToken);
 
   if (!verification.valid) {
-    console.warn('⚠️ Invalid initData:', verification.error);
+    console.warn('⚠️ Invalid initData - Error:', verification.error);
+    console.warn('📝 User data from initData:', verification.user);
     throw new UnauthorizedError('Invalid initData: ' + verification.error);
   }
 
