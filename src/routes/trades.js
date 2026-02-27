@@ -239,7 +239,7 @@ router.get('/:userId', async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT id, direction, amount, result, status, created_at as "createdAt"
+      `SELECT id, direction, amount, result, status, duration, created_at as "createdAt", expires_at as "expiresAt"
        FROM orders 
        WHERE user_id = $1 
        ORDER BY created_at DESC 
@@ -252,9 +252,12 @@ router.get('/:userId', async (req, res) => {
       id: row.id,
       fromCurrency: 'USDT',
       toCurrency: row.direction === 'up' ? '↑' : '↓',
+      direction: row.direction,
       fromAmount: row.amount,
       status: row.result === 'win' ? 'successful' : row.result === 'loss' ? 'failed' : row.status,
-      createdAt: row.createdAt
+      createdAt: row.createdAt,
+      expiresAt: row.expiresAt,
+      duration: row.duration
     }));
 
     res.json({

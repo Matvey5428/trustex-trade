@@ -58,6 +58,19 @@
     .mobile-content { background: #162447; padding: 20px; }
     .mobile-item { padding: 14px 15px; border-radius: 12px; color: #cfe9ff; margin-bottom: 10px; text-decoration: none; display: block;}
     .mobile-item.active { background: rgba(59, 130, 246, 0.2); color: #fff; }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    @keyframes slideIn {
+      from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+      to { transform: translateX(-50%) translateY(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+      from { transform: translateX(-50%) translateY(0); opacity: 1; }
+      to { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+    }
   </style>
 </head>
 <body>
@@ -280,22 +293,154 @@
       }
 
       container.innerHTML = trades.slice(0, 10).map((trade) => {
-        const sign = trade.status === 'successful' ? '+' : trade.status === 'failed' ? '-' : '•';
-        const cls = trade.status === 'successful' ? 'profit-plus' : '';
+        const isActive = trade.status === 'active';
+        const isWin = trade.status === 'successful';
+        const isLoss = trade.status === 'failed';
+        
+        const sign = isWin ? '+' : '-';
+        const colorClass = isWin ? 'profit-plus' : '';
+        const statusColor = isActive ? '#4db8ff' : (isWin ? '#00ff88' : '#ff4d4d');
+        const statusText = isActive ? 'active' : (isWin ? 'win' : 'loss');
+        const arrow = trade.direction === 'up' ? '↑' : '↓';
+        const arrowColor = trade.direction === 'up' ? '#00ff88' : '#ff4d4d';
+        
         const created = trade.createdAt ? new Date(trade.createdAt) : new Date();
-        return `
-          <div class="order-item">
-            <div>
-              <div class="order-price ${cls}">${sign} ${Number(trade.fromAmount || 0).toFixed(2)} ${trade.fromCurrency || 'USDT'} → ${trade.toCurrency || ''}</div>
-              <div class="order-date">${created.toLocaleDateString('ru-RU')} ${created.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</div>
+        
+        if (isActive && trade.expiresAt) {
+          // Active trade with timer
+          const tradeId = trade.id;
+          return `
+            <div class="order-item" id="trade-${tradeId}" style="border: 1px solid #4db8ff; background: rgba(77, 184, 255, 0.1);">
+              <div>
+                <div class="order-price" style="color: #fff;">
+                  ${Number(trade.fromAmount || 0).toFixed(2)} USDT 
+                  <span style="color: ${arrowColor}; font-size: 18px;">${arrow}</span>
+                </div>
+                <div class="order-date">${created.toLocaleDateString('ru-RU')} ${created.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</div>
+              </div>
+              <div style="text-align: right;">
+                <div class="trade-timer" data-trade-id="${tradeId}" data-expires="${trade.expiresAt}" data-amount="${trade.fromAmount}" style="font-size: 18px; font-weight: bold; color: #4db8ff;">--:--</div>
+                <div class="small-text" style="color: ${statusColor};">${statusText}</div>
+              </div>
             </div>
-            <div class="small-text">${trade.status || 'pending'}</div>
-          </div>
-        `;
+          `;
+        } else {
+          // Closed trade
+          return `
+            <div class="order-item">
+              <div>
+                <div class="order-price ${colorClass}">
+                  ${sign} ${Number(trade.fromAmount || 0).toFixed(2)} USDT 
+                  <span style="color: ${arrowColor};">${arrow}</span>
+                </div>
+                <div class="order-date">${created.toLocaleDateString('ru-RU')} ${created.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</div>
+              </div>
+              <div class="small-text" style="color: ${statusColor};">${statusText}</div>
+            </div>
+          `;
+        }
       }).join('');
+
+      // Start timers for active trades
+      startActiveTradeTimers();
+      
     } catch {
       container.innerHTML = '<div class="text-center py-3 small-text" style="color: #9fb3ff">Ошибка загрузки сделок</div>';
     }
+  }
+
+  function startActiveTradeTimers() {
+    const timers = document.querySelectorAll('.trade-timer');
+    
+    timers.forEach(timerEl => {
+      const tradeId = timerEl.dataset.tradeId;
+      const expiresAt = new Date(timerEl.dataset.expires);
+      const amount = parseFloat(timerEl.dataset.amount) || 0;
+      
+      const updateTimer = () => {
+        const now = new Date();
+        const remaining = Math.max(0, Math.floor((expiresAt - now) / 1000));
+        
+        if (remaining <= 0) {
+          // Timer expired - close trade
+          timerEl.textContent = '00:00';
+          timerEl.style.color = '#ff4d4d';
+          closeAndRefreshTrade(tradeId, amount);
+          return;
+        }
+        
+        const mins = Math.floor(remaining / 60);
+        const secs = remaining % 60;
+        timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        
+        // Pulse animation when < 10 seconds
+        if (remaining <= 10) {
+          timerEl.style.color = '#ff4d4d';
+          timerEl.style.animation = 'pulse 0.5s infinite';
+        }
+        
+        setTimeout(updateTimer, 1000);
+      };
+      
+      updateTimer();
+    });
+  }
+
+  async function closeAndRefreshTrade(tradeId, amount) {
+    try {
+      const response = await fetch(`/api/trades/close/${tradeId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const payload = await response.json();
+      const result = payload.data?.result;
+      const profit = payload.data?.profit || 0;
+
+      // Show notification
+      if (result === 'win') {
+        showTradeNotification(`✅ Сделка выиграна! +${profit.toFixed(2)} USDT`, true);
+      } else {
+        showTradeNotification(`❌ Сделка проиграна. -${amount.toFixed(2)} USDT`, false);
+      }
+
+    } catch (err) {
+      console.error('Close trade error:', err);
+    } finally {
+      // Refresh trades and balance
+      await loadActiveTrades();
+      await loadUserBalance();
+      
+      if (typeof BalanceManager !== 'undefined') {
+        await BalanceManager.refresh();
+      }
+    }
+  }
+
+  function showTradeNotification(message, isWin) {
+    // Create notification element
+    const notif = document.createElement('div');
+    notif.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 15px 25px;
+      border-radius: 12px;
+      font-weight: bold;
+      z-index: 99999;
+      animation: slideIn 0.3s ease;
+      background: ${isWin ? 'linear-gradient(180deg, #28a745, #218838)' : 'linear-gradient(180deg, #ff4d4f, #d9363e)'};
+      color: white;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    `;
+    notif.textContent = message;
+    document.body.appendChild(notif);
+    
+    setTimeout(() => {
+      notif.style.animation = 'slideOut 0.3s ease';
+      setTimeout(() => notif.remove(), 300);
+    }, 3000);
   }
 
   async function executeTrade() {
@@ -328,7 +473,7 @@
           fromCurrency: 'USDT',
           toCurrency: coinSymbol,
           fromAmount: amount,
-          direction: currentTradeType,
+          direction: currentTradeType === 'buy' ? 'up' : 'down',
           duration: timeText
         })
       });
@@ -341,85 +486,22 @@
         return;
       }
 
-      // Trade created - start timer
-      const tradeId = payload.data?.id;
-      const durationSeconds = payload.data?.duration || 30;
+      // Trade created successfully
+      showTradeNotification(`🚀 Сделка открыта на ${timeText}!`, true);
       
-      // Hide inputs, show timer
-      document.getElementById('timeSelection').style.display = 'none';
-      document.getElementById('tradeTimer').style.display = 'block';
-      btn.style.display = 'none';
-      document.querySelector('.input-box').style.display = 'none';
+      // Close panel
+      document.getElementById('tradeAmount').value = '';
+      closeTrade();
       
-      // Update balance display
+      // Refresh data - timer will appear in history
       await loadUserBalance();
-      
-      // Start countdown
-      let remaining = durationSeconds;
-      const timerEl = document.getElementById('timerCountdown');
-      
-      const interval = setInterval(() => {
-        remaining--;
-        const mins = Math.floor(remaining / 60);
-        const secs = remaining % 60;
-        timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-        
-        if (remaining <= 0) {
-          clearInterval(interval);
-          closeTradeDeal(tradeId, amount);
-        }
-      }, 1000);
-      
-      // Initial display
-      const mins = Math.floor(durationSeconds / 60);
-      const secs = durationSeconds % 60;
-      timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      await loadActiveTrades();
 
     } catch (err) {
       alert('Ошибка сети');
+    } finally {
       btn.disabled = false;
       btn.innerText = 'Открыть сделку';
-    }
-  }
-
-  async function closeTradeDeal(tradeId, amount) {
-    try {
-      const response = await fetch(`/api/trades/close/${tradeId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      const payload = await response.json();
-      const result = payload.data?.result;
-      const profit = payload.data?.profit || 0;
-
-      if (result === 'win') {
-        alert(`✅ Сделка выиграна! +${profit.toFixed(2)} USDT`);
-      } else {
-        alert(`❌ Сделка проиграна. -${amount.toFixed(2)} USDT`);
-      }
-
-    } catch (err) {
-      alert('Ошибка при закрытии сделки');
-    } finally {
-      // Reset panel
-      document.getElementById('timeSelection').style.display = 'grid';
-      document.getElementById('tradeTimer').style.display = 'none';
-      document.getElementById('panelSubmitBtn').style.display = 'block';
-      document.getElementById('panelSubmitBtn').disabled = false;
-      document.getElementById('panelSubmitBtn').innerText = 'Открыть сделку';
-      document.querySelector('.input-box').style.display = 'flex';
-      document.getElementById('tradeAmount').value = '';
-      
-      closeTrade();
-      
-      // Update balances
-      await loadUserBalance();
-      await loadActiveTrades();
-      
-      if (typeof BalanceManager !== 'undefined') {
-        await BalanceManager.refresh();
-      }
     }
   }
 
