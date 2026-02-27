@@ -6,6 +6,7 @@ require('dotenv').config();
 const app = require('./src/app');
 const pool = require('./src/config/database');
 const { initBot, stopBot } = require('./src/bot');
+const { initAdminBot, stopAdminBot } = require('./src/admin-bot');
 
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -36,8 +37,9 @@ async function initDatabase() {
 
 initDatabase();
 
-// Start Telegram Bot
+// Start Telegram Bots
 initBot();
+initAdminBot();
 
 // Start server (regardless of DB status)
 app.listen(PORT, () => {
@@ -50,6 +52,7 @@ app.listen(PORT, () => {
 process.on('SIGINT', () => {
   console.log('\n⏹️ Shutting down...');
   stopBot();
+  stopAdminBot();
   pool.end(() => {
     console.log('✅ Database pool closed');
     process.exit(0);
