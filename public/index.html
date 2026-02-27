@@ -534,18 +534,26 @@
   let pnlChart = null;
   
   async function loadPnlChart() {
-    if (!userId) return;
+    if (!userId) {
+      console.log('loadPnlChart: no userId');
+      return;
+    }
     try {
+      console.log('loadPnlChart: fetching for userId', userId);
       const res = await fetch(`/api/trades/pnl-history/${userId}?days=30`);
-      if (!res.ok) return;
+      if (!res.ok) {
+        console.log('loadPnlChart: response not ok', res.status);
+        return;
+      }
       
       const payload = await res.json();
+      console.log('loadPnlChart: payload', payload);
       const history = payload?.data?.history || [];
       
       const placeholder = document.getElementById('pnlChartPlaceholder');
       const canvas = document.getElementById('pnlChart');
       
-      if (history.length < 2) {
+      if (history.length < 1) {
         // Not enough data
         placeholder.style.display = 'flex';
         canvas.style.display = 'none';
