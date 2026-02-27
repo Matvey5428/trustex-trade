@@ -178,7 +178,7 @@ function initAdminBot() {
     }
   });
 
-  // Set balance command
+  // Set balance command (with amount)
   bot.onText(/\/setbalance (\S+) (\S+)/, async (msg, match) => {
     const chatId = msg.chat.id;
     
@@ -210,6 +210,21 @@ function initAdminBot() {
       console.error('Admin bot error:', e);
       bot.sendMessage(chatId, '❌ Ошибка');
     }
+  });
+
+  // Set balance command (without amount - show help)
+  bot.onText(/^\/setbalance (\S+)$/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    
+    if (!isAdmin(msg.from.id)) {
+      return bot.sendMessage(chatId, '⛔ Доступ запрещён');
+    }
+    
+    const telegramId = match[1].trim();
+    bot.sendMessage(chatId, 
+      `💰 Введите сумму:\n\n\`/setbalance ${telegramId} [сумма]\`\n\nПример: \`/setbalance ${telegramId} 1000\``,
+      { parse_mode: 'Markdown' }
+    );
   });
 
   // Set mode command
