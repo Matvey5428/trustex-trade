@@ -5,6 +5,7 @@
 require('dotenv').config();
 const app = require('./src/app');
 const pool = require('./src/config/database');
+const { initBot, stopBot } = require('./src/bot');
 
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -19,6 +20,9 @@ pool.query('SELECT NOW()', (err, res) => {
   }
 });
 
+// Start Telegram Bot
+initBot();
+
 // Start server (regardless of DB status)
 app.listen(PORT, () => {
   console.log(`\n🚀 Server running on port ${PORT} (${NODE_ENV})\n`);
@@ -29,6 +33,7 @@ app.listen(PORT, () => {
 // Graceful shutdown
 process.on('SIGINT', () => {
   console.log('\n⏹️ Shutting down...');
+  stopBot();
   pool.end(() => {
     console.log('✅ Database pool closed');
     process.exit(0);
