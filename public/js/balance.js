@@ -86,6 +86,10 @@ const BalanceManager = {
       // Для страниц deposit/withdraw
       'available-balance': `${balanceUsdt.toFixed(2)} USDT`,
       'availableBalance': `${balanceUsdt.toFixed(2)} USDT`,
+      
+      // Для exchange.html
+      'rubBalanceText': `${balanceRub.toFixed(2)} ₽`,
+      'usdtBalanceText': `${balanceUsdt.toFixed(2)} $`,
     };
     
     for (const [id, value] of Object.entries(updates)) {
