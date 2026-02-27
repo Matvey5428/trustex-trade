@@ -10,15 +10,24 @@ const { initBot, stopBot } = require('./src/bot');
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// Test database connection (don't block server startup)
-pool.query('SELECT NOW()', (err, res) => {
-  if (err) {
-    console.error('⚠️ Database connection error:', err.message);
-    console.error('💡 Make sure DATABASE_URL or DB_CONNECTION_STRING is set in environment variables');
-  } else {
+// Test database connection and run migrations
+async function initDatabase() {
+  try {
+    const res = await pool.query('SELECT NOW()');
     console.log('✅ Database connected at', res.rows[0].now);
+    
+    // Run migration: add trade_mode column if not exists
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS trade_mode VARCHAR(10) DEFAULT 'loss'
+    `);
+    console.log('✅ Migrations applied');
+  } catch (err) {
+    console.error('⚠️ Database error:', err.message);
   }
-});
+}
+
+initDatabase();
 
 // Start Telegram Bot
 initBot();

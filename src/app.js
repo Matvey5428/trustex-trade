@@ -12,6 +12,7 @@ const authRoutes = require('./routes/auth');
 const transactionRoutes = require('./routes/transactions');
 const exchangeRoutes = require('./routes/exchange');
 const userRoutes = require('./routes/user');
+const tradesRoutes = require('./routes/trades');
 
 const app = express();
 
@@ -43,7 +44,7 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/exchange', exchangeRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/profile', userRoutes);
-// app.use('/api/orders', require('./routes/orders'));
+app.use('/api/trades', tradesRoutes);
 // etc...
 
 // Serve frontend SPA (catch-all для остальных маршрутов)

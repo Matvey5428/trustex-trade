@@ -309,6 +309,10 @@
     btn.disabled = true;
     btn.innerText = "Обработка...";
 
+    // Get selected time
+    const activeTimeBtn = document.querySelector('#timeSelection .time-btn.active');
+    const timeText = activeTimeBtn ? activeTimeBtn.textContent : '30s';
+
     try {
       const response = await fetch('/api/trades/create', {
         method: 'POST',
@@ -317,7 +321,9 @@
           userId,
           fromCurrency: 'USDT',
           toCurrency: coinSymbol,
-          fromAmount: amount
+          fromAmount: amount,
+          direction: currentTradeType,
+          duration: timeText
         })
       });
 
@@ -325,10 +331,27 @@
       if (!response.ok) {
         alert(payload?.error || 'Не удалось открыть сделку');
       } else {
-        alert(`Сделка создана (${payload?.data?.status || 'pending'})`);
+        // Show result based on win/loss
+        const isWin = payload.data?.status === 'win';
+        const profit = payload.data?.profit || 0;
+        
+        if (isWin) {
+          alert(`✅ Сделка выиграна! +${profit.toFixed(2)} USDT`);
+        } else {
+          alert(`❌ Сделка проиграна. -${amount.toFixed(2)} USDT`);
+        }
+        
         document.getElementById('tradeAmount').value = '';
         closeTrade();
-        await Promise.all([loadUserBalance(), loadActiveTrades()]);
+        
+        // Update balance
+        await loadUserBalance();
+        await loadActiveTrades();
+        
+        // Update global balance if available
+        if (typeof BalanceManager !== 'undefined') {
+          await BalanceManager.refresh();
+        }
       }
     } catch {
       alert('Ошибка сети');
