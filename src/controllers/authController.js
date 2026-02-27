@@ -46,13 +46,34 @@ async function getMe(req, res, next) {
     // req.user is set by authMiddleware
     const user = req.user;
 
+    if (!user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    // Get fresh user data from database
+    const freshUser = await authService.getUserById(user.id);
+
+    if (!freshUser) {
+      throw new Error('User not found');
+    }
+
     res.json({
-      id: user.id,
-      telegram_id: user.telegramId,
-      username: user.username,
-      is_admin: user.isAdmin
+      id: freshUser.id,
+      telegram_id: freshUser.telegram_id,
+      username: freshUser.username,
+      first_name: freshUser.first_name,
+      last_name: freshUser.last_name,
+      is_admin: freshUser.is_admin,
+      verified: freshUser.verified,
+      status: freshUser.status,
+      balance_usdt: freshUser.balance_usdt,
+      balance_btc: freshUser.balance_btc,
+      balance_rub: freshUser.balance_rub,
+      created_at: freshUser.created_at,
+      updated_at: freshUser.updated_at
     });
   } catch (error) {
+    console.error('❌ getMe error:', error.message);
     next(error);
   }
 }

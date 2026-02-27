@@ -155,7 +155,7 @@ const TelegramAuth = {
    */
   async refreshUser() {
     try {
-      const user = await API.get('/profile');
+      const user = await API.get('/auth/me');
       localStorage.setItem(this.USER_KEY, JSON.stringify(user));
       window.CURRENT_USER = user;
       return user;
@@ -165,7 +165,8 @@ const TelegramAuth = {
         this.logout();
         window.location.href = '/';
       }
-      throw error;
+      // Не выбрасываем ошибку - это не критично если не получилось обновить
+      return this.getCurrentUser();
     }
   }
 };

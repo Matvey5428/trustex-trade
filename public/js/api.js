@@ -114,8 +114,8 @@ const API = {
    * Получить профиль текущего пользователя
    */
   profile: {
-    get: () => API.get('/profile'),
-    balance: () => API.get('/profile/balance')
+    get: () => API.get('/auth/me'),
+    balance: () => API.get('/auth/me')  // TODO: Create dedicated /profile/balance endpoint
   },
 
   // ========== ORDERS ==========
