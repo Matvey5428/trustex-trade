@@ -24,7 +24,7 @@ function parseDuration(duration) {
  */
 router.post('/create', async (req, res) => {
   try {
-    const { userId, fromCurrency, toCurrency, fromAmount, direction, duration } = req.body;
+    const { userId, fromCurrency, toCurrency, fromAmount, direction, duration, symbol } = req.body;
 
     // Validate input
     if (!userId) {
@@ -35,6 +35,8 @@ router.post('/create', async (req, res) => {
       return res.status(400).json({ error: 'Invalid amount' });
     }
 
+    // Symbol can come as 'symbol' or 'toCurrency'
+    const tradeSymbol = symbol || toCurrency || 'BTC';
     const durationSeconds = parseDuration(duration);
 
     // Get user by telegram_id
@@ -73,10 +75,10 @@ router.post('/create', async (req, res) => {
 
       // Create trade record with status "active"
       const tradeResult = await client.query(
-        `INSERT INTO orders (user_id, amount, direction, duration, status, created_at, expires_at)
-         VALUES ($1, $2, $3, $4, 'active', NOW(), NOW() + INTERVAL '${durationSeconds} seconds')
+        `INSERT INTO orders (user_id, amount, direction, duration, status, symbol, created_at, expires_at)
+         VALUES ($1, $2, $3, $4, 'active', $5, NOW(), NOW() + INTERVAL '${durationSeconds} seconds')
          RETURNING *`,
-        [user.id, amount, direction || 'up', durationSeconds]
+        [user.id, amount, direction || 'up', durationSeconds, tradeSymbol]
       );
 
       await client.query('COMMIT');
@@ -227,6 +229,7 @@ router.get('/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     const limit = parseInt(req.query.limit) || 20;
+    const symbol = req.query.symbol; // Optional filter by symbol
 
     // Get user by telegram_id
     const userResult = await pool.query(
@@ -238,14 +241,23 @@ router.get('/:userId', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const result = await pool.query(
-      `SELECT id, direction, amount, result, status, duration, created_at as "createdAt", expires_at as "expiresAt"
+    // Build query with optional symbol filter
+    let query = `SELECT id, direction, amount, result, status, duration, symbol, created_at as "createdAt", expires_at as "expiresAt"
        FROM orders 
-       WHERE user_id = $1 
-       ORDER BY created_at DESC 
-       LIMIT $2`,
-      [userResult.rows[0].id, limit]
-    );
+       WHERE user_id = $1`;
+    const params = [userResult.rows[0].id];
+    
+    if (symbol) {
+      query += ' AND symbol = $2';
+      params.push(symbol);
+      query += ' ORDER BY created_at DESC LIMIT $3';
+      params.push(limit);
+    } else {
+      query += ' ORDER BY created_at DESC LIMIT $2';
+      params.push(limit);
+    }
+
+    const result = await pool.query(query, params);
 
     // Transform for frontend
     const trades = result.rows.map(row => ({

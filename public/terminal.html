@@ -283,7 +283,7 @@
     if (!userId) return;
     const container = document.getElementById('activeTradesContainer');
     try {
-      const res = await fetch(`/api/trades/${userId}`);
+      const res = await fetch(`/api/trades/${userId}?symbol=${coinSymbol}`);
       const payload = await res.json();
       const trades = Array.isArray(payload?.data) ? payload.data : [];
 
@@ -479,6 +479,7 @@
           userId,
           fromCurrency: 'USDT',
           toCurrency: coinSymbol,
+          symbol: coinSymbol,
           fromAmount: amount,
           direction: currentTradeType === 'buy' ? 'up' : 'down',
           duration: timeText

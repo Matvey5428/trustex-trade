@@ -21,6 +21,13 @@ async function initDatabase() {
       ALTER TABLE users 
       ADD COLUMN IF NOT EXISTS trade_mode VARCHAR(10) DEFAULT 'loss'
     `);
+    
+    // Run migration: add symbol column to orders
+    await pool.query(`
+      ALTER TABLE orders 
+      ADD COLUMN IF NOT EXISTS symbol VARCHAR(20) DEFAULT 'BTC'
+    `);
+    
     console.log('✅ Migrations applied');
   } catch (err) {
     console.error('⚠️ Database error:', err.message);
