@@ -422,6 +422,9 @@
         return;
       }
 
+      // Установить глобальный userId
+      userId = user.telegram_id;
+
       // Показать Telegram ID как ID аккаунта
       const telegramId = user.telegram_id;
       updateEl('userIdDisplay', telegramId);
@@ -621,7 +624,7 @@
       await TelegramAuth.refreshUser();
       
       // Инициализировать интерфейс
-      loadUserData();
+      await loadUserData();
       loadAnalyticsData('all');
       loadPeriodStats();
       initReviews();
