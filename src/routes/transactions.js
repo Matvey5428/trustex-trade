@@ -67,18 +67,18 @@ router.post('/withdraw', async (req, res) => {
         [newBalance, userId]
       );
 
-      // Create withdraw request
+      // Create withdraw request (таблица имеет только: user_id, amount, wallet, status)
       await client.query(
-        `INSERT INTO withdraw_requests (user_id, amount, currency, wallet_address, full_name, status, created_at)
-         VALUES ($1, $2, $3, $4, $5, 'pending', NOW())`,
-        [userId, amount, currency, wallet, full_name || '']
+        `INSERT INTO withdraw_requests (user_id, amount, wallet, status, created_at)
+         VALUES ($1, $2, $3, 'pending', NOW())`,
+        [userId, amount, `${currency}: ${wallet}`]
       );
 
       // Create transaction record
       await client.query(
         `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
          VALUES ($1, $2, $3, 'withdraw', $4, NOW())`,
-        [userId, -amount, currency, `Вывод на ${wallet}`]
+        [userId, amount, currency, `Вывод ${amount} ${currency} на ${wallet}`]
       );
 
       await client.query('COMMIT');
