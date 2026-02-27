@@ -484,4 +484,66 @@ router.get('/analytics/:userId', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/trades/pnl-history/:userId
+ * Get daily P&L history for chart (last 30 days)
+ */
+router.get('/pnl-history/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const days = parseInt(req.query.days) || 30;
+
+    // Get user by telegram_id
+    const userResult = await pool.query(
+      'SELECT id FROM users WHERE telegram_id = $1',
+      [userId.toString()]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const internalUserId = userResult.rows[0].id;
+
+    // Get daily P&L for last N days
+    const pnlResult = await pool.query(
+      `SELECT 
+        DATE(created_at) as date,
+        COALESCE(SUM(CASE WHEN result = 'win' THEN amount * 0.015 ELSE 0 END), 0) as profit,
+        COALESCE(SUM(CASE WHEN result = 'loss' THEN amount ELSE 0 END), 0) as loss
+       FROM orders 
+       WHERE user_id = $1 
+         AND status = 'closed'
+         AND created_at >= NOW() - INTERVAL '${days} days'
+       GROUP BY DATE(created_at)
+       ORDER BY DATE(created_at) ASC`,
+      [internalUserId]
+    );
+
+    // Build cumulative P&L data
+    let cumulative = 0;
+    const history = pnlResult.rows.map(row => {
+      const dailyPnl = parseFloat(row.profit) - parseFloat(row.loss);
+      cumulative += dailyPnl;
+      return {
+        date: row.date,
+        dailyPnl: dailyPnl.toFixed(2),
+        cumulative: cumulative.toFixed(2)
+      };
+    });
+
+    res.json({
+      success: true,
+      data: {
+        history,
+        totalPnl: cumulative.toFixed(2)
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Get P&L history error:', error.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;

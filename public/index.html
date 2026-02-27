@@ -7,6 +7,7 @@
   
   <!-- Telegram Web App SDK - REQUIRED for Mini App -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
@@ -286,8 +287,11 @@
 
     <div class="section-card text-center">
         <h5 class="section-title text-start">График доходности (P&L)</h5>
-        <div style="height: 150px; display: flex; align-items: center; justify-content: center; color: #9fb3ff;">
-            <span>Недостаточно данных для построения графика</span>
+        <div id="pnlChartContainer" style="height: 180px; position: relative;">
+            <canvas id="pnlChart"></canvas>
+            <div id="pnlChartPlaceholder" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; color: #9fb3ff;">
+                <span>Недостаточно данных для построения графика</span>
+            </div>
         </div>
     </div>
 
@@ -527,6 +531,90 @@
     } catch (e) { console.error('loadPeriodStats error:', e); }
   }
 
+  let pnlChart = null;
+  
+  async function loadPnlChart() {
+    if (!userId) return;
+    try {
+      const res = await fetch(`/api/trades/pnl-history/${userId}?days=30`);
+      if (!res.ok) return;
+      
+      const payload = await res.json();
+      const history = payload?.data?.history || [];
+      
+      const placeholder = document.getElementById('pnlChartPlaceholder');
+      const canvas = document.getElementById('pnlChart');
+      
+      if (history.length < 2) {
+        // Not enough data
+        placeholder.style.display = 'flex';
+        canvas.style.display = 'none';
+        return;
+      }
+      
+      placeholder.style.display = 'none';
+      canvas.style.display = 'block';
+      
+      const labels = history.map(h => {
+        const d = new Date(h.date);
+        return `${d.getDate()}.${d.getMonth() + 1}`;
+      });
+      const data = history.map(h => parseFloat(h.cumulative));
+      
+      const ctx = canvas.getContext('2d');
+      
+      // Destroy old chart if exists
+      if (pnlChart) {
+        pnlChart.destroy();
+      }
+      
+      // Determine color based on final P&L
+      const finalPnl = data[data.length - 1] || 0;
+      const lineColor = finalPnl >= 0 ? '#00ff88' : '#ff4d4d';
+      const bgColor = finalPnl >= 0 ? 'rgba(0, 255, 136, 0.1)' : 'rgba(255, 77, 77, 0.1)';
+      
+      pnlChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'P&L (USDT)',
+            data: data,
+            borderColor: lineColor,
+            backgroundColor: bgColor,
+            borderWidth: 2,
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3,
+            pointBackgroundColor: lineColor
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: '#9fb3ff', font: { size: 10 } }
+            },
+            y: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { 
+                color: '#9fb3ff', 
+                font: { size: 10 },
+                callback: (v) => v.toFixed(2)
+              }
+            }
+          }
+        }
+      });
+      
+    } catch (e) { console.error('loadPnlChart error:', e); }
+  }
+
   function updateFilterCounts() {
     const counts = {
         all: allTransactions.length,
@@ -627,6 +715,7 @@
       await loadUserData();
       loadAnalyticsData('all');
       loadPeriodStats();
+      loadPnlChart();
       initReviews();
       console.log('✅ Init complete');
     } catch (e) {
