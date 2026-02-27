@@ -540,7 +540,7 @@
     }
     try {
       console.log('loadPnlChart: fetching for userId', userId);
-      const res = await fetch(`/api/trades/pnl-history/${userId}?days=30`);
+      const res = await fetch(`/api/trades/pnl-history/${userId}`);
       if (!res.ok) {
         console.log('loadPnlChart: response not ok', res.status);
         return;

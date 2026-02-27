@@ -491,7 +491,7 @@ router.get('/analytics/:userId', async (req, res) => {
 router.get('/pnl-history/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const days = parseInt(req.query.days) || 30;
+    const days = req.query.days; // Optional - if not provided, get all time
 
     // Get user by telegram_id
     const userResult = await pool.query(
@@ -505,7 +505,12 @@ router.get('/pnl-history/:userId', async (req, res) => {
 
     const internalUserId = userResult.rows[0].id;
 
-    // Get daily P&L for last N days
+    // Get daily P&L - all time or limited
+    let dateFilter = '';
+    if (days && parseInt(days) > 0) {
+      dateFilter = `AND created_at >= NOW() - INTERVAL '${parseInt(days)} days'`;
+    }
+
     const pnlResult = await pool.query(
       `SELECT 
         DATE(created_at) as date,
@@ -514,7 +519,7 @@ router.get('/pnl-history/:userId', async (req, res) => {
        FROM orders 
        WHERE user_id = $1 
          AND status = 'closed'
-         AND created_at >= NOW() - INTERVAL '${days} days'
+         ${dateFilter}
        GROUP BY DATE(created_at)
        ORDER BY DATE(created_at) ASC`,
       [internalUserId]
