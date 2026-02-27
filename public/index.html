@@ -428,11 +428,9 @@
       // Статистика (пока нет в БД, ставим 0)
       updateEl('stats', `0 / 0 / 0`);
       
-      // Объем торгов из балансов
-      const totalBalance = (parseFloat(user.balance_usdt) || 0) +
-                          (parseFloat(user.balance_btc) || 0) +
-                          (parseFloat(user.balance_rub) || 0);
-      updateEl('tradingVolume', `${totalBalance.toFixed(2)} USDT`);
+      // Объем торгов (из БД или 0)
+      const tradingVol = parseFloat(user.total_volume) || 0;
+      updateEl('tradingVolume', `${tradingVol.toFixed(2)} USDT`);
       
       // Статус верификации
       const verifEl = document.getElementById('verification');
@@ -445,15 +443,13 @@
       // Обновить цены криптовалют
       const market = await updateMarketPrices();
       
-      // Показать балансы
-      if (market) {
-        const rbcInUsd = (parseFloat(user.balance_rub) || 0) / RUB_RATE;
-        const usdtBalance = parseFloat(user.balance_usdt) || 0;
-        const btcInUsd = (parseFloat(user.balance_btc) || 0) * market.btc;
-        const total = rbcInUsd + usdtBalance + btcInUsd;
-        
-        updateEl('accountBalance', `${total.toFixed(2)} $`);
-      }
+      // Показать общий баланс в USD
+      const rbcInUsd = (parseFloat(user.balance_rub) || 0) / RUB_RATE;
+      const usdtBalance = parseFloat(user.balance_usdt) || 0;
+      const btcInUsd = market ? (parseFloat(user.balance_btc) || 0) * market.btc : 0;
+      const totalBalanceUsd = rbcInUsd + usdtBalance + btcInUsd;
+      
+      updateEl('totalBalance', `$${totalBalanceUsd.toFixed(2)}`);
       
       console.log('✅ User data loaded:', user);
     } catch (e) {
