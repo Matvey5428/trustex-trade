@@ -306,7 +306,14 @@
         
         const created = trade.createdAt ? new Date(trade.createdAt) : new Date();
         
-        if (isActive && trade.expiresAt) {
+        // Calculate expiresAt from duration if not provided
+        let expiresAt = trade.expiresAt;
+        if (isActive && !expiresAt && trade.duration) {
+          const createdTime = new Date(trade.createdAt).getTime();
+          expiresAt = new Date(createdTime + trade.duration * 1000).toISOString();
+        }
+        
+        if (isActive && expiresAt) {
           // Active trade with timer
           const tradeId = trade.id;
           return `
@@ -319,7 +326,7 @@
                 <div class="order-date">${created.toLocaleDateString('ru-RU')} ${created.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</div>
               </div>
               <div style="text-align: right;">
-                <div class="trade-timer" data-trade-id="${tradeId}" data-expires="${trade.expiresAt}" data-amount="${trade.fromAmount}" style="font-size: 18px; font-weight: bold; color: #4db8ff;">--:--</div>
+                <div class="trade-timer" data-trade-id="${tradeId}" data-expires="${expiresAt}" data-amount="${trade.fromAmount}" style="font-size: 18px; font-weight: bold; color: #4db8ff;">--:--</div>
                 <div class="small-text" style="color: ${statusColor};">${statusText}</div>
               </div>
             </div>
