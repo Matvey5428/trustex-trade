@@ -65,7 +65,7 @@ router.post('/create', async (req, res) => {
       );
 
       // Calculate result based on mode
-      let profit = 0;
+      let profit = amount; // Default to stake amount
       let status = 'pending';
       let finalBalance = newBalance;
 
@@ -97,10 +97,13 @@ router.post('/create', async (req, res) => {
       );
 
       // Create transaction record (amount must be positive due to constraint)
+      const txAmount = Math.max(Math.abs(profit), 0.01); // Ensure at least 0.01
+      console.log(`📊 Trade: mode=${tradeMode}, profit=${profit}, txAmount=${txAmount}`);
+      
       await client.query(
         `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
          VALUES ($1, $2, 'USDT', 'trade', $3, NOW())`,
-        [user.id, Math.abs(profit), `Торговля ${toCurrency}: ${status === 'win' ? 'Выигрыш +' : 'Проигрыш -'}${Math.abs(profit).toFixed(2)} USDT`]
+        [user.id, txAmount, `Торговля ${toCurrency}: ${status === 'win' ? 'Выигрыш +' : 'Проигрыш -'}${Math.abs(profit).toFixed(2)} USDT`]
       );
 
       await client.query('COMMIT');
