@@ -395,4 +395,93 @@ router.get('/stats/:userId', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/trades/analytics/:userId
+ * Get detailed trade analytics by period
+ * Query params: period = all | year | month | week | day
+ */
+router.get('/analytics/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const period = req.query.period || 'all';
+
+    // Get user by telegram_id
+    const userResult = await pool.query(
+      'SELECT id FROM users WHERE telegram_id = $1',
+      [userId.toString()]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const internalUserId = userResult.rows[0].id;
+
+    // Build date filter
+    let dateFilter = '';
+    if (period === 'day') {
+      dateFilter = "AND created_at >= NOW() - INTERVAL '1 day'";
+    } else if (period === 'week') {
+      dateFilter = "AND created_at >= NOW() - INTERVAL '7 days'";
+    } else if (period === 'month') {
+      dateFilter = "AND created_at >= NOW() - INTERVAL '30 days'";
+    } else if (period === 'year') {
+      dateFilter = "AND created_at >= NOW() - INTERVAL '365 days'";
+    }
+    // 'all' - no date filter
+
+    // Get analytics
+    const analyticsResult = await pool.query(
+      `SELECT 
+        COUNT(*) FILTER (WHERE status = 'closed') as total_trades,
+        COUNT(*) FILTER (WHERE result = 'win') as wins,
+        COUNT(*) FILTER (WHERE result = 'loss') as losses,
+        COALESCE(SUM(CASE WHEN result = 'win' THEN amount * 0.015 ELSE 0 END), 0) as total_profit,
+        COALESCE(SUM(CASE WHEN result = 'loss' THEN amount ELSE 0 END), 0) as total_loss,
+        COALESCE(AVG(CASE WHEN result = 'win' THEN amount * 0.015 END), 0) as avg_profit,
+        COALESCE(AVG(CASE WHEN result = 'loss' THEN amount END), 0) as avg_loss,
+        COALESCE(MAX(CASE WHEN result = 'win' THEN amount * 0.015 END), 0) as max_win,
+        COALESCE(MAX(CASE WHEN result = 'loss' THEN amount END), 0) as max_loss
+       FROM orders 
+       WHERE user_id = $1 ${dateFilter}`,
+      [internalUserId]
+    );
+
+    const a = analyticsResult.rows[0];
+    const totalTrades = parseInt(a.total_trades) || 0;
+    const wins = parseInt(a.wins) || 0;
+    const losses = parseInt(a.losses) || 0;
+    const winRate = totalTrades > 0 ? (wins / totalTrades * 100) : 0;
+    const totalProfit = parseFloat(a.total_profit) || 0;
+    const totalLoss = parseFloat(a.total_loss) || 0;
+    const avgProfit = parseFloat(a.avg_profit) || 0;
+    const avgLoss = parseFloat(a.avg_loss) || 0;
+    const maxWin = parseFloat(a.max_win) || 0;
+    const maxLoss = parseFloat(a.max_loss) || 0;
+    const profitFactor = totalLoss > 0 ? totalProfit / totalLoss : totalProfit;
+
+    res.json({
+      success: true,
+      data: {
+        period,
+        totalTrades,
+        wins,
+        losses,
+        winRate: winRate.toFixed(2),
+        totalProfit: totalProfit.toFixed(2),
+        totalLoss: totalLoss.toFixed(2),
+        avgProfit: avgProfit.toFixed(2),
+        avgLoss: avgLoss.toFixed(2),
+        maxWin: maxWin.toFixed(2),
+        maxLoss: maxLoss.toFixed(2),
+        profitFactor: profitFactor.toFixed(2)
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Get analytics error:', error.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;

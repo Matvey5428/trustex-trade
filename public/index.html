@@ -270,11 +270,11 @@
     <div class="section-card">
         <h5 class="section-title">Аналитика торговли</h5>
         <div class="analytics-btn-group mt-3">
-            <button class="btn-period active">Все время</button>
-            <button class="btn-period">Год</button>
-            <button class="btn-period">Месяц</button>
-            <button class="btn-period">Неделя</button>
-            <button class="btn-period">День</button>
+            <button class="btn-period active" onclick="selectPeriod(this, 'all')">Все время</button>
+            <button class="btn-period" onclick="selectPeriod(this, 'year')">Год</button>
+            <button class="btn-period" onclick="selectPeriod(this, 'month')">Месяц</button>
+            <button class="btn-period" onclick="selectPeriod(this, 'week')">Неделя</button>
+            <button class="btn-period" onclick="selectPeriod(this, 'day')">День</button>
         </div>
         <div class="stat-box"><div class="stat-label">Win Rate</div><div class="stat-value" id="winRate">0.0%</div></div>
         <div class="stat-box"><div class="stat-label">Средняя прибыль</div><div class="stat-value text-success-custom" id="avgProfit">+0.00 USDT</div></div>
@@ -470,26 +470,58 @@
     }
   }
 
-  async function loadAnalyticsData(period) {
+  function selectPeriod(btn, period) {
+    document.querySelectorAll('.btn-period').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadAnalyticsData(period);
+  }
+
+  async function loadAnalyticsData(period = 'all') {
     if (!userId) return;
     try {
-        const apiPeriod = period === 'Все время' ? 'year' : period === 'Год' ? 'year' : period === 'Месяц' ? 'month' : period === 'Неделя' ? 'week' : 'day';
-        const res = await fetch(`/api/analytics/${userId}/stats`);
+        const res = await fetch(`/api/trades/analytics/${userId}?period=${period}`);
         if (!res.ok) return;
         const payload = await res.json();
-        const stats = payload?.data?.statistics || {};
-        const pnlRes = await fetch(`/api/analytics/${userId}/pnl/${apiPeriod}`);
-        const pnlPayload = pnlRes.ok ? await pnlRes.json() : { data: {} };
-        const pnl = pnlPayload?.data || {};
+        const a = payload?.data || {};
 
-        updateEl('winRate', `${parseFloat(stats.winRate || 0).toFixed(2)}%`);
-        updateEl('avgProfit', `+${parseFloat(stats.avgProfit || 0).toFixed(2)} USDT`);
-        updateEl('avgLoss', `${parseFloat(stats.avgLoss || 0).toFixed(2)} USDT`);
-        updateEl('maxWin', `+${parseFloat(pnl.totalProfit || 0).toFixed(2)} USDT`);
-        updateEl('maxLoss', `${parseFloat(pnl.totalLoss || 0).toFixed(2)} USDT`);
-        const pf = parseFloat(pnl.totalLoss || 0) > 0 ? parseFloat(pnl.totalProfit || 0) / parseFloat(pnl.totalLoss || 0) : parseFloat(pnl.totalProfit || 0);
-        updateEl('profitFactor', pf.toFixed(2));
+        updateEl('winRate', `${a.winRate || 0}%`);
+        updateEl('avgProfit', `+${a.avgProfit || '0.00'} USDT`);
+        updateEl('avgLoss', `-${a.avgLoss || '0.00'} USDT`);
+        updateEl('maxWin', `+${a.maxWin || '0.00'} USDT`);
+        updateEl('maxLoss', `-${a.maxLoss || '0.00'} USDT`);
+        updateEl('profitFactor', a.profitFactor || '0.00');
     } catch (e) { console.error('loadAnalyticsData error:', e); }
+  }
+
+  async function loadPeriodStats() {
+    if (!userId) return;
+    try {
+      // Load stats for each period
+      const periods = ['day', 'week', 'month'];
+      const periodMap = { day: 'Today', week: 'Week', month: 'Month' };
+      
+      for (const period of periods) {
+        const res = await fetch(`/api/trades/analytics/${userId}?period=${period}`);
+        if (res.ok) {
+          const payload = await res.json();
+          const a = payload.data || {};
+          const profit = parseFloat(a.totalProfit) - parseFloat(a.totalLoss) || 0;
+          const profitStr = profit >= 0 ? `+${profit.toFixed(2)}` : profit.toFixed(2);
+          const profitColor = profit >= 0 ? 'text-success-custom' : 'text-danger-custom';
+          
+          const elProfit = document.getElementById(`pProfit${periodMap[period]}`);
+          const elTrades = document.getElementById(`pTrades${periodMap[period]}`);
+          
+          if (elProfit) {
+            elProfit.textContent = `${profitStr} USDT`;
+            elProfit.className = `period-value ${profitColor}`;
+          }
+          if (elTrades) {
+            elTrades.innerHTML = `${a.totalTrades} <small>(${a.wins}W / ${a.losses}L)</small>`;
+          }
+        }
+      }
+    } catch (e) { console.error('loadPeriodStats error:', e); }
   }
 
   function updateFilterCounts() {
@@ -590,6 +622,8 @@
       
       // Инициализировать интерфейс
       loadUserData();
+      loadAnalyticsData('all');
+      loadPeriodStats();
       initReviews();
       console.log('✅ Init complete');
     } catch (e) {
@@ -599,14 +633,6 @@
       // Показать ошибку на экране
       alert('Ошибка авторизации: ' + e.message);
     }
-  });
-
-  document.querySelectorAll('.btn-period').forEach(button => {
-    button.addEventListener('click', function() {
-        document.querySelectorAll('.btn-period').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        loadAnalyticsData(this.innerText);
-    });
   });
 
   setInterval(() => {
