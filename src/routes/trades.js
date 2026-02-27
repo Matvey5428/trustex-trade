@@ -90,10 +90,10 @@ router.post('/create', async (req, res) => {
 
       // Create trade record
       const tradeResult = await client.query(
-        `INSERT INTO orders (user_id, symbol, side, amount, price, status, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+        `INSERT INTO orders (user_id, amount, direction, duration, status, result, created_at, expires_at)
+         VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW() + INTERVAL '30 seconds')
          RETURNING *`,
-        [user.id, toCurrency + 'USDT', direction || 'buy', amount, 0, status]
+        [user.id, amount, direction || 'up', 30, 'closed', status]
       );
 
       // Create transaction record
@@ -153,7 +153,7 @@ router.get('/:userId', async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT id, symbol, side, amount, price, status, created_at as "createdAt"
+      `SELECT id, direction, amount, result, status, created_at as "createdAt"
        FROM orders 
        WHERE user_id = $1 
        ORDER BY created_at DESC 
@@ -165,9 +165,9 @@ router.get('/:userId', async (req, res) => {
     const trades = result.rows.map(row => ({
       id: row.id,
       fromCurrency: 'USDT',
-      toCurrency: row.symbol?.replace('USDT', '') || '',
+      toCurrency: row.direction === 'up' ? '↑' : '↓',
       fromAmount: row.amount,
-      status: row.status === 'win' ? 'successful' : row.status === 'loss' ? 'failed' : row.status,
+      status: row.result === 'win' ? 'successful' : row.result === 'loss' ? 'failed' : row.status,
       createdAt: row.createdAt
     }));
 
