@@ -90,6 +90,9 @@ const BalanceManager = {
       // Для exchange.html
       'rubBalanceText': `${balanceRub.toFixed(2)} ₽`,
       'usdtBalanceText': `${balanceUsdt.toFixed(2)} $`,
+      
+      // Для withdraw.html
+      'balanceText': `${balanceRub.toFixed(2)} ₽ | ${balanceUsdt.toFixed(2)} $`,
     };
     
     for (const [id, value] of Object.entries(updates)) {

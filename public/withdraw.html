@@ -221,6 +221,15 @@ async function resolveUserId() {
 async function loadUserData() {
     if (!userId) return;
     try {
+        // Используем balance.js данные если доступны
+        if (window.USER_BALANCES) {
+            rubBalance = window.USER_BALANCES.rub || 0;
+            usdtBalance = window.USER_BALANCES.usdt || 0;
+            balanceText.innerText = `${rubBalance.toFixed(2)} ₽ | ${usdtBalance.toFixed(2)} $`;
+            return;
+        }
+        
+        // Fallback: загрузить через API
         const res = await fetch(`/api/profile/${userId}?t=${new Date().getTime()}`);
         const payload = await res.json();
         const data = payload.data || {};
@@ -290,7 +299,10 @@ document.getElementById('refreshBtn').onclick = loadUserData;
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         userId = await resolveUserId();
-        loadUserData();
+        // Небольшая задержка чтобы balance.js успел загрузить данные
+        setTimeout(() => {
+            loadUserData();
+        }, 200);
     } catch (e) {
         console.error('init_error', e);
         showAlert('Ошибка инициализации');
