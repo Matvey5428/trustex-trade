@@ -461,29 +461,6 @@
       document.getElementById('userIdDisplay').textContent = '❌ Ошибка';
     }
   }
-      
-      updateEl('totalBalance', `$${total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
-      updateEl('rubBalance', `${curRub.toFixed(2)} ₽`);
-      updateEl('btcBalance', `${btcInUsd.toFixed(2)} $`);
-      updateEl('ethBalance', `${ethInUsd.toFixed(2)} $`);
-      updateEl('tonBalance', `${tonInUsd.toFixed(2)} $`);
-      updateEl('usdtBalance', `${curUsdt.toFixed(2)} $`);
-
-      const txRes = await fetch(`/api/transactions/${userId}`);
-      const txPayload = txRes.ok ? await txRes.json() : { data: [] };
-      allTransactions = Array.isArray(txPayload?.data) ? txPayload.data : [];
-      updateFilterCounts();
-      const activeBtn = document.querySelector('.btn-filter.active');
-      if (activeBtn) {
-          const filterType = activeBtn.getAttribute('onclick').match(/'([^']+)'/)[1];
-          filterHistory(filterType);
-      }
-
-      const activePeriodBtn = document.querySelector('.btn-period.active');
-      if (activePeriodBtn) loadAnalyticsData(activePeriodBtn.innerText);
-      
-    } catch (e) { console.error('loadUserData error:', e); }
-  }
 
   async function loadAnalyticsData(period) {
     if (!userId) return;
