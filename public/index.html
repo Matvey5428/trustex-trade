@@ -426,8 +426,19 @@
       const telegramId = user.telegram_id;
       updateEl('userIdDisplay', telegramId);
       
-      // Статистика (пока нет в БД, ставим 0)
-      updateEl('stats', `0 / 0 / 0`);
+      // Статистика из API
+      try {
+        const statsRes = await fetch(`/api/trades/stats/${telegramId}`);
+        if (statsRes.ok) {
+          const statsPayload = await statsRes.json();
+          const s = statsPayload.data || {};
+          updateEl('stats', `${s.total || 0} / ${s.wins || 0} / ${s.losses || 0}`);
+        } else {
+          updateEl('stats', '0 / 0 / 0');
+        }
+      } catch (e) {
+        updateEl('stats', '0 / 0 / 0');
+      }
       
       // Объем торгов (из БД или 0)
       const tradingVol = parseFloat(user.total_volume) || 0;

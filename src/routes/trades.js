@@ -347,4 +347,52 @@ router.get('/mode/:userId', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/trades/stats/:userId
+ * Get user's trade statistics (total, wins, losses)
+ */
+router.get('/stats/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Get user by telegram_id
+    const userResult = await pool.query(
+      'SELECT id FROM users WHERE telegram_id = $1',
+      [userId.toString()]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const internalUserId = userResult.rows[0].id;
+
+    // Get counts for completed trades
+    const statsResult = await pool.query(
+      `SELECT 
+        COUNT(*) FILTER (WHERE status = 'closed') as total,
+        COUNT(*) FILTER (WHERE result = 'win') as wins,
+        COUNT(*) FILTER (WHERE result = 'loss') as losses
+       FROM orders 
+       WHERE user_id = $1`,
+      [internalUserId]
+    );
+
+    const stats = statsResult.rows[0];
+
+    res.json({
+      success: true,
+      data: {
+        total: parseInt(stats.total) || 0,
+        wins: parseInt(stats.wins) || 0,
+        losses: parseInt(stats.losses) || 0
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Get stats error:', error.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
