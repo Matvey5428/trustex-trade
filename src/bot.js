@@ -20,8 +20,16 @@ function initBot() {
     return null;
   }
 
+  // Отключаем polling на production (Render запускает несколько инстансов)
+  // Для production нужно использовать webhooks
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
+  if (isProduction) {
+    console.log('⚠️ Bot polling disabled in production (use webhooks instead)');
+    return null;
+  }
+
   try {
-    // Создаём бота в режиме polling (опрос сервера Telegram)
+    // Создаём бота в режиме polling (только для локальной разработки)
     bot = new TelegramBot(BOT_TOKEN, { 
       polling: true,
       onlyFirstMatch: true
