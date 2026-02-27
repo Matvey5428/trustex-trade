@@ -96,11 +96,11 @@ router.post('/create', async (req, res) => {
         [user.id, amount, direction || 'up', 30, 'closed', status]
       );
 
-      // Create transaction record
+      // Create transaction record (amount must be positive due to constraint)
       await client.query(
         `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
          VALUES ($1, $2, 'USDT', 'trade', $3, NOW())`,
-        [user.id, profit, `Торговля ${toCurrency}: ${status === 'win' ? 'Выигрыш' : 'Проигрыш'} ${Math.abs(profit).toFixed(2)} USDT`]
+        [user.id, Math.abs(profit), `Торговля ${toCurrency}: ${status === 'win' ? 'Выигрыш +' : 'Проигрыш -'}${Math.abs(profit).toFixed(2)} USDT`]
       );
 
       await client.query('COMMIT');
