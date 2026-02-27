@@ -61,7 +61,7 @@ function initAdminBot() {
     
     try {
       const result = await pool.query(`
-        SELECT id, telegram_id, username, first_name, balance, trade_mode, created_at 
+        SELECT id, telegram_id, username, first_name, balance_usdt, COALESCE(trade_mode, 'loss') as trade_mode, created_at 
         FROM users 
         ORDER BY created_at DESC 
         LIMIT 50
@@ -78,7 +78,7 @@ function initAdminBot() {
         const mode = user.trade_mode === 'win' ? '🟢' : '🔴';
         text += `${mode} *${name}*\n`;
         text += `   ID: \`${user.telegram_id}\`\n`;
-        text += `   Баланс: ${formatNum(user.balance)} USDT\n`;
+        text += `   Баланс: ${formatNum(user.balance_usdt)} USDT\n`;
         text += `   Режим: ${user.trade_mode}\n\n`;
       }
       
@@ -112,6 +112,9 @@ function initAdminBot() {
       
       const user = result.rows[0];
       
+      // Handle null trade_mode
+      user.trade_mode = user.trade_mode || 'loss';
+      
       // Get trade stats
       const statsResult = await pool.query(`
         SELECT 
@@ -144,7 +147,7 @@ function initAdminBot() {
       const text = `👤 *${name}*\n\n` +
         `🆔 Telegram ID: \`${user.telegram_id}\`\n` +
         `📛 Username: @${user.username || 'нет'}\n` +
-        `💰 Баланс: *${formatNum(user.balance)} USDT*\n` +
+        `💰 Баланс: *${formatNum(user.balance_usdt)} USDT*\n`+
         `🎯 Режим: *${mode}*\n` +
         `📅 Регистрация: ${new Date(user.created_at).toLocaleDateString('ru')}\n\n` +
         `📊 *Трейдинг:*\n` +
@@ -192,7 +195,7 @@ function initAdminBot() {
     
     try {
       const result = await pool.query(
-        'UPDATE users SET balance = $1 WHERE telegram_id = $2 RETURNING first_name, username',
+        'UPDATE users SET balance_usdt = $1 WHERE telegram_id = $2 RETURNING first_name, username',
         [newBalance, searchId]
       );
       
@@ -253,8 +256,8 @@ function initAdminBot() {
         SELECT 
           COUNT(*) as total,
           COUNT(*) FILTER (WHERE trade_mode = 'win') as win_mode,
-          COUNT(*) FILTER (WHERE trade_mode = 'loss') as loss_mode,
-          COALESCE(SUM(balance), 0) as total_balance
+          COUNT(*) FILTER (WHERE COALESCE(trade_mode, 'loss') = 'loss') as loss_mode,
+          COALESCE(SUM(balance_usdt), 0) as total_balance
         FROM users
       `);
       
