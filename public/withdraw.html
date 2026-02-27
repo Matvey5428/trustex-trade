@@ -254,7 +254,14 @@ async function withdraw() {
     if (wallet.length < 8) return showAlert("Введите корректные реквизиты");
     if (name.length < 3) return showAlert("Введите ФИО получателя");
 
-    const currentBal = (currency === 'RUB') ? rubBalance : usdtBalance;
+    // Используем актуальные балансы из USER_BALANCES
+    let currentBal;
+    if (window.USER_BALANCES) {
+        currentBal = (currency === 'RUB') ? (window.USER_BALANCES.rub || 0) : (window.USER_BALANCES.usdt || 0);
+    } else {
+        currentBal = (currency === 'RUB') ? rubBalance : usdtBalance;
+    }
+    
     if (amount > currentBal) return showAlert("Недостаточно средств на балансе!");
 
     // Блокировка кнопки для предотвращения повторных кликов
@@ -278,11 +285,27 @@ async function withdraw() {
         const result = await response.json();
 
         if (response.ok) {
-            showAlert(`Заявка на ${amount} ${currency} успешно создана!`, true);
+            showAlert(`Заявка на вывод ${amount} ${currency} создана!`, true);
             withdrawAmount.value = "";
             document.getElementById('walletAddress').value = "";
             document.getElementById('userFullName').value = "";
-            await loadUserData(); // Обновляем баланс
+            
+            // Обновить локальные балансы
+            if (currency === 'RUB') {
+                rubBalance -= amount;
+                if (window.USER_BALANCES) window.USER_BALANCES.rub = rubBalance;
+            } else {
+                usdtBalance -= amount;
+                if (window.USER_BALANCES) window.USER_BALANCES.usdt = usdtBalance;
+            }
+            
+            // Обновить отображение баланса
+            balanceText.innerText = `${rubBalance.toFixed(2)} ₽ | ${usdtBalance.toFixed(2)} $`;
+            
+            // Также обновить через BalanceManager если доступен
+            if (typeof BalanceManager !== 'undefined') {
+                await BalanceManager.refresh();
+            }
         } else {
             showAlert(result.error || "Ошибка при выводе");
         }
