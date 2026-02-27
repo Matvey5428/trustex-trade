@@ -222,10 +222,10 @@ router.post('/close/:tradeId', async (req, res) => {
 });
 
 /**
- * GET /api/trades/:userId
+ * GET /api/trades/history/:userId
  * Get user's trade history
  */
-router.get('/:userId', async (req, res) => {
+router.get('/history/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     const limit = parseInt(req.query.limit) || 20;

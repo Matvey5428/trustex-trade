@@ -283,7 +283,7 @@
     if (!userId) return;
     const container = document.getElementById('activeTradesContainer');
     try {
-      const res = await fetch(`/api/trades/${userId}?symbol=${coinSymbol}`);
+      const res = await fetch(`/api/trades/history/${userId}?symbol=${coinSymbol}`);
       const payload = await res.json();
       const trades = Array.isArray(payload?.data) ? payload.data : [];
 
