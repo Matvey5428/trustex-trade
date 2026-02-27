@@ -414,30 +414,53 @@
   }
 
   async function loadUserData() {
-    if (!userId) return;
     try {
-      const market = await updateMarketPrices();
-      const res = await fetch(`/api/profile/${userId}`);
-      if (!res.ok) throw new Error('Ошибка сервера');
-      const payload = await res.json();
-      const data = payload?.data || {};
-      
-      updateEl('userIdDisplay', userId);
-      updateEl('stats', `${data.total_trades || 0} / ${data.success_trades || 0} / ${data.failed_trades || 0}`);
-      updateEl('tradingVolume', `${parseFloat(data.trading_volume || 0).toFixed(2)} USDT`);
-      
-      const verifEl = document.getElementById('verification');
-      if (verifEl) {
-          verifEl.textContent = data.verified ? 'Верификация пройдена' : 'Верификация не пройдена';
-          verifEl.style.color = data.verified ? "#00ff88" : "#ffc107";
+      const user = window.CURRENT_USER;
+      if (!user) {
+        console.warn('No user data available');
+        return;
       }
 
-      const curRub = parseFloat(data.rub || 0);
-      const curUsdt = parseFloat(data.usdt || 0);
-      const btcInUsd = market ? (parseFloat(data.btc || 0)) * market.btc : 0;
-      const ethInUsd = market ? (parseFloat(data.eth || 0)) * market.eth : 0;
-      const tonInUsd = market ? (parseFloat(data.ton || 0)) * market.ton : 0;
-      const total = (curRub / RUB_RATE) + curUsdt + btcInUsd + ethInUsd + tonInUsd;
+      // Показать Telegram ID как ID аккаунта
+      const telegramId = user.telegram_id;
+      updateEl('userIdDisplay', telegramId);
+      
+      // Статистика (пока нет в БД, ставим 0)
+      updateEl('stats', `0 / 0 / 0`);
+      
+      // Объем торгов из балансов
+      const totalBalance = (parseFloat(user.balance_usdt) || 0) +
+                          (parseFloat(user.balance_btc) || 0) +
+                          (parseFloat(user.balance_rub) || 0);
+      updateEl('tradingVolume', `${totalBalance.toFixed(2)} USDT`);
+      
+      // Статус верификации
+      const verifEl = document.getElementById('verification');
+      if (verifEl) {
+          const isVerified = user.verified === true || user.verified === 1;
+          verifEl.textContent = isVerified ? '✅ Верифицирован' : '⚠️ Не верифицирован';
+          verifEl.style.color = isVerified ? "#00ff88" : "#ffc107";
+      }
+
+      // Обновить цены криптовалют
+      const market = await updateMarketPrices();
+      
+      // Показать балансы
+      if (market) {
+        const rbcInUsd = (parseFloat(user.balance_rub) || 0) / RUB_RATE;
+        const usdtBalance = parseFloat(user.balance_usdt) || 0;
+        const btcInUsd = (parseFloat(user.balance_btc) || 0) * market.btc;
+        const total = rbcInUsd + usdtBalance + btcInUsd;
+        
+        updateEl('accountBalance', `${total.toFixed(2)} $`);
+      }
+      
+      console.log('✅ User data loaded:', user);
+    } catch (e) {
+      console.error('❌ Error loading user data:', e.message);
+      document.getElementById('userIdDisplay').textContent = '❌ Ошибка';
+    }
+  }
       
       updateEl('totalBalance', `$${total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
       updateEl('rubBalance', `${curRub.toFixed(2)} ₽`);
