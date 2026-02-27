@@ -47,6 +47,8 @@ const BalanceManager = {
     const balanceUsdt = parseFloat(user.balance_usdt) || 0;
     const balanceBtc = parseFloat(user.balance_btc) || 0;
     const balanceRub = parseFloat(user.balance_rub) || 0;
+    const balanceTon = parseFloat(user.balance_ton) || 0;
+    const balanceEth = parseFloat(user.balance_eth) || 0;
     
     // Расчет общего баланса в USD
     const totalUsd = balanceUsdt + (balanceRub / this.RUB_RATE);
@@ -61,16 +63,25 @@ const BalanceManager = {
       'userUsdtBalance': `${balanceUsdt.toFixed(2)} USDT`,
       'usdt-balance': `${balanceUsdt.toFixed(2)} USDT`,
       'balanceUsdt': `${balanceUsdt.toFixed(2)}`,
+      'bal-USDT': `${balanceUsdt.toFixed(2)} USDT`,
       
       // BTC баланс  
       'userBtcBalance': `${balanceBtc.toFixed(8)} BTC`,
       'btc-balance': `${balanceBtc.toFixed(8)} BTC`,
       'balanceBtc': `${balanceBtc.toFixed(8)}`,
+      'bal-BTC': `${balanceBtc.toFixed(8)} BTC`,
       
       // RUB баланс
       'userRubBalance': `${balanceRub.toFixed(2)} ₽`,
       'rub-balance': `${balanceRub.toFixed(2)} ₽`,
       'balanceRub': `${balanceRub.toFixed(2)}`,
+      'bal-RUB': `${balanceRub.toFixed(2)} ₽`,
+      
+      // TON баланс
+      'bal-TON': `${balanceTon.toFixed(4)} TON`,
+      
+      // ETH баланс
+      'bal-ETH': `${balanceEth.toFixed(6)} ETH`,
       
       // Для страниц deposit/withdraw
       'available-balance': `${balanceUsdt.toFixed(2)} USDT`,
@@ -89,6 +100,8 @@ const BalanceManager = {
       usdt: balanceUsdt,
       btc: balanceBtc,
       rub: balanceRub,
+      ton: balanceTon,
+      eth: balanceEth,
       totalUsd: totalUsd
     };
   },
