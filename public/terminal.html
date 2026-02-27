@@ -188,10 +188,10 @@
       body: JSON.stringify({ telegramId })
     });
     const payload = await res.json();
-    if (!res.ok || !payload?.data?.id) {
+    if (!res.ok || !payload?.data?.telegram_id) {
       throw new Error(payload?.error || 'Не удалось получить аккаунт');
     }
-    return payload.data.id;
+    return payload.data.telegram_id;
   }
 
   function initChart(interval = '1') {
