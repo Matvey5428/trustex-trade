@@ -1,22 +1,30 @@
 /**
  * src/routes/trades.js
- * Trading functionality with win/loss mode
+ * Trading functionality with win/loss mode and timer
  */
 
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 
-// Хранилище активных сделок (в памяти, можно перенести в Redis)
-const activeTrades = new Map();
+/**
+ * Parse duration string to seconds
+ */
+function parseDuration(duration) {
+  if (!duration) return 30;
+  const str = String(duration).toLowerCase();
+  if (str.includes('s')) return parseInt(str) || 30;
+  if (str.includes('m')) return (parseInt(str) || 1) * 60;
+  return parseInt(duration) || 30;
+}
 
 /**
  * POST /api/trades/create
- * Create a new trade
+ * Create a new trade (deduct balance, return trade ID for timer)
  */
 router.post('/create', async (req, res) => {
   try {
-    const { userId, fromCurrency, toCurrency, fromAmount, direction } = req.body;
+    const { userId, fromCurrency, toCurrency, fromAmount, direction, duration } = req.body;
 
     // Validate input
     if (!userId) {
@@ -26,6 +34,8 @@ router.post('/create', async (req, res) => {
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: 'Invalid amount' });
     }
+
+    const durationSeconds = parseDuration(duration);
 
     // Get user by telegram_id
     const userResult = await pool.query(
@@ -49,77 +59,41 @@ router.post('/create', async (req, res) => {
       });
     }
 
-    // Get user's trade mode (default: loss)
-    const tradeMode = user.trade_mode || 'loss';
-    
     // Start transaction
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
 
-      // Deduct balance immediately
+      // Deduct balance immediately (stake is locked)
       const newBalance = currentBalance - amount;
       await client.query(
         'UPDATE users SET balance_usdt = $1, updated_at = NOW() WHERE telegram_id = $2',
         [newBalance, userId.toString()]
       );
 
-      // Calculate result based on mode
-      let profit = amount; // Default to stake amount
-      let status = 'pending';
-      let finalBalance = newBalance;
-
-      if (tradeMode === 'win') {
-        // WIN mode: +1.5% profit
-        profit = amount * 0.015;
-        finalBalance = newBalance + amount + profit; // Return stake + profit
-        status = 'win';
-        
-        // Add profit to balance
-        await client.query(
-          'UPDATE users SET balance_usdt = $1, updated_at = NOW() WHERE telegram_id = $2',
-          [finalBalance, userId.toString()]
-        );
-      } else {
-        // LOSS mode: lose entire stake
-        profit = -amount;
-        status = 'loss';
-        finalBalance = newBalance;
-        // Balance already deducted, nothing more to do
-      }
-
-      // Create trade record
+      // Create trade record with status "active"
       const tradeResult = await client.query(
-        `INSERT INTO orders (user_id, amount, direction, duration, status, result, created_at, expires_at)
-         VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW() + INTERVAL '30 seconds')
+        `INSERT INTO orders (user_id, amount, direction, duration, status, created_at, expires_at)
+         VALUES ($1, $2, $3, $4, 'active', NOW(), NOW() + INTERVAL '${durationSeconds} seconds')
          RETURNING *`,
-        [user.id, amount, direction || 'up', 30, 'closed', status]
-      );
-
-      // Create transaction record (amount must be positive due to constraint)
-      const txAmount = Math.max(Math.abs(profit), 0.01); // Ensure at least 0.01
-      console.log(`📊 Trade: mode=${tradeMode}, profit=${profit}, txAmount=${txAmount}`);
-      
-      await client.query(
-        `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
-         VALUES ($1, $2, 'USDT', 'trade', $3, NOW())`,
-        [user.id, txAmount, `Торговля ${toCurrency}: ${status === 'win' ? 'Выигрыш +' : 'Проигрыш -'}${Math.abs(profit).toFixed(2)} USDT`]
+        [user.id, amount, direction || 'up', durationSeconds]
       );
 
       await client.query('COMMIT');
 
+      const trade = tradeResult.rows[0];
+
       res.json({
         success: true,
-        message: status === 'win' 
-          ? `Сделка выиграна! +${profit.toFixed(2)} USDT` 
-          : `Сделка проиграна. -${amount.toFixed(2)} USDT`,
+        message: 'Сделка открыта',
         data: {
-          id: tradeResult.rows[0]?.id,
-          status,
+          id: trade.id,
           amount,
-          profit,
-          newBalance: finalBalance,
-          mode: tradeMode
+          direction: direction || 'up',
+          duration: durationSeconds,
+          expiresAt: trade.expires_at,
+          status: 'active',
+          newBalance
         }
       });
 
@@ -131,7 +105,116 @@ router.post('/create', async (req, res) => {
     }
 
   } catch (error) {
-    console.error('❌ Trade error:', error.message);
+    console.error('❌ Trade create error:', error.message);
+    res.status(500).json({ error: 'Server error: ' + error.message });
+  }
+});
+
+/**
+ * POST /api/trades/close/:tradeId
+ * Close a trade and calculate result
+ */
+router.post('/close/:tradeId', async (req, res) => {
+  try {
+    const { tradeId } = req.params;
+
+    // Get trade
+    const tradeResult = await pool.query(
+      'SELECT o.*, u.telegram_id, u.trade_mode, u.balance_usdt FROM orders o JOIN users u ON o.user_id = u.id WHERE o.id = $1',
+      [tradeId]
+    );
+
+    if (tradeResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Trade not found' });
+    }
+
+    const trade = tradeResult.rows[0];
+
+    // Already closed?
+    if (trade.status !== 'active') {
+      return res.json({
+        success: true,
+        message: 'Сделка уже закрыта',
+        data: {
+          id: trade.id,
+          status: trade.status,
+          result: trade.result
+        }
+      });
+    }
+
+    const amount = parseFloat(trade.amount);
+    const tradeMode = trade.trade_mode || 'loss';
+    const currentBalance = parseFloat(trade.balance_usdt) || 0;
+
+    // Calculate result based on mode
+    let profit = 0;
+    let result = 'loss';
+    let finalBalance = currentBalance;
+
+    if (tradeMode === 'win') {
+      // WIN mode: +1.5% profit + return stake
+      profit = amount * 0.015;
+      finalBalance = currentBalance + amount + profit;
+      result = 'win';
+    } else {
+      // LOSS mode: already lost (balance was deducted)
+      profit = -amount;
+      result = 'loss';
+    }
+
+    // Start transaction
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Update trade status
+      await client.query(
+        'UPDATE orders SET status = $1, result = $2, closed_at = NOW() WHERE id = $3',
+        ['closed', result, tradeId]
+      );
+
+      // If win - add money back
+      if (result === 'win') {
+        await client.query(
+          'UPDATE users SET balance_usdt = $1, updated_at = NOW() WHERE id = $2',
+          [finalBalance, trade.user_id]
+        );
+      }
+
+      // Create transaction record
+      const txAmount = Math.max(Math.abs(profit), 0.01);
+      await client.query(
+        `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
+         VALUES ($1, $2, 'USDT', 'trade', $3, NOW())`,
+        [trade.user_id, txAmount, `Торговля: ${result === 'win' ? 'Выигрыш +' : 'Проигрыш -'}${Math.abs(profit).toFixed(2)} USDT`]
+      );
+
+      await client.query('COMMIT');
+
+      res.json({
+        success: true,
+        message: result === 'win' 
+          ? `Сделка выиграна! +${profit.toFixed(2)} USDT` 
+          : `Сделка проиграна. -${amount.toFixed(2)} USDT`,
+        data: {
+          id: trade.id,
+          result,
+          amount,
+          profit,
+          newBalance: finalBalance
+        }
+      });
+
+    } catch (txError) {
+      await client.query('ROLLBACK');
+      throw txError;
+    } finally {
+      client.release();
+    }
+
+  } catch (error) {
+    console.error('❌ Trade close error:', error.message);
     res.status(500).json({ error: 'Server error: ' + error.message });
   }
 });

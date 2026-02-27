@@ -156,6 +156,12 @@
     <button class="time-btn" onclick="setTime(this)">30m</button>
   </div>
 
+  <div id="tradeTimer" style="display: none; text-align: center; padding: 20px 0;">
+    <div style="font-size: 14px; color: #9fb3ff; margin-bottom: 10px;">Сделка активна</div>
+    <div id="timerCountdown" style="font-size: 36px; font-weight: bold; color: #4db8ff;">00:00</div>
+    <div style="font-size: 12px; color: #666; margin-top: 10px;">Ожидание результата...</div>
+  </div>
+
   <button class="btn-trade w-100" id="panelSubmitBtn" onclick="executeTrade()">Открыть сделку</button>
 </div>
 
@@ -307,7 +313,7 @@
 
     const btn = document.getElementById('panelSubmitBtn');
     btn.disabled = true;
-    btn.innerText = "Обработка...";
+    btn.innerText = "Открытие...";
 
     // Get selected time
     const activeTimeBtn = document.querySelector('#timeSelection .time-btn.active');
@@ -330,34 +336,90 @@
       const payload = await response.json();
       if (!response.ok) {
         alert(payload?.error || 'Не удалось открыть сделку');
-      } else {
-        // Show result based on win/loss
-        const isWin = payload.data?.status === 'win';
-        const profit = payload.data?.profit || 0;
-        
-        if (isWin) {
-          alert(`✅ Сделка выиграна! +${profit.toFixed(2)} USDT`);
-        } else {
-          alert(`❌ Сделка проиграна. -${amount.toFixed(2)} USDT`);
-        }
-        
-        document.getElementById('tradeAmount').value = '';
-        closeTrade();
-        
-        // Update balance
-        await loadUserBalance();
-        await loadActiveTrades();
-        
-        // Update global balance if available
-        if (typeof BalanceManager !== 'undefined') {
-          await BalanceManager.refresh();
-        }
+        btn.disabled = false;
+        btn.innerText = 'Открыть сделку';
+        return;
       }
-    } catch {
+
+      // Trade created - start timer
+      const tradeId = payload.data?.id;
+      const durationSeconds = payload.data?.duration || 30;
+      
+      // Hide inputs, show timer
+      document.getElementById('timeSelection').style.display = 'none';
+      document.getElementById('tradeTimer').style.display = 'block';
+      btn.style.display = 'none';
+      document.querySelector('.input-box').style.display = 'none';
+      
+      // Update balance display
+      await loadUserBalance();
+      
+      // Start countdown
+      let remaining = durationSeconds;
+      const timerEl = document.getElementById('timerCountdown');
+      
+      const interval = setInterval(() => {
+        remaining--;
+        const mins = Math.floor(remaining / 60);
+        const secs = remaining % 60;
+        timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        
+        if (remaining <= 0) {
+          clearInterval(interval);
+          closeTradeDeal(tradeId, amount);
+        }
+      }, 1000);
+      
+      // Initial display
+      const mins = Math.floor(durationSeconds / 60);
+      const secs = durationSeconds % 60;
+      timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+    } catch (err) {
       alert('Ошибка сети');
-    } finally {
       btn.disabled = false;
       btn.innerText = 'Открыть сделку';
+    }
+  }
+
+  async function closeTradeDeal(tradeId, amount) {
+    try {
+      const response = await fetch(`/api/trades/close/${tradeId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const payload = await response.json();
+      const result = payload.data?.result;
+      const profit = payload.data?.profit || 0;
+
+      if (result === 'win') {
+        alert(`✅ Сделка выиграна! +${profit.toFixed(2)} USDT`);
+      } else {
+        alert(`❌ Сделка проиграна. -${amount.toFixed(2)} USDT`);
+      }
+
+    } catch (err) {
+      alert('Ошибка при закрытии сделки');
+    } finally {
+      // Reset panel
+      document.getElementById('timeSelection').style.display = 'grid';
+      document.getElementById('tradeTimer').style.display = 'none';
+      document.getElementById('panelSubmitBtn').style.display = 'block';
+      document.getElementById('panelSubmitBtn').disabled = false;
+      document.getElementById('panelSubmitBtn').innerText = 'Открыть сделку';
+      document.querySelector('.input-box').style.display = 'flex';
+      document.getElementById('tradeAmount').value = '';
+      
+      closeTrade();
+      
+      // Update balances
+      await loadUserBalance();
+      await loadActiveTrades();
+      
+      if (typeof BalanceManager !== 'undefined') {
+        await BalanceManager.refresh();
+      }
     }
   }
 
