@@ -29,8 +29,8 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Invalid side (rub_to_usdt or usdt_to_rub)' });
     }
 
-    // Get user
-    const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [user_id]);
+    // Get user by telegram_id
+    const userResult = await pool.query('SELECT * FROM users WHERE telegram_id = $1', [user_id.toString()]);
     if (userResult.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -66,8 +66,8 @@ router.post('/', async (req, res) => {
 
       // Update balances
       await client.query(
-        `UPDATE users SET balance_rub = $1, balance_usdt = $2, updated_at = NOW() WHERE id = $3`,
-        [newRubBalance, newUsdtBalance, user_id]
+        `UPDATE users SET balance_rub = $1, balance_usdt = $2, updated_at = NOW() WHERE telegram_id = $3`,
+        [newRubBalance, newUsdtBalance, user_id.toString()]
       );
 
       // Create transaction record
@@ -78,7 +78,7 @@ router.post('/', async (req, res) => {
       await client.query(
         `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
          VALUES ($1, $2, $3, 'exchange', $4, NOW())`,
-        [user_id, amount, side === 'rub_to_usdt' ? 'RUB' : 'USDT', description]
+        [user.id, amount, side === 'rub_to_usdt' ? 'RUB' : 'USDT', description]
       );
 
       await client.query('COMMIT');

@@ -59,15 +59,15 @@ router.post('/', async (req, res) => {
 
 /**
  * GET /api/profile/:userId
- * Get user profile by internal ID
+ * Get user profile by telegram_id
  */
 router.get('/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
 
     const result = await pool.query(
-      'SELECT * FROM users WHERE id = $1',
-      [userId]
+      'SELECT * FROM users WHERE telegram_id = $1',
+      [userId.toString()]
     );
 
     if (result.rows.length === 0) {

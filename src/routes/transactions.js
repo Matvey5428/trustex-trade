@@ -29,10 +29,10 @@ router.post('/withdraw', async (req, res) => {
       return res.status(400).json({ error: 'Invalid wallet/card' });
     }
 
-    // Get user by ID
+    // Get user by telegram_id
     const userResult = await pool.query(
-      'SELECT * FROM users WHERE id = $1',
-      [userId]
+      'SELECT * FROM users WHERE telegram_id = $1',
+      [userId.toString()]
     );
 
     if (userResult.rows.length === 0) {
@@ -63,22 +63,22 @@ router.post('/withdraw', async (req, res) => {
       // Deduct balance
       const newBalance = currentBalance - amount;
       await client.query(
-        `UPDATE users SET ${balanceField} = $1, updated_at = NOW() WHERE id = $2`,
-        [newBalance, userId]
+        `UPDATE users SET ${balanceField} = $1, updated_at = NOW() WHERE telegram_id = $2`,
+        [newBalance, userId.toString()]
       );
 
       // Create withdraw request (таблица имеет только: user_id, amount, wallet, status)
       await client.query(
         `INSERT INTO withdraw_requests (user_id, amount, wallet, status, created_at)
          VALUES ($1, $2, $3, 'pending', NOW())`,
-        [userId, amount, `${currency}: ${wallet}`]
+        [user.id, amount, `${currency}: ${wallet}`]
       );
 
       // Create transaction record
       await client.query(
         `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
          VALUES ($1, $2, $3, 'withdraw', $4, NOW())`,
-        [userId, amount, currency, `Вывод ${amount} ${currency} на ${wallet}`]
+        [user.id, amount, currency, `Вывод ${amount} ${currency} на ${wallet}`]
       );
 
       await client.query('COMMIT');
@@ -121,11 +121,23 @@ router.post('/deposit', async (req, res) => {
       return res.status(400).json({ error: 'Invalid request data' });
     }
 
+    // Get user by telegram_id
+    const userResult = await pool.query(
+      'SELECT * FROM users WHERE telegram_id = $1',
+      [userId.toString()]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = userResult.rows[0];
+
     // Create deposit request (pending admin approval)
     await pool.query(
       `INSERT INTO deposit_requests (user_id, amount, currency, status, created_at)
        VALUES ($1, $2, $3, 'pending', NOW())`,
-      [userId, amount, currency]
+      [user.id, amount, currency]
     );
 
     res.json({
@@ -153,12 +165,22 @@ router.get('/history/:userId', async (req, res) => {
     const { userId } = req.params;
     const limit = parseInt(req.query.limit) || 50;
 
+    // First get user by telegram_id
+    const userResult = await pool.query(
+      'SELECT id FROM users WHERE telegram_id = $1',
+      [userId.toString()]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     const result = await pool.query(
       `SELECT * FROM transactions 
        WHERE user_id = $1 
        ORDER BY created_at DESC 
        LIMIT $2`,
-      [userId, limit]
+      [userResult.rows[0].id, limit]
     );
 
     res.json({
