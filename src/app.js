@@ -11,6 +11,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const transactionRoutes = require('./routes/transactions');
 const exchangeRoutes = require('./routes/exchange');
+const userRoutes = require('./routes/user');
 
 const app = express();
 
@@ -40,7 +41,8 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/exchange', exchangeRoutes);
-// app.use('/api/profile', require('./routes/profile'));
+app.use('/api/user', userRoutes);
+app.use('/api/profile', userRoutes);
 // app.use('/api/orders', require('./routes/orders'));
 // etc...
 
