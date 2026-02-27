@@ -269,6 +269,17 @@
     async function loadUserBalances() {
         if (!userId) return;
         try {
+            // Используем balance.js данные если доступны
+            if (window.USER_BALANCES) {
+                document.getElementById('bal-RUB').innerText = `${(window.USER_BALANCES.rub || 0).toFixed(2)} ₽`;
+                document.getElementById('bal-BTC').innerText = `${(window.USER_BALANCES.btc || 0).toFixed(6)} BTC`;
+                document.getElementById('bal-ETH').innerText = `${(window.USER_BALANCES.eth || 0).toFixed(6)} ETH`;
+                document.getElementById('bal-TON').innerText = `${(window.USER_BALANCES.ton || 0).toFixed(2)} TON`;
+                document.getElementById('bal-USDT').innerText = `${(window.USER_BALANCES.usdt || 0).toFixed(2)} USDT`;
+                return;
+            }
+            
+            // Fallback
             const res = await fetch(`/api/profile/${userId}`);
             const payload = await res.json();
             const data = payload?.data || {};
@@ -347,7 +358,10 @@
     document.addEventListener('DOMContentLoaded', async () => {
         try {
             userId = await resolveUserId();
-            await loadUserBalances();
+            // Небольшая задержка чтобы balance.js успел загрузить данные
+            setTimeout(async () => {
+                await loadUserBalances();
+            }, 200);
             updateMarketPrices();
             setInterval(updateMarketPrices, 15000);
         } catch (e) {

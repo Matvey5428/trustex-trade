@@ -260,8 +260,13 @@ exchangeBtn.onclick = async function () {
 
     const side = isSwapped ? 'usdt_to_rub' : 'rub_to_usdt';
 
-    // Проверка баланса перед отправкой (клиентская)
-    const currentBalance = isSwapped ? usdtBalance : rubBalance;
+    // Проверка баланса перед отправкой (используем USER_BALANCES)
+    let currentBalance;
+    if (window.USER_BALANCES) {
+        currentBalance = isSwapped ? (window.USER_BALANCES.usdt || 0) : (window.USER_BALANCES.rub || 0);
+    } else {
+        currentBalance = isSwapped ? usdtBalance : rubBalance;
+    }
     if (amount > currentBalance) return showAlert("Недостаточно средств");
 
     try {
@@ -273,14 +278,32 @@ exchangeBtn.onclick = async function () {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user_id: userId, amount: amount, side: side })
         });
-        const res = await response.json();
+        const result = await response.json();
 
         if (response.ok) {
             showAlert("Успешный обмен!", true);
             amountInput.value = "";
-            await loadData();
+            
+            // Обновить локальные балансы из ответа сервера
+            if (result.data?.newBalances) {
+                rubBalance = result.data.newBalances.rub;
+                usdtBalance = result.data.newBalances.usdt;
+                rubBalanceText.innerText = rubBalance.toFixed(2) + ' ₽';
+                usdtBalanceText.innerText = usdtBalance.toFixed(2) + ' $';
+                
+                // Обновить глобальные балансы
+                if (window.USER_BALANCES) {
+                    window.USER_BALANCES.rub = rubBalance;
+                    window.USER_BALANCES.usdt = usdtBalance;
+                }
+            }
+            
+            // Обновить через BalanceManager если доступен
+            if (typeof BalanceManager !== 'undefined') {
+                await BalanceManager.refresh();
+            }
         } else {
-            showAlert(res.error || "Ошибка");
+            showAlert(result.error || "Ошибка");
         }
     } catch (err) {
         showAlert("Нет связи с сервером");
