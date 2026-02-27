@@ -64,24 +64,29 @@ const BalanceManager = {
       'usdt-balance': `${balanceUsdt.toFixed(2)} USDT`,
       'balanceUsdt': `${balanceUsdt.toFixed(2)}`,
       'bal-USDT': `${balanceUsdt.toFixed(2)} USDT`,
+      'usdtBalance': `${balanceUsdt.toFixed(2)} $`,
       
       // BTC баланс  
       'userBtcBalance': `${balanceBtc.toFixed(8)} BTC`,
       'btc-balance': `${balanceBtc.toFixed(8)} BTC`,
       'balanceBtc': `${balanceBtc.toFixed(8)}`,
       'bal-BTC': `${balanceBtc.toFixed(8)} BTC`,
+      'btcBalance': `${balanceBtc.toFixed(8)} $`,
       
       // RUB баланс
       'userRubBalance': `${balanceRub.toFixed(2)} ₽`,
       'rub-balance': `${balanceRub.toFixed(2)} ₽`,
       'balanceRub': `${balanceRub.toFixed(2)}`,
       'bal-RUB': `${balanceRub.toFixed(2)} ₽`,
+      'rubBalance': `${balanceRub.toFixed(2)} ₽`,
       
       // TON баланс
       'bal-TON': `${balanceTon.toFixed(4)} TON`,
+      'tonBalance': `${balanceTon.toFixed(4)} $`,
       
       // ETH баланс
       'bal-ETH': `${balanceEth.toFixed(6)} ETH`,
+      'ethBalance': `${balanceEth.toFixed(6)} $`,
       
       // Для страниц deposit/withdraw
       'available-balance': `${balanceUsdt.toFixed(2)} USDT`,
