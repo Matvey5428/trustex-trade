@@ -226,15 +226,25 @@ async function loadData() {
     if (!userId) return;
     try {
         refreshBtn.innerText = "Обновление...";
-        const response = await fetch(`/api/profile/${userId}?t=${new Date().getTime()}`);
-        const payload = await response.json();
-        const data = payload?.data || {};
-
-        if (!payload.error) {
-            rubBalance = parseFloat(data.rub) || 0;
-            usdtBalance = parseFloat(data.usdt) || 0;
+        
+        // Используем balance.js данные если доступны
+        if (window.USER_BALANCES) {
+            rubBalance = window.USER_BALANCES.rub || 0;
+            usdtBalance = window.USER_BALANCES.usdt || 0;
             rubBalanceText.innerText = rubBalance.toFixed(2) + ' ₽';
             usdtBalanceText.innerText = usdtBalance.toFixed(2) + ' $';
+        } else {
+            // Fallback: загрузить через API
+            const response = await fetch(`/api/profile/${userId}?t=${new Date().getTime()}`);
+            const payload = await response.json();
+            const data = payload?.data || {};
+
+            if (!payload.error) {
+                rubBalance = parseFloat(data.rub) || 0;
+                usdtBalance = parseFloat(data.usdt) || 0;
+                rubBalanceText.innerText = rubBalance.toFixed(2) + ' ₽';
+                usdtBalanceText.innerText = usdtBalance.toFixed(2) + ' $';
+            }
         }
     } catch (e) {
         console.error("Ошибка загрузки:", e);
@@ -284,15 +294,22 @@ amountInput.addEventListener('input', updateDisplay);
 refreshBtn.onclick = loadData;
 
 document.getElementById('selectAllBtn').onclick = function () {
-    // Исправлено: берем чистые значения баланса
-    amountInput.value = isSwapped ? usdtBalance : rubBalance;
+    // Берем баланс из window.USER_BALANCES или локальных переменных
+    if (window.USER_BALANCES) {
+        amountInput.value = isSwapped ? (window.USER_BALANCES.usdt || 0) : (window.USER_BALANCES.rub || 0);
+    } else {
+        amountInput.value = isSwapped ? usdtBalance : rubBalance;
+    }
     updateDisplay();
 };
 
 document.addEventListener('DOMContentLoaded', async function () {
     try {
         userId = await resolveUserId();
-        await loadData();
+        // Небольшая задержка чтобы balance.js успел загрузить данные
+        setTimeout(async () => {
+            await loadData();
+        }, 200);
     } catch (e) {
         console.error('init_error', e);
     }
