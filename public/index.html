@@ -7,7 +7,7 @@
   
   <!-- Telegram Web App SDK - REQUIRED for Mini App -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
@@ -287,9 +287,9 @@
 
     <div class="section-card text-center">
         <h5 class="section-title text-start">График доходности (P&L)</h5>
-        <div id="pnlChartContainer" style="height: 180px; position: relative;">
-            <canvas id="pnlChart"></canvas>
-            <div id="pnlChartPlaceholder" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; color: #9fb3ff;">
+        <div id="pnlChartContainer" style="height: 300px; position: relative;">
+            <div id="pnlChart" style="width: 100%; height: 100%;"></div>
+            <div id="pnlChartPlaceholder" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; color: #9fb3ff; background: #162447;">
                 <span>Недостаточно данных для построения графика</span>
             </div>
         </div>
@@ -551,73 +551,77 @@
       const history = payload?.data?.history || [];
       
       const placeholder = document.getElementById('pnlChartPlaceholder');
-      const canvas = document.getElementById('pnlChart');
+      const container = document.getElementById('pnlChart');
       
       if (history.length < 1) {
-        // Not enough data
         placeholder.style.display = 'flex';
-        canvas.style.display = 'none';
         return;
       }
       
       placeholder.style.display = 'none';
-      canvas.style.display = 'block';
       
-      const labels = history.map(h => {
-        const d = new Date(h.date);
-        return `${d.getDate()}.${d.getMonth() + 1}`;
+      // Clear container
+      container.innerHTML = '';
+      
+      // Create chart
+      const chart = LightweightCharts.createChart(container, {
+        width: container.clientWidth,
+        height: container.clientHeight,
+        layout: {
+          background: { type: 'solid', color: '#162447' },
+          textColor: '#9fb3ff'
+        },
+        grid: {
+          vertLines: { color: 'rgba(255,255,255,0.05)' },
+          horzLines: { color: 'rgba(255,255,255,0.05)' }
+        },
+        crosshair: {
+          mode: LightweightCharts.CrosshairMode.Normal
+        },
+        rightPriceScale: {
+          borderColor: 'rgba(255,255,255,0.1)'
+        },
+        timeScale: {
+          borderColor: 'rgba(255,255,255,0.1)',
+          timeVisible: false
+        },
+        handleScroll: true,
+        handleScale: true
       });
-      const data = history.map(h => parseFloat(h.cumulative));
-      
-      const ctx = canvas.getContext('2d');
-      
-      // Destroy old chart if exists
-      if (pnlChart) {
-        pnlChart.destroy();
-      }
       
       // Determine color based on final P&L
-      const finalPnl = data[data.length - 1] || 0;
+      const finalPnl = parseFloat(history[history.length - 1]?.cumulative) || 0;
       const lineColor = finalPnl >= 0 ? '#00ff88' : '#ff4d4d';
-      const bgColor = finalPnl >= 0 ? 'rgba(0, 255, 136, 0.1)' : 'rgba(255, 77, 77, 0.1)';
+      const topColor = finalPnl >= 0 ? 'rgba(0, 255, 136, 0.4)' : 'rgba(255, 77, 77, 0.4)';
+      const bottomColor = finalPnl >= 0 ? 'rgba(0, 255, 136, 0.0)' : 'rgba(255, 77, 77, 0.0)';
       
-      pnlChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'P&L (USDT)',
-            data: data,
-            borderColor: lineColor,
-            backgroundColor: bgColor,
-            borderWidth: 2,
-            fill: true,
-            tension: 0.3,
-            pointRadius: 3,
-            pointBackgroundColor: lineColor
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false }
-          },
-          scales: {
-            x: {
-              grid: { color: 'rgba(255,255,255,0.05)' },
-              ticks: { color: '#9fb3ff', font: { size: 10 } }
-            },
-            y: {
-              grid: { color: 'rgba(255,255,255,0.05)' },
-              ticks: { 
-                color: '#9fb3ff', 
-                font: { size: 10 },
-                callback: (v) => v.toFixed(2)
-              }
-            }
-          }
+      // Create area series
+      const areaSeries = chart.addAreaSeries({
+        lineColor: lineColor,
+        topColor: topColor,
+        bottomColor: bottomColor,
+        lineWidth: 2,
+        priceFormat: {
+          type: 'custom',
+          formatter: (price) => price.toFixed(2) + ' USDT'
         }
+      });
+      
+      // Transform data for lightweight-charts
+      const chartData = history.map(h => {
+        const d = new Date(h.date);
+        return {
+          time: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+          value: parseFloat(h.cumulative)
+        };
+      });
+      
+      areaSeries.setData(chartData);
+      chart.timeScale().fitContent();
+      
+      // Handle resize
+      window.addEventListener('resize', () => {
+        chart.applyOptions({ width: container.clientWidth });
       });
       
     } catch (e) { console.error('loadPnlChart error:', e); }
