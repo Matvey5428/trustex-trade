@@ -208,7 +208,7 @@
     <div class="profile-box">
       <h6 class="mb-3">Профиль</h6>
       <div class="mb-3"><div class="fw-bold" id="userIdDisplay">0</div><div class="small-text">ID аккаунта</div></div>
-      <div class="mb-3"><div class="fw-bold" id="stats">0 / 0 / 0</div><div class="small-text">Статистика</div></div>
+      <div class="mb-3"><div class="fw-bold" id="stats">0 / <span style="color: #00ff88">0</span> / <span style="color: #ff4d4d">0</span></div><div class="small-text">Статистика</div></div>
       <div class="mb-3"><div class="fw-bold" id="tradingVolume">0.00 USDT</div><div class="small-text">Объем торгов</div></div>
       <div><div class="text-warning fw-bold" id="verification">Неизвестно</div><div class="small-text">Нажмите, чтобы пройти</div></div>
     </div>
@@ -432,12 +432,12 @@
         if (statsRes.ok) {
           const statsPayload = await statsRes.json();
           const s = statsPayload.data || {};
-          updateEl('stats', `${s.total || 0} / ${s.wins || 0} / ${s.losses || 0}`);
+          document.getElementById('stats').innerHTML = `${s.total || 0} / <span style="color: #00ff88">${s.wins || 0}</span> / <span style="color: #ff4d4d">${s.losses || 0}</span>`;
         } else {
-          updateEl('stats', '0 / 0 / 0');
+          document.getElementById('stats').innerHTML = '0 / <span style="color: #00ff88">0</span> / <span style="color: #ff4d4d">0</span>';
         }
       } catch (e) {
-        updateEl('stats', '0 / 0 / 0');
+        document.getElementById('stats').innerHTML = '0 / <span style="color: #00ff88">0</span> / <span style="color: #ff4d4d">0</span>';
       }
       
       // Объем торгов (из БД или 0)
