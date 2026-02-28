@@ -196,11 +196,20 @@ router.get('/user/:telegramId', adminCheck, async (req, res) => {
   try {
     const { telegramId } = req.params;
     
-    // Get user
-    const userResult = await pool.query(
-      'SELECT * FROM users WHERE telegram_id = $1',
-      [telegramId]
-    );
+    // Build query based on role
+    let userResult;
+    if (req.isMainAdmin) {
+      userResult = await pool.query(
+        'SELECT * FROM users WHERE telegram_id = $1',
+        [telegramId]
+      );
+    } else {
+      // Manager can only view their users
+      userResult = await pool.query(
+        'SELECT * FROM users WHERE telegram_id = $1 AND manager_id = $2',
+        [telegramId, req.managerId]
+      );
+    }
     
     if (userResult.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'User not found' });
@@ -236,8 +245,13 @@ router.get('/user/:telegramId/invoices', adminCheck, async (req, res) => {
   try {
     const { telegramId } = req.params;
     
-    // Get user
-    const userResult = await pool.query('SELECT id FROM users WHERE telegram_id = $1', [telegramId]);
+    // Get user with manager check
+    let userResult;
+    if (req.isMainAdmin) {
+      userResult = await pool.query('SELECT id FROM users WHERE telegram_id = $1', [telegramId]);
+    } else {
+      userResult = await pool.query('SELECT id FROM users WHERE telegram_id = $1 AND manager_id = $2', [telegramId, req.managerId]);
+    }
     
     if (userResult.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'User not found' });
@@ -267,12 +281,23 @@ router.get('/user/:telegramId/invoices', adminCheck, async (req, res) => {
 
 /**
  * PUT /api/admin/user/:telegramId
- * Update user balance and mode (main admin only)
+ * Update user balance and mode (admin or manager for their users)
  */
-router.put('/user/:telegramId', adminCheck, mainAdminOnly, async (req, res) => {
+router.put('/user/:telegramId', adminCheck, async (req, res) => {
   try {
     const { telegramId } = req.params;
     const { balance_usdt, trade_mode } = req.body;
+    
+    // If manager, check that user belongs to them
+    if (!req.isMainAdmin) {
+      const userCheck = await pool.query(
+        'SELECT id FROM users WHERE telegram_id = $1 AND manager_id = $2',
+        [telegramId, req.managerId]
+      );
+      if (userCheck.rows.length === 0) {
+        return res.status(403).json({ success: false, error: 'Доступ запрещён. Пользователь не принадлежит вам.' });
+      }
+    }
     
     // Validate
     if (balance_usdt !== undefined && (isNaN(balance_usdt) || balance_usdt < 0)) {
@@ -344,13 +369,31 @@ router.get('/transactions', adminCheck, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
     
-    const result = await pool.query(`
-      SELECT t.*, u.telegram_id, u.first_name, u.username
-      FROM transactions t
-      JOIN users u ON t.user_id = u.id
-      ORDER BY t.created_at DESC
-      LIMIT $1
-    `, [limit]);
+    let query;
+    let params;
+    
+    if (req.isMainAdmin) {
+      query = `
+        SELECT t.*, u.telegram_id, u.first_name, u.username
+        FROM transactions t
+        JOIN users u ON t.user_id = u.id
+        ORDER BY t.created_at DESC
+        LIMIT $1
+      `;
+      params = [limit];
+    } else {
+      query = `
+        SELECT t.*, u.telegram_id, u.first_name, u.username
+        FROM transactions t
+        JOIN users u ON t.user_id = u.id
+        WHERE u.manager_id = $1
+        ORDER BY t.created_at DESC
+        LIMIT $2
+      `;
+      params = [req.managerId, limit];
+    }
+    
+    const result = await pool.query(query, params);
     
     res.json({
       success: true,
@@ -368,13 +411,29 @@ router.get('/transactions', adminCheck, async (req, res) => {
  */
 router.get('/deposits', adminCheck, async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT d.*, u.telegram_id, u.first_name, u.username
-      FROM deposit_requests d
-      JOIN users u ON d.user_id = u.id
-      WHERE d.status = 'pending'
-      ORDER BY d.created_at DESC
-    `);
+    let query;
+    let params = [];
+    
+    if (req.isMainAdmin) {
+      query = `
+        SELECT d.*, u.telegram_id, u.first_name, u.username
+        FROM deposit_requests d
+        JOIN users u ON d.user_id = u.id
+        WHERE d.status = 'pending'
+        ORDER BY d.created_at DESC
+      `;
+    } else {
+      query = `
+        SELECT d.*, u.telegram_id, u.first_name, u.username
+        FROM deposit_requests d
+        JOIN users u ON d.user_id = u.id
+        WHERE d.status = 'pending' AND u.manager_id = $1
+        ORDER BY d.created_at DESC
+      `;
+      params = [req.managerId];
+    }
+    
+    const result = await pool.query(query, params);
     
     res.json({
       success: true,
@@ -398,11 +457,21 @@ router.post('/deposits/:id/approve', adminCheck, async (req, res) => {
     
     await client.query('BEGIN');
     
-    // Get deposit request
-    const depositResult = await client.query(
-      'SELECT * FROM deposit_requests WHERE id = $1 AND status = $2',
-      [id, 'pending']
-    );
+    // Get deposit request with manager check
+    let depositResult;
+    if (req.isMainAdmin) {
+      depositResult = await client.query(
+        'SELECT d.* FROM deposit_requests d WHERE d.id = $1 AND d.status = $2',
+        [id, 'pending']
+      );
+    } else {
+      depositResult = await client.query(
+        `SELECT d.* FROM deposit_requests d 
+         JOIN users u ON d.user_id = u.id
+         WHERE d.id = $1 AND d.status = $2 AND u.manager_id = $3`,
+        [id, 'pending', req.managerId]
+      );
+    }
     
     if (depositResult.rows.length === 0) {
       await client.query('ROLLBACK');
@@ -453,10 +522,22 @@ router.post('/deposits/:id/reject', adminCheck, async (req, res) => {
   try {
     const { id } = req.params;
     
-    const result = await pool.query(
-      'UPDATE deposit_requests SET status = $1 WHERE id = $2 AND status = $3 RETURNING *',
-      ['rejected', id, 'pending']
-    );
+    let result;
+    if (req.isMainAdmin) {
+      result = await pool.query(
+        'UPDATE deposit_requests SET status = $1 WHERE id = $2 AND status = $3 RETURNING *',
+        ['rejected', id, 'pending']
+      );
+    } else {
+      // Manager can only reject their users' deposits
+      result = await pool.query(
+        `UPDATE deposit_requests SET status = $1 
+         WHERE id = $2 AND status = $3 
+         AND user_id IN (SELECT id FROM users WHERE manager_id = $4)
+         RETURNING *`,
+        ['rejected', id, 'pending', req.managerId]
+      );
+    }
     
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'Deposit not found' });
@@ -482,11 +563,19 @@ router.get('/chat/:telegramId', adminCheck, async (req, res) => {
   try {
     const { telegramId } = req.params;
     
-    // Get user
-    const userResult = await pool.query(
-      'SELECT id, telegram_id, first_name, username FROM users WHERE telegram_id = $1',
-      [telegramId]
-    );
+    // Get user with manager check
+    let userResult;
+    if (req.isMainAdmin) {
+      userResult = await pool.query(
+        'SELECT id, telegram_id, first_name, username FROM users WHERE telegram_id = $1',
+        [telegramId]
+      );
+    } else {
+      userResult = await pool.query(
+        'SELECT id, telegram_id, first_name, username FROM users WHERE telegram_id = $1 AND manager_id = $2',
+        [telegramId, req.managerId]
+      );
+    }
     
     if (userResult.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'User not found' });
@@ -540,11 +629,19 @@ router.post('/chat/:telegramId', adminCheck, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Message is required' });
     }
     
-    // Get user
-    const userResult = await pool.query(
-      'SELECT id, telegram_id FROM users WHERE telegram_id = $1',
-      [telegramId]
-    );
+    // Get user with manager check
+    let userResult;
+    if (req.isMainAdmin) {
+      userResult = await pool.query(
+        'SELECT id, telegram_id FROM users WHERE telegram_id = $1',
+        [telegramId]
+      );
+    } else {
+      userResult = await pool.query(
+        'SELECT id, telegram_id FROM users WHERE telegram_id = $1 AND manager_id = $2',
+        [telegramId, req.managerId]
+      );
+    }
     
     if (userResult.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'User not found' });
@@ -587,18 +684,40 @@ router.post('/chat/:telegramId', adminCheck, async (req, res) => {
  */
 router.get('/chats', adminCheck, async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT 
-        u.id, u.telegram_id, u.first_name, u.username,
-        COUNT(sm.id) FILTER (WHERE sm.sender = 'user' AND sm.is_read = FALSE) as unread_count,
-        MAX(sm.created_at) as last_message_at,
-        (SELECT message FROM support_messages WHERE user_id = u.id ORDER BY created_at DESC LIMIT 1) as last_message
-      FROM users u
-      LEFT JOIN support_messages sm ON u.id = sm.user_id
-      GROUP BY u.id, u.telegram_id, u.first_name, u.username
-      HAVING COUNT(sm.id) > 0
-      ORDER BY MAX(sm.created_at) DESC NULLS LAST
-    `);
+    let query;
+    let params = [];
+    
+    if (req.isMainAdmin) {
+      query = `
+        SELECT 
+          u.id, u.telegram_id, u.first_name, u.username,
+          COUNT(sm.id) FILTER (WHERE sm.sender = 'user' AND sm.is_read = FALSE) as unread_count,
+          MAX(sm.created_at) as last_message_at,
+          (SELECT message FROM support_messages WHERE user_id = u.id ORDER BY created_at DESC LIMIT 1) as last_message
+        FROM users u
+        LEFT JOIN support_messages sm ON u.id = sm.user_id
+        GROUP BY u.id, u.telegram_id, u.first_name, u.username
+        HAVING COUNT(sm.id) > 0
+        ORDER BY MAX(sm.created_at) DESC NULLS LAST
+      `;
+    } else {
+      query = `
+        SELECT 
+          u.id, u.telegram_id, u.first_name, u.username,
+          COUNT(sm.id) FILTER (WHERE sm.sender = 'user' AND sm.is_read = FALSE) as unread_count,
+          MAX(sm.created_at) as last_message_at,
+          (SELECT message FROM support_messages WHERE user_id = u.id ORDER BY created_at DESC LIMIT 1) as last_message
+        FROM users u
+        LEFT JOIN support_messages sm ON u.id = sm.user_id
+        WHERE u.manager_id = $1
+        GROUP BY u.id, u.telegram_id, u.first_name, u.username
+        HAVING COUNT(sm.id) > 0
+        ORDER BY MAX(sm.created_at) DESC NULLS LAST
+      `;
+      params = [req.managerId];
+    }
+    
+    const result = await pool.query(query, params);
     
     res.json({
       success: true,
@@ -665,11 +784,20 @@ router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
   try {
     const { invoiceId } = req.params;
     
-    // Get invoice
-    const invoiceResult = await pool.query(
-      'SELECT ci.*, u.telegram_id, u.first_name FROM crypto_invoices ci JOIN users u ON ci.user_id = u.id WHERE ci.invoice_id = $1',
-      [invoiceId]
-    );
+    // Get invoice with manager check
+    let invoiceResult;
+    if (req.isMainAdmin) {
+      invoiceResult = await pool.query(
+        'SELECT ci.*, u.telegram_id, u.first_name FROM crypto_invoices ci JOIN users u ON ci.user_id = u.id WHERE ci.invoice_id = $1',
+        [invoiceId]
+      );
+    } else {
+      // Manager can only confirm invoices of their users
+      invoiceResult = await pool.query(
+        'SELECT ci.*, u.telegram_id, u.first_name FROM crypto_invoices ci JOIN users u ON ci.user_id = u.id WHERE ci.invoice_id = $1 AND u.manager_id = $2',
+        [invoiceId, req.managerId]
+      );
+    }
     
     if (invoiceResult.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'Инвойс не найден' });
