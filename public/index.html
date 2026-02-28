@@ -203,6 +203,13 @@
           <button class="action-box" onclick="window.location.href='exchange.html'">⇄</button>
           <div class="label">Обменять</div>
         </div>
+        <div class="action-item">
+          <button class="action-box" onclick="window.location.href='support.html'" style="position: relative;">
+            💬
+            <span id="supportBadge" style="display: none; position: absolute; top: -5px; right: -5px; background: #ff4444; color: #fff; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"></span>
+          </button>
+          <div class="label">Поддержка</div>
+        </div>
       </div>
     </div>
 
@@ -735,6 +742,24 @@
   document.getElementById('nextReview').onclick = () => updateReview(1);
   document.getElementById('prevReview').onclick = () => updateReview(-1);
 
+  async function checkUnreadSupport() {
+    try {
+      if (!userId) return;
+      const res = await fetch(`/api/user/${userId}/support/unread`);
+      const data = await res.json();
+      
+      const badge = document.getElementById('supportBadge');
+      if (data.success && data.count > 0) {
+        badge.textContent = data.count;
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    } catch (e) {
+      console.error('Check unread error:', e);
+    }
+  }
+
   window.addEventListener('DOMContentLoaded', async () => {
     try {
       console.log('🚀 Initializing Nexo Trade...');
@@ -758,6 +783,7 @@
       loadPeriodStats();
       loadPnlChart();
       initReviews();
+      checkUnreadSupport();
       console.log('✅ Init complete');
     } catch (e) {
       console.error('❌ Initialization error:', e.message);
@@ -769,7 +795,10 @@
   });
 
   setInterval(() => {
-    if (userId) loadUserData();
+    if (userId) {
+      loadUserData();
+      checkUnreadSupport();
+    }
   }, 5000);
 </script>
 </body>
