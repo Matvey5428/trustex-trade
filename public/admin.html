@@ -821,11 +821,10 @@
           document.getElementById('newBalance').value = parseFloat(currentUser.balance_usdt).toFixed(2);
           updateModeButtons();
           
-          // Hide balance/mode editing for managers
-          const isAdminRole = userRole === 'admin';
-          document.getElementById('balanceFormGroup').style.display = isAdminRole ? 'block' : 'none';
-          document.getElementById('modeFormGroup').style.display = isAdminRole ? 'block' : 'none';
-          document.getElementById('btnSaveUser').style.display = isAdminRole ? 'block' : 'none';
+          // Show all controls for both admin and manager (API handles permissions)
+          document.getElementById('balanceFormGroup').style.display = 'block';
+          document.getElementById('modeFormGroup').style.display = 'block';
+          document.getElementById('btnSaveUser').style.display = 'block';
           
           document.getElementById('userModal').classList.add('active');
           
