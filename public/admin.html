@@ -153,6 +153,79 @@
       color: #ff4444;
     }
     
+    .invoice-card {
+      background: rgba(255,255,255,0.03);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-left: 3px solid #ffd700;
+    }
+    
+    .invoice-card.paid {
+      border-left-color: #00ff88;
+      opacity: 0.7;
+    }
+    
+    .invoice-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .invoice-user {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    .invoice-amount {
+      font-weight: bold;
+      color: #4db8ff;
+      font-size: 16px;
+    }
+    
+    .invoice-details {
+      font-size: 12px;
+      color: #8892b0;
+      margin-bottom: 10px;
+    }
+    
+    .invoice-status {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    
+    .status-active {
+      background: rgba(255, 215, 0, 0.2);
+      color: #ffd700;
+    }
+    
+    .status-paid {
+      background: rgba(0, 255, 136, 0.2);
+      color: #00ff88;
+    }
+    
+    .btn-confirm {
+      width: 100%;
+      padding: 10px;
+      background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+      border: none;
+      border-radius: 8px;
+      color: #000;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    
+    .btn-confirm:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
     /* Modal */
     .modal-overlay {
       display: none;
@@ -414,11 +487,25 @@
       </div>
     </div>
     
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" id="tabUsers" onclick="switchTab('users')">👥 Пользователи</button>
+      <button class="tab" id="tabInvoices" onclick="switchTab('invoices')">💳 Оплаты</button>
+    </div>
+    
     <!-- Users Section -->
-    <div class="section">
+    <div class="section" id="sectionUsers">
       <div class="section-title">👥 Пользователи</div>
       <input type="text" class="search-box" id="searchInput" placeholder="🔍 Поиск по ID или имени...">
       <div class="user-list" id="userList">
+        <div class="loading">Загрузка...</div>
+      </div>
+    </div>
+    
+    <!-- Invoices Section -->
+    <div class="section" id="sectionInvoices" style="display: none;">
+      <div class="section-title">💳 Ожидающие оплаты</div>
+      <div class="user-list" id="invoiceList">
         <div class="loading">Загрузка...</div>
       </div>
     </div>
@@ -474,13 +561,105 @@
       adminId = tg.initDataUnsafe?.user?.id;
     }
     
+    let currentTab = 'users';
+    let allInvoices = [];
+    
     // Load data on start
     document.addEventListener('DOMContentLoaded', () => {
       loadStats();
       loadUsers();
+      loadInvoices();
       
       document.getElementById('searchInput').addEventListener('input', filterUsers);
     });
+    
+    function switchTab(tab) {
+      currentTab = tab;
+      document.getElementById('tabUsers').classList.toggle('active', tab === 'users');
+      document.getElementById('tabInvoices').classList.toggle('active', tab === 'invoices');
+      document.getElementById('sectionUsers').style.display = tab === 'users' ? 'block' : 'none';
+      document.getElementById('sectionInvoices').style.display = tab === 'invoices' ? 'block' : 'none';
+      
+      if (tab === 'invoices') {
+        loadInvoices();
+      }
+    }
+    
+    async function loadInvoices() {
+      try {
+        const res = await fetch(`${API_BASE}/invoices?adminId=${adminId}`);
+        const data = await res.json();
+        
+        if (data.success) {
+          allInvoices = data.data;
+          renderInvoices(allInvoices);
+        } else {
+          document.getElementById('invoiceList').innerHTML = `<div class="error-msg">${data.error}</div>`;
+        }
+      } catch (e) {
+        console.error('Invoices error:', e);
+        document.getElementById('invoiceList').innerHTML = '<div class="error-msg">Ошибка загрузки</div>';
+      }
+    }
+    
+    function renderInvoices(invoices) {
+      const list = document.getElementById('invoiceList');
+      
+      if (invoices.length === 0) {
+        list.innerHTML = '<div class="loading">Нет ожидающих оплат</div>';
+        return;
+      }
+      
+      list.innerHTML = invoices.map(inv => {
+        const isPaid = inv.status === 'paid';
+        const userName = inv.first_name || inv.username || 'Пользователь';
+        const date = new Date(inv.created_at).toLocaleString('ru-RU');
+        
+        return `
+          <div class="invoice-card ${isPaid ? 'paid' : ''}">
+            <div class="invoice-header">
+              <span class="invoice-user">👤 ${userName}</span>
+              <span class="invoice-amount">${parseFloat(inv.amount).toFixed(2)} ${inv.asset}</span>
+            </div>
+            <div class="invoice-details">
+              ID: ${inv.telegram_id}<br>
+              Создан: ${date}<br>
+              Invoice: ${inv.invoice_id}
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="invoice-status ${isPaid ? 'status-paid' : 'status-active'}">
+                ${isPaid ? '✅ Оплачен' : '⏳ Ожидает'}
+              </span>
+              ${!isPaid ? `<button class="btn-confirm" onclick="confirmInvoice('${inv.invoice_id}')" style="width: auto; padding: 8px 16px;">✅ Подтвердить</button>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    async function confirmInvoice(invoiceId) {
+      if (!confirm('Подтвердить оплату? Баланс пользователя будет пополнен.')) return;
+      
+      try {
+        const res = await fetch(`${API_BASE}/invoices/${invoiceId}/confirm`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminId })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast('✅ Оплата подтверждена!', 'success');
+          loadInvoices();
+          loadStats();
+        } else {
+          showToast('❌ ' + data.error, 'error');
+        }
+      } catch (e) {
+        showToast('❌ Ошибка подтверждения', 'error');
+      }
+    }
     
     async function loadStats() {
       try {

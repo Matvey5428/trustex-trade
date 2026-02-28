@@ -478,4 +478,100 @@ router.get('/chats', adminCheck, async (req, res) => {
   }
 });
 
+/**
+ * GET /api/admin/invoices
+ * Get pending invoices
+ */
+router.get('/invoices', adminCheck, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        ci.id, ci.invoice_id, ci.amount, ci.asset, ci.status, ci.pay_url, ci.created_at, ci.paid_at,
+        u.telegram_id, u.first_name, u.username
+      FROM crypto_invoices ci
+      JOIN users u ON ci.user_id = u.id
+      ORDER BY ci.created_at DESC
+      LIMIT 50
+    `);
+    
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('Get invoices error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * POST /api/admin/invoices/:invoiceId/confirm
+ * Confirm invoice payment manually
+ */
+router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
+  try {
+    const { invoiceId } = req.params;
+    
+    // Get invoice
+    const invoiceResult = await pool.query(
+      'SELECT ci.*, u.telegram_id, u.first_name FROM crypto_invoices ci JOIN users u ON ci.user_id = u.id WHERE ci.invoice_id = $1',
+      [invoiceId]
+    );
+    
+    if (invoiceResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Инвойс не найден' });
+    }
+    
+    const invoice = invoiceResult.rows[0];
+    
+    if (invoice.status === 'paid') {
+      return res.status(400).json({ success: false, error: 'Уже оплачен' });
+    }
+    
+    const paidAmount = parseFloat(invoice.amount);
+    
+    // Update invoice status
+    await pool.query(
+      'UPDATE crypto_invoices SET status = $1, paid_at = NOW() WHERE invoice_id = $2',
+      ['paid', invoiceId]
+    );
+    
+    // Credit user balance
+    await pool.query(
+      'UPDATE users SET balance_usdt = balance_usdt + $1, updated_at = NOW() WHERE id = $2',
+      [paidAmount, invoice.user_id]
+    );
+    
+    // Create transaction record
+    await pool.query(
+      `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
+       VALUES ($1, $2, 'USDT', 'deposit', $3, NOW())`,
+      [invoice.user_id, paidAmount, `Пополнение (подтверждено админом): ${paidAmount} USDT`]
+    );
+    
+    // Notify user via main bot
+    try {
+      const { getBot } = require('../bot');
+      const bot = getBot();
+      if (bot) {
+        await bot.sendMessage(invoice.telegram_id, 
+          `✅ Пополнение подтверждено!\n\n💰 Сумма: ${paidAmount} USDT\n\nБаланс обновлён. Приятной торговли!`
+        );
+      }
+    } catch (botError) {
+      console.error('Failed to notify user:', botError.message);
+    }
+    
+    console.log(`✅ Admin confirmed invoice ${invoiceId} for user ${invoice.telegram_id}, credited ${paidAmount} USDT`);
+    
+    res.json({
+      success: true,
+      message: 'Оплата подтверждена'
+    });
+  } catch (error) {
+    console.error('Confirm invoice error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
 module.exports = router;
