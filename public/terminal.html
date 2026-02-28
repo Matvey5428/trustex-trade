@@ -488,7 +488,12 @@
 
       const payload = await response.json();
       if (!response.ok) {
-        alert(payload?.error || 'Не удалось открыть сделку');
+        // Check if trading is blocked
+        if (payload?.tradingBlocked) {
+          showTradeNotification('⛔ Торговля ограничена. Обратитесь в поддержку.', false);
+        } else {
+          alert(payload?.error || 'Не удалось открыть сделку');
+        }
         btn.disabled = false;
         btn.innerText = 'Открыть сделку';
         return;

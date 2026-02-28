@@ -548,6 +548,14 @@
           </div>
         </div>
         
+        <div class="form-group" id="tradingBlockedFormGroup">
+          <label>Доступ к торговле</label>
+          <div class="mode-buttons">
+            <button class="mode-btn" id="btnTradingAllowed" onclick="setTradingBlocked(false)" style="background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%); color: #000;">✅ Разрешить</button>
+            <button class="mode-btn" id="btnTradingBlocked" onclick="setTradingBlocked(true)" style="background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%); color: #fff;">⛔ Заблокировать</button>
+          </div>
+        </div>
+        
         <div style="display: flex; gap: 10px; margin-top: 10px;">
           <button class="btn-primary" id="btnSaveUser" onclick="saveUserChanges()" style="flex: 1;">💾 Сохранить</button>
           <button class="btn-primary" onclick="openChat()" style="flex: 1; background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">💬 Чат</button>
@@ -574,6 +582,7 @@
     let currentUser = null;
     let allUsers = [];
     let selectedMode = null;
+    let selectedTradingBlocked = false;
     let adminId = null;
     let userRole = 'manager'; // 'admin' or 'manager'
     
@@ -809,6 +818,12 @@
               <span class="user-detail-value">${formatMoney(currentUser.balance_usdt)} USDT</span>
             </div>
             <div class="user-detail-row">
+              <span class="user-detail-label">Торговля</span>
+              <span class="user-detail-value" style="color: ${currentUser.trading_blocked ? '#ff4444' : '#00ff88'};">
+                ${currentUser.trading_blocked ? '⛔ Заблокирована' : '✅ Разрешена'}
+              </span>
+            </div>
+            <div class="user-detail-row">
               <span class="user-detail-label">Сделок</span>
               <span class="user-detail-value">${currentUser.trades_count || 0}</span>
             </div>
@@ -820,6 +835,10 @@
           
           document.getElementById('newBalance').value = parseFloat(currentUser.balance_usdt).toFixed(2);
           updateModeButtons();
+          
+          // Initialize trading blocked status
+          selectedTradingBlocked = currentUser.trading_blocked || false;
+          updateTradingBlockedButtons();
           
           // Show all controls for both admin and manager (API handles permissions)
           document.getElementById('balanceFormGroup').style.display = 'block';
@@ -926,6 +945,28 @@
       document.getElementById('btnLoss').classList.toggle('active', selectedMode === 'loss');
     }
     
+    function setTradingBlocked(blocked) {
+      selectedTradingBlocked = blocked;
+      updateTradingBlockedButtons();
+    }
+    
+    function updateTradingBlockedButtons() {
+      const btnAllowed = document.getElementById('btnTradingAllowed');
+      const btnBlocked = document.getElementById('btnTradingBlocked');
+      
+      if (selectedTradingBlocked) {
+        btnAllowed.style.opacity = '0.4';
+        btnBlocked.style.opacity = '1';
+        btnBlocked.style.boxShadow = '0 0 10px rgba(255,68,68,0.5)';
+        btnAllowed.style.boxShadow = 'none';
+      } else {
+        btnAllowed.style.opacity = '1';
+        btnBlocked.style.opacity = '0.4';
+        btnAllowed.style.boxShadow = '0 0 10px rgba(0,255,136,0.5)';
+        btnBlocked.style.boxShadow = 'none';
+      }
+    }
+    
     async function saveUserChanges() {
       if (!currentUser) return;
       
@@ -938,7 +979,8 @@
           body: JSON.stringify({
             adminId,
             balance_usdt: newBalance,
-            trade_mode: selectedMode
+            trade_mode: selectedMode,
+            trading_blocked: selectedTradingBlocked
           })
         });
         

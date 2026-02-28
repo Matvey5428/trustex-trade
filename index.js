@@ -99,6 +99,12 @@ async function initDatabase() {
       )
     `);
     
+    // Run migration: add trading_blocked column to users
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS trading_blocked BOOLEAN DEFAULT FALSE
+    `);
+    
     console.log('✅ Migrations applied');
   } catch (err) {
     console.error('⚠️ Database error:', err.message);

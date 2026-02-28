@@ -52,6 +52,15 @@ router.post('/create', async (req, res) => {
     const user = userResult.rows[0];
     const currentBalance = parseFloat(user.balance_usdt) || 0;
 
+    // Check if trading is blocked for this user
+    if (user.trading_blocked) {
+      return res.status(403).json({ 
+        error: '⛔ Торговля ограничена',
+        message: 'Ваш аккаунт ограничен в торговле. Пожалуйста, обратитесь в поддержку.',
+        tradingBlocked: true
+      });
+    }
+
     // Check balance
     if (amount > currentBalance) {
       return res.status(400).json({ 
