@@ -105,6 +105,13 @@
             background: linear-gradient(90deg, #38bdf8, #3b82f6);
             color: white; font-weight: bold; font-size: 16px;
             box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+            margin-bottom: 10px;
+        }
+
+        .link-btn {
+            width: 100%; padding: 14px; border-radius: 15px;
+            background: transparent; border: 2px solid #3b82f6;
+            color: #3b82f6; font-weight: bold; font-size: 14px;
         }
 
         .mobile-bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; }
@@ -187,7 +194,8 @@
                 </div>
             </div>
             <div class="presets" id="presetContainer"></div>
-            <button class="submit-btn" id="submitBtn" onclick="submitDeposit()">Пополнить</button>
+            <button class="submit-btn" id="submitBtn" onclick="submitDeposit()">💳 Пополнить</button>
+            <button class="link-btn" id="linkBtn" onclick="sendPaymentLink()">🔗 Получить ссылку</button>
         </div>
     </div>
 
@@ -384,7 +392,49 @@
             alert("Ошибка сети");
         } finally {
             btn.disabled = false;
-            btn.innerText = "Пополнить";
+            btn.innerText = "💳 Пополнить";
+        }
+    }
+
+    async function sendPaymentLink() {
+        const amount = parseFloat(document.getElementById('amountInput').value);
+        if (!amount || amount <= 0) {
+            alert("Введите сумму");
+            return;
+        }
+
+        if (currentSymbol !== 'USDT') {
+            alert("Ссылка доступна только для USDT");
+            return;
+        }
+
+        const btn = document.getElementById('linkBtn');
+        btn.disabled = true;
+        btn.innerText = "Создание ссылки...";
+
+        try {
+            const response = await fetch('/api/transactions/create-invoice', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId,
+                    amount: amount,
+                    sendToBot: true
+                })
+            });
+
+            const result = await response.json();
+            if (response.ok && result.success) {
+                alert(`✅ Ссылка на оплату ${amount} USDT отправлена вам в бот!\n\nВы можете переслать её тому, кто будет оплачивать.`);
+                closePayment();
+            } else {
+                alert("Ошибка: " + (result.error || "Попробуйте позже"));
+            }
+        } catch (e) {
+            alert("Ошибка сети");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "🔗 Получить ссылку";
         }
     }
 

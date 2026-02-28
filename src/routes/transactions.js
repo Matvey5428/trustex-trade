@@ -200,7 +200,7 @@ router.get('/history/:userId', async (req, res) => {
  */
 router.post('/create-invoice', async (req, res) => {
   try {
-    const { userId, amount } = req.body;
+    const { userId, amount, sendToBot } = req.body;
     const CRYPTOBOT_TOKEN = process.env.CRYPTOBOT_API_TOKEN;
     
     if (!CRYPTOBOT_TOKEN) {
@@ -261,6 +261,25 @@ router.post('/create-invoice', async (req, res) => {
     );
     
     console.log(`💰 Invoice created: ${invoice.invoice_id} for user ${userId}, ${amount} USDT`);
+    
+    // Send payment link to bot if requested
+    if (sendToBot) {
+      try {
+        const { getBot } = require('../bot');
+        const bot = getBot();
+        if (bot) {
+          await bot.sendMessage(userId, 
+            `💳 *Ссылка для пополнения TrustEx*\n\n` +
+            `💰 Сумма: ${amount} USDT\n\n` +
+            `Нажмите на ссылку ниже для оплаты:\n${invoice.pay_url}\n\n` +
+            `_Вы можете переслать это сообщение тому, кто будет оплачивать._`,
+            { parse_mode: 'Markdown' }
+          );
+        }
+      } catch (botError) {
+        console.warn('Could not send payment link to bot:', botError.message);
+      }
+    }
     
     res.json({
       success: true,
