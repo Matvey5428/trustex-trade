@@ -177,7 +177,7 @@ router.get('/history/:userId', async (req, res) => {
 
     const result = await pool.query(
       `SELECT * FROM transactions 
-       WHERE user_id = $1 
+       WHERE user_id = $1 AND type IN ('deposit', 'withdraw')
        ORDER BY created_at DESC 
        LIMIT $2`,
       [userResult.rows[0].id, limit]
