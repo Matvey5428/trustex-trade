@@ -446,5 +446,6 @@ module.exports = {
   initAdminBot, 
   stopAdminBot,
   processAdminUpdate,
-  getAdminWebhookPath
+  getAdminWebhookPath,
+  getAdminBot: () => bot
 };

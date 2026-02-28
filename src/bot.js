@@ -253,6 +253,70 @@ function registerHandlers() {
     }
     console.error('❌ Bot polling error:', error.message);
   });
+
+  // Обработчик текстовых сообщений для техподдержки
+  bot.on('message', async (msg) => {
+    // Игнорируем команды
+    if (!msg.text || msg.text.startsWith('/')) return;
+    
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    const text = msg.text;
+
+    console.log(`💬 Support message from ${userId}: ${text.substring(0, 50)}...`);
+
+    try {
+      const pool = require('./config/database');
+      
+      // Проверяем, существует ли пользователь
+      const userResult = await pool.query(
+        'SELECT id FROM users WHERE telegram_id = $1',
+        [userId.toString()]
+      );
+
+      if (userResult.rows.length === 0) {
+        // Пользователь не зарегистрирован
+        await bot.sendMessage(chatId, '⚠️ Сначала откройте приложение TrustEx для регистрации.', {
+          reply_markup: {
+            inline_keyboard: [[{ text: '🚀 Открыть TrustEx', web_app: { url: WEB_APP_URL } }]]
+          }
+        });
+        return;
+      }
+
+      const dbUserId = userResult.rows[0].id;
+
+      // Сохраняем сообщение в базу
+      await pool.query(
+        'INSERT INTO support_messages (user_id, sender, message) VALUES ($1, $2, $3)',
+        [dbUserId, 'user', text]
+      );
+
+      // Подтверждение пользователю
+      await bot.sendMessage(chatId, '✅ Сообщение отправлено в техподдержку. Мы ответим вам в ближайшее время!');
+
+      // Уведомление админам
+      const adminIds = (process.env.ADMIN_IDS || '').split(',').filter(id => id.trim());
+      const adminBot = require('./admin-bot').getAdminBot();
+      
+      if (adminBot && adminIds.length > 0) {
+        const notifyText = `💬 <b>Новое сообщение в техподдержку</b>\n\nОт: ${msg.from.first_name || 'Пользователь'} (ID: ${userId})\n\n<i>${text.substring(0, 200)}${text.length > 200 ? '...' : ''}</i>`;
+        
+        for (const adminId of adminIds) {
+          try {
+            await adminBot.sendMessage(adminId.trim(), notifyText, { parse_mode: 'HTML' });
+          } catch (e) {
+            console.warn(`Could not notify admin ${adminId}:`, e.message);
+          }
+        }
+      }
+
+      console.log(`✅ Support message saved from user ${userId}`);
+    } catch (error) {
+      console.error('❌ Error saving support message:', error.message);
+      await bot.sendMessage(chatId, '❌ Произошла ошибка. Попробуйте позже.');
+    }
+  });
 }
 
 /**

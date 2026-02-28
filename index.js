@@ -29,6 +29,22 @@ async function initDatabase() {
       ADD COLUMN IF NOT EXISTS symbol VARCHAR(20) DEFAULT 'BTC'
     `);
     
+    // Run migration: create support_messages table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS support_messages (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        sender VARCHAR(10) NOT NULL, -- 'user' or 'admin'
+        message TEXT NOT NULL,
+        is_read BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_support_messages_user_id ON support_messages(user_id)
+    `);
+    
     console.log('✅ Migrations applied');
   } catch (err) {
     console.error('⚠️ Database error:', err.message);
