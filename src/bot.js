@@ -100,14 +100,75 @@ function getWebhookPath() {
 function registerHandlers() {
   if (!bot) return;
 
-  // Обработчик команды /start
-  bot.onText(/\/start/, async (msg) => {
+  // Обработчик команды /start с поддержкой реферальных ссылок
+  bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
     const chatId = msg.chat.id;
     const user = msg.from;
     const firstName = user.first_name || 'Пользователь';
+    const startParam = match[1]; // ref_CODE или undefined
 
-    console.log(`📨 /start from ${user.id} (@${user.username || 'no_username'})`);
+    console.log(`📨 /start from ${user.id} (@${user.username || 'no_username'})${startParam ? ` with param: ${startParam}` : ''}`);
 
+    // Handle referral link
+    if (startParam && startParam.startsWith('ref_')) {
+      const refCode = startParam.replace('ref_', '');
+      try {
+        // Find manager by ref_code
+        const managerResult = await pool.query(
+          'SELECT id, name FROM managers WHERE ref_code = $1',
+          [refCode]
+        );
+        
+        if (managerResult.rows.length > 0) {
+          const manager = managerResult.rows[0];
+          
+          // Check if user already exists
+          const existingUser = await pool.query(
+            'SELECT id, manager_id FROM users WHERE telegram_id = $1',
+            [user.id.toString()]
+          );
+          
+          if (existingUser.rows.length === 0) {
+            // New user - will be linked when they register through Mini App
+            // Store ref in session/cache or pass via webapp
+            console.log(`👤 New user ${user.id} came via ref ${refCode} (manager: ${manager.name})`);
+            
+            // We'll handle the linking when user registers
+            // For now, store the ref temporarily in a simple way
+            // Pass it via webapp URL
+            const refUrl = `${WEB_APP_URL}?ref=${refCode}`;
+            
+            const welcomeMessage = `
+👋 Привет, <b>${firstName}</b>!
+
+Ты перешёл по приглашению <b>${manager.name}</b>!
+
+Добро пожаловать в <b>TrustEx</b> — современную торговую платформу!
+
+🚀 Нажми кнопку ниже, чтобы начать торговать! 👇
+            `.trim();
+
+            return bot.sendMessage(chatId, welcomeMessage, {
+              parse_mode: 'HTML',
+              reply_markup: {
+                inline_keyboard: [
+                  [{ text: '🚀 Открыть TrustEx', web_app: { url: refUrl } }]
+                ]
+              }
+            });
+          } else if (!existingUser.rows[0].manager_id) {
+            // Existing user without manager - link them
+            await pool.query(
+              'UPDATE users SET manager_id = $1 WHERE telegram_id = $2',
+              [manager.id, user.id.toString()]
+            );
+            console.log(`✅ Linked existing user ${user.id} to manager ${manager.name}`);
+          }
+        }
+      } catch (e) {
+        console.error('Referral processing error:', e.message);
+      }
+    }
     const welcomeMessage = `
 👋 Привет, <b>${firstName}</b>!
 

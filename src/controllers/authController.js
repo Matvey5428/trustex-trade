@@ -11,7 +11,7 @@ const authService = require('../services/authService');
  */
 async function verify(req, res, next) {
   try {
-    const { initData } = req.body;
+    const { initData, refCode } = req.body;
 
     if (!initData) {
       console.error('❌ No initData in request body');
@@ -21,9 +21,10 @@ async function verify(req, res, next) {
     console.log('🔄 Verifying initData...');
     console.log('📝 initData length:', initData.length);
     console.log('🔑 TELEGRAM_BOT_TOKEN configured:', !!process.env.TELEGRAM_BOT_TOKEN);
+    if (refCode) console.log('🔗 Referral code:', refCode);
 
     // Verify initData and get/create user
-    const user = await authService.verifyAndGetUser(initData);
+    const user = await authService.verifyAndGetUser(initData, refCode);
 
     // Generate auth response with token
     const authResponse = authService.getAuthResponse(user);

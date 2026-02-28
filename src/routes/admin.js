@@ -737,7 +737,7 @@ router.get('/managers', adminCheck, mainAdminOnly, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT 
-        m.id, m.telegram_id, m.name, m.created_at,
+        m.id, m.telegram_id, m.name, m.ref_code, m.created_at,
         COUNT(u.id) as users_count
       FROM managers m
       LEFT JOIN users u ON u.manager_id = m.id
@@ -745,15 +745,33 @@ router.get('/managers', adminCheck, mainAdminOnly, async (req, res) => {
       ORDER BY m.created_at DESC
     `);
     
+    // Add ref_link to each manager
+    const managers = result.rows.map(m => ({
+      ...m,
+      ref_link: m.ref_code ? `https://t.me/trustEx_ru_bot?start=ref_${m.ref_code}` : null
+    }));
+    
     res.json({
       success: true,
-      data: result.rows
+      data: managers
     });
   } catch (error) {
     console.error('Get managers error:', error);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
+
+/**
+ * Generate unique ref code
+ */
+function generateRefCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
 
 /**
  * POST /api/admin/managers
@@ -777,12 +795,22 @@ router.post('/managers', adminCheck, mainAdminOnly, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Менеджер уже существует' });
     }
     
+    // Generate unique ref code
+    let refCode = generateRefCode();
+    let attempts = 0;
+    while (attempts < 10) {
+      const codeExists = await pool.query('SELECT id FROM managers WHERE ref_code = $1', [refCode]);
+      if (codeExists.rows.length === 0) break;
+      refCode = generateRefCode();
+      attempts++;
+    }
+    
     const result = await pool.query(
-      'INSERT INTO managers (telegram_id, name) VALUES ($1, $2) RETURNING *',
-      [String(telegram_id), name || `Менеджер ${telegram_id}`]
+      'INSERT INTO managers (telegram_id, name, ref_code) VALUES ($1, $2, $3) RETURNING *',
+      [String(telegram_id), name || `Менеджер ${telegram_id}`, refCode]
     );
     
-    console.log(`✅ Manager added: ${telegram_id}`);
+    console.log(`✅ Manager added: ${telegram_id} with ref_code: ${refCode}`);
     
     res.json({
       success: true,

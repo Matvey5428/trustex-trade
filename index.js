@@ -70,8 +70,14 @@ async function initDatabase() {
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         telegram_id VARCHAR(50) UNIQUE NOT NULL,
         name VARCHAR(100),
+        ref_code VARCHAR(20) UNIQUE,
         created_at TIMESTAMP DEFAULT NOW()
       )
+    `);
+    
+    // Add ref_code column if not exists
+    await pool.query(`
+      ALTER TABLE managers ADD COLUMN IF NOT EXISTS ref_code VARCHAR(20) UNIQUE
     `);
     
     // Run migration: add manager_id to users

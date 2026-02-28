@@ -12,7 +12,7 @@ const { UnauthorizedError, ValidationError, ForbiddenError } = require('../utils
 /**
  * Verify initData and get or create user
  */
-async function verifyAndGetUser(initData) {
+async function verifyAndGetUser(initData, refCode = null) {
   if (!initData) {
     throw new ValidationError('initData is required');
   }
@@ -48,13 +48,28 @@ async function verifyAndGetUser(initData) {
       throw new ForbiddenError('User is blocked');
     }
 
+    // If user has no manager and refCode is provided, link them
+    if (refCode && !user.manager_id) {
+      const managerResult = await pool.query(
+        'SELECT id FROM managers WHERE ref_code = $1',
+        [refCode]
+      );
+      if (managerResult.rows.length > 0) {
+        await pool.query(
+          'UPDATE users SET manager_id = $1 WHERE id = $2',
+          [managerResult.rows[0].id, user.id]
+        );
+        console.log(`✅ Linked existing user ${user.id} to manager via ref: ${refCode}`);
+      }
+    }
+
     console.log('✅ User found:', user.id);
     return user;
   }
 
-  // Create new user
+  // Create new user with optional manager link
   console.log('👤 Creating new user with telegram_id:', userData.telegram_id);
-  user = await createUser(userData);
+  user = await createUser(userData, refCode);
 
   return user;
 }
@@ -98,7 +113,7 @@ async function getUserById(id) {
 /**
  * Create new user
  */
-async function createUser(userData) {
+async function createUser(userData, refCode = null) {
   const {
     telegram_id,
     username,
@@ -108,22 +123,35 @@ async function createUser(userData) {
   } = userData;
 
   const id = uuidv4();
+  
+  // Find manager by ref_code if provided
+  let managerId = null;
+  if (refCode) {
+    const managerResult = await pool.query(
+      'SELECT id FROM managers WHERE ref_code = $1',
+      [refCode]
+    );
+    if (managerResult.rows.length > 0) {
+      managerId = managerResult.rows[0].id;
+      console.log(`🔗 New user will be linked to manager via ref: ${refCode}`);
+    }
+  }
 
   const result = await pool.query(
     `INSERT INTO users 
-      (id, telegram_id, username, first_name, last_name, photo_url, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+      (id, telegram_id, username, first_name, last_name, photo_url, manager_id, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
      RETURNING 
       id, telegram_id, username, first_name, last_name, photo_url,
       balance_usdt, balance_btc, balance_rub,
-      verified, status, is_admin,
+      verified, status, is_admin, manager_id,
       created_at, updated_at,
       created_at`,
-    [id, telegram_id, username || null, first_name || null, last_name || null, photo_url || null]
+    [id, telegram_id, username || null, first_name || null, last_name || null, photo_url || null, managerId]
   );
 
   const user = result.rows[0];
-  console.log('✅ User created:', user.id);
+  console.log('✅ User created:', user.id, managerId ? `(manager: ${managerId})` : '');
 
   return user;
 }

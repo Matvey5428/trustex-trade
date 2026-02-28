@@ -79,10 +79,17 @@ const TelegramAuth = {
 
       console.log('🔄 Sending auth request to backend...');
       
+      // Check for referral code in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const refCode = urlParams.get('ref');
+      if (refCode) {
+        console.log('🔗 Referral code found:', refCode);
+      }
+      
       const response = await fetch('/api/auth/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData })
+        body: JSON.stringify({ initData, refCode })
       });
 
       if (!response.ok) {

@@ -1009,17 +1009,33 @@
       }
       
       list.innerHTML = managers.map(m => `
-        <div class="user-card" style="cursor: default;">
-          <div class="user-info">
-            <div class="user-name">${m.name || 'Менеджер'}</div>
-            <div class="user-id">ID: ${m.telegram_id}</div>
+        <div class="user-card" style="cursor: default; flex-direction: column; align-items: stretch;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div class="user-info">
+              <div class="user-name">${m.name || 'Менеджер'}</div>
+              <div class="user-id">ID: ${m.telegram_id}</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 12px; color: #8892b0;">👥 ${m.users_count || 0}</span>
+              <button onclick="deleteManager('${m.id}')" style="background: rgba(255,68,68,0.2); border: none; color: #ff4444; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px;">🗑️</button>
+            </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 12px; color: #8892b0;">👥 ${m.users_count || 0}</span>
-            <button onclick="deleteManager('${m.id}')" style="background: rgba(255,68,68,0.2); border: none; color: #ff4444; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px;">🗑️</button>
-          </div>
+          ${m.ref_link ? `
+            <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 8px; margin-top: 5px;">
+              <span style="font-size: 11px; color: #8892b0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${m.ref_link}</span>
+              <button onclick="copyRefLink('${m.ref_link}')" style="background: rgba(77,184,255,0.2); border: none; color: #4db8ff; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px;">📋 Копировать</button>
+            </div>
+          ` : ''}
         </div>
       `).join('');
+    }
+    
+    function copyRefLink(link) {
+      navigator.clipboard.writeText(link).then(() => {
+        showToast('✅ Ссылка скопирована', 'success');
+      }).catch(() => {
+        showToast('❌ Ошибка копирования', 'error');
+      });
     }
     
     async function addManager() {
