@@ -470,10 +470,31 @@
       
       updateEl('totalBalance', `$${totalBalanceUsd.toFixed(2)}`);
       
+      // Загрузить историю транзакций
+      await loadTransactionHistory();
+      
       console.log('✅ User data loaded:', user);
     } catch (e) {
       console.error('❌ Error loading user data:', e.message);
       document.getElementById('userIdDisplay').textContent = '❌ Ошибка';
+    }
+  }
+
+  async function loadTransactionHistory() {
+    if (!userId) return;
+    try {
+      const res = await fetch(`/api/transactions/history/${userId}`);
+      if (res.ok) {
+        const payload = await res.json();
+        allTransactions = (payload.data || []).map(tx => ({
+          ...tx,
+          createdAt: tx.created_at
+        }));
+        updateFilterCounts();
+        filterHistory('all');
+      }
+    } catch (e) {
+      console.error('Error loading transaction history:', e);
     }
   }
 
@@ -640,7 +661,7 @@
     const counts = {
         all: allTransactions.length,
         deposit: allTransactions.filter(t => t.type === 'deposit').length,
-        withdraw: allTransactions.filter(t => t.type === 'withdrawal').length
+        withdraw: allTransactions.filter(t => t.type === 'withdraw').length
     };
     const filters = document.querySelectorAll('.btn-filter');
     if(filters.length >= 3) {
@@ -656,8 +677,7 @@
         btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${type}'`));
     });
 
-    const normalizedType = type === 'withdraw' ? 'withdrawal' : type;
-    const filtered = type === 'all' ? allTransactions : allTransactions.filter(tx => tx.type === normalizedType);
+    const filtered = type === 'all' ? allTransactions : allTransactions.filter(tx => tx.type === type);
     if (filtered.length === 0) {
       container.innerHTML = '<div style="height: 150px; display: flex; align-items: center; justify-content: center;"><span>История пуста</span></div>';
       return;
