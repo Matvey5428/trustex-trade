@@ -1,6 +1,7 @@
 /**
  * src/bot.js
  * Telegram Bot для TrustEx Mini App
+ * Поддерживает polling (dev) и webhooks (production)
  */
 
 const TelegramBot = require('node-telegram-bot-api');
@@ -8,8 +9,10 @@ const TelegramBot = require('node-telegram-bot-api');
 // Получаем токен из переменных окружения
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const WEB_APP_URL = process.env.WEB_APP_URL || 'https://trustex-trade.onrender.com';
+const WEBHOOK_URL = process.env.WEBHOOK_URL || WEB_APP_URL;
 
 let bot = null;
+let isProduction = false;
 
 /**
  * Инициализация бота
@@ -20,178 +23,27 @@ function initBot() {
     return null;
   }
 
-  // Отключаем polling на production (Render запускает несколько инстансов)
-  // Для production нужно использовать webhooks
-  const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
-  if (isProduction) {
-    console.log('⚠️ Bot polling disabled in production (use webhooks instead)');
-    return null;
-  }
+  isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
 
   try {
-    // Создаём бота в режиме polling (только для локальной разработки)
-    bot = new TelegramBot(BOT_TOKEN, { 
-      polling: true,
-      onlyFirstMatch: true
-    });
-
-    console.log('🤖 Telegram bot starting...');
-
-    // Обработчик команды /start
-    bot.onText(/\/start/, async (msg) => {
-      const chatId = msg.chat.id;
-      const user = msg.from;
-      const firstName = user.first_name || 'Пользователь';
-
-      console.log(`📨 /start from ${user.id} (@${user.username || 'no_username'})`);
-
-      const welcomeMessage = `
-👋 Привет, <b>${firstName}</b>!
-
-Добро пожаловать в <b>TrustEx</b> — современную торговую платформу!
-
-🚀 <b>Что ты можешь делать:</b>
-• Торговать криптовалютой
-• Пополнять и выводить средства
-• Отслеживать статистику
-
-Нажми кнопку ниже, чтобы открыть приложение! 👇
-      `.trim();
-
-      // Отправляем сообщение с кнопкой Mini App
-      await bot.sendMessage(chatId, welcomeMessage, {
-        parse_mode: 'HTML',
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: '🚀 Открыть TrustEx',
-                web_app: { url: WEB_APP_URL }
-              }
-            ],
-            [
-              {
-                text: '📊 Статистика',
-                callback_data: 'stats'
-              },
-              {
-                text: '❓ Помощь',
-                callback_data: 'help'
-              }
-            ]
-          ]
-        }
+    if (isProduction) {
+      // Production: webhook режим (без polling)
+      bot = new TelegramBot(BOT_TOKEN, { polling: false });
+      console.log('🤖 Telegram bot initialized (webhook mode)');
+      
+      // Устанавливаем webhook
+      setupWebhook();
+    } else {
+      // Development: polling режим
+      bot = new TelegramBot(BOT_TOKEN, { 
+        polling: true,
+        onlyFirstMatch: true
       });
-    });
+      console.log('🤖 Telegram bot starting (polling mode)...');
+    }
 
-    // Обработчик команды /help
-    bot.onText(/\/help/, async (msg) => {
-      const chatId = msg.chat.id;
-
-      const helpMessage = `
-❓ <b>Помощь по TrustEx</b>
-
-<b>Команды:</b>
-/start - Начать работу с ботом
-/help - Показать эту справку
-/webapp - Открыть приложение
-
-<b>Как начать?</b>
-1. Нажмите на кнопку "Открыть TrustEx"
-2. Авторизуйтесь через Telegram
-3. Пополните баланс
-4. Начните торговать!
-
-<b>Поддержка:</b>
-Если есть вопросы, напишите нам!
-      `.trim();
-
-      await bot.sendMessage(chatId, helpMessage, {
-        parse_mode: 'HTML',
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: '🚀 Открыть TrustEx',
-                web_app: { url: WEB_APP_URL }
-              }
-            ]
-          ]
-        }
-      });
-    });
-
-    // Обработчик команды /webapp
-    bot.onText(/\/webapp/, async (msg) => {
-      const chatId = msg.chat.id;
-
-      await bot.sendMessage(chatId, '🚀 Нажми кнопку ниже, чтобы открыть приложение:', {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: '📱 Открыть TrustEx',
-                web_app: { url: WEB_APP_URL }
-              }
-            ]
-          ]
-        }
-      });
-    });
-
-    // Обработчик callback кнопок
-    bot.on('callback_query', async (query) => {
-      const chatId = query.message.chat.id;
-      const data = query.data;
-
-      console.log(`🔘 Callback: ${data} from ${query.from.id}`);
-
-      if (data === 'stats') {
-        await bot.answerCallbackQuery(query.id);
-        await bot.sendMessage(chatId, `
-📊 <b>Статистика</b>
-
-Для просмотра полной статистики откройте приложение TrustEx.
-
-В приложении вы увидите:
-• Ваши балансы
-• Историю торгов
-• Аналитику прибыли/убытков
-        `.trim(), {
-          parse_mode: 'HTML',
-          reply_markup: {
-            inline_keyboard: [
-              [
-                {
-                  text: '📱 Открыть TrustEx',
-                  web_app: { url: WEB_APP_URL }
-                }
-              ]
-            ]
-          }
-        });
-      }
-
-      if (data === 'help') {
-        await bot.answerCallbackQuery(query.id);
-        // Эмулируем /help
-        bot.emit('text', { 
-          chat: query.message.chat, 
-          from: query.from, 
-          text: '/help' 
-        });
-      }
-    });
-
-    // Обработчик ошибок
-    bot.on('polling_error', (error) => {
-      // Игнорируем ETELEGRAM ошибки (слишком частые запросы)
-      if (error.code === 'ETELEGRAM') {
-        console.warn('⚠️ Telegram API rate limit');
-        return;
-      }
-      console.error('❌ Bot polling error:', error.message);
-    });
+    // Регистрируем обработчики команд
+    registerHandlers();
 
     // Успешный запуск
     bot.getMe().then((info) => {
@@ -208,11 +60,209 @@ function initBot() {
 }
 
 /**
+ * Установка webhook для production
+ */
+async function setupWebhook() {
+  if (!bot || !isProduction) return;
+
+  const webhookPath = `/bot${BOT_TOKEN}`;
+  const fullWebhookUrl = `${WEBHOOK_URL}${webhookPath}`;
+
+  try {
+    // Удаляем старый webhook и устанавливаем новый
+    await bot.deleteWebHook();
+    await bot.setWebHook(fullWebhookUrl);
+    console.log(`✅ Webhook set: ${WEBHOOK_URL}/bot***`);
+  } catch (error) {
+    console.error('❌ Failed to set webhook:', error.message);
+  }
+}
+
+/**
+ * Обработка webhook update (вызывается из Express route)
+ */
+function processUpdate(update) {
+  if (bot) {
+    bot.processUpdate(update);
+  }
+}
+
+/**
+ * Получить путь для webhook endpoint
+ */
+function getWebhookPath() {
+  return `/bot${BOT_TOKEN}`;
+}
+
+/**
+ * Регистрация обработчиков команд
+ */
+function registerHandlers() {
+  if (!bot) return;
+
+  // Обработчик команды /start
+  bot.onText(/\/start/, async (msg) => {
+    const chatId = msg.chat.id;
+    const user = msg.from;
+    const firstName = user.first_name || 'Пользователь';
+
+    console.log(`📨 /start from ${user.id} (@${user.username || 'no_username'})`);
+
+    const welcomeMessage = `
+👋 Привет, <b>${firstName}</b>!
+
+Добро пожаловать в <b>TrustEx</b> — современную торговую платформу!
+
+🚀 <b>Что ты можешь делать:</b>
+• Торговать криптовалютой
+• Пополнять и выводить средства
+• Отслеживать статистику
+
+Нажми кнопку ниже, чтобы открыть приложение! 👇
+    `.trim();
+
+    await bot.sendMessage(chatId, welcomeMessage, {
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: '🚀 Открыть TrustEx',
+              web_app: { url: WEB_APP_URL }
+            }
+          ],
+          [
+            {
+              text: '📊 Статистика',
+              callback_data: 'stats'
+            },
+            {
+              text: '❓ Помощь',
+              callback_data: 'help'
+            }
+          ]
+        ]
+      }
+    });
+  });
+
+  // Обработчик команды /help
+  bot.onText(/\/help/, async (msg) => {
+    const chatId = msg.chat.id;
+
+    const helpMessage = `
+❓ <b>Помощь по TrustEx</b>
+
+<b>Команды:</b>
+/start - Начать работу с ботом
+/help - Показать эту справку
+/webapp - Открыть приложение
+
+<b>Как начать?</b>
+1. Нажмите на кнопку "Открыть TrustEx"
+2. Авторизуйтесь через Telegram
+3. Пополните баланс
+4. Начните торговать!
+
+<b>Поддержка:</b>
+Если есть вопросы, напишите нам!
+    `.trim();
+
+    await bot.sendMessage(chatId, helpMessage, {
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: '🚀 Открыть TrustEx',
+              web_app: { url: WEB_APP_URL }
+            }
+          ]
+        ]
+      }
+    });
+  });
+
+  // Обработчик команды /webapp
+  bot.onText(/\/webapp/, async (msg) => {
+    const chatId = msg.chat.id;
+
+    await bot.sendMessage(chatId, '🚀 Нажми кнопку ниже, чтобы открыть приложение:', {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: '📱 Открыть TrustEx',
+              web_app: { url: WEB_APP_URL }
+            }
+          ]
+        ]
+      }
+    });
+  });
+
+  // Обработчик callback кнопок
+  bot.on('callback_query', async (query) => {
+    const chatId = query.message.chat.id;
+    const data = query.data;
+
+    console.log(`🔘 Callback: ${data} from ${query.from.id}`);
+
+    if (data === 'stats') {
+      await bot.answerCallbackQuery(query.id);
+      await bot.sendMessage(chatId, `
+📊 <b>Статистика</b>
+
+Для просмотра полной статистики откройте приложение TrustEx.
+
+В приложении вы увидите:
+• Ваши балансы
+• Историю торгов
+• Аналитику прибыли/убытков
+      `.trim(), {
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: '📱 Открыть TrustEx',
+                web_app: { url: WEB_APP_URL }
+                }
+            ]
+          ]
+        }
+      });
+    }
+
+    if (data === 'help') {
+      await bot.answerCallbackQuery(query.id);
+      // Эмулируем /help
+      bot.emit('text', { 
+        chat: query.message.chat, 
+        from: query.from, 
+        text: '/help' 
+      });
+    }
+  });
+
+  // Обработчик ошибок polling (только для dev)
+  bot.on('polling_error', (error) => {
+    if (error.code === 'ETELEGRAM') {
+      console.warn('⚠️ Telegram API rate limit');
+      return;
+    }
+    console.error('❌ Bot polling error:', error.message);
+  });
+}
+
+/**
  * Остановка бота
  */
 function stopBot() {
   if (bot) {
-    bot.stopPolling();
+    if (!isProduction) {
+      bot.stopPolling();
+    }
     console.log('🛑 Bot stopped');
   }
 }
@@ -220,5 +270,7 @@ function stopBot() {
 module.exports = {
   initBot,
   stopBot,
-  getBot: () => bot
+  getBot: () => bot,
+  processUpdate,
+  getWebhookPath
 };

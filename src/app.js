@@ -13,6 +13,7 @@ const transactionRoutes = require('./routes/transactions');
 const exchangeRoutes = require('./routes/exchange');
 const userRoutes = require('./routes/user');
 const tradesRoutes = require('./routes/trades');
+const { processUpdate, getWebhookPath } = require('./bot');
 
 const app = express();
 
@@ -45,6 +46,16 @@ app.use('/api/exchange', exchangeRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/profile', userRoutes);
 app.use('/api/trades', tradesRoutes);
+
+// Telegram Bot Webhook endpoint (для production)
+const webhookPath = getWebhookPath();
+if (webhookPath) {
+  app.post(webhookPath, (req, res) => {
+    console.log('📩 Webhook update received');
+    processUpdate(req.body);
+    res.sendStatus(200);
+  });
+}
 // etc...
 
 // Serve frontend SPA (catch-all для остальных маршрутов)
