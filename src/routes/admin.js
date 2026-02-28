@@ -433,9 +433,7 @@ router.post('/chat/:telegramId', adminCheck, async (req, res) => {
       const { getBot } = require('../bot');
       const bot = getBot();
       if (bot) {
-        await bot.sendMessage(telegramId, `💬 *Поддержка TrustEx:*\n\n${message.trim()}`, {
-          parse_mode: 'Markdown'
-        });
+        await bot.sendMessage(telegramId, message.trim());
       }
     } catch (botError) {
       console.error('Failed to send Telegram message:', botError.message);
