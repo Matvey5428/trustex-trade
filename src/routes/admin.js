@@ -748,7 +748,7 @@ router.get('/managers', adminCheck, mainAdminOnly, async (req, res) => {
     // Add ref_link to each manager
     const managers = result.rows.map(m => ({
       ...m,
-      ref_link: m.ref_code ? `https://t.me/trustEx_ru_bot?start=ref_${m.ref_code}` : null
+      ref_link: m.ref_code ? `t.me/trustEx_ru_bot?start=ref_${m.ref_code}` : null
     }));
     
     res.json({
