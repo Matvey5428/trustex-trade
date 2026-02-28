@@ -78,6 +78,8 @@ function getAdminWebhookPath() {
 function registerAdminHandlers() {
   if (!bot) return;
 
+  const ADMIN_APP_URL = `${WEB_APP_URL}/admin.html`;
+
   // Start command
   bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
@@ -88,12 +90,26 @@ function registerAdminHandlers() {
     
     bot.sendMessage(chatId, 
       '👑 *Админ-панель TrustEx*\n\n' +
-      '📋 /users — Список пользователей\n' +
-      '🔍 /user [id] — Информация о пользователе\n' +
-      '💰 /setbalance [id] [сумма] — Установить баланс\n' +
-      '🎯 /setmode [id] [win/loss] — Установить режим\n' +
-      '📊 /stats — Общая статистика',
-      { parse_mode: 'Markdown' }
+      'Нажмите кнопку ниже, чтобы открыть панель управления.\n\n' +
+      '📝 *Текстовые команды:*\n' +
+      '`/users` — Список пользователей\n' +
+      '`/user [id]` — Информация о пользователе\n' +
+      '`/setbalance [id] [сумма]` — Установить баланс\n' +
+      '`/setmode [id] [win/loss]` — Установить режим\n' +
+      '`/stats` — Общая статистика',
+      { 
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: '👑 Открыть админ-панель',
+                web_app: { url: ADMIN_APP_URL }
+              }
+            ]
+          ]
+        }
+      }
     );
   });
 

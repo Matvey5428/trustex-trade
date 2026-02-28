@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TrustEx Admin</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0e1a;
+      color: #fff;
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #1a1f35 0%, #0d1117 100%);
+      padding: 20px;
+      text-align: center;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .header h1 {
+      font-size: 24px;
+      color: #ffd700;
+      margin-bottom: 5px;
+    }
+    
+    .header p {
+      color: #8892b0;
+      font-size: 14px;
+    }
+    
+    .container {
+      padding: 15px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .stat-card {
+      background: linear-gradient(135deg, #1a2332 0%, #141c2b 100%);
+      border-radius: 12px;
+      padding: 15px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .stat-card .value {
+      font-size: 28px;
+      font-weight: bold;
+      color: #4db8ff;
+    }
+    
+    .stat-card .label {
+      font-size: 12px;
+      color: #8892b0;
+      margin-top: 5px;
+    }
+    
+    .section {
+      background: linear-gradient(135deg, #1a2332 0%, #141c2b 100%);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: #ffd700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .user-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .user-card {
+      background: rgba(255,255,255,0.03);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .user-card:hover {
+      background: rgba(255,255,255,0.08);
+    }
+    
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    
+    .user-name {
+      font-weight: 600;
+      font-size: 15px;
+    }
+    
+    .user-id {
+      font-size: 12px;
+      color: #8892b0;
+    }
+    
+    .user-balance {
+      text-align: right;
+    }
+    
+    .user-balance .amount {
+      font-weight: 600;
+      color: #4db8ff;
+    }
+    
+    .user-balance .mode {
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 10px;
+      margin-top: 5px;
+      display: inline-block;
+    }
+    
+    .mode-win {
+      background: rgba(0, 255, 136, 0.2);
+      color: #00ff88;
+    }
+    
+    .mode-loss {
+      background: rgba(255, 68, 68, 0.2);
+      color: #ff4444;
+    }
+    
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .modal-overlay.active {
+      display: flex;
+    }
+    
+    .modal {
+      background: #1a2332;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-header h3 {
+      font-size: 18px;
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      color: #8892b0;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    
+    .modal-body {
+      padding: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      color: #8892b0;
+      margin-bottom: 8px;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 16px;
+    }
+    
+    .form-group input:focus {
+      outline: none;
+      border-color: #4db8ff;
+    }
+    
+    .mode-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .mode-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .mode-btn.win {
+      background: rgba(0, 255, 136, 0.2);
+      color: #00ff88;
+      border: 2px solid transparent;
+    }
+    
+    .mode-btn.win.active {
+      border-color: #00ff88;
+    }
+    
+    .mode-btn.loss {
+      background: rgba(255, 68, 68, 0.2);
+      color: #ff4444;
+      border: 2px solid transparent;
+    }
+    
+    .mode-btn.loss.active {
+      border-color: #ff4444;
+    }
+    
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #4db8ff 0%, #2ea3e8 100%);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    
+    .btn-primary:disabled {
+      opacity: 0.5;
+    }
+    
+    .user-detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .user-detail-row:last-child {
+      border-bottom: none;
+    }
+    
+    .user-detail-label {
+      color: #8892b0;
+    }
+    
+    .user-detail-value {
+      font-weight: 500;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #8892b0;
+    }
+    
+    .error-msg {
+      background: rgba(255, 68, 68, 0.2);
+      color: #ff4444;
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    
+    .search-box {
+      width: 100%;
+      padding: 12px 15px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 15px;
+      margin-bottom: 15px;
+    }
+    
+    .search-box::placeholder {
+      color: #8892b0;
+    }
+    
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .tab {
+      flex: 1;
+      padding: 12px;
+      background: rgba(255,255,255,0.05);
+      border: none;
+      border-radius: 10px;
+      color: #8892b0;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .tab.active {
+      background: linear-gradient(135deg, #4db8ff 0%, #2ea3e8 100%);
+      color: #fff;
+    }
+    
+    .toast {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a2332;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 10px;
+      z-index: 2000;
+      display: none;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .toast.success {
+      border-color: #00ff88;
+    }
+    
+    .toast.error {
+      border-color: #ff4444;
+    }
+    
+    .toast.show {
+      display: block;
+      animation: fadeIn 0.3s;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>👑 TrustEx Admin</h1>
+    <p>Панель управления</p>
+  </div>
+  
+  <div class="container">
+    <!-- Stats -->
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card">
+        <div class="value" id="totalUsers">-</div>
+        <div class="label">Пользователей</div>
+      </div>
+      <div class="stat-card">
+        <div class="value" id="totalBalance">-</div>
+        <div class="label">Общий баланс</div>
+      </div>
+      <div class="stat-card">
+        <div class="value" id="winModeCount">-</div>
+        <div class="label">🟢 WIN режим</div>
+      </div>
+      <div class="stat-card">
+        <div class="value" id="lossModeCount">-</div>
+        <div class="label">🔴 LOSS режим</div>
+      </div>
+    </div>
+    
+    <!-- Users Section -->
+    <div class="section">
+      <div class="section-title">👥 Пользователи</div>
+      <input type="text" class="search-box" id="searchInput" placeholder="🔍 Поиск по ID или имени...">
+      <div class="user-list" id="userList">
+        <div class="loading">Загрузка...</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- User Modal -->
+  <div class="modal-overlay" id="userModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalUserName">Пользователь</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="userDetails"></div>
+        
+        <div class="form-group">
+          <label>Баланс USDT</label>
+          <input type="number" id="newBalance" placeholder="Новый баланс">
+        </div>
+        
+        <div class="form-group">
+          <label>Режим торговли</label>
+          <div class="mode-buttons">
+            <button class="mode-btn win" id="btnWin" onclick="setMode('win')">🟢 WIN</button>
+            <button class="mode-btn loss" id="btnLoss" onclick="setMode('loss')">🔴 LOSS</button>
+          </div>
+        </div>
+        
+        <button class="btn-primary" onclick="saveUserChanges()">💾 Сохранить изменения</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+  
+  <script>
+    const API_BASE = window.location.origin + '/api/admin';
+    const tg = window.Telegram?.WebApp;
+    
+    let currentUser = null;
+    let allUsers = [];
+    let selectedMode = null;
+    let adminId = null;
+    
+    // Init
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      adminId = tg.initDataUnsafe?.user?.id;
+    }
+    
+    // Load data on start
+    document.addEventListener('DOMContentLoaded', () => {
+      loadStats();
+      loadUsers();
+      
+      document.getElementById('searchInput').addEventListener('input', filterUsers);
+    });
+    
+    async function loadStats() {
+      try {
+        const res = await fetch(`${API_BASE}/stats?adminId=${adminId}`);
+        const data = await res.json();
+        
+        if (data.success) {
+          document.getElementById('totalUsers').textContent = data.data.totalUsers;
+          document.getElementById('totalBalance').textContent = formatMoney(data.data.totalBalance);
+          document.getElementById('winModeCount').textContent = data.data.winModeCount;
+          document.getElementById('lossModeCount').textContent = data.data.lossModeCount;
+        }
+      } catch (e) {
+        console.error('Stats error:', e);
+      }
+    }
+    
+    async function loadUsers() {
+      try {
+        const res = await fetch(`${API_BASE}/users?adminId=${adminId}`);
+        const data = await res.json();
+        
+        if (data.success) {
+          allUsers = data.data;
+          renderUsers(allUsers);
+        } else {
+          document.getElementById('userList').innerHTML = `<div class="error-msg">${data.error}</div>`;
+        }
+      } catch (e) {
+        console.error('Users error:', e);
+        document.getElementById('userList').innerHTML = '<div class="error-msg">Ошибка загрузки</div>';
+      }
+    }
+    
+    function renderUsers(users) {
+      const list = document.getElementById('userList');
+      
+      if (users.length === 0) {
+        list.innerHTML = '<div class="loading">Пользователи не найдены</div>';
+        return;
+      }
+      
+      list.innerHTML = users.map(user => `
+        <div class="user-card" onclick="openUser('${user.telegram_id}')">
+          <div class="user-info">
+            <div class="user-name">${user.first_name || user.username || 'Без имени'}</div>
+            <div class="user-id">ID: ${user.telegram_id}</div>
+          </div>
+          <div class="user-balance">
+            <div class="amount">${formatMoney(user.balance_usdt)} $</div>
+            <div class="mode ${user.trade_mode === 'win' ? 'mode-win' : 'mode-loss'}">
+              ${user.trade_mode === 'win' ? '🟢 WIN' : '🔴 LOSS'}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    function filterUsers() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = allUsers.filter(u => 
+        String(u.telegram_id).includes(query) ||
+        (u.first_name || '').toLowerCase().includes(query) ||
+        (u.username || '').toLowerCase().includes(query)
+      );
+      renderUsers(filtered);
+    }
+    
+    async function openUser(telegramId) {
+      try {
+        const res = await fetch(`${API_BASE}/user/${telegramId}?adminId=${adminId}`);
+        const data = await res.json();
+        
+        if (data.success) {
+          currentUser = data.data;
+          selectedMode = currentUser.trade_mode || 'loss';
+          
+          document.getElementById('modalUserName').textContent = 
+            currentUser.first_name || currentUser.username || 'Пользователь';
+          
+          document.getElementById('userDetails').innerHTML = `
+            <div class="user-detail-row">
+              <span class="user-detail-label">Telegram ID</span>
+              <span class="user-detail-value">${currentUser.telegram_id}</span>
+            </div>
+            <div class="user-detail-row">
+              <span class="user-detail-label">Username</span>
+              <span class="user-detail-value">@${currentUser.username || 'нет'}</span>
+            </div>
+            <div class="user-detail-row">
+              <span class="user-detail-label">Текущий баланс</span>
+              <span class="user-detail-value">${formatMoney(currentUser.balance_usdt)} USDT</span>
+            </div>
+            <div class="user-detail-row">
+              <span class="user-detail-label">Сделок</span>
+              <span class="user-detail-value">${currentUser.trades_count || 0}</span>
+            </div>
+            <div class="user-detail-row">
+              <span class="user-detail-label">Регистрация</span>
+              <span class="user-detail-value">${formatDate(currentUser.created_at)}</span>
+            </div>
+          `;
+          
+          document.getElementById('newBalance').value = parseFloat(currentUser.balance_usdt).toFixed(2);
+          updateModeButtons();
+          
+          document.getElementById('userModal').classList.add('active');
+        }
+      } catch (e) {
+        showToast('Ошибка загрузки', 'error');
+      }
+    }
+    
+    function closeModal() {
+      document.getElementById('userModal').classList.remove('active');
+      currentUser = null;
+    }
+    
+    function setMode(mode) {
+      selectedMode = mode;
+      updateModeButtons();
+    }
+    
+    function updateModeButtons() {
+      document.getElementById('btnWin').classList.toggle('active', selectedMode === 'win');
+      document.getElementById('btnLoss').classList.toggle('active', selectedMode === 'loss');
+    }
+    
+    async function saveUserChanges() {
+      if (!currentUser) return;
+      
+      const newBalance = parseFloat(document.getElementById('newBalance').value);
+      
+      try {
+        const res = await fetch(`${API_BASE}/user/${currentUser.telegram_id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            adminId,
+            balance_usdt: newBalance,
+            trade_mode: selectedMode
+          })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast('✅ Изменения сохранены', 'success');
+          closeModal();
+          loadUsers();
+          loadStats();
+        } else {
+          showToast('❌ ' + data.error, 'error');
+        }
+      } catch (e) {
+        showToast('❌ Ошибка сохранения', 'error');
+      }
+    }
+    
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast show ${type}`;
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+    
+    function formatMoney(amount) {
+      return parseFloat(amount || 0).toFixed(2);
+    }
+    
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      return new Date(dateStr).toLocaleDateString('ru-RU');
+    }
+    
+    // Close modal on overlay click
+    document.getElementById('userModal').addEventListener('click', (e) => {
+      if (e.target.id === 'userModal') closeModal();
+    });
+  </script>
+</body>
+</html>
