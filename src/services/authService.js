@@ -48,18 +48,35 @@ async function verifyAndGetUser(initData, refCode = null) {
       throw new ForbiddenError('User is blocked');
     }
 
-    // If user has no manager and refCode is provided, link them
-    if (refCode && !user.manager_id) {
-      const managerResult = await pool.query(
-        'SELECT id FROM managers WHERE ref_code = $1',
-        [refCode]
-      );
-      if (managerResult.rows.length > 0) {
-        await pool.query(
-          'UPDATE users SET manager_id = $1 WHERE id = $2',
-          [managerResult.rows[0].id, user.id]
+    // If user has no manager, try to link them
+    if (!user.manager_id) {
+      let linkRefCode = refCode;
+      
+      // Check pending_refs if no refCode passed
+      if (!linkRefCode) {
+        const pendingRef = await pool.query(
+          'SELECT ref_code FROM pending_refs WHERE telegram_id = $1',
+          [userData.telegram_id]
         );
-        console.log(`✅ Linked existing user ${user.id} to manager via ref: ${refCode}`);
+        if (pendingRef.rows.length > 0) {
+          linkRefCode = pendingRef.rows[0].ref_code;
+          console.log(`📋 Found pending ref for existing user ${userData.telegram_id}: ${linkRefCode}`);
+          await pool.query('DELETE FROM pending_refs WHERE telegram_id = $1', [userData.telegram_id]);
+        }
+      }
+      
+      if (linkRefCode) {
+        const managerResult = await pool.query(
+          'SELECT id FROM managers WHERE ref_code = $1',
+          [linkRefCode]
+        );
+        if (managerResult.rows.length > 0) {
+          await pool.query(
+            'UPDATE users SET manager_id = $1 WHERE id = $2',
+            [managerResult.rows[0].id, user.id]
+          );
+          console.log(`✅ Linked existing user ${user.id} to manager via ref: ${linkRefCode}`);
+        }
       }
     }
 
@@ -172,6 +189,7 @@ async function createUser(userData, refCode = null) {
        username = EXCLUDED.username,
        first_name = EXCLUDED.first_name,
        last_name = EXCLUDED.last_name,
+       manager_id = COALESCE(users.manager_id, EXCLUDED.manager_id),
        updated_at = NOW()
      RETURNING 
       id, telegram_id, username, first_name, last_name, photo_url,
