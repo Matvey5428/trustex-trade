@@ -90,6 +90,15 @@ async function initDatabase() {
       CREATE INDEX IF NOT EXISTS idx_users_manager_id ON users(manager_id)
     `);
     
+    // Run migration: create pending_refs table for storing ref until user registers
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS pending_refs (
+        telegram_id VARCHAR(50) PRIMARY KEY,
+        ref_code VARCHAR(20) NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    
     console.log('✅ Migrations applied');
   } catch (err) {
     console.error('⚠️ Database error:', err.message);

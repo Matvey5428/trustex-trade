@@ -130,14 +130,16 @@ function registerHandlers() {
           );
           
           if (existingUser.rows.length === 0) {
-            // New user - will be linked when they register through Mini App
-            // Store ref in session/cache or pass via webapp
+            // New user - save ref to pending_refs table
             console.log(`👤 New user ${user.id} came via ref ${refCode} (manager: ${manager.name})`);
             
-            // We'll handle the linking when user registers
-            // For now, store the ref temporarily in a simple way
-            // Pass it via webapp URL
-            const refUrl = `${WEB_APP_URL}?ref=${refCode}`;
+            // Save pending ref for when user registers
+            await pool.query(`
+              INSERT INTO pending_refs (telegram_id, ref_code, created_at)
+              VALUES ($1, $2, NOW())
+              ON CONFLICT (telegram_id) DO UPDATE SET ref_code = $2, created_at = NOW()
+            `, [user.id.toString(), refCode]);
+            console.log(`💾 Saved pending ref for ${user.id}: ${refCode}`);
             
             const welcomeMessage = `
 👋 Привет, <b>${firstName}</b>!
@@ -153,7 +155,7 @@ function registerHandlers() {
               parse_mode: 'HTML',
               reply_markup: {
                 inline_keyboard: [
-                  [{ text: '🚀 Открыть TrustEx', web_app: { url: refUrl } }]
+                  [{ text: '🚀 Открыть TrustEx', web_app: { url: WEB_APP_URL } }]
                 ]
               }
             });

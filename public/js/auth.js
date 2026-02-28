@@ -79,9 +79,24 @@ const TelegramAuth = {
 
       console.log('🔄 Sending auth request to backend...');
       
-      // Check for referral code in URL
+      // Check for referral code in multiple places
+      let refCode = null;
+      
+      // 1. Check URL params (for direct web links)
       const urlParams = new URLSearchParams(window.location.search);
-      const refCode = urlParams.get('ref');
+      refCode = urlParams.get('ref');
+      
+      // 2. Check Telegram start_param (for Mini App opened via bot)
+      if (!refCode && window.Telegram?.WebApp?.initDataUnsafe?.start_param) {
+        const startParam = window.Telegram.WebApp.initDataUnsafe.start_param;
+        console.log('📱 Telegram start_param:', startParam);
+        if (startParam.startsWith('ref_')) {
+          refCode = startParam.replace('ref_', '');
+        } else {
+          refCode = startParam;
+        }
+      }
+      
       if (refCode) {
         console.log('🔗 Referral code found:', refCode);
       }

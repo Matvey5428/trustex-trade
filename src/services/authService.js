@@ -68,7 +68,7 @@ async function verifyAndGetUser(initData, refCode = null) {
   }
 
   // Create new user with optional manager link
-  console.log('👤 Creating new user with telegram_id:', userData.telegram_id);
+  console.log('👤 Creating new user with telegram_id:', userData.telegram_id, 'refCode:', refCode || '(none)');
   user = await createUser(userData, refCode);
 
   return user;
@@ -124,8 +124,11 @@ async function createUser(userData, refCode = null) {
 
   const id = uuidv4();
   
-  // Find manager by ref_code if provided
+  // Find manager by ref_code - check multiple sources
   let managerId = null;
+  let usedRefCode = refCode;
+  
+  // 1. First check passed refCode
   if (refCode) {
     const managerResult = await pool.query(
       'SELECT id FROM managers WHERE ref_code = $1',
@@ -136,17 +139,45 @@ async function createUser(userData, refCode = null) {
       console.log(`🔗 New user will be linked to manager via ref: ${refCode}`);
     }
   }
+  
+  // 2. If no refCode passed, check pending_refs table
+  if (!managerId) {
+    const pendingRef = await pool.query(
+      'SELECT ref_code FROM pending_refs WHERE telegram_id = $1',
+      [telegram_id]
+    );
+    if (pendingRef.rows.length > 0) {
+      usedRefCode = pendingRef.rows[0].ref_code;
+      console.log(`📋 Found pending ref for ${telegram_id}: ${usedRefCode}`);
+      
+      const managerResult = await pool.query(
+        'SELECT id FROM managers WHERE ref_code = $1',
+        [usedRefCode]
+      );
+      if (managerResult.rows.length > 0) {
+        managerId = managerResult.rows[0].id;
+        console.log(`🔗 New user will be linked to manager via pending ref: ${usedRefCode}`);
+      }
+      
+      // Clean up pending ref
+      await pool.query('DELETE FROM pending_refs WHERE telegram_id = $1', [telegram_id]);
+    }
+  }
 
   const result = await pool.query(
     `INSERT INTO users 
       (id, telegram_id, username, first_name, last_name, photo_url, manager_id, created_at, updated_at)
      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+     ON CONFLICT (telegram_id) DO UPDATE SET
+       username = EXCLUDED.username,
+       first_name = EXCLUDED.first_name,
+       last_name = EXCLUDED.last_name,
+       updated_at = NOW()
      RETURNING 
       id, telegram_id, username, first_name, last_name, photo_url,
       balance_usdt, balance_btc, balance_rub,
       verified, status, is_admin, manager_id,
-      created_at, updated_at,
-      created_at`,
+      created_at, updated_at`,
     [id, telegram_id, username || null, first_name || null, last_name || null, photo_url || null, managerId]
   );
 

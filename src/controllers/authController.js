@@ -21,7 +21,7 @@ async function verify(req, res, next) {
     console.log('🔄 Verifying initData...');
     console.log('📝 initData length:', initData.length);
     console.log('🔑 TELEGRAM_BOT_TOKEN configured:', !!process.env.TELEGRAM_BOT_TOKEN);
-    if (refCode) console.log('🔗 Referral code:', refCode);
+    console.log('🔗 Referral code received:', refCode || '(none)');
 
     // Verify initData and get/create user
     const user = await authService.verifyAndGetUser(initData, refCode);
