@@ -279,7 +279,14 @@ router.post('/create-invoice', async (req, res) => {
         
         for (const adminId of adminIds) {
           try {
-            await adminBot.sendMessage(adminId.trim(), notifyText, { parse_mode: 'Markdown' });
+            await adminBot.sendMessage(adminId.trim(), notifyText, {
+              parse_mode: 'Markdown',
+              reply_markup: {
+                inline_keyboard: [[
+                  { text: '✅ Подтвердить оплату', callback_data: `confirm_invoice_${invoice.invoice_id}` }
+                ]]
+              }
+            });
           } catch (e) {
             console.warn(`Could not notify admin ${adminId}:`, e.message);
           }

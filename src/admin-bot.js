@@ -424,6 +424,90 @@ function registerAdminHandlers() {
         { parse_mode: 'Markdown' }
       );
     }
+    
+    // Confirm invoice payment manually
+    if (data.startsWith('confirm_invoice_')) {
+      const invoiceId = data.replace('confirm_invoice_', '');
+      
+      try {
+        // Get invoice from database
+        const invoiceResult = await pool.query(
+          'SELECT * FROM crypto_invoices WHERE invoice_id = $1',
+          [invoiceId]
+        );
+        
+        if (invoiceResult.rows.length === 0) {
+          bot.answerCallbackQuery(query.id, { text: '❌ Инвойс не найден' });
+          return;
+        }
+        
+        const invoice = invoiceResult.rows[0];
+        
+        if (invoice.status === 'paid') {
+          bot.answerCallbackQuery(query.id, { text: '⚠️ Уже оплачен' });
+          return;
+        }
+        
+        const paidAmount = parseFloat(invoice.amount);
+        
+        // Update invoice status
+        await pool.query(
+          'UPDATE crypto_invoices SET status = $1, paid_at = NOW() WHERE invoice_id = $2',
+          ['paid', invoiceId]
+        );
+        
+        // Credit user balance
+        await pool.query(
+          'UPDATE users SET balance_usdt = balance_usdt + $1, updated_at = NOW() WHERE id = $2',
+          [paidAmount, invoice.user_id]
+        );
+        
+        // Create transaction record
+        await pool.query(
+          `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
+           VALUES ($1, $2, 'USDT', 'deposit', $3, NOW())`,
+          [invoice.user_id, paidAmount, `Пополнение (подтверждено админом): ${paidAmount} USDT`]
+        );
+        
+        // Get user info for notification
+        const userResult = await pool.query('SELECT telegram_id, first_name FROM users WHERE id = $1', [invoice.user_id]);
+        
+        if (userResult.rows.length > 0) {
+          const user = userResult.rows[0];
+          
+          // Notify user
+          const { getBot } = require('./bot');
+          const mainBot = getBot();
+          if (mainBot) {
+            await mainBot.sendMessage(user.telegram_id, 
+              `✅ Пополнение подтверждено!\n\n💰 Сумма: ${paidAmount} USDT\n\nБаланс обновлён. Приятной торговли!`
+            );
+          }
+          
+          // Update admin message
+          const userName = user.first_name || 'Пользователь';
+          bot.editMessageText(
+            `✅ *Оплата подтверждена*\n\n` +
+            `👤 Пользователь: ${userName}\n` +
+            `🆔 Telegram ID: \`${user.telegram_id}\`\n` +
+            `💵 Сумма: ${paidAmount} USDT\n` +
+            `📋 Invoice: \`${invoiceId}\``,
+            {
+              chat_id: chatId,
+              message_id: query.message.message_id,
+              parse_mode: 'Markdown'
+            }
+          );
+        }
+        
+        bot.answerCallbackQuery(query.id, { text: '✅ Оплата подтверждена!' });
+        console.log(`✅ Admin confirmed invoice ${invoiceId}, credited ${paidAmount} USDT`);
+        
+      } catch (e) {
+        console.error('Confirm invoice error:', e);
+        bot.answerCallbackQuery(query.id, { text: '❌ Ошибка: ' + e.message });
+      }
+    }
   });
 
   bot.on('polling_error', (error) => {
