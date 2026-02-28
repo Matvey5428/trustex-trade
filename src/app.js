@@ -69,7 +69,100 @@ if (adminWebhookPath) {
     res.sendStatus(200);
   });
 }
-// etc...
+
+// CryptoBot Payment Webhook
+app.post('/api/cryptobot-webhook', async (req, res) => {
+  try {
+    const pool = require('./config/database');
+    const crypto = require('crypto');
+    const CRYPTOBOT_TOKEN = process.env.CRYPTOBOT_API_TOKEN;
+    
+    if (!CRYPTOBOT_TOKEN) {
+      return res.sendStatus(200);
+    }
+    
+    // Verify signature
+    const signature = req.headers['crypto-pay-api-signature'];
+    const checkString = JSON.stringify(req.body);
+    const secret = crypto.createHash('sha256').update(CRYPTOBOT_TOKEN).digest();
+    const hmac = crypto.createHmac('sha256', secret).update(checkString).digest('hex');
+    
+    if (signature !== hmac) {
+      console.warn('⚠️ Invalid CryptoBot webhook signature');
+      return res.sendStatus(200);
+    }
+    
+    const { update_type, payload } = req.body;
+    
+    if (update_type === 'invoice_paid') {
+      const invoice = payload;
+      const invoiceId = invoice.invoice_id.toString();
+      const paidAmount = parseFloat(invoice.amount);
+      
+      console.log(`💰 CryptoBot payment received: Invoice ${invoiceId}, ${paidAmount} ${invoice.asset}`);
+      
+      // Get invoice from database
+      const invoiceResult = await pool.query(
+        'SELECT * FROM crypto_invoices WHERE invoice_id = $1',
+        [invoiceId]
+      );
+      
+      if (invoiceResult.rows.length === 0) {
+        console.warn(`Invoice ${invoiceId} not found in database`);
+        return res.sendStatus(200);
+      }
+      
+      const dbInvoice = invoiceResult.rows[0];
+      
+      if (dbInvoice.status === 'paid') {
+        console.log(`Invoice ${invoiceId} already processed`);
+        return res.sendStatus(200);
+      }
+      
+      // Update invoice status
+      await pool.query(
+        'UPDATE crypto_invoices SET status = $1, paid_at = NOW() WHERE invoice_id = $2',
+        ['paid', invoiceId]
+      );
+      
+      // Credit user balance
+      await pool.query(
+        'UPDATE users SET balance_usdt = balance_usdt + $1, updated_at = NOW() WHERE id = $2',
+        [paidAmount, dbInvoice.user_id]
+      );
+      
+      // Create transaction record
+      await pool.query(
+        `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
+         VALUES ($1, $2, 'USDT', 'deposit', $3, NOW())`,
+        [dbInvoice.user_id, paidAmount, `Пополнение через CryptoBot: ${paidAmount} USDT`]
+      );
+      
+      // Notify user via Telegram
+      try {
+        const userResult = await pool.query('SELECT telegram_id FROM users WHERE id = $1', [dbInvoice.user_id]);
+        if (userResult.rows.length > 0) {
+          const { getBot } = require('./bot');
+          const bot = getBot();
+          if (bot) {
+            await bot.sendMessage(userResult.rows[0].telegram_id, 
+              `✅ Пополнение успешно!\n\n💰 Сумма: ${paidAmount} USDT\n\nБаланс обновлён. Приятной торговли!`
+            );
+          }
+        }
+      } catch (notifyError) {
+        console.warn('Could not notify user:', notifyError.message);
+      }
+      
+      console.log(`✅ Balance credited: ${paidAmount} USDT to user ${dbInvoice.user_id}`);
+    }
+    
+    res.sendStatus(200);
+  } catch (error) {
+    console.error('❌ CryptoBot webhook error:', error.message);
+    res.sendStatus(200);
+  }
+});
 
 // Serve frontend SPA (catch-all для остальных маршрутов)
 app.use((req, res, next) => {

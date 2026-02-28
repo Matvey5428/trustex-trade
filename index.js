@@ -45,6 +45,25 @@ async function initDatabase() {
       CREATE INDEX IF NOT EXISTS idx_support_messages_user_id ON support_messages(user_id)
     `);
     
+    // Run migration: create crypto_invoices table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS crypto_invoices (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        invoice_id VARCHAR(100) UNIQUE NOT NULL,
+        amount DECIMAL(18,8) NOT NULL,
+        asset VARCHAR(10) NOT NULL DEFAULT 'USDT',
+        status VARCHAR(20) DEFAULT 'pending',
+        pay_url TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        paid_at TIMESTAMP
+      )
+    `);
+    
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_crypto_invoices_user_id ON crypto_invoices(user_id)
+    `);
+    
     console.log('✅ Migrations applied');
   } catch (err) {
     console.error('⚠️ Database error:', err.message);

@@ -194,4 +194,89 @@ router.get('/history/:userId', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/transactions/create-invoice
+ * Create CryptoBot invoice for deposit
+ */
+router.post('/create-invoice', async (req, res) => {
+  try {
+    const { userId, amount } = req.body;
+    const CRYPTOBOT_TOKEN = process.env.CRYPTOBOT_API_TOKEN;
+    
+    if (!CRYPTOBOT_TOKEN) {
+      return res.status(500).json({ error: 'CryptoBot not configured' });
+    }
+    
+    if (!userId || !amount || amount <= 0) {
+      return res.status(400).json({ error: 'Invalid userId or amount' });
+    }
+    
+    // Get user
+    const userResult = await pool.query(
+      'SELECT id, telegram_id, first_name FROM users WHERE telegram_id = $1',
+      [userId.toString()]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    // Create invoice via CryptoBot API
+    const invoiceData = {
+      asset: 'USDT',
+      amount: amount.toString(),
+      description: `Пополнение TrustEx: ${amount} USDT`,
+      paid_btn_name: 'callback',
+      paid_btn_url: process.env.WEB_APP_URL || 'https://trustex-trade.onrender.com',
+      payload: JSON.stringify({ user_id: user.id, telegram_id: userId }),
+      allow_comments: false,
+      allow_anonymous: false
+    };
+    
+    const response = await fetch('https://pay.crypt.bot/api/createInvoice', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Crypto-Pay-API-Token': CRYPTOBOT_TOKEN
+      },
+      body: JSON.stringify(invoiceData)
+    });
+    
+    const result = await response.json();
+    
+    if (!result.ok) {
+      console.error('CryptoBot error:', result);
+      return res.status(400).json({ error: result.error?.name || 'Failed to create invoice' });
+    }
+    
+    const invoice = result.result;
+    
+    // Save invoice to database
+    await pool.query(
+      `INSERT INTO crypto_invoices (user_id, invoice_id, amount, asset, status, pay_url)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [user.id, invoice.invoice_id.toString(), amount, 'USDT', 'pending', invoice.pay_url]
+    );
+    
+    console.log(`💰 Invoice created: ${invoice.invoice_id} for user ${userId}, ${amount} USDT`);
+    
+    res.json({
+      success: true,
+      data: {
+        invoice_id: invoice.invoice_id,
+        amount: amount,
+        asset: 'USDT',
+        pay_url: invoice.pay_url,
+        bot_invoice_url: invoice.bot_invoice_url
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Create invoice error:', error.message);
+    res.status(500).json({ error: 'Server error: ' + error.message });
+  }
+});
+
 module.exports = router;

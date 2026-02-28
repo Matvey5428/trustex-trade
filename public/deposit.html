@@ -328,24 +328,51 @@
         btn.innerText = "Создание заявки...";
 
         try {
-            const response = await fetch('/api/transactions/deposit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId,
-                    amount: amount,
-                    currency: currentSymbol
-                })
-            });
+            // Для USDT используем CryptoBot
+            if (currentSymbol === 'USDT') {
+                const response = await fetch('/api/transactions/create-invoice', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId,
+                        amount: amount
+                    })
+                });
 
-            const result = await response.json();
-            if (response.ok) {
-                const paymentLink = result?.data?.paymentLink;
-                alert(paymentLink ? `Заявка создана. Ссылка на оплату: ${paymentLink}` : 'Заявка создана! Ожидайте подтверждения.');
-                closePayment();
-                loadUserBalances();
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    // Показываем инфо и открываем оплату
+                    alert(`✅ Заявка создана!\n\nСумма: ${amount} USDT\n\nСейчас откроется окно оплаты через CryptoBot.`);
+                    
+                    // Открываем ссылку на оплату
+                    if (result.data.pay_url) {
+                        window.open(result.data.pay_url, '_blank');
+                    }
+                    
+                    closePayment();
+                } else {
+                    alert("Ошибка: " + (result.error || "Попробуйте позже"));
+                }
             } else {
-                alert("Ошибка: " + (result.error || "Попробуйте позже"));
+                // Для других валют - старая логика
+                const response = await fetch('/api/transactions/deposit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId,
+                        amount: amount,
+                        currency: currentSymbol
+                    })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    alert('Заявка создана! Ожидайте подтверждения.');
+                    closePayment();
+                    loadUserBalances();
+                } else {
+                    alert("Ошибка: " + (result.error || "Попробуйте позже"));
+                }
             }
         } catch (e) {
             alert("Ошибка сети");
