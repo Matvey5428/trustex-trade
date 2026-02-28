@@ -1,5 +1,6 @@
 /**
  * Admin Bot - User Management
+ * Поддерживает polling (dev) и webhooks (production)
  */
 
 const TelegramBot = require('node-telegram-bot-api');
@@ -7,8 +8,10 @@ const pool = require('./config/database');
 
 const ADMIN_BOT_TOKEN = process.env.ADMIN_BOT_TOKEN;
 const ADMIN_IDS = (process.env.ADMIN_IDS || '').split(',').map(id => id.trim());
+const WEB_APP_URL = process.env.WEB_APP_URL || 'https://trustex-trade.onrender.com';
 
 let bot = null;
+let isProduction = false;
 
 function isAdmin(userId) {
   return ADMIN_IDS.includes(String(userId));
@@ -29,8 +32,51 @@ function initAdminBot() {
     return;
   }
 
-  bot = new TelegramBot(ADMIN_BOT_TOKEN, { polling: true });
-  console.log('🤖 Admin bot started');
+  isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
+
+  if (isProduction) {
+    // Production: webhook режим
+    bot = new TelegramBot(ADMIN_BOT_TOKEN, { polling: false });
+    console.log('🤖 Admin bot initialized (webhook mode)');
+    setupAdminWebhook();
+  } else {
+    // Development: polling режим
+    bot = new TelegramBot(ADMIN_BOT_TOKEN, { polling: true });
+    console.log('🤖 Admin bot started (polling mode)');
+  }
+
+  // Регистрируем обработчики
+  registerAdminHandlers();
+}
+
+async function setupAdminWebhook() {
+  if (!bot || !isProduction) return;
+
+  const webhookPath = `/adminbot${ADMIN_BOT_TOKEN}`;
+  const fullWebhookUrl = `${WEB_APP_URL}${webhookPath}`;
+
+  try {
+    await bot.deleteWebHook();
+    await bot.setWebHook(fullWebhookUrl);
+    console.log(`✅ Admin webhook set: ${WEB_APP_URL}/adminbot***`);
+  } catch (error) {
+    console.error('❌ Failed to set admin webhook:', error.message);
+  }
+}
+
+function processAdminUpdate(update) {
+  if (bot) {
+    bot.processUpdate(update);
+  }
+}
+
+function getAdminWebhookPath() {
+  if (!ADMIN_BOT_TOKEN) return null;
+  return `/adminbot${ADMIN_BOT_TOKEN}`;
+}
+
+function registerAdminHandlers() {
+  if (!bot) return;
 
   // Start command
   bot.onText(/\/start/, async (msg) => {
@@ -365,15 +411,24 @@ function initAdminBot() {
   });
 
   bot.on('polling_error', (error) => {
-    console.error('Admin bot polling error:', error.message);
+    if (!isProduction) {
+      console.error('Admin bot polling error:', error.message);
+    }
   });
 }
 
 function stopAdminBot() {
   if (bot) {
-    bot.stopPolling();
+    if (!isProduction) {
+      bot.stopPolling();
+    }
     console.log('🤖 Admin bot stopped');
   }
 }
 
-module.exports = { initAdminBot, stopAdminBot };
+module.exports = { 
+  initAdminBot, 
+  stopAdminBot,
+  processAdminUpdate,
+  getAdminWebhookPath
+};

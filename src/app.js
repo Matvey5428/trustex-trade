@@ -14,6 +14,7 @@ const exchangeRoutes = require('./routes/exchange');
 const userRoutes = require('./routes/user');
 const tradesRoutes = require('./routes/trades');
 const { processUpdate, getWebhookPath } = require('./bot');
+const { processAdminUpdate, getAdminWebhookPath } = require('./admin-bot');
 
 const app = express();
 
@@ -53,6 +54,16 @@ if (webhookPath) {
   app.post(webhookPath, (req, res) => {
     console.log('📩 Webhook update received');
     processUpdate(req.body);
+    res.sendStatus(200);
+  });
+}
+
+// Admin Bot Webhook endpoint (для production)
+const adminWebhookPath = getAdminWebhookPath();
+if (adminWebhookPath) {
+  app.post(adminWebhookPath, (req, res) => {
+    console.log('📩 Admin webhook update received');
+    processAdminUpdate(req.body);
     res.sendStatus(200);
   });
 }
