@@ -7,32 +7,84 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 
-// Admin IDs from environment
-const ADMIN_IDS = (process.env.ADMIN_IDS || '').split(',').map(id => id.trim());
+// Main Admin ID from environment (single admin)
+const MAIN_ADMIN_ID = (process.env.ADMIN_IDS || '').split(',')[0]?.trim();
 
 /**
- * Check if user is admin
+ * Check if user is main admin
  */
-function isAdmin(telegramId) {
-  return ADMIN_IDS.includes(String(telegramId));
+function isMainAdmin(telegramId) {
+  return String(telegramId) === MAIN_ADMIN_ID;
 }
 
 /**
- * Admin middleware
+ * Check if user is manager (async)
  */
-function adminCheck(req, res, next) {
+async function getManagerId(telegramId) {
+  try {
+    const result = await pool.query(
+      'SELECT id FROM managers WHERE telegram_id = $1',
+      [String(telegramId)]
+    );
+    return result.rows[0]?.id || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Admin middleware - allows main admin or managers
+ */
+async function adminCheck(req, res, next) {
   const adminId = req.query.adminId || req.body.adminId;
   
-  if (!adminId || !isAdmin(adminId)) {
-    return res.status(403).json({ 
-      success: false, 
-      error: 'Доступ запрещён' 
-    });
+  if (!adminId) {
+    return res.status(403).json({ success: false, error: 'Доступ запрещён' });
   }
   
-  req.adminId = adminId;
+  // Check if main admin
+  if (isMainAdmin(adminId)) {
+    req.adminId = adminId;
+    req.isMainAdmin = true;
+    req.managerId = null;
+    return next();
+  }
+  
+  // Check if manager
+  const managerId = await getManagerId(adminId);
+  if (managerId) {
+    req.adminId = adminId;
+    req.isMainAdmin = false;
+    req.managerId = managerId;
+    return next();
+  }
+  
+  return res.status(403).json({ success: false, error: 'Доступ запрещён' });
+}
+
+/**
+ * Middleware for main admin only actions
+ */
+function mainAdminOnly(req, res, next) {
+  if (!req.isMainAdmin) {
+    return res.status(403).json({ success: false, error: 'Только для главного админа' });
+  }
   next();
 }
+
+/**
+ * GET /api/admin/role
+ * Get current user role
+ */
+router.get('/role', adminCheck, (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      role: req.isMainAdmin ? 'admin' : 'manager',
+      managerId: req.managerId
+    }
+  });
+});
 
 /**
  * GET /api/admin/stats
@@ -40,15 +92,34 @@ function adminCheck(req, res, next) {
  */
 router.get('/stats', adminCheck, async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT 
-        COUNT(*) as total_users,
-        COALESCE(SUM(balance_usdt), 0) as total_balance,
-        COUNT(*) FILTER (WHERE trade_mode = 'win') as win_mode_count,
-        COUNT(*) FILTER (WHERE COALESCE(trade_mode, 'loss') = 'loss') as loss_mode_count
-      FROM users
-    `);
+    let query;
+    let params = [];
     
+    if (req.isMainAdmin) {
+      // Main admin sees all users
+      query = `
+        SELECT 
+          COUNT(*) as total_users,
+          COALESCE(SUM(balance_usdt), 0) as total_balance,
+          COUNT(*) FILTER (WHERE trade_mode = 'win') as win_mode_count,
+          COUNT(*) FILTER (WHERE COALESCE(trade_mode, 'loss') = 'loss') as loss_mode_count
+        FROM users
+      `;
+    } else {
+      // Manager sees only their users
+      query = `
+        SELECT 
+          COUNT(*) as total_users,
+          COALESCE(SUM(balance_usdt), 0) as total_balance,
+          COUNT(*) FILTER (WHERE trade_mode = 'win') as win_mode_count,
+          COUNT(*) FILTER (WHERE COALESCE(trade_mode, 'loss') = 'loss') as loss_mode_count
+        FROM users
+        WHERE manager_id = $1
+      `;
+      params = [req.managerId];
+    }
+    
+    const result = await pool.query(query, params);
     const stats = result.rows[0];
     
     res.json({
@@ -68,20 +139,44 @@ router.get('/stats', adminCheck, async (req, res) => {
 
 /**
  * GET /api/admin/users
- * Get all users
+ * Get all users (or manager's users only)
  */
 router.get('/users', adminCheck, async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT 
-        id, telegram_id, username, first_name, last_name,
-        balance_usdt, balance_btc, balance_rub,
-        COALESCE(trade_mode, 'loss') as trade_mode,
-        created_at
-      FROM users 
-      ORDER BY created_at DESC 
-      LIMIT 100
-    `);
+    let query;
+    let params = [];
+    
+    if (req.isMainAdmin) {
+      // Main admin sees all users
+      query = `
+        SELECT 
+          u.id, u.telegram_id, u.username, u.first_name, u.last_name,
+          u.balance_usdt, u.balance_btc, u.balance_rub,
+          COALESCE(u.trade_mode, 'loss') as trade_mode,
+          u.created_at,
+          m.name as manager_name
+        FROM users u
+        LEFT JOIN managers m ON u.manager_id = m.id
+        ORDER BY u.created_at DESC 
+        LIMIT 100
+      `;
+    } else {
+      // Manager sees only their users
+      query = `
+        SELECT 
+          id, telegram_id, username, first_name, last_name,
+          balance_usdt, balance_btc, balance_rub,
+          COALESCE(trade_mode, 'loss') as trade_mode,
+          created_at
+        FROM users 
+        WHERE manager_id = $1
+        ORDER BY created_at DESC 
+        LIMIT 100
+      `;
+      params = [req.managerId];
+    }
+    
+    const result = await pool.query(query, params);
     
     res.json({
       success: true,
@@ -172,9 +267,9 @@ router.get('/user/:telegramId/invoices', adminCheck, async (req, res) => {
 
 /**
  * PUT /api/admin/user/:telegramId
- * Update user balance and mode
+ * Update user balance and mode (main admin only)
  */
-router.put('/user/:telegramId', adminCheck, async (req, res) => {
+router.put('/user/:telegramId', adminCheck, mainAdminOnly, async (req, res) => {
   try {
     const { telegramId } = req.params;
     const { balance_usdt, trade_mode } = req.body;
@@ -521,15 +616,36 @@ router.get('/chats', adminCheck, async (req, res) => {
  */
 router.get('/invoices', adminCheck, async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT 
-        ci.id, ci.invoice_id, ci.amount, ci.asset, ci.status, ci.pay_url, ci.created_at, ci.paid_at,
-        u.telegram_id, u.first_name, u.username
-      FROM crypto_invoices ci
-      JOIN users u ON ci.user_id = u.id
-      ORDER BY ci.created_at DESC
-      LIMIT 50
-    `);
+    let query;
+    let params = [];
+    
+    if (req.isMainAdmin) {
+      // Main admin sees all invoices
+      query = `
+        SELECT 
+          ci.id, ci.invoice_id, ci.amount, ci.asset, ci.status, ci.pay_url, ci.created_at, ci.paid_at,
+          u.telegram_id, u.first_name, u.username
+        FROM crypto_invoices ci
+        JOIN users u ON ci.user_id = u.id
+        ORDER BY ci.created_at DESC
+        LIMIT 50
+      `;
+    } else {
+      // Manager sees only their users' invoices
+      query = `
+        SELECT 
+          ci.id, ci.invoice_id, ci.amount, ci.asset, ci.status, ci.pay_url, ci.created_at, ci.paid_at,
+          u.telegram_id, u.first_name, u.username
+        FROM crypto_invoices ci
+        JOIN users u ON ci.user_id = u.id
+        WHERE u.manager_id = $1
+        ORDER BY ci.created_at DESC
+        LIMIT 50
+      `;
+      params = [req.managerId];
+    }
+    
+    const result = await pool.query(query, params);
     
     res.json({
       success: true,
@@ -607,6 +723,126 @@ router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
     });
   } catch (error) {
     console.error('Confirm invoice error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+// ==================== MANAGER MANAGEMENT (Main Admin Only) ====================
+
+/**
+ * GET /api/admin/managers
+ * Get all managers (main admin only)
+ */
+router.get('/managers', adminCheck, mainAdminOnly, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        m.id, m.telegram_id, m.name, m.created_at,
+        COUNT(u.id) as users_count
+      FROM managers m
+      LEFT JOIN users u ON u.manager_id = m.id
+      GROUP BY m.id
+      ORDER BY m.created_at DESC
+    `);
+    
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('Get managers error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * POST /api/admin/managers
+ * Add new manager (main admin only)
+ */
+router.post('/managers', adminCheck, mainAdminOnly, async (req, res) => {
+  try {
+    const { telegram_id, name } = req.body;
+    
+    if (!telegram_id) {
+      return res.status(400).json({ success: false, error: 'Telegram ID обязателен' });
+    }
+    
+    // Check if already exists
+    const existing = await pool.query(
+      'SELECT id FROM managers WHERE telegram_id = $1',
+      [String(telegram_id)]
+    );
+    
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ success: false, error: 'Менеджер уже существует' });
+    }
+    
+    const result = await pool.query(
+      'INSERT INTO managers (telegram_id, name) VALUES ($1, $2) RETURNING *',
+      [String(telegram_id), name || `Менеджер ${telegram_id}`]
+    );
+    
+    console.log(`✅ Manager added: ${telegram_id}`);
+    
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Add manager error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * DELETE /api/admin/managers/:managerId
+ * Remove manager (main admin only)
+ */
+router.delete('/managers/:managerId', adminCheck, mainAdminOnly, async (req, res) => {
+  try {
+    const { managerId } = req.params;
+    
+    // Unlink users from this manager
+    await pool.query(
+      'UPDATE users SET manager_id = NULL WHERE manager_id = $1',
+      [managerId]
+    );
+    
+    await pool.query(
+      'DELETE FROM managers WHERE id = $1',
+      [managerId]
+    );
+    
+    res.json({
+      success: true,
+      message: 'Менеджер удалён'
+    });
+  } catch (error) {
+    console.error('Delete manager error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * POST /api/admin/users/:telegramId/assign
+ * Assign user to manager (main admin only)
+ */
+router.post('/user/:telegramId/assign', adminCheck, mainAdminOnly, async (req, res) => {
+  try {
+    const { telegramId } = req.params;
+    const { managerId } = req.body;
+    
+    await pool.query(
+      'UPDATE users SET manager_id = $1 WHERE telegram_id = $2',
+      [managerId || null, telegramId]
+    );
+    
+    res.json({
+      success: true,
+      message: managerId ? 'Пользователь привязан' : 'Привязка удалена'
+    });
+  } catch (error) {
+    console.error('Assign user error:', error);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });

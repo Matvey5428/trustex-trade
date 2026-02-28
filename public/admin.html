@@ -463,7 +463,7 @@
 <body>
   <div class="header">
     <h1>👑 TrustEx Admin</h1>
-    <p>Панель управления</p>
+    <p id="roleLabel">Панель управления</p>
   </div>
   
   <div class="container">
@@ -488,9 +488,10 @@
     </div>
     
     <!-- Tabs -->
-    <div class="tabs">
+    <div class="tabs" id="mainTabs">
       <button class="tab active" id="tabUsers" onclick="switchTab('users')">👥 Пользователи</button>
       <button class="tab" id="tabInvoices" onclick="switchTab('invoices')">💳 Оплаты</button>
+      <button class="tab" id="tabManagers" onclick="switchTab('managers')" style="display: none;">👤 Менеджеры</button>
     </div>
     
     <!-- Users Section -->
@@ -509,6 +510,19 @@
         <div class="loading">Загрузка...</div>
       </div>
     </div>
+    
+    <!-- Managers Section (Admin only) -->
+    <div class="section" id="sectionManagers" style="display: none;">
+      <div class="section-title">👤 Менеджеры</div>
+      <div style="margin-bottom: 15px;">
+        <input type="text" class="search-box" id="managerTelegramId" placeholder="Telegram ID нового менеджера..." style="margin-bottom: 10px;">
+        <input type="text" class="search-box" id="managerName" placeholder="Имя менеджера..." style="margin-bottom: 10px;">
+        <button class="btn-primary" onclick="addManager()" style="width: 100%;">+ Добавить менеджера</button>
+      </div>
+      <div class="user-list" id="managerList">
+        <div class="loading">Загрузка...</div>
+      </div>
+    </div>
   </div>
   
   <!-- User Modal -->
@@ -521,12 +535,12 @@
       <div class="modal-body">
         <div id="userDetails"></div>
         
-        <div class="form-group">
+        <div class="form-group" id="balanceFormGroup">
           <label>Баланс USDT</label>
           <input type="number" id="newBalance" placeholder="Новый баланс">
         </div>
         
-        <div class="form-group">
+        <div class="form-group" id="modeFormGroup">
           <label>Режим торговли</label>
           <div class="mode-buttons">
             <button class="mode-btn win" id="btnWin" onclick="setMode('win')">🟢 WIN</button>
@@ -535,7 +549,7 @@
         </div>
         
         <div style="display: flex; gap: 10px; margin-top: 10px;">
-          <button class="btn-primary" onclick="saveUserChanges()" style="flex: 1;">💾 Сохранить</button>
+          <button class="btn-primary" id="btnSaveUser" onclick="saveUserChanges()" style="flex: 1;">💾 Сохранить</button>
           <button class="btn-primary" onclick="openChat()" style="flex: 1; background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">💬 Чат</button>
         </div>
         
@@ -561,6 +575,7 @@
     let allUsers = [];
     let selectedMode = null;
     let adminId = null;
+    let userRole = 'manager'; // 'admin' or 'manager'
     
     // Init
     if (tg) {
@@ -571,25 +586,57 @@
     
     let currentTab = 'users';
     let allInvoices = [];
+    let allManagers = [];
     
     // Load data on start
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadRole();
       loadStats();
       loadUsers();
       loadInvoices();
+      if (userRole === 'admin') {
+        loadManagers();
+      }
       
       document.getElementById('searchInput').addEventListener('input', filterUsers);
     });
+    
+    async function loadRole() {
+      try {
+        const res = await fetch(`${API_BASE}/role?adminId=${adminId}`);
+        const data = await res.json();
+        
+        if (data.success) {
+          userRole = data.data.role;
+          
+          // Update UI based on role
+          if (userRole === 'admin') {
+            document.getElementById('roleLabel').textContent = '👑 Главный админ';
+            document.getElementById('tabManagers').style.display = 'block';
+          } else {
+            document.getElementById('roleLabel').textContent = '👤 Менеджер';
+            document.getElementById('tabManagers').style.display = 'none';
+          }
+        }
+      } catch (e) {
+        console.error('Role error:', e);
+      }
+    }
     
     function switchTab(tab) {
       currentTab = tab;
       document.getElementById('tabUsers').classList.toggle('active', tab === 'users');
       document.getElementById('tabInvoices').classList.toggle('active', tab === 'invoices');
+      document.getElementById('tabManagers').classList.toggle('active', tab === 'managers');
       document.getElementById('sectionUsers').style.display = tab === 'users' ? 'block' : 'none';
       document.getElementById('sectionInvoices').style.display = tab === 'invoices' ? 'block' : 'none';
+      document.getElementById('sectionManagers').style.display = tab === 'managers' ? 'block' : 'none';
       
       if (tab === 'invoices') {
         loadInvoices();
+      }
+      if (tab === 'managers') {
+        loadManagers();
       }
     }
     
@@ -774,6 +821,12 @@
           document.getElementById('newBalance').value = parseFloat(currentUser.balance_usdt).toFixed(2);
           updateModeButtons();
           
+          // Hide balance/mode editing for managers
+          const isAdminRole = userRole === 'admin';
+          document.getElementById('balanceFormGroup').style.display = isAdminRole ? 'block' : 'none';
+          document.getElementById('modeFormGroup').style.display = isAdminRole ? 'block' : 'none';
+          document.getElementById('btnSaveUser').style.display = isAdminRole ? 'block' : 'none';
+          
           document.getElementById('userModal').classList.add('active');
           
           // Load user payment history
@@ -925,6 +978,101 @@
     document.getElementById('userModal').addEventListener('click', (e) => {
       if (e.target.id === 'userModal') closeModal();
     });
+    
+    // ==================== MANAGERS ====================
+    
+    async function loadManagers() {
+      if (userRole !== 'admin') return;
+      
+      try {
+        const res = await fetch(`${API_BASE}/managers?adminId=${adminId}`);
+        const data = await res.json();
+        
+        if (data.success) {
+          allManagers = data.data;
+          renderManagers(allManagers);
+        } else {
+          document.getElementById('managerList').innerHTML = `<div class="error-msg">${data.error}</div>`;
+        }
+      } catch (e) {
+        console.error('Managers error:', e);
+        document.getElementById('managerList').innerHTML = '<div class="error-msg">Ошибка загрузки</div>';
+      }
+    }
+    
+    function renderManagers(managers) {
+      const list = document.getElementById('managerList');
+      
+      if (managers.length === 0) {
+        list.innerHTML = '<div class="loading">Нет менеджеров</div>';
+        return;
+      }
+      
+      list.innerHTML = managers.map(m => `
+        <div class="user-card" style="cursor: default;">
+          <div class="user-info">
+            <div class="user-name">${m.name || 'Менеджер'}</div>
+            <div class="user-id">ID: ${m.telegram_id}</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 12px; color: #8892b0;">👥 ${m.users_count || 0}</span>
+            <button onclick="deleteManager('${m.id}')" style="background: rgba(255,68,68,0.2); border: none; color: #ff4444; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px;">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    async function addManager() {
+      const telegramId = document.getElementById('managerTelegramId').value.trim();
+      const name = document.getElementById('managerName').value.trim();
+      
+      if (!telegramId) {
+        showToast('❌ Введите Telegram ID', 'error');
+        return;
+      }
+      
+      try {
+        const res = await fetch(`${API_BASE}/managers`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminId, telegram_id: telegramId, name })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast('✅ Менеджер добавлен', 'success');
+          document.getElementById('managerTelegramId').value = '';
+          document.getElementById('managerName').value = '';
+          loadManagers();
+        } else {
+          showToast('❌ ' + data.error, 'error');
+        }
+      } catch (e) {
+        showToast('❌ Ошибка добавления', 'error');
+      }
+    }
+    
+    async function deleteManager(managerId) {
+      if (!confirm('Удалить менеджера? Пользователи будут отвязаны.')) return;
+      
+      try {
+        const res = await fetch(`${API_BASE}/managers/${managerId}?adminId=${adminId}`, {
+          method: 'DELETE'
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast('✅ Менеджер удалён', 'success');
+          loadManagers();
+        } else {
+          showToast('❌ ' + data.error, 'error');
+        }
+      } catch (e) {
+        showToast('❌ Ошибка удаления', 'error');
+      }
+    }
   </script>
 </body>
 </html>

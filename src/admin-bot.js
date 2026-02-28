@@ -7,14 +7,34 @@ const TelegramBot = require('node-telegram-bot-api');
 const pool = require('./config/database');
 
 const ADMIN_BOT_TOKEN = process.env.ADMIN_BOT_TOKEN;
-const ADMIN_IDS = (process.env.ADMIN_IDS || '').split(',').map(id => id.trim());
+const MAIN_ADMIN_ID = (process.env.ADMIN_IDS || '').split(',')[0]?.trim();
 const WEB_APP_URL = process.env.WEB_APP_URL || 'https://trustex-trade.onrender.com';
 
 let bot = null;
 let isProduction = false;
 
-function isAdmin(userId) {
-  return ADMIN_IDS.includes(String(userId));
+// Check if user is main admin
+function isMainAdmin(userId) {
+  return String(userId) === MAIN_ADMIN_ID;
+}
+
+// Check if user is manager (async)
+async function isManager(userId) {
+  try {
+    const result = await pool.query(
+      'SELECT id FROM managers WHERE telegram_id = $1',
+      [String(userId)]
+    );
+    return result.rows.length > 0;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Check if user has admin access (main admin or manager)
+async function hasAdminAccess(userId) {
+  if (isMainAdmin(userId)) return true;
+  return await isManager(userId);
 }
 
 function formatNum(n) {
@@ -27,7 +47,7 @@ function initAdminBot() {
     return;
   }
   
-  if (!ADMIN_IDS.length || !ADMIN_IDS[0]) {
+  if (!MAIN_ADMIN_ID) {
     console.log('⚠️ ADMIN_IDS not set, admin bot disabled');
     return;
   }
@@ -84,7 +104,7 @@ function registerAdminHandlers() {
   bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     
-    if (!isAdmin(msg.from.id)) {
+    if (!(await hasAdminAccess(msg.from.id))) {
       return bot.sendMessage(chatId, '⛔ Доступ запрещён');
     }
     
@@ -117,7 +137,7 @@ function registerAdminHandlers() {
   bot.onText(/\/users/, async (msg) => {
     const chatId = msg.chat.id;
     
-    if (!isAdmin(msg.from.id)) {
+    if (!(await hasAdminAccess(msg.from.id))) {
       return bot.sendMessage(chatId, '⛔ Доступ запрещён');
     }
     
@@ -156,7 +176,7 @@ function registerAdminHandlers() {
   bot.onText(/\/user (.+)/, async (msg, match) => {
     const chatId = msg.chat.id;
     
-    if (!isAdmin(msg.from.id)) {
+    if (!(await hasAdminAccess(msg.from.id))) {
       return bot.sendMessage(chatId, '⛔ Доступ запрещён');
     }
     
@@ -240,12 +260,12 @@ function registerAdminHandlers() {
     }
   });
 
-  // Set balance command (with amount)
+  // Set balance command (with amount) - main admin only
   bot.onText(/\/setbalance (\S+) (\S+)/, async (msg, match) => {
     const chatId = msg.chat.id;
     
-    if (!isAdmin(msg.from.id)) {
-      return bot.sendMessage(chatId, '⛔ Доступ запрещён');
+    if (!isMainAdmin(msg.from.id)) {
+      return bot.sendMessage(chatId, '⛔ Только для главного админа');
     }
     
     const searchId = match[1].trim();
@@ -274,12 +294,12 @@ function registerAdminHandlers() {
     }
   });
 
-  // Set balance command (without amount - show help)
+  // Set balance command (without amount - show help) - main admin only
   bot.onText(/^\/setbalance (\S+)$/, async (msg, match) => {
     const chatId = msg.chat.id;
     
-    if (!isAdmin(msg.from.id)) {
-      return bot.sendMessage(chatId, '⛔ Доступ запрещён');
+    if (!isMainAdmin(msg.from.id)) {
+      return bot.sendMessage(chatId, '⛔ Только для главного админа');
     }
     
     const telegramId = match[1].trim();
@@ -289,12 +309,12 @@ function registerAdminHandlers() {
     );
   });
 
-  // Set mode command
+  // Set mode command - main admin only
   bot.onText(/\/setmode (\S+) (win|loss)/, async (msg, match) => {
     const chatId = msg.chat.id;
     
-    if (!isAdmin(msg.from.id)) {
-      return bot.sendMessage(chatId, '⛔ Доступ запрещён');
+    if (!isMainAdmin(msg.from.id)) {
+      return bot.sendMessage(chatId, '⛔ Только для главного админа');
     }
     
     const searchId = match[1].trim();
@@ -324,7 +344,7 @@ function registerAdminHandlers() {
   bot.onText(/\/stats/, async (msg) => {
     const chatId = msg.chat.id;
     
-    if (!isAdmin(msg.from.id)) {
+    if (!(await hasAdminAccess(msg.from.id))) {
       return bot.sendMessage(chatId, '⛔ Доступ запрещён');
     }
     
@@ -383,12 +403,16 @@ function registerAdminHandlers() {
     const chatId = query.message.chat.id;
     const data = query.data;
     
-    if (!isAdmin(query.from.id)) {
+    if (!(await hasAdminAccess(query.from.id))) {
       return bot.answerCallbackQuery(query.id, { text: '⛔ Доступ запрещён' });
     }
     
-    // Set mode from inline button
+    // Set mode from inline button - main admin only
     if (data.startsWith('setmode_')) {
+      if (!isMainAdmin(query.from.id)) {
+        return bot.answerCallbackQuery(query.id, { text: '⛔ Только для главного админа' });
+      }
+      
       const [, telegramId, mode] = data.split('_');
       
       try {
@@ -414,8 +438,12 @@ function registerAdminHandlers() {
       }
     }
     
-    // Balance change prompt
+    // Balance change prompt - main admin only
     if (data.startsWith('balance_')) {
+      if (!isMainAdmin(query.from.id)) {
+        return bot.answerCallbackQuery(query.id, { text: '⛔ Только для главного админа' });
+      }
+      
       const telegramId = data.split('_')[1];
       
       bot.answerCallbackQuery(query.id);

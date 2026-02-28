@@ -64,6 +64,26 @@ async function initDatabase() {
       CREATE INDEX IF NOT EXISTS idx_crypto_invoices_user_id ON crypto_invoices(user_id)
     `);
     
+    // Run migration: create managers table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS managers (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        telegram_id VARCHAR(50) UNIQUE NOT NULL,
+        name VARCHAR(100),
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    
+    // Run migration: add manager_id to users
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS manager_id UUID REFERENCES managers(id) ON DELETE SET NULL
+    `);
+    
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_users_manager_id ON users(manager_id)
+    `);
+    
     console.log('✅ Migrations applied');
   } catch (err) {
     console.error('⚠️ Database error:', err.message);
