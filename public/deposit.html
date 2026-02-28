@@ -344,9 +344,15 @@
                     // Показываем инфо и открываем оплату
                     alert(`✅ Заявка создана!\n\nСумма: ${amount} USDT\n\nСейчас откроется окно оплаты через CryptoBot.`);
                     
-                    // Открываем ссылку на оплату
+                    // Открываем ссылку на оплату через Telegram API
                     if (result.data.pay_url) {
-                        window.open(result.data.pay_url, '_blank');
+                        if (tg && tg.openLink) {
+                            tg.openLink(result.data.pay_url);
+                        } else if (tg && tg.openTelegramLink && result.data.bot_invoice_url) {
+                            tg.openTelegramLink(result.data.bot_invoice_url);
+                        } else {
+                            window.location.href = result.data.pay_url;
+                        }
                     }
                     
                     closePayment();
