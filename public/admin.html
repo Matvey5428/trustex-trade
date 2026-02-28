@@ -538,6 +538,14 @@
           <button class="btn-primary" onclick="saveUserChanges()" style="flex: 1;">💾 Сохранить</button>
           <button class="btn-primary" onclick="openChat()" style="flex: 1; background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">💬 Чат</button>
         </div>
+        
+        <!-- User Payment History -->
+        <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+          <div style="font-size: 14px; font-weight: 600; color: #ffd700; margin-bottom: 10px;">💳 История оплат</div>
+          <div id="userInvoiceHistory" style="max-height: 200px; overflow-y: auto;">
+            <div class="loading" style="font-size: 12px; padding: 10px;">Загрузка...</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -767,9 +775,82 @@
           updateModeButtons();
           
           document.getElementById('userModal').classList.add('active');
+          
+          // Load user payment history
+          loadUserInvoices(telegramId);
         }
       } catch (e) {
         showToast('Ошибка загрузки', 'error');
+      }
+    }
+    
+    async function loadUserInvoices(telegramId) {
+      const container = document.getElementById('userInvoiceHistory');
+      container.innerHTML = '<div class="loading" style="font-size: 12px; padding: 10px;">Загрузка...</div>';
+      
+      try {
+        const res = await fetch(`${API_BASE}/user/${telegramId}/invoices?adminId=${adminId}`);
+        const data = await res.json();
+        
+        if (data.success && data.data.length > 0) {
+          container.innerHTML = data.data.map(inv => {
+            const isPaid = inv.status === 'paid';
+            const date = new Date(inv.created_at).toLocaleString('ru-RU');
+            const paidDate = inv.paid_at ? new Date(inv.paid_at).toLocaleString('ru-RU') : null;
+            
+            return `
+              <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; margin-bottom: 8px; border-left: 3px solid ${isPaid ? '#00ff88' : '#ffd700'};">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-weight: 600; color: #4db8ff;">${parseFloat(inv.amount).toFixed(2)} ${inv.asset}</span>
+                  <span style="font-size: 11px; padding: 3px 8px; border-radius: 10px; background: ${isPaid ? 'rgba(0,255,136,0.2)' : 'rgba(255,215,0,0.2)'}; color: ${isPaid ? '#00ff88' : '#ffd700'};">
+                    ${isPaid ? '✅ Оплачен' : '⏳ Ожидает'}
+                  </span>
+                </div>
+                <div style="font-size: 11px; color: #8892b0; margin-top: 5px;">
+                  Создан: ${date}${paidDate ? '<br>Оплачен: ' + paidDate : ''}
+                </div>
+                ${!isPaid ? `<button onclick="confirmInvoiceFromModal('${inv.invoice_id}')" style="width: 100%; margin-top: 8px; padding: 6px; background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%); border: none; border-radius: 6px; color: #000; font-weight: 600; font-size: 12px; cursor: pointer;">✅ Подтвердить</button>` : ''}
+              </div>
+            `;
+          }).join('');
+        } else {
+          container.innerHTML = '<div style="font-size: 12px; color: #8892b0; text-align: center; padding: 15px;">Нет оплат</div>';
+        }
+      } catch (e) {
+        container.innerHTML = '<div style="font-size: 12px; color: #ff4444; text-align: center; padding: 10px;">Ошибка загрузки</div>';
+      }
+    }
+    
+    async function confirmInvoiceFromModal(invoiceId) {
+      if (!confirm('Подтвердить оплату?')) return;
+      
+      try {
+        const res = await fetch(`${API_BASE}/invoices/${invoiceId}/confirm`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminId })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast('✅ Оплата подтверждена!', 'success');
+          if (currentUser) {
+            loadUserInvoices(currentUser.telegram_id);
+            // Refresh user data
+            const userRes = await fetch(`${API_BASE}/user/${currentUser.telegram_id}?adminId=${adminId}`);
+            const userData = await userRes.json();
+            if (userData.success) {
+              currentUser = userData.data;
+              document.getElementById('newBalance').value = parseFloat(currentUser.balance_usdt).toFixed(2);
+            }
+          }
+          loadStats();
+        } else {
+          showToast('❌ ' + data.error, 'error');
+        }
+      } catch (e) {
+        showToast('❌ Ошибка', 'error');
       }
     }
     

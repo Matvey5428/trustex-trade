@@ -134,6 +134,43 @@ router.get('/user/:telegramId', adminCheck, async (req, res) => {
 });
 
 /**
+ * GET /api/admin/user/:telegramId/invoices
+ * Get user's payment history
+ */
+router.get('/user/:telegramId/invoices', adminCheck, async (req, res) => {
+  try {
+    const { telegramId } = req.params;
+    
+    // Get user
+    const userResult = await pool.query('SELECT id FROM users WHERE telegram_id = $1', [telegramId]);
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    
+    const userId = userResult.rows[0].id;
+    
+    // Get invoices
+    const result = await pool.query(
+      `SELECT invoice_id, amount, asset, status, pay_url, created_at, paid_at
+       FROM crypto_invoices
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 20`,
+      [userId]
+    );
+    
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('User invoices error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
  * PUT /api/admin/user/:telegramId
  * Update user balance and mode
  */
