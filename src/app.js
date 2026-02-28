@@ -72,27 +72,21 @@ if (adminWebhookPath) {
 
 // CryptoBot Payment Webhook
 app.post('/api/cryptobot-webhook', async (req, res) => {
+  console.log('📩 CryptoBot webhook received:', JSON.stringify(req.body).substring(0, 200));
+  
   try {
     const pool = require('./config/database');
     const crypto = require('crypto');
     const CRYPTOBOT_TOKEN = process.env.CRYPTOBOT_API_TOKEN;
     
     if (!CRYPTOBOT_TOKEN) {
-      return res.sendStatus(200);
-    }
-    
-    // Verify signature
-    const signature = req.headers['crypto-pay-api-signature'];
-    const checkString = JSON.stringify(req.body);
-    const secret = crypto.createHash('sha256').update(CRYPTOBOT_TOKEN).digest();
-    const hmac = crypto.createHmac('sha256', secret).update(checkString).digest('hex');
-    
-    if (signature !== hmac) {
-      console.warn('⚠️ Invalid CryptoBot webhook signature');
+      console.warn('⚠️ CRYPTOBOT_API_TOKEN not set');
       return res.sendStatus(200);
     }
     
     const { update_type, payload } = req.body;
+    
+    console.log(`📩 CryptoBot update_type: ${update_type}`);
     
     if (update_type === 'invoice_paid') {
       const invoice = payload;

@@ -70,6 +70,39 @@ async function initDatabase() {
   }
 }
 
+// Setup CryptoBot webhook
+async function setupCryptoBotWebhook() {
+  const CRYPTOBOT_TOKEN = process.env.CRYPTOBOT_API_TOKEN;
+  const WEB_APP_URL = process.env.WEB_APP_URL || 'https://trustex-trade.onrender.com';
+  
+  if (!CRYPTOBOT_TOKEN || process.env.NODE_ENV !== 'production') {
+    return;
+  }
+  
+  try {
+    const webhookUrl = `${WEB_APP_URL}/api/cryptobot-webhook`;
+    
+    const response = await fetch('https://pay.crypt.bot/api/setWebhook', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Crypto-Pay-API-Token': CRYPTOBOT_TOKEN
+      },
+      body: JSON.stringify({ url: webhookUrl })
+    });
+    
+    const result = await response.json();
+    
+    if (result.ok) {
+      console.log('✅ CryptoBot webhook set:', webhookUrl);
+    } else {
+      console.error('❌ CryptoBot webhook error:', result.error);
+    }
+  } catch (error) {
+    console.error('❌ CryptoBot webhook setup failed:', error.message);
+  }
+}
+
 initDatabase();
 
 // Start Telegram Bots
@@ -81,6 +114,9 @@ app.listen(PORT, () => {
   console.log(`\n🚀 Server running on port ${PORT} (${NODE_ENV})\n`);
   console.log(`📍 Local: http://localhost:${PORT}`);
   console.log(`🏥 Health: http://localhost:${PORT}/health\n`);
+  
+  // Setup CryptoBot webhook after server starts
+  setupCryptoBotWebhook();
 });
 
 // Graceful shutdown
