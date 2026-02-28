@@ -181,9 +181,60 @@
       .action-box { width: 60px; height: 60px; font-size: 20px; }
       .action-item .label { font-size: 12px; }
     }
+    
+    .support-fab {
+      position: fixed;
+      bottom: 100px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4db8ff 0%, #2ea3e8 100%);
+      border: none;
+      box-shadow: 0 4px 15px rgba(77, 184, 255, 0.4);
+      cursor: pointer;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .support-fab:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(77, 184, 255, 0.6);
+    }
+    
+    .support-fab:active {
+      transform: scale(0.95);
+    }
+    
+    .support-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: #ff4444;
+      color: #fff;
+      font-size: 11px;
+      font-weight: bold;
+      min-width: 20px;
+      height: 20px;
+      border-radius: 10px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 0 5px;
+    }
   </style>
 </head>
 <body>
+
+<!-- Floating Support Button -->
+<button class="support-fab" onclick="window.location.href='support.html'">
+  💬
+  <span class="support-badge" id="supportBadge"></span>
+</button>
 
 <div class="app-container">
 
@@ -202,13 +253,6 @@
         <div class="action-item">
           <button class="action-box" onclick="window.location.href='exchange.html'">⇄</button>
           <div class="label">Обменять</div>
-        </div>
-        <div class="action-item">
-          <button class="action-box" onclick="window.location.href='support.html'" style="position: relative;">
-            💬
-            <span id="supportBadge" style="display: none; position: absolute; top: -5px; right: -5px; background: #ff4444; color: #fff; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"></span>
-          </button>
-          <div class="label">Поддержка</div>
         </div>
       </div>
     </div>
