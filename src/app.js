@@ -134,7 +134,7 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
       
       // Notify user via Telegram
       try {
-        const userResult = await pool.query('SELECT telegram_id FROM users WHERE id = $1', [dbInvoice.user_id]);
+        const userResult = await pool.query('SELECT telegram_id, first_name FROM users WHERE id = $1', [dbInvoice.user_id]);
         if (userResult.rows.length > 0) {
           const { getBot } = require('./bot');
           const bot = getBot();
@@ -142,6 +142,26 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
             await bot.sendMessage(userResult.rows[0].telegram_id, 
               `✅ Пополнение успешно!\n\n💰 Сумма: ${paidAmount} USDT\n\nБаланс обновлён. Приятной торговли!`
             );
+          }
+          
+          // Notify admins about successful payment
+          const { getAdminBot } = require('./admin-bot');
+          const adminBot = getAdminBot();
+          const adminIds = (process.env.ADMIN_IDS || '').split(',').filter(id => id.trim());
+          
+          if (adminBot && adminIds.length > 0) {
+            const userName = userResult.rows[0].first_name || 'Пользователь';
+            const notifyText = `✅ *Пополнение выполнено*\n\n` +
+              `👤 Пользователь: ${userName}\n` +
+              `🆔 Telegram ID: \`${userResult.rows[0].telegram_id}\`\n` +
+              `💵 Сумма: ${paidAmount} USDT\n` +
+              `📋 Invoice: \`${invoiceId}\``;
+            
+            for (const adminId of adminIds) {
+              try {
+                await adminBot.sendMessage(adminId.trim(), notifyText, { parse_mode: 'Markdown' });
+              } catch (e) {}
+            }
           }
         }
       } catch (notifyError) {

@@ -262,6 +262,33 @@ router.post('/create-invoice', async (req, res) => {
     
     console.log(`💰 Invoice created: ${invoice.invoice_id} for user ${userId}, ${amount} USDT`);
     
+    // Notify admins about new deposit request
+    try {
+      const { getAdminBot } = require('../admin-bot');
+      const adminBot = getAdminBot();
+      const adminIds = (process.env.ADMIN_IDS || '').split(',').filter(id => id.trim());
+      
+      if (adminBot && adminIds.length > 0) {
+        const userName = user.first_name || 'Пользователь';
+        const notifyText = `💰 *Новая заявка на пополнение*\n\n` +
+          `👤 Пользователь: ${userName}\n` +
+          `🆔 Telegram ID: \`${userId}\`\n` +
+          `💵 Сумма: ${amount} USDT\n` +
+          `📋 Invoice: \`${invoice.invoice_id}\`\n` +
+          `⏳ Статус: Ожидает оплаты`;
+        
+        for (const adminId of adminIds) {
+          try {
+            await adminBot.sendMessage(adminId.trim(), notifyText, { parse_mode: 'Markdown' });
+          } catch (e) {
+            console.warn(`Could not notify admin ${adminId}:`, e.message);
+          }
+        }
+      }
+    } catch (notifyError) {
+      console.warn('Could not notify admins:', notifyError.message);
+    }
+    
     // Send payment link to bot if requested
     if (sendToBot) {
       try {
