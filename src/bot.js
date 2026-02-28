@@ -284,6 +284,11 @@ function registerHandlers() {
         return;
       }
 
+      // Игнорируем ссылки CryptoBot - это не сообщения в техподдержку
+      if (text.includes('t.me/CryptoBot') || text.includes('CryptoBot?start=')) {
+        return;
+      }
+
       const dbUserId = userResult.rows[0].id;
 
       // Сохраняем сообщение в базу
