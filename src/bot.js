@@ -5,6 +5,7 @@
  */
 
 const TelegramBot = require('node-telegram-bot-api');
+const pool = require('./config/database');
 
 // Получаем токен из переменных окружения
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
