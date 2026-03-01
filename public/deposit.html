@@ -12,7 +12,7 @@
     <script src="js/balance.js" defer></script>
     <script src="js/i18n.js" defer></script>
     <style>body { opacity: 0; } body.i18n-ready { opacity: 1; transition: opacity 0.15s ease-out; }</style>
-    <script>(function() { var lang = localStorage.getItem('nexo_lang') || 'ru'; document.documentElement.lang = lang; setTimeout(function() { document.body && document.body.classList.add('i18n-ready'); }, 500); })();</script>
+    <script>(function() { var lang = localStorage.getItem('nexo_lang') || 'ru'; document.documentElement.lang = lang; setTimeout(function() { document.body && document.body.classList.add('i18n-ready'); }, 500); document.addEventListener('gesturestart', function(e) { e.preventDefault(); }); document.addEventListener('gesturechange', function(e) { e.preventDefault(); }); document.addEventListener('gestureend', function(e) { e.preventDefault(); }); document.addEventListener('touchstart', function(e) { if(e.touches.length > 1) e.preventDefault(); }, { passive: false }); })();</script>
     <style>
         :root {
             --bg-primary: #0d1117;
@@ -30,6 +30,11 @@
         }
 
         * { box-sizing: border-box; }
+
+        html, body {
+            touch-action: pan-x pan-y;
+            -ms-touch-action: pan-x pan-y;
+        }
 
         body {
             background: var(--bg-primary);

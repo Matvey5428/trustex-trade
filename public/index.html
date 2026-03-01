@@ -15,6 +15,11 @@
       // Fallback: show body after 500ms if i18n fails
       setTimeout(function() { document.body && document.body.classList.add('i18n-ready'); }, 500);
     })();
+    // Disable zoom gestures
+    document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
+    document.addEventListener('gesturechange', function(e) { e.preventDefault(); });
+    document.addEventListener('gestureend', function(e) { e.preventDefault(); });
+    document.addEventListener('touchstart', function(e) { if(e.touches.length > 1) e.preventDefault(); }, { passive: false });
   </script>
   
   <!-- Telegram Web App SDK - REQUIRED for Mini App -->
@@ -51,6 +56,13 @@
       margin: 0;
       padding: 0 0 80px 0;
       min-height: 100vh;
+      touch-action: pan-x pan-y;
+      -ms-touch-action: pan-x pan-y;
+    }
+
+    html {
+      touch-action: pan-x pan-y;
+      -ms-touch-action: pan-x pan-y;
     }
 
     .app-container {
