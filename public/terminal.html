@@ -1048,7 +1048,16 @@
     const lang = localStorage.getItem('nexo_lang') || 'en';
     const amount = parseFloat(document.getElementById('tradeAmount').value);
     const balanceStr = document.getElementById('panelAvailableUsdt').textContent;
-    const balance = parseFloat(balanceStr.replace(/[^0-9.]/g, ''));
+    // Parse balance - handle both formats: "2,000.00" and "2.000,00"
+    let balanceNum = balanceStr.replace(/[^\d.,]/g, '');
+    // If comma is after dot, it's European format (1.000,50) -> replace comma with dot and remove dot separators
+    if (balanceNum.indexOf(',') > balanceNum.indexOf('.')) {
+      balanceNum = balanceNum.replace(/\./g, '').replace(',', '.');
+    } else {
+      // US format or simple - just remove commas
+      balanceNum = balanceNum.replace(/,/g, '');
+    }
+    const balance = parseFloat(balanceNum) || 0;
     
     const minAmountText = lang === 'ru' ? 'Минимальная сумма: 1 USDT' : 'Minimum amount: 1 USDT';
     if (isNaN(amount) || amount < 1) { alert(minAmountText); return; }
