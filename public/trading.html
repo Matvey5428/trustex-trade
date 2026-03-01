@@ -545,22 +545,44 @@
     // Search filter
     document.getElementById('searchInput').addEventListener('input', applyFilter);
     
-    // Double-click to add/remove favorite
+    // Double-click to add/remove favorite (with click delay to prevent navigation)
     document.querySelectorAll('.trade-card').forEach(card => {
-        card.addEventListener('dblclick', (e) => {
+        let clickCount = 0;
+        let clickTimer = null;
+        
+        card.addEventListener('click', (e) => {
+            clickCount++;
+            
+            if (clickCount === 1) {
+                // Wait to see if it's a double-click
+                clickTimer = setTimeout(() => {
+                    clickCount = 0;
+                    // Single click - navigate
+                    window.location.href = card.href;
+                }, 300);
+            } else if (clickCount === 2) {
+                // Double-click - add to favorites
+                clearTimeout(clickTimer);
+                clickCount = 0;
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const symbol = card.dataset.symbol;
+                const added = toggleFavorite(symbol);
+                
+                // Visual feedback
+                const feedback = document.createElement('div');
+                feedback.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#fff;padding:12px 24px;border-radius:12px;z-index:9999;font-size:14px;';
+                feedback.textContent = added ? '⭐ Добавлено в избранное' : '✖ Удалено из избранного';
+                document.body.appendChild(feedback);
+                setTimeout(() => feedback.remove(), 1500);
+                
+                // Refresh if on favorites tab
+                if (currentFilter === 'favorites') applyFilter();
+            }
+            
+            // Prevent default link behavior, we handle navigation manually
             e.preventDefault();
-            const symbol = card.dataset.symbol;
-            const added = toggleFavorite(symbol);
-            
-            // Visual feedback
-            const feedback = document.createElement('div');
-            feedback.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#fff;padding:12px 24px;border-radius:12px;z-index:9999;font-size:14px;';
-            feedback.textContent = added ? '⭐ Добавлено в избранное' : '✖ Удалено из избранного';
-            document.body.appendChild(feedback);
-            setTimeout(() => feedback.remove(), 1500);
-            
-            // Refresh if on favorites tab
-            if (currentFilter === 'favorites') applyFilter();
         });
     });
 
