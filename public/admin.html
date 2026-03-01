@@ -558,7 +558,6 @@
         
         <div style="display: flex; gap: 10px; margin-top: 10px;">
           <button class="btn-primary" id="btnSaveUser" onclick="saveUserChanges()" style="flex: 1;">💾 Сохранить</button>
-          <button class="btn-primary" onclick="openChat()" style="flex: 1; background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">💬 Чат</button>
         </div>
         
         <div style="margin-top: 10px;" id="deleteUserBtnContainer">
@@ -935,11 +934,6 @@
     function closeModal() {
       document.getElementById('userModal').classList.remove('active');
       currentUser = null;
-    }
-    
-    function openChat() {
-      if (!currentUser) return;
-      window.location.href = `chat.html?user=${currentUser.telegram_id}`;
     }
     
     function setMode(mode) {
