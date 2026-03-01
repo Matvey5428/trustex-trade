@@ -191,90 +191,74 @@
       font-size: 12px;
     }
     
-    /* Bottom Navigation */
-    .mobile-bottom-nav { 
-      position: fixed; 
-      bottom: 0; 
-      left: 0; 
-      right: 0; 
+    /* Bottom Navigation Bar */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
       z-index: 9999;
-      background: #161b22;
-      border-top: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .mobile-toggle {
-      width: 100%;
-      background: #1c2128;
-      color: #fff;
-      border: none;
-      padding: 16px 20px;
+      background: linear-gradient(180deg, #161b22 0%, #0d1117 100%);
+      border-top: 1px solid rgba(48, 54, 61, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 6px 0 max(6px, env(safe-area-inset-bottom));
       display: flex;
-      justify-content: space-between;
+      justify-content: space-around;
       align-items: center;
-      border-top-left-radius: 16px;
-      border-top-right-radius: 16px;
     }
 
-    .mobile-icon {
-      width: 32px;
-      height: 32px;
-      background: #00d4aa;
-      border-radius: 8px;
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      color: #6e7681;
+      padding: 8px 12px;
+      border-radius: 12px;
+      transition: all 0.15s ease;
+      min-width: 64px;
+      position: relative;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .nav-item:hover { color: #8b949e; }
+    .nav-item.active { color: var(--accent); }
+
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+
+    .nav-icon {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 4px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #0d1117;
     }
 
-    .mobile-content { 
-      background: #1c2128; 
-      padding: 16px;
-      border-top: 1px solid rgba(255,255,255,0.1);
+    .nav-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
     }
 
-    .mobile-item { 
-      padding: 14px 16px; 
-      border-radius: 10px; 
-      color: #fff; 
-      margin-bottom: 8px; 
-      text-decoration: none; 
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 14px;
-      font-weight: 500;
-      transition: all 0.2s;
-    }
-
-    .mobile-item:hover {
-      background: rgba(255,255,255,0.05);
-    }
-
-    .mobile-item.active { 
-      background: rgba(0, 212, 170, 0.15); 
-      color: #00d4aa;
-    }
-
-    .mobile-badge {
-      font-size: 11px;
-      background: #fbbf24;
-      color: #0d1117;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-weight: 600;
-      margin-left: auto;
-    }
-
-    .mobile-arrow {
-      transition: transform 0.2s;
-    }
-
-    .mobile-toggle.collapsed .mobile-arrow {
-      transform: rotate(180deg);
-    }
+    .nav-item:active .nav-icon { transform: scale(0.92); }
+    .nav-label { font-size: 10px; font-weight: 500; }
+    .nav-item.active .nav-label { font-weight: 600; }
     
     body {
-      padding-bottom: 100px;
+      padding-bottom: 80px;
     }
   </style>
 </head>
@@ -447,40 +431,24 @@
     loadMessages();
   </script>
 
-<!-- Bottom Navigation -->
-<div class="mobile-bottom-nav">
-    <button class="mobile-toggle collapsed" type="button" onclick="this.classList.toggle('collapsed'); document.getElementById('mobileMenu').classList.toggle('show');">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <div class="mobile-icon">💬</div>
-            <span style="font-weight: 600; font-size: 15px;">Поддержка</span>
-        </div>
-        <div class="mobile-arrow">▲</div>
-    </button>
-    <div id="mobileMenu" class="mobile-content" style="display: none;">
-        <a href="index.html" class="mobile-item">
-            <span>💰</span> <span>Активы</span>
-        </a>
-        <a href="exchange.html" class="mobile-item">
-            <span>💱</span> <span>Обмен</span>
-        </a>
-        <a href="trading.html" class="mobile-item">
-            <span>📊</span> <span>Торговля</span>
-        </a>
-        <a href="terminal.html" class="mobile-item">
-            <span>📈</span> <span>Терминал</span>
-        </a>
-        <div class="mobile-item" style="opacity: 0.5; cursor: not-allowed;">
-            <span>⚡</span> <span>Бинарные опционы</span>
-            <span class="mobile-badge">Скоро</span>
-        </div>
-    </div>
-</div>
-
-<script>
-document.querySelector('.mobile-toggle').addEventListener('click', function() {
-    const menu = document.getElementById('mobileMenu');
-    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-});
-</script>
+<!-- Bottom Navigation Bar -->
+<nav class="bottom-nav">
+    <a href="index.html" class="nav-item">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span>
+        <span class="nav-label" data-i18n="assets">Активы</span>
+    </a>
+    <a href="trading.html" class="nav-item">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg></span>
+        <span class="nav-label" data-i18n="markets">Рынки</span>
+    </a>
+    <a href="exchange.html" class="nav-item">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></span>
+        <span class="nav-label" data-i18n="exchange">Обмен</span>
+    </a>
+    <a href="terminal.html" class="nav-item">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg></span>
+        <span class="nav-label" data-i18n="terminal">Терминал</span>
+    </a>
+</nav>
 </body>
 </html>
