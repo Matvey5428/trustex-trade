@@ -964,11 +964,12 @@
             </div>
           `;
         } else {
+          const displayAmount = isWin ? (Number(trade.fromAmount || 0) + Number(trade.profit || 0)) : Number(trade.fromAmount || 0);
           return `
             <div class="trade-item">
               <div>
                 <div class="trade-amount ${statusClass}">
-                  ${sign} ${Number(trade.fromAmount || 0).toFixed(2)} USDT 
+                  ${sign} ${displayAmount.toFixed(2)} USDT 
                   <span style="color: ${arrowColor};">${arrow}</span>
                 </div>
                 <div class="trade-date">${created.toLocaleDateString(dateLocale)} ${created.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' })}</div>

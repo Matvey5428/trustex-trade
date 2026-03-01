@@ -50,8 +50,8 @@ async function closeTrade(trade) {
 
     // Update trade status
     await client.query(
-      'UPDATE orders SET status = $1, result = $2, closed_at = NOW() WHERE id = $3',
-      ['closed', result, trade.id]
+      'UPDATE orders SET status = $1, result = $2, profit = $3, closed_at = NOW() WHERE id = $4',
+      ['closed', result, profit, trade.id]
     );
 
     // If win - add money back

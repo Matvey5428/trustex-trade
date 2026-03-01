@@ -182,8 +182,8 @@ router.post('/close/:tradeId', async (req, res) => {
 
       // Update trade status
       await client.query(
-        'UPDATE orders SET status = $1, result = $2, closed_at = NOW() WHERE id = $3',
-        ['closed', result, tradeId]
+        'UPDATE orders SET status = $1, result = $2, profit = $3, closed_at = NOW() WHERE id = $4',
+        ['closed', result, profit, tradeId]
       );
 
       // If win - add money back
@@ -252,7 +252,7 @@ router.get('/history/:userId', async (req, res) => {
     }
 
     // Build query with optional symbol filter
-    let query = `SELECT id, direction, amount, result, status, duration, symbol, created_at as "createdAt", expires_at as "expiresAt"
+    let query = `SELECT id, direction, amount, result, status, duration, symbol, profit, created_at as "createdAt", expires_at as "expiresAt"
        FROM orders 
        WHERE user_id = $1`;
     const params = [userResult.rows[0].id];
@@ -276,6 +276,7 @@ router.get('/history/:userId', async (req, res) => {
       toCurrency: row.direction === 'up' ? '↑' : '↓',
       direction: row.direction,
       fromAmount: row.amount,
+      profit: parseFloat(row.profit) || 0,
       status: row.result === 'win' ? 'successful' : row.result === 'loss' ? 'failed' : row.status,
       createdAt: row.createdAt,
       expiresAt: row.expiresAt,
