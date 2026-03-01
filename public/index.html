@@ -819,6 +819,33 @@
       font-weight: 500;
       color: var(--text-muted);
     }
+    
+    /* Skeleton Loading */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-hover) 50%, var(--bg-secondary) 75%);
+      background-size: 200% 100%;
+      animation: skeleton-pulse 1.5s ease-in-out infinite;
+      border-radius: 6px;
+      color: transparent !important;
+    }
+    
+    @keyframes skeleton-pulse {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    
+    .balance.loaded {
+      animation: balance-appear 0.3s ease-out;
+    }
+    
+    @keyframes balance-appear {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    
+    .asset-right.loaded {
+      animation: balance-appear 0.2s ease-out;
+    }
   </style>
 </head>
 <body>
@@ -904,7 +931,7 @@
       <div class="balance-label">
         <span>💎</span> <span data-i18n="totalBalance">Общий баланс</span>
       </div>
-      <div class="balance" id="totalBalance">$0.00</div>
+      <div class="balance skeleton" id="totalBalance">$0000.00</div>
       <div class="action-wrapper">      
         <div class="action-item">
           <button class="action-box" onclick="window.location.href='deposit.html'">↑</button>
@@ -981,7 +1008,7 @@
           <div class="coin gold">₽</div>
           <div><div class="asset-name" data-i18n="rub">Российский рубль</div><div class="asset-price" id="rubPrice">... ₽</div></div>
         </div>
-        <div class="asset-right" id="rubBalance">0.00 ₽</div>
+        <div class="asset-right skeleton" id="rubBalance">0000.00 ₽</div>
       </div>
     </div>
 
@@ -990,19 +1017,19 @@
       <h5 class="section-title">🪙 <span data-i18n="crypto">Криптовалюты</span></h5>
       <div class="asset-item">
         <div class="asset-left d-flex align-items-center gap-3"><div class="coin btc">₿</div><div><div class="asset-name">Bitcoin</div><div class="asset-price" id="btcPrice">... $</div></div></div>
-        <div class="asset-right" id="btcBalance">0.00 $</div>
+        <div class="asset-right skeleton" id="btcBalance">0.0000 $</div>
       </div>
       <div class="asset-item">
         <div class="asset-left d-flex align-items-center gap-3"><div class="coin ton">T</div><div><div class="asset-name">Toncoin</div><div class="asset-price" id="tonPrice">... $</div></div></div>
-        <div class="asset-right" id="tonBalance">0.00 $</div>
+        <div class="asset-right skeleton" id="tonBalance">0.0000 $</div>
       </div>
       <div class="asset-item">
         <div class="asset-left d-flex align-items-center gap-3"><div class="coin eth">◆</div><div><div class="asset-name">Ethereum</div><div class="asset-price" id="ethPrice">... $</div></div></div>
-        <div class="asset-right" id="ethBalance">0.00 $</div>
+        <div class="asset-right skeleton" id="ethBalance">0.0000 $</div>
       </div>
       <div class="asset-item">
         <div class="asset-left d-flex align-items-center gap-3"><div class="coin usdt">₮</div><div><div class="asset-name">Tether</div><div class="asset-price" id="usdtPrice">1.00 $</div></div></div>
-        <div class="asset-right" id="usdtBalance">0.00 $</div>
+        <div class="asset-right skeleton" id="usdtBalance">0.00 $</div>
       </div>
     </div>
 

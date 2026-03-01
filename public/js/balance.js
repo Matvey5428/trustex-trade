@@ -104,6 +104,9 @@ const BalanceManager = {
       const el = document.getElementById(id);
       if (el) {
         el.textContent = value;
+        // Remove skeleton loading state and add loaded animation
+        el.classList.remove('skeleton');
+        el.classList.add('loaded');
       }
     }
     
