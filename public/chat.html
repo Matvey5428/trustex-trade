@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TrustEx Chat</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0e1a;
+      color: #fff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #1a1f35 0%, #0d1117 100%);
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      flex-shrink: 0;
+    }
+    
+    .back-btn {
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: #fff;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    
+    .user-info {
+      flex: 1;
+    }
+    
+    .user-name {
+      font-weight: 600;
+      font-size: 16px;
+    }
+    
+    .user-status {
+      font-size: 12px;
+      color: #8892b0;
+    }
+    
+    .messages-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .message {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 15px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+    
+    .message.admin {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #4db8ff 0%, #2ea3e8 100%);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    
+    .message.user {
+      align-self: flex-start;
+      background: #1a2332;
+      color: #fff;
+      border-bottom-left-radius: 4px;
+    }
+    
+    .message-time {
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      margin-top: 4px;
+    }
+    
+    .message.admin .message-time {
+      text-align: right;
+    }
+    
+    .input-container {
+      background: #1a1f35;
+      padding: 12px 15px;
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      flex-shrink: 0;
+    }
+    
+    .message-input {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 10px 16px;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+    }
+    
+    .message-input::placeholder {
+      color: #8892b0;
+    }
+    
+    .message-input:focus {
+      border-color: #4db8ff;
+    }
+    
+    .send-btn {
+      background: linear-gradient(135deg, #4db8ff 0%, #2ea3e8 100%);
+      border: none;
+      color: #fff;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    
+    .send-btn:disabled {
+      opacity: 0.5;
+    }
+    
+    .empty-state {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #8892b0;
+      text-align: center;
+      padding: 20px;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #8892b0;
+    }
+    
+    .date-divider {
+      text-align: center;
+      color: #8892b0;
+      font-size: 12px;
+      margin: 15px 0;
+      position: relative;
+    }
+    
+    .date-divider::before,
+    .date-divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 30%;
+      height: 1px;
+      background: rgba(255,255,255,0.1);
+    }
+    
+    .date-divider::before {
+      left: 0;
+    }
+    
+    .date-divider::after {
+      right: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <button class="back-btn" onclick="goBack()">←</button>
+    <div class="user-info">
+      <div class="user-name" id="userName">Загрузка...</div>
+      <div class="user-status" id="userStatus">ID: -</div>
+    </div>
+  </div>
+  
+  <div class="messages-container" id="messagesContainer">
+    <div class="loading">Загрузка сообщений...</div>
+  </div>
+  
+  <div class="input-container">
+    <input type="text" class="message-input" id="messageInput" placeholder="Написать сообщение..." autocomplete="off">
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+  </div>
+  
+  <script>
+    const API_BASE = window.location.origin + '/api/admin';
+    const tg = window.Telegram?.WebApp;
+    
+    let adminId = null;
+    let targetUserId = null;
+    let refreshInterval = null;
+    
+    // Get adminId from Telegram
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      adminId = tg.initDataUnsafe?.user?.id;
+    }
+    
+    // Get target user from URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    targetUserId = urlParams.get('user');
+    
+    if (!targetUserId) {
+      document.getElementById('messagesContainer').innerHTML = 
+        '<div class="empty-state">Пользователь не выбран</div>';
+    } else {
+      loadChat();
+      // Auto-refresh every 3 seconds
+      refreshInterval = setInterval(loadChat, 3000);
+    }
+    
+    // Send on Enter
+    document.getElementById('messageInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+    
+    async function loadChat() {
+      try {
+        const res = await fetch(`${API_BASE}/chat/${targetUserId}?adminId=${adminId}`);
+        const data = await res.json();
+        
+        if (data.success) {
+          document.getElementById('userName').textContent = data.data.user.name;
+          document.getElementById('userStatus').textContent = `ID: ${data.data.user.telegram_id}`;
+          renderMessages(data.data.messages);
+        } else {
+          document.getElementById('messagesContainer').innerHTML = 
+            `<div class="empty-state">${data.error}</div>`;
+        }
+      } catch (e) {
+        console.error('Load chat error:', e);
+      }
+    }
+    
+    function renderMessages(messages) {
+      const container = document.getElementById('messagesContainer');
+      
+      if (messages.length === 0) {
+        container.innerHTML = '<div class="empty-state">Начните диалог с пользователем</div>';
+        return;
+      }
+      
+      let html = '';
+      let lastDate = null;
+      
+      messages.forEach(msg => {
+        const date = new Date(msg.created_at);
+        const dateStr = date.toLocaleDateString('ru-RU');
+        
+        // Date divider
+        if (dateStr !== lastDate) {
+          html += `<div class="date-divider">${dateStr}</div>`;
+          lastDate = dateStr;
+        }
+        
+        const time = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        const senderClass = msg.sender === 'admin' ? 'admin' : 'user';
+        
+        html += `
+          <div class="message ${senderClass}">
+            ${escapeHtml(msg.message)}
+            <div class="message-time">${time}</div>
+          </div>
+        `;
+      });
+      
+      const wasScrolledToBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+      container.innerHTML = html;
+      
+      // Auto-scroll if was at bottom
+      if (wasScrolledToBottom) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+    
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const message = input.value.trim();
+      
+      if (!message) return;
+      
+      const sendBtn = document.getElementById('sendBtn');
+      sendBtn.disabled = true;
+      input.disabled = true;
+      
+      try {
+        const res = await fetch(`${API_BASE}/chat/${targetUserId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminId, message })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          input.value = '';
+          loadChat();
+        } else {
+          alert('Ошибка: ' + data.error);
+        }
+      } catch (e) {
+        alert('Ошибка отправки');
+      } finally {
+        sendBtn.disabled = false;
+        input.disabled = false;
+        input.focus();
+      }
+    }
+    
+    function goBack() {
+      if (refreshInterval) clearInterval(refreshInterval);
+      window.location.href = 'admin.html';
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // Cleanup on unload
+    window.addEventListener('beforeunload', () => {
+      if (refreshInterval) clearInterval(refreshInterval);
+    });
+  </script>
+</body>
+</html>

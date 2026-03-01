@@ -110,4 +110,121 @@ router.get('/:userId', async (req, res) => {
   }
 });
 
+// ==================== SUPPORT CHAT ====================
+
+/**
+ * GET /api/user/:userId/support/messages
+ * Get support chat messages for user
+ */
+router.get('/:userId/support/messages', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Get user
+    const userResult = await pool.query(
+      'SELECT id FROM users WHERE telegram_id = $1',
+      [userId.toString()]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    // Get messages
+    const messagesResult = await pool.query(
+      `SELECT id, sender, message, is_read, created_at 
+       FROM support_messages 
+       WHERE user_id = $1 
+       ORDER BY created_at ASC`,
+      [user.id]
+    );
+    
+    // Mark admin messages as read
+    await pool.query(
+      `UPDATE support_messages SET is_read = TRUE 
+       WHERE user_id = $1 AND sender = 'admin' AND is_read = FALSE`,
+      [user.id]
+    );
+    
+    res.json({
+      success: true,
+      data: messagesResult.rows
+    });
+  } catch (error) {
+    console.error('Support messages error:', error.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+/**
+ * POST /api/user/:userId/support/send
+ * Send message from user to support
+ */
+router.post('/:userId/support/send', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { message } = req.body;
+    
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+    
+    // Get user
+    const userResult = await pool.query(
+      'SELECT id, first_name, username FROM users WHERE telegram_id = $1',
+      [userId.toString()]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    // Save message
+    const msgResult = await pool.query(
+      `INSERT INTO support_messages (user_id, sender, message, created_at)
+       VALUES ($1, 'user', $2, NOW())
+       RETURNING *`,
+      [user.id, message.trim()]
+    );
+    
+    res.json({
+      success: true,
+      data: msgResult.rows[0]
+    });
+  } catch (error) {
+    console.error('Send support message error:', error.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+/**
+ * GET /api/user/:userId/support/unread
+ * Get unread messages count for user
+ */
+router.get('/:userId/support/unread', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const result = await pool.query(
+      `SELECT COUNT(*) as count 
+       FROM support_messages sm
+       JOIN users u ON sm.user_id = u.id
+       WHERE u.telegram_id = $1 AND sm.sender = 'admin' AND sm.is_read = FALSE`,
+      [userId.toString()]
+    );
+    
+    res.json({
+      success: true,
+      count: parseInt(result.rows[0].count)
+    });
+  } catch (error) {
+    console.error('Unread count error:', error.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
