@@ -5,54 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Exchange - TrustEx</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="js/auth.js?v=2" defer></script>
     <script src="js/api.js" defer></script>
     <script src="js/balance.js" defer></script>
     <script src="js/i18n.js" defer></script>
     <style>
         :root {
-            --bg-primary: #0d1117;
-            --bg-secondary: #161b22;
-            --bg-card: #1c2128;
-            --bg-hover: #262c36;
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #1a2235;
+            --bg-input: #0f1520;
             --accent: #00d4aa;
-            --text-primary: #e6edf3;
-            --text-secondary: #8b949e;
-            --text-muted: #6e7681;
-            --border: #30363d;
-            --success: #3fb950;
-            --danger: #f85149;
+            --accent-glow: rgba(0, 212, 170, 0.15);
+            --accent-hover: #00eebb;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: rgba(255, 255, 255, 0.08);
+            --success: #22c55e;
+            --danger: #ef4444;
+            --gold: #fbbf24;
+            --rub-gradient: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            --usdt-gradient: linear-gradient(135deg, #26a17b 0%, #1a8c6a 100%);
         }
 
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             background: var(--bg-primary);
+            background-image: 
+                radial-gradient(ellipse at 50% 0%, rgba(0, 212, 170, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 100% 100%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
             color: var(--text-primary);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Inter', -apple-system, sans-serif;
             min-height: 100vh;
-            margin: 0;
-            padding: 20px 16px 100px 16px;
-            display: flex;
-            justify-content: center;
+            padding: 16px;
+            padding-bottom: 100px;
         }
 
         .app-container {
-            max-width: 420px;
-            width: 100%;
+            max-width: 440px;
+            margin: 0 auto;
         }
 
+        /* Header */
         .page-header {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 24px;
+            gap: 10px;
+            margin-bottom: 20px;
         }
 
         .back-btn {
-            background: var(--bg-card);
+            background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--border);
             color: var(--text-primary);
             padding: 10px 16px;
@@ -63,171 +69,440 @@
             transition: all 0.2s;
         }
 
-        .back-btn:hover { background: var(--bg-hover); border-color: var(--accent); }
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent);
+        }
+
+        .header-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
         .refresh-btn {
-            background: var(--bg-secondary);
+            background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--border);
             color: var(--text-secondary);
-            padding: 10px 14px;
-            border-radius: 12px;
-            font-size: 13px;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            font-size: 16px;
             cursor: pointer;
-            margin-left: auto;
-            transition: all 0.2s;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .refresh-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: rotate(180deg);
+        }
 
-        .lang-select-small {
-            background: var(--bg-secondary);
+        .lang-select {
+            background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--border);
             color: var(--text-primary);
-            padding: 6px 10px;
-            border-radius: 8px;
-            font-size: 12px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 13px;
             cursor: pointer;
         }
 
-        .exchange-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 24px;
-        }
-
-        .exchange-title {
-            font-size: 18px;
-            font-weight: 600;
-            text-align: center;
+        /* Live Rate Banner */
+        .rate-banner {
+            background: linear-gradient(135deg, rgba(0, 212, 170, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+            border: 1px solid rgba(0, 212, 170, 0.2);
+            border-radius: 16px;
+            padding: 14px 18px;
             margin-bottom: 20px;
-            color: var(--accent);
-        }
-
-        .currency-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            padding: 16px;
+        }
+
+        .rate-banner-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .rate-live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .rate-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .rate-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        /* Main Exchange Card */
+        .exchange-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .exchange-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), #3b82f6, var(--accent));
+            background-size: 200% 100%;
+            animation: shimmer 3s infinite linear;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .exchange-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .exchange-title {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .exchange-pair {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--accent) 50%, #26a17b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Currency Blocks */
+        .currency-section {
+            position: relative;
+        }
+
+        .currency-block {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 18px;
+            transition: all 0.3s;
+        }
+
+        .currency-block:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .currency-block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 12px;
         }
 
-        .currency-info { display: flex; align-items: center; gap: 12px; }
-
-        .circle-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 18px;
+        .currency-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .icon-rub { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #000; }
-        .icon-usdt { background: #26a17b; color: #fff; }
-
-        .currency-name { font-weight: 600; font-size: 15px; }
-        .currency-balance { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
-
-        .swap-btn {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
-            background: linear-gradient(135deg, var(--accent), #00b894);
-            color: #000;
+        .balance-badge {
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: none;
-            font-weight: bold;
-        }
-
-        .swap-btn:hover { transform: scale(1.05); }
-        .swap-btn:active { transform: scale(0.95); }
-
-        .rate-box {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 14px;
-            text-align: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
             color: var(--text-secondary);
-            font-size: 14px;
-            margin-bottom: 16px;
-            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .input-group-modern {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 14px 16px;
-            margin-bottom: 16px;
+        .balance-badge:hover {
+            background: var(--accent);
+            color: #000;
+        }
+
+        .balance-badge .max-label {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .balance-badge:hover .max-label {
+            color: #000;
+        }
+
+        .currency-main {
             display: flex;
             align-items: center;
-            gap: 12px;
-            transition: border-color 0.2s;
+            gap: 14px;
         }
 
-        .input-group-modern:focus-within { border-color: var(--accent); }
+        .currency-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .icon-rub {
+            background: var(--rub-gradient);
+            color: #000;
+            box-shadow: 0 8px 24px rgba(251, 191, 36, 0.25);
+        }
+
+        .icon-usdt {
+            background: var(--usdt-gradient);
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(38, 161, 123, 0.25);
+        }
+
+        .currency-input-wrap {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .currency-name {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
 
         .amount-input {
             background: transparent;
             border: none;
             color: var(--text-primary);
-            font-size: 22px;
-            font-weight: 600;
+            font-size: 28px;
+            font-weight: 700;
             width: 100%;
             outline: none;
+            font-family: 'Inter', sans-serif;
         }
 
-        .amount-input::placeholder { color: var(--text-muted); }
-
-        .select-all-btn {
-            background: var(--bg-hover);
-            border: 1px solid var(--border);
-            color: var(--accent);
-            padding: 10px 16px;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.2s;
+        .amount-input::placeholder {
+            color: var(--text-muted);
         }
 
-        .select-all-btn:hover { background: var(--accent); color: #000; }
+        /* Swap Button */
+        .swap-container {
+            display: flex;
+            justify-content: center;
+            position: relative;
+            height: 0;
+            z-index: 10;
+        }
 
-        .btn-primary-modern {
-            width: 100%;
-            padding: 16px;
-            border: none;
-            border-radius: 14px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: linear-gradient(135deg, var(--accent), #00b894);
+        .swap-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--accent) 0%, #00b894 100%);
             color: #000;
-        }
-
-        .btn-primary-modern:hover {
-            transform: translateY(-2px);
+            border: 4px solid var(--bg-card);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 8px 24px rgba(0, 212, 170, 0.3);
         }
 
-        .btn-primary-modern:disabled {
+        .swap-btn:hover {
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: 0 12px 32px rgba(0, 212, 170, 0.4);
+        }
+
+        .swap-btn:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        .swap-btn.rotated {
+            transform: translateY(-50%) rotate(180deg);
+        }
+
+        .swap-btn.rotated:hover {
+            transform: translateY(-50%) rotate(180deg) scale(1.1);
+        }
+
+        .currency-gap {
+            height: 20px;
+        }
+
+        /* Result Preview */
+        .result-preview {
+            background: linear-gradient(135deg, rgba(0, 212, 170, 0.08) 0%, rgba(0, 212, 170, 0.02) 100%);
+            border: 1px solid rgba(0, 212, 170, 0.15);
+            border-radius: 14px;
+            padding: 16px;
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .result-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        /* Exchange Button */
+        .exchange-btn {
+            width: 100%;
+            padding: 18px 24px;
+            margin-top: 20px;
+            border: none;
+            border-radius: 16px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, var(--accent) 0%, #00b894 100%);
+            color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .exchange-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .exchange-btn:hover::before {
+            left: 100%;
+        }
+
+        .exchange-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(0, 212, 170, 0.35);
+        }
+
+        .exchange-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .exchange-btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
         }
 
+        .exchange-btn-icon {
+            font-size: 20px;
+        }
+
+        /* Info Section */
+        .info-section {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .info-card-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .info-card-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Features */
+        .features {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .feature-icon {
+            font-size: 16px;
+        }
+
+        /* Alert */
         #topAlert {
             position: fixed;
             top: 20px;
@@ -235,71 +510,158 @@
             transform: translateX(-50%) translateY(-20px);
             min-width: 300px;
             max-width: 90%;
-            padding: 14px 20px;
+            padding: 16px 24px;
             color: white;
-            font-weight: 500;
+            font-weight: 600;
             text-align: center;
-            border-radius: 14px;
+            border-radius: 16px;
             opacity: 0;
             pointer-events: none;
             transition: all 0.3s ease;
             z-index: 9999;
+            backdrop-filter: blur(10px);
         }
 
-        #topAlert.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        #topAlert.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .exchange-card {
+            animation: fadeInUp 0.5s ease;
+        }
     </style>
 </head>
-<body data-i18n-title="exchangeTitle">
+<body>
 
 <div id="topAlert"></div>
 
 <div class="app-container">
     <div class="page-header">
-        <button class="back-btn" onclick="history.back()">← <span data-i18n="back">Back</span></button>
-        <button class="refresh-btn" id="refreshBtn">🔄 <span data-i18n="refresh">Refresh</span></button>
-        <select class="lang-select-small" id="languageSelect">
-            <option value="en">🇬🇧 EN</option>
-            <option value="ru">🇷🇺 RU</option>
-        </select>
+        <button class="back-btn" onclick="history.back()">← <span data-i18n="back">Назад</span></button>
+        <div class="header-right">
+            <button class="refresh-btn" id="refreshBtn" title="Обновить">🔄</button>
+            <select class="lang-select" id="languageSelect">
+                <option value="ru">🇷🇺 RU</option>
+                <option value="en">🇬🇧 EN</option>
+            </select>
+        </div>
     </div>
 
+    <!-- Live Rate Banner -->
+    <div class="rate-banner">
+        <div class="rate-banner-left">
+            <div class="rate-live-dot"></div>
+            <span class="rate-label">Курс онлайн</span>
+        </div>
+        <span class="rate-value" id="liveRate">1 RUB = 0.012642 USDT</span>
+    </div>
+
+    <!-- Main Exchange Card -->
     <div class="exchange-card">
-        <div class="exchange-title" id="exchangeTitle">Exchange RUB → USDT</div>
+        <div class="exchange-header">
+            <div class="exchange-title">Мгновенный обмен</div>
+            <div class="exchange-pair" id="exchangePair">RUB → USDT</div>
+        </div>
 
-        <div class="currency-row">
-            <div class="currency-info">
-                <div class="circle-icon icon-rub">₽</div>
-                <div>
-                    <div class="currency-name" data-i18n="rub">Russian Ruble</div>
-                    <div class="currency-balance" id="rubBalanceText">0.00 ₽</div>
+        <div class="currency-section">
+            <!-- From Currency -->
+            <div class="currency-block" id="fromBlock">
+                <div class="currency-block-header">
+                    <span class="currency-label" id="fromLabel">Отдаёте</span>
+                    <div class="balance-badge" id="fromBalance" onclick="selectAll()">
+                        <span>Баланс: <span id="fromBalanceValue">0.00</span></span>
+                        <span class="max-label">MAX</span>
+                    </div>
+                </div>
+                <div class="currency-main">
+                    <div class="currency-icon icon-rub" id="fromIcon">₽</div>
+                    <div class="currency-input-wrap">
+                        <div class="currency-name" id="fromName">Российский рубль</div>
+                        <input type="number" class="amount-input" id="amountInput" placeholder="0.00" inputmode="decimal">
+                    </div>
                 </div>
             </div>
 
-            <button class="swap-btn" id="swapBtn">⇄</button>
+            <!-- Swap Button -->
+            <div class="swap-container">
+                <button class="swap-btn" id="swapBtn">⇅</button>
+            </div>
 
-            <div class="currency-info" style="text-align: right;">
-                <div>
-                    <div class="currency-name">USDT</div>
-                    <div class="currency-balance" id="usdtBalanceText">0.00 $</div>
+            <div class="currency-gap"></div>
+
+            <!-- To Currency -->
+            <div class="currency-block" id="toBlock">
+                <div class="currency-block-header">
+                    <span class="currency-label" id="toLabel">Получаете</span>
+                    <div class="balance-badge" style="cursor: default; background: transparent;">
+                        <span>Баланс: <span id="toBalanceValue">0.00</span></span>
+                    </div>
                 </div>
-                <div class="circle-icon icon-usdt">₮</div>
+                <div class="currency-main">
+                    <div class="currency-icon icon-usdt" id="toIcon">₮</div>
+                    <div class="currency-input-wrap">
+                        <div class="currency-name" id="toName">Tether USDT</div>
+                        <div class="amount-input" id="resultAmount" style="color: var(--accent);">0.00</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="rate-box" id="rateText">Rate: 1 RUB = 0.012642 USDT | You get: 0.00 USDT</div>
-
-        <div class="input-group-modern">
-            <input type="number" class="amount-input" id="amountInput" placeholder="0.00">
-            <button class="select-all-btn" id="selectAllBtn" data-i18n="selectAll">All</button>
+        <!-- Result Preview -->
+        <div class="result-preview">
+            <span class="result-label" id="youGetLabel">Вы получите</span>
+            <span class="result-value" id="resultPreview">0.00 USDT</span>
         </div>
 
-        <button class="btn-primary-modern" id="exchangeBtn">
-            ⇄ <span data-i18n="exchangeBtn">Exchange</span>
+        <!-- Exchange Button -->
+        <button class="exchange-btn" id="exchangeBtn">
+            <span class="exchange-btn-icon">⇄</span>
+            <span data-i18n="exchangeBtn">Обменять</span>
         </button>
+
+        <!-- Info Cards -->
+        <div class="info-section">
+            <div class="info-card">
+                <div class="info-card-value">0%</div>
+                <div class="info-card-label">Комиссия</div>
+            </div>
+            <div class="info-card">
+                <div class="info-card-value">~1 сек</div>
+                <div class="info-card-label">Время обмена</div>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="features">
+            <div class="feature">
+                <span class="feature-icon">🔒</span>
+                <span>Безопасно</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">⚡</span>
+                <span>Мгновенно</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">💎</span>
+                <span>Лучший курс</span>
+            </div>
+        </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 const tg = window.Telegram?.WebApp;
 if (tg) { tg.expand(); tg.ready(); }
@@ -307,14 +669,24 @@ if (tg) { tg.expand(); tg.ready(); }
 let userId = null;
 
 const amountInput = document.getElementById('amountInput');
-const rateText = document.getElementById('rateText');
-const exchangeTitle = document.getElementById('exchangeTitle');
+const resultAmount = document.getElementById('resultAmount');
+const resultPreview = document.getElementById('resultPreview');
+const exchangePair = document.getElementById('exchangePair');
+const liveRate = document.getElementById('liveRate');
 const swapBtn = document.getElementById('swapBtn');
-const rubBalanceText = document.getElementById('rubBalanceText');
-const usdtBalanceText = document.getElementById('usdtBalanceText');
 const exchangeBtn = document.getElementById('exchangeBtn');
 const refreshBtn = document.getElementById('refreshBtn');
 const topAlert = document.getElementById('topAlert');
+
+const fromIcon = document.getElementById('fromIcon');
+const fromName = document.getElementById('fromName');
+const fromBalanceValue = document.getElementById('fromBalanceValue');
+const toIcon = document.getElementById('toIcon');
+const toName = document.getElementById('toName');
+const toBalanceValue = document.getElementById('toBalanceValue');
+const fromLabel = document.getElementById('fromLabel');
+const toLabel = document.getElementById('toLabel');
+const youGetLabel = document.getElementById('youGetLabel');
 
 let rubBalance = 0;
 let usdtBalance = 0;
@@ -346,44 +718,86 @@ async function resolveUserId() {
 
 function showAlert(msg, success = false) {
     topAlert.innerText = msg;
-    topAlert.style.background = success ? 'linear-gradient(135deg, #3fb950, #2ea043)' : 'linear-gradient(135deg, #f85149, #da3633)';
+    topAlert.style.background = success 
+        ? 'linear-gradient(135deg, #22c55e, #16a34a)' 
+        : 'linear-gradient(135deg, #ef4444, #dc2626)';
     topAlert.classList.add('show');
     setTimeout(() => topAlert.classList.remove('show'), 3000);
 }
 
 function updateDisplay() {
     const val = parseFloat(amountInput.value) || 0;
-    const lang = window.currentLang || 'en';
+    const lang = window.currentLang || 'ru';
 
     if (isSwapped) {
-        exchangeTitle.innerText = lang === 'ru' ? "Обменять USDT → RUB" : "Exchange USDT → RUB";
+        // USDT -> RUB
+        exchangePair.innerText = 'USDT → RUB';
         const reverseRate = (1 / rate);
         const result = val * reverseRate;
-        rateText.innerText = lang === 'ru' 
-            ? `Курс: 1 USDT = ${reverseRate.toFixed(2)} ₽ | Получите: ${result.toFixed(2)} ₽`
-            : `Rate: 1 USDT = ${reverseRate.toFixed(2)} ₽ | You get: ${result.toFixed(2)} ₽`;
-        swapBtn.style.transform = "rotate(180deg)";
+        
+        liveRate.innerText = `1 USDT = ${reverseRate.toFixed(2)} RUB`;
+        resultAmount.innerText = result.toFixed(2);
+        resultPreview.innerText = result.toFixed(2) + ' ₽';
+        
+        // Update icons
+        fromIcon.className = 'currency-icon icon-usdt';
+        fromIcon.innerText = '₮';
+        fromName.innerText = 'Tether USDT';
+        fromBalanceValue.innerText = usdtBalance.toFixed(2);
+        
+        toIcon.className = 'currency-icon icon-rub';
+        toIcon.innerText = '₽';
+        toName.innerText = 'Российский рубль';
+        toBalanceValue.innerText = rubBalance.toFixed(2);
+        
+        swapBtn.classList.add('rotated');
     } else {
-        exchangeTitle.innerText = lang === 'ru' ? "Обменять RUB → USDT" : "Exchange RUB → USDT";
+        // RUB -> USDT
+        exchangePair.innerText = 'RUB → USDT';
         const result = val * rate;
-        rateText.innerText = lang === 'ru'
-            ? `Курс: 1 RUB = ${rate.toFixed(6)} USDT | Получите: ${result.toFixed(2)} USDT`
-            : `Rate: 1 RUB = ${rate.toFixed(6)} USDT | You get: ${result.toFixed(2)} USDT`;
-        swapBtn.style.transform = "rotate(0deg)";
+        
+        liveRate.innerText = `1 RUB = ${rate.toFixed(6)} USDT`;
+        resultAmount.innerText = result.toFixed(2);
+        resultPreview.innerText = result.toFixed(2) + ' USDT';
+        
+        // Update icons
+        fromIcon.className = 'currency-icon icon-rub';
+        fromIcon.innerText = '₽';
+        fromName.innerText = 'Российский рубль';
+        fromBalanceValue.innerText = rubBalance.toFixed(2);
+        
+        toIcon.className = 'currency-icon icon-usdt';
+        toIcon.innerText = '₮';
+        toName.innerText = 'Tether USDT';
+        toBalanceValue.innerText = usdtBalance.toFixed(2);
+        
+        swapBtn.classList.remove('rotated');
     }
 }
 
-swapBtn.addEventListener('click', () => { isSwapped = !isSwapped; updateDisplay(); });
+function selectAll() {
+    if (window.USER_BALANCES) {
+        amountInput.value = isSwapped ? (window.USER_BALANCES.usdt || 0) : (window.USER_BALANCES.rub || 0);
+    } else {
+        amountInput.value = isSwapped ? usdtBalance : rubBalance;
+    }
+    updateDisplay();
+}
+
+swapBtn.addEventListener('click', () => {
+    isSwapped = !isSwapped;
+    amountInput.value = '';
+    updateDisplay();
+});
 
 async function loadData() {
     if (!userId) return;
     try {
-        refreshBtn.innerHTML = '⏳ ...';
+        refreshBtn.style.transform = 'rotate(360deg)';
+        
         if (window.USER_BALANCES) {
             rubBalance = window.USER_BALANCES.rub || 0;
             usdtBalance = window.USER_BALANCES.usdt || 0;
-            rubBalanceText.innerText = rubBalance.toFixed(2) + ' ₽';
-            usdtBalanceText.innerText = usdtBalance.toFixed(2) + ' $';
         } else {
             const response = await fetch(`/api/profile/${userId}?t=${Date.now()}`);
             const payload = await response.json();
@@ -391,20 +805,18 @@ async function loadData() {
             if (!payload.error) {
                 rubBalance = parseFloat(data.rub) || 0;
                 usdtBalance = parseFloat(data.usdt) || 0;
-                rubBalanceText.innerText = rubBalance.toFixed(2) + ' ₽';
-                usdtBalanceText.innerText = usdtBalance.toFixed(2) + ' $';
             }
         }
     } catch (e) { console.error("Load error:", e); }
     finally {
-        refreshBtn.innerHTML = '🔄 <span data-i18n="refresh">' + (window.t ? t('refresh') : 'Refresh') + '</span>';
+        setTimeout(() => { refreshBtn.style.transform = ''; }, 300);
         updateDisplay();
     }
 }
 
 exchangeBtn.onclick = async function() {
     const amount = parseFloat(amountInput.value) || 0;
-    if (amount <= 0) return showAlert(window.t ? t('enterAmount') : "Enter amount");
+    if (amount <= 0) return showAlert("Введите сумму для обмена");
 
     const side = isSwapped ? 'usdt_to_rub' : 'rub_to_usdt';
     let currentBalance;
@@ -413,11 +825,11 @@ exchangeBtn.onclick = async function() {
     } else {
         currentBalance = isSwapped ? usdtBalance : rubBalance;
     }
-    if (amount > currentBalance) return showAlert(window.t ? t('insufficientFunds') : "Insufficient funds");
+    if (amount > currentBalance) return showAlert("Недостаточно средств");
 
     try {
         exchangeBtn.disabled = true;
-        exchangeBtn.innerHTML = '⏳ ' + (window.t ? t('processing') : 'Processing...');
+        exchangeBtn.innerHTML = '<span class="exchange-btn-icon">⏳</span> Обработка...';
 
         const response = await fetch('/api/exchange', {
             method: 'POST',
@@ -427,40 +839,30 @@ exchangeBtn.onclick = async function() {
         const result = await response.json();
 
         if (response.ok) {
-            showAlert("✅ " + (window.t ? t('exchangeSuccess') : "Exchange successful!"), true);
+            showAlert("✅ Обмен выполнен успешно!", true);
             amountInput.value = "";
             if (result.data?.newBalances) {
                 rubBalance = result.data.newBalances.rub;
                 usdtBalance = result.data.newBalances.usdt;
-                rubBalanceText.innerText = rubBalance.toFixed(2) + ' ₽';
-                usdtBalanceText.innerText = usdtBalance.toFixed(2) + ' $';
                 if (window.USER_BALANCES) {
                     window.USER_BALANCES.rub = rubBalance;
                     window.USER_BALANCES.usdt = usdtBalance;
                 }
             }
             if (typeof BalanceManager !== 'undefined') await BalanceManager.refresh();
+            updateDisplay();
         } else {
-            showAlert(result.error || (window.t ? t('error') : "Error"));
+            showAlert(result.error || "Ошибка обмена");
         }
-    } catch (err) { showAlert("Server connection error"); }
+    } catch (err) { showAlert("Ошибка соединения с сервером"); }
     finally {
         exchangeBtn.disabled = false;
-        exchangeBtn.innerHTML = '⇄ <span data-i18n="exchangeBtn">' + (window.t ? t('exchangeBtn') : 'Exchange') + '</span>';
+        exchangeBtn.innerHTML = '<span class="exchange-btn-icon">⇄</span> Обменять';
     }
 };
 
 amountInput.addEventListener('input', updateDisplay);
 refreshBtn.onclick = loadData;
-
-document.getElementById('selectAllBtn').onclick = function() {
-    if (window.USER_BALANCES) {
-        amountInput.value = isSwapped ? (window.USER_BALANCES.usdt || 0) : (window.USER_BALANCES.rub || 0);
-    } else {
-        amountInput.value = isSwapped ? usdtBalance : rubBalance;
-    }
-    updateDisplay();
-};
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
