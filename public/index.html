@@ -557,7 +557,7 @@
       color: var(--accent);
     }
 
-    .nav-item.active::before {
+    .nav-item::before {
       content: '';
       position: absolute;
       top: -6px;
@@ -567,6 +567,12 @@
       height: 2px;
       background: var(--accent);
       border-radius: 2px;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .nav-item.active::before {
+      opacity: 1;
     }
 
     .nav-icon {
