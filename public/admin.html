@@ -1250,10 +1250,10 @@
       }
       
       try {
-        const res = await fetch(`${API_BASE}/user/${currentUser.telegram_id}/block`, {
+        const res = await fetch(`${API_BASE}/user/${currentUser.telegram_id}/block?adminId=${adminId}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ adminId, blocked: !isBlocked })
+          body: JSON.stringify({ blocked: !isBlocked })
         });
         
         const data = await res.json();
