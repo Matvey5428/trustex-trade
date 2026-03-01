@@ -528,7 +528,7 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
  * POST /api/admin/user/:telegramId/block
  * Block or unblock user (main admin only)
  */
-router.post('/user/:telegramId/block', adminCheck, mainAdminOnly, async (req, res) => {
+router.post('/user/:telegramId/block', adminCheck, async (req, res) => {
   try {
     const { telegramId } = req.params;
     const { blocked } = req.body; // true = block, false = unblock

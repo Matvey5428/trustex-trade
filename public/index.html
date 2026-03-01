@@ -959,6 +959,14 @@
   <span class="support-badge" id="supportBadge"></span>
 </button>
 
+<!-- Blocked User Overlay -->
+<div id="blockedOverlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:var(--bg-primary); z-index:9999; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px;">
+  <div style="font-size:80px; margin-bottom:20px;">⛔</div>
+  <h2 style="color:#f85149; margin-bottom:16px;">Аккаунт заблокирован</h2>
+  <p style="color:var(--text-secondary); max-width:300px; line-height:1.6;">Ваш аккаунт был заблокирован администратором. Для получения информации обратитесь в поддержку.</p>
+  <a href="support.html" style="margin-top:24px; padding:12px 32px; background:var(--accent); color:#000; text-decoration:none; border-radius:12px; font-weight:600;">Написать в поддержку</a>
+</div>
+
 <div class="app-container">
 
     <!-- Header -->
@@ -1602,6 +1610,13 @@
         const profileRes = await fetch(`/api/profile/${telegramId}`);
         if (profileRes.ok) {
           const profileData = await profileRes.json();
+          
+          // Check if user is blocked
+          if (profileData.data?.is_blocked) {
+            document.getElementById('blockedOverlay').style.display = 'flex';
+            return;
+          }
+          
           const tradingVol = parseFloat(profileData.data?.total_volume) || 0;
           updateEl('tradingVolume', `${tradingVol.toFixed(2)} USDT`);
           

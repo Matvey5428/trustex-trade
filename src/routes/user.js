@@ -111,7 +111,8 @@ router.get('/:userId', async (req, res) => {
         total_volume: totalVolume,
         verified: user.verified || false,
         needs_verification: user.needs_verification || false,
-        verification_pending: user.verification_pending || false
+        verification_pending: user.verification_pending || false,
+        is_blocked: user.is_blocked || false
       }
     });
 
