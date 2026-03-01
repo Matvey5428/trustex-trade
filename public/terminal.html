@@ -586,6 +586,88 @@
       background: linear-gradient(135deg, var(--accent) 0%, #00a884 100%);
       color: #000;
     }
+    
+    /* Bottom Navigation */
+    .mobile-bottom-nav { 
+      position: fixed; 
+      bottom: 0; 
+      left: 0; 
+      right: 0; 
+      z-index: 9999;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+    }
+
+    .mobile-toggle {
+      width: 100%;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: none;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top-left-radius: 16px;
+      border-top-right-radius: 16px;
+    }
+
+    .mobile-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0d1117;
+    }
+
+    .mobile-content { 
+      background: var(--bg-card); 
+      padding: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .mobile-item { 
+      padding: 14px 16px; 
+      border-radius: 10px; 
+      color: var(--text-primary); 
+      margin-bottom: 8px; 
+      text-decoration: none; 
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .mobile-item:hover {
+      background: rgba(255,255,255,0.05);
+    }
+
+    .mobile-item.active { 
+      background: rgba(0, 212, 170, 0.15); 
+      color: var(--accent);
+    }
+
+    .mobile-badge {
+      font-size: 11px;
+      background: #fbbf24;
+      color: #0d1117;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+      margin-left: auto;
+    }
+
+    .mobile-arrow {
+      transition: transform 0.2s;
+    }
+
+    .mobile-toggle.collapsed .mobile-arrow {
+      transform: rotate(180deg);
+    }
   </style>
 </head>
 <body>
@@ -1115,6 +1197,42 @@
         console.error('init_error', e);
       });
   });
+</script>
+
+<!-- Bottom Navigation -->
+<div class="mobile-bottom-nav">
+    <button class="mobile-toggle collapsed" type="button" onclick="this.classList.toggle('collapsed'); document.getElementById('mobileMenu').classList.toggle('show');">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="mobile-icon">📈</div>
+            <span style="font-weight: 600; font-size: 15px;">Терминал</span>
+        </div>
+        <div class="mobile-arrow">▲</div>
+    </button>
+    <div id="mobileMenu" class="mobile-content" style="display: none;">
+        <a href="index.html" class="mobile-item">
+            <span>💰</span> <span>Активы</span>
+        </a>
+        <a href="exchange.html" class="mobile-item">
+            <span>💱</span> <span>Обмен</span>
+        </a>
+        <a href="trading.html" class="mobile-item">
+            <span>📊</span> <span>Торговля</span>
+        </a>
+        <a href="terminal.html" class="mobile-item active">
+            <span>📈</span> <span>Терминал</span>
+        </a>
+        <div class="mobile-item" style="opacity: 0.5; cursor: not-allowed;">
+            <span>⚡</span> <span>Бинарные опционы</span>
+            <span class="mobile-badge">Скоро</span>
+        </div>
+    </div>
+</div>
+
+<script>
+document.querySelector('.mobile-toggle').addEventListener('click', function() {
+    const menu = document.getElementById('mobileMenu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+});
 </script>
 </body>
 </html>
