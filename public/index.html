@@ -5,6 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TrustEx</title>
   
+  <!-- Prevent flash during language load -->
+  <style>body { opacity: 0; } body.i18n-ready { opacity: 1; transition: opacity 0.15s ease-out; }</style>
+  <script>
+    // Apply language immediately to prevent flash
+    (function() {
+      var lang = localStorage.getItem('nexo_lang') || 'ru';
+      document.documentElement.lang = lang;
+      // Fallback: show body after 500ms if i18n fails
+      setTimeout(function() { document.body && document.body.classList.add('i18n-ready'); }, 500);
+    })();
+  </script>
+  
   <!-- Telegram Web App SDK - REQUIRED for Mini App -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

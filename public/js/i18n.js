@@ -363,6 +363,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Apply saved language
   applyLanguage(currentLang);
   
+  // Show body after translations applied
+  document.body.classList.add('i18n-ready');
+  
   // Setup language selector if exists
   const langSelect = document.getElementById('languageSelect');
   if (langSelect) {
