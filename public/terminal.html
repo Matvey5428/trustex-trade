@@ -1,165 +1,715 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Nexo Trade - Терминал</title>
+  <title>TrustEx - Terminal</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="js/i18n.js" defer></script>
   <script src="js/auth.js" defer></script>
   <script src="js/api.js" defer></script>
   <script src="js/balance.js" defer></script>
   <style>
-    body { background: #060b1a; color: #fff; font-family: Arial, sans-serif; padding: 20px 15px 120px 15px; overflow-x: hidden; }
-    .app-container { width: 100%; max-width: 500px; margin: 0 auto; }
-    .btn-back { background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; color: #fff; border-radius: 10px; padding: 6px 18px; text-decoration: none; display: inline-block; margin-bottom: 20px; font-size: 14px; }
-    .info-row { display: flex; gap: 12px; margin-bottom: 15px; }
-    .info-box { background: #162447; flex: 1; padding: 12px 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); }
-    .info-label { color: #9fb3ff; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; }
-    .info-value { font-size: 18px; font-weight: bold; white-space: nowrap; }
-    .percent-badge { font-size: 12px; padding: 2px 6px; border-radius: 6px; margin-left: 5px; }
-    .badge-red { background: rgba(255, 77, 77, 0.2); color: #ff4d4d; }
-    .badge-green { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-card: #1c2128;
+      --bg-hover: #262c36;
+      --accent: #00d4aa;
+      --accent-dim: rgba(0, 212, 170, 0.1);
+      --text-primary: #f0f6fc;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --border-color: #30363d;
+      --success: #3fb950;
+      --danger: #f85149;
+      --warning: #d29922;
+    }
     
-    .chart-box { background: #10172a; border-radius: 15px; height: 350px; margin-bottom: 15px; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,0.05); }
+    * { box-sizing: border-box; }
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
     
-    .pair-card { background: #162447; padding: 15px; border-radius: 18px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .pair-left { display: flex; align-items: center; gap: 12px; }
-    .pair-icon { width: 42px; height: 42px; background: #2b3e75; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; color: #4db8ff; }
+    .app-container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px;
+    }
     
-    .tf-group { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 20px; }
-    .tf-btn { background: #1c2c54; border: 1px solid rgba(255,255,255,0.1); color: #fff; flex: 1; padding: 8px 0; border-radius: 10px; font-size: 14px; transition: 0.2s; cursor: pointer; }
-    .tf-btn.active { background: #3b82f6; border-color: #3b82f6; }
+    /* Header */
+    .terminal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      margin-bottom: 16px;
+    }
     
-    .main-actions { display: flex; gap: 10px; margin-bottom: 20px; }
-    .btn-trade { flex: 1; padding: 15px; border-radius: 12px; border: none; font-weight: bold; font-size: 16px; color: #fff; transition: 0.2s; cursor: pointer; }
-    .btn-trade:active { transform: scale(0.96); }
-    .btn-buy { background: #2ea354; box-shadow: 0 4px 15px rgba(46, 163, 84, 0.3); }
-    .btn-sell { background: #d93044; box-shadow: 0 4px 15px rgba(217, 48, 68, 0.3); }
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      padding: 8px 12px;
+      background: var(--bg-card);
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      transition: all 0.2s;
+    }
     
-    .order-item { background: #162447; padding: 12px 15px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05); }
-    .order-price { font-weight: bold; font-size: 15px; }
-    .profit-plus { color: #00ff88; font-weight: bold; }
-    .order-date { color: #9fb3ff; font-size: 12px; }
-
-    .trade-panel { position: fixed; bottom: -100%; left: 0; right: 0; background: #162447; border-top-left-radius: 25px; border-top-right-radius: 25px; padding: 25px; z-index: 10000; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-    .trade-panel.active { bottom: 0; }
-    .panel-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; z-index: 9999; backdrop-filter: blur(4px); }
+    .back-btn:hover {
+      color: var(--text-primary);
+      background: var(--bg-hover);
+    }
     
-    .input-box { background: #060b1a; border-radius: 12px; padding: 15px; margin: 15px 0; border: 1px solid rgba(59, 130, 246, 0.3); }
-    .input-field { background: transparent; border: none; color: #fff; width: 80%; outline: none; font-size: 20px; font-weight: bold; }
+    .lang-selector {
+      display: flex;
+      background: var(--bg-card);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
     
-    .time-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-    .time-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 10px; border-radius: 10px; font-size: 13px; cursor: pointer; }
-    .time-btn.active { background: #3b82f6; border-color: #3b82f6; }
-
-    .mobile-bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9998; }
-    .mobile-toggle { width: 100%; background: #1c2c54; color: #cfe9ff; border: none; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; border-top-left-radius: 20px; border-top-right-radius: 20px; }
-    .mobile-content { background: #162447; padding: 20px; }
-    .mobile-item { padding: 14px 15px; border-radius: 12px; color: #cfe9ff; margin-bottom: 10px; text-decoration: none; display: block;}
-    .mobile-item.active { background: rgba(59, 130, 246, 0.2); color: #fff; }
+    .lang-btn {
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
     
+    .lang-btn.active {
+      background: var(--accent);
+      color: #000;
+    }
+    
+    /* Pair Info Card */
+    .pair-card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      border: 1px solid var(--border-color);
+    }
+    
+    .pair-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .pair-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--accent) 0%, #00a884 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      color: #000;
+    }
+    
+    .pair-name {
+      font-weight: 600;
+      font-size: 16px;
+      margin-bottom: 2px;
+    }
+    
+    .pair-subtitle {
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+    
+    .pair-price {
+      font-weight: 700;
+      font-size: 18px;
+      text-align: right;
+    }
+    
+    .pair-change {
+      font-size: 13px;
+      font-weight: 500;
+      text-align: right;
+    }
+    
+    .pair-change.positive { color: var(--success); }
+    .pair-change.negative { color: var(--danger); }
+    
+    /* Info Row */
+    .info-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .info-box {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 14px;
+      border: 1px solid var(--border-color);
+    }
+    
+    .info-label {
+      color: var(--text-secondary);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    
+    .info-value {
+      font-weight: 600;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .percent-badge {
+      font-size: 11px;
+      padding: 3px 7px;
+      border-radius: 6px;
+      font-weight: 500;
+    }
+    
+    .badge-green { background: rgba(63, 185, 80, 0.15); color: var(--success); }
+    .badge-red { background: rgba(248, 81, 73, 0.15); color: var(--danger); }
+    
+    /* Chart */
+    .chart-container {
+      background: var(--bg-card);
+      border-radius: 16px;
+      height: 320px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+    
+    /* Timeframe buttons */
+    .tf-group {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    
+    .tf-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    
+    .tf-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+    
+    .tf-btn.active {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+    
+    /* Trade Buttons */
+    .trade-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    
+    .btn-trade {
+      padding: 18px;
+      border-radius: 14px;
+      border: none;
+      font-weight: 700;
+      font-size: 16px;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .btn-trade:active {
+      transform: scale(0.97);
+    }
+    
+    .btn-up {
+      background: linear-gradient(135deg, #3fb950 0%, #2ea043 100%);
+      box-shadow: 0 4px 20px rgba(63, 185, 80, 0.3);
+    }
+    
+    .btn-down {
+      background: linear-gradient(135deg, #f85149 0%, #da3633 100%);
+      box-shadow: 0 4px 20px rgba(248, 81, 73, 0.3);
+    }
+    
+    /* Trade History */
+    .section-title {
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+    
+    .trade-item {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      border: 1px solid var(--border-color);
+      transition: all 0.2s;
+    }
+    
+    .trade-item.active {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+    
+    .trade-amount {
+      font-weight: 600;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .trade-amount.win { color: var(--success); }
+    .trade-amount.loss { color: var(--danger); }
+    
+    .trade-date {
+      color: var(--text-secondary);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    
+    .trade-status {
+      font-size: 12px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+    
+    .trade-status.active { background: rgba(0, 212, 170, 0.15); color: var(--accent); }
+    .trade-status.win { background: rgba(63, 185, 80, 0.15); color: var(--success); }
+    .trade-status.loss { background: rgba(248, 81, 73, 0.15); color: var(--danger); }
+    
+    .trade-timer {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    
+    .empty-trades {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+    
+    /* Trade Panel */
+    .panel-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      z-index: 9999;
+    }
+    
+    .trade-panel {
+      position: fixed;
+      bottom: -100%;
+      left: 0;
+      right: 0;
+      background: var(--bg-secondary);
+      border-top-left-radius: 24px;
+      border-top-right-radius: 24px;
+      padding: 24px;
+      z-index: 10000;
+      transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    
+    .trade-panel.active {
+      bottom: 0;
+    }
+    
+    .panel-handle {
+      width: 40px;
+      height: 4px;
+      background: var(--border-color);
+      border-radius: 2px;
+      margin: 0 auto 20px;
+    }
+    
+    .panel-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .panel-title .arrow-up { color: var(--success); }
+    .panel-title .arrow-down { color: var(--danger); }
+    
+    .balance-alert {
+      background: rgba(248, 81, 73, 0.15);
+      border: 1px solid var(--danger);
+      color: var(--danger);
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      text-align: center;
+      margin-bottom: 16px;
+      display: none;
+    }
+    
+    .input-group-custom {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border-color);
+    }
+    
+    .input-label {
+      color: var(--text-secondary);
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    
+    .input-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .input-field {
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-size: 22px;
+      font-weight: 600;
+      width: 70%;
+      outline: none;
+    }
+    
+    .input-currency {
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 16px;
+    }
+    
+    .available-balance {
+      color: var(--text-secondary);
+      font-size: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .available-balance span {
+      color: var(--text-primary);
+    }
+    
+    /* Time Grid */
+    .time-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    
+    .time-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .time-btn:hover {
+      background: var(--bg-hover);
+    }
+    
+    .time-btn.active {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+    
+    .panel-submit {
+      width: 100%;
+      padding: 18px;
+      border-radius: 14px;
+      border: none;
+      font-weight: 700;
+      font-size: 16px;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .panel-submit.up {
+      background: linear-gradient(135deg, #3fb950 0%, #2ea043 100%);
+    }
+    
+    .panel-submit.down {
+      background: linear-gradient(135deg, #f85149 0%, #da3633 100%);
+    }
+    
+    .panel-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    /* Bottom Nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-around;
+      padding: 12px 0;
+      z-index: 9998;
+    }
+    
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 11px;
+      padding: 4px 16px;
+      transition: all 0.2s;
+    }
+    
+    .nav-item.active {
+      color: var(--accent);
+    }
+    
+    .nav-icon {
+      font-size: 20px;
+    }
+    
+    /* Animations */
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.5; }
     }
+    
     @keyframes slideIn {
       from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
       to { transform: translateX(-50%) translateY(0); opacity: 1; }
     }
+    
     @keyframes slideOut {
       from { transform: translateX(-50%) translateY(0); opacity: 1; }
       to { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+    }
+    
+    /* Notification */
+    .notification {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 16px 24px;
+      border-radius: 14px;
+      font-weight: 600;
+      z-index: 99999;
+      animation: slideIn 0.3s ease;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    }
+    
+    .notification.win {
+      background: linear-gradient(135deg, #3fb950 0%, #2ea043 100%);
+      color: #fff;
+    }
+    
+    .notification.loss {
+      background: linear-gradient(135deg, #f85149 0%, #da3633 100%);
+      color: #fff;
+    }
+    
+    .notification.info {
+      background: linear-gradient(135deg, var(--accent) 0%, #00a884 100%);
+      color: #000;
     }
   </style>
 </head>
 <body>
 
 <div class="app-container">
-  <a href="trading.html" class="btn-back">← Назад</a>
+  <!-- Header -->
+  <div class="terminal-header">
+    <a href="trading.html" class="back-btn">
+      <span>←</span>
+      <span data-i18n="back">Back</span>
+    </a>
+    <div class="lang-selector">
+      <button class="lang-btn active" onclick="switchLang('en')">EN</button>
+      <button class="lang-btn" onclick="switchLang('ru')">RU</button>
+    </div>
+  </div>
 
+  <!-- Pair Card -->
+  <div class="pair-card">
+    <div class="pair-left">
+      <div class="pair-icon" id="coinIcon">X</div>
+      <div>
+        <div class="pair-name" id="pairName">XRP / USDT</div>
+        <div class="pair-subtitle" data-i18n="cryptocurrency">Cryptocurrency</div>
+      </div>
+    </div>
+    <div>
+      <div class="pair-price" id="pairPriceDisplay">0.00</div>
+      <div class="pair-change negative" id="pairChangeDisplay">0.00%</div>
+    </div>
+  </div>
+
+  <!-- Info Row -->
   <div class="info-row">
     <div class="info-box">
-      <div class="info-label">Баланс</div>
-      <div class="info-value" id="userUsdtBalance">Загрузка...</div>
+      <div class="info-label" data-i18n="balance">Balance</div>
+      <div class="info-value" id="userUsdtBalance">0.00 USDT</div>
     </div>
     <div class="info-box">
       <div class="info-label">Live Price</div>
       <div class="info-value">
-        <span id="livePrice">0.00</span> 
+        <span id="livePrice">0.00</span>
         <span class="percent-badge badge-red" id="liveChange">0.00%</span>
       </div>
     </div>
   </div>
 
-  <div class="chart-box" id="tradingview_widget"></div>
+  <!-- Chart -->
+  <div class="chart-container" id="tradingview_widget"></div>
 
-  <div class="pair-card">
-    <div class="pair-left">
-      <div class="pair-icon" id="coinIcon">X</div>
-      <div>
-        <div class="fw-bold" id="pairName">XRP / USDT</div>
-        <div class="small-text" style="color: #9fb3ff" id="coinName">Криптовалюта</div>
-      </div>
-    </div>
-    <div class="text-end">
-      <div class="fw-bold" id="pairPriceDisplay">0.00 USDT</div>
-      <div class="small-text" id="pairChangeDisplay" style="color: #ff4d4d">-0.00%</div>
-    </div>
-  </div>
-
+  <!-- Timeframes -->
   <div class="tf-group">
     <button class="tf-btn active" data-tf="1" onclick="changeInterval(this)">1M</button>
     <button class="tf-btn" data-tf="5" onclick="changeInterval(this)">5M</button>
+    <button class="tf-btn" data-tf="15" onclick="changeInterval(this)">15M</button>
     <button class="tf-btn" data-tf="30" onclick="changeInterval(this)">30M</button>
     <button class="tf-btn" data-tf="60" onclick="changeInterval(this)">1H</button>
     <button class="tf-btn" data-tf="D" onclick="changeInterval(this)">1D</button>
   </div>
 
-  <div class="main-actions">
-    <button class="btn-trade btn-buy" onclick="openTrade('buy')">ВВЕРХ</button>
-    <button class="btn-trade btn-sell" onclick="openTrade('sell')">ВНИЗ</button>
+  <!-- Trade Actions -->
+  <div class="trade-actions">
+    <button class="btn-trade btn-up" onclick="openTrade('buy')">
+      <span>↑</span>
+      <span data-i18n="up">UP</span>
+    </button>
+    <button class="btn-trade btn-down" onclick="openTrade('sell')">
+      <span>↓</span>
+      <span data-i18n="down">DOWN</span>
+    </button>
   </div>
 
-  <h6 class="mb-3" style="color: #9fb3ff">История сделок</h6>
+  <!-- Trade History -->
+  <div class="section-title" data-i18n="tradeHistory">Trade History</div>
   <div id="activeTradesContainer">
-    <div class="text-center py-3 small-text" style="color: #9fb3ff">Нет сделок</div>
-  </div>
-
-  <div class="mobile-bottom-nav">
-      <button class="mobile-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mobileMenu">
-          <div class="d-flex align-items-center gap-2">
-              <div style="width:30px; height:30px; background:rgba(255,255,255,0.1); border-radius:50%; display:flex; align-items:center; justify-content:center;">💰</div>
-              <span class="fw-bold">Меню</span>
-          </div>
-          <span>⌃</span>
-      </button>
-      <div class="collapse" id="mobileMenu">
-          <div class="mobile-content">
-              <a href="index.html" class="mobile-item">💰 Активы</a>
-              <a href="trading.html" class="mobile-item active">📊 Торговля</a>
-              <a href="staking.html" class="mobile-item">📦 Стейкинг</a> 
-          </div>
-      </div>
+    <div class="empty-trades" data-i18n="noTrades">No trades yet</div>
   </div>
 </div>
 
+<!-- Bottom Navigation -->
+<div class="bottom-nav">
+  <a href="index.html" class="nav-item">
+    <span class="nav-icon">💼</span>
+    <span data-i18n="assets">Assets</span>
+  </a>
+  <a href="trading.html" class="nav-item active">
+    <span class="nav-icon">📊</span>
+    <span data-i18n="trading">Trading</span>
+  </a>
+  <a href="exchange.html" class="nav-item">
+    <span class="nav-icon">🔄</span>
+    <span data-i18n="exchange">Exchange</span>
+  </a>
+</div>
+
+<!-- Trade Panel Overlay -->
 <div class="panel-overlay" id="panelOverlay" onclick="closeTrade()"></div>
+
+<!-- Trade Panel -->
 <div class="trade-panel" id="tradePanel">
-  <div id="balanceAlert" style="display: none; background: rgba(217, 48, 68, 0.2); color: #ff4d4d; border: 1px solid #d93044; padding: 10px; border-radius: 12px; font-size: 13px; text-align: center; margin-bottom: 15px;">
-    Недостаточно средств на балансе
-  </div>
-
-  <h4 id="panelTitle">Сделка</h4>
+  <div class="panel-handle"></div>
   
-  <div class="small-text mt-3" style="color: #9fb3ff">Сумма инвестиции (USDT)</div>
-  <div class="input-box d-flex justify-content-between align-items-center">
-    <input type="number" class="input-field" id="tradeAmount" placeholder="10.00">
-    <span class="fw-bold" style="color: #3b82f6">USDT</span>
+  <div class="balance-alert" id="balanceAlert" data-i18n="insufficientBalance">
+    Insufficient balance
   </div>
   
-  <div class="small-text mb-3">Доступно: <span id="panelAvailableUsdt" style="color: #fff">0.00 USDT</span></div>
-
+  <div class="panel-title" id="panelTitle">
+    <span class="arrow-up">↑</span>
+    <span data-i18n="predictUp">Predict: UP</span>
+  </div>
+  
+  <div class="input-group-custom">
+    <div class="input-label" data-i18n="investmentAmount">Investment Amount (USDT)</div>
+    <div class="input-row">
+      <input type="number" class="input-field" id="tradeAmount" placeholder="10.00">
+      <span class="input-currency">USDT</span>
+    </div>
+  </div>
+  
+  <div class="available-balance">
+    <span data-i18n="available">Available</span>: <span id="panelAvailableUsdt">0.00 USDT</span>
+  </div>
+  
+  <div class="input-label" style="margin-bottom: 10px;" data-i18n="duration">Duration</div>
   <div class="time-grid" id="timeSelection">
     <button class="time-btn active" onclick="setTime(this)">30s</button>
     <button class="time-btn" onclick="setTime(this)">1m</button>
@@ -168,14 +718,10 @@
     <button class="time-btn" onclick="setTime(this)">15m</button>
     <button class="time-btn" onclick="setTime(this)">30m</button>
   </div>
-
-  <div id="tradeTimer" style="display: none; text-align: center; padding: 20px 0;">
-    <div style="font-size: 14px; color: #9fb3ff; margin-bottom: 10px;">Сделка активна</div>
-    <div id="timerCountdown" style="font-size: 36px; font-weight: bold; color: #4db8ff;">00:00</div>
-    <div style="font-size: 12px; color: #666; margin-top: 10px;">Ожидание результата...</div>
-  </div>
-
-  <button class="btn-trade w-100" id="panelSubmitBtn" onclick="executeTrade()">Открыть сделку</button>
+  
+  <button class="panel-submit up" id="panelSubmitBtn" onclick="executeTrade()" data-i18n="openTrade">
+    Open Trade
+  </button>
 </div>
 
 <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
@@ -184,9 +730,26 @@
   const tg = window.Telegram?.WebApp;
   let userId = null;
   const params = new URLSearchParams(window.location.search);
-  const coinSymbol = params.get('symbol') || 'XRP';
+  const coinSymbol = params.get('symbol') || 'BTC';
   let currentTradeType = 'buy';
   let widget = null;
+
+  // Language switcher
+  function switchLang(lang) {
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    if (typeof applyLanguage === 'function') {
+      applyLanguage(lang);
+    }
+  }
+
+  // Initialize language
+  document.addEventListener('DOMContentLoaded', () => {
+    const savedLang = localStorage.getItem('nexo_lang') || 'en';
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.textContent.toLowerCase() === savedLang);
+    });
+  });
 
   function getClientTelegramId() {
     const telegramRawId = tg?.initDataUnsafe?.user?.id;
@@ -208,12 +771,13 @@
     });
     const payload = await res.json();
     if (!res.ok || !payload?.data?.telegram_id) {
-      throw new Error(payload?.error || 'Не удалось получить аккаунт');
+      throw new Error(payload?.error || 'Failed to get account');
     }
     return payload.data.telegram_id;
   }
 
   function initChart(interval = '1') {
+    const lang = localStorage.getItem('nexo_lang') || 'en';
     widget = new TradingView.widget({
       "autosize": true,
       "symbol": `BINANCE:${coinSymbol}USDT`,
@@ -221,8 +785,8 @@
       "timezone": "Etc/UTC",
       "theme": "dark",
       "style": "1",
-      "locale": "ru",
-      "toolbar_bg": "#060b1a",
+      "locale": lang === 'ru' ? 'ru' : 'en',
+      "toolbar_bg": "#0d1117",
       "enable_publishing": false,
       "hide_top_toolbar": true,
       "save_image": false,
@@ -236,7 +800,6 @@
     initChart(btn.getAttribute('data-tf'));
   }
 
-  // ОБНОВЛЕННАЯ ФУНКЦИЯ БАЛАНСА
   async function loadUserBalance() {
     if (!userId) return;
     try {
@@ -246,15 +809,13 @@
       const data = payload?.data || {};
       
       const usdt = parseFloat(data.usdt || 0);
-      const currency = 'USDT';
-      
       const formatted = usdt.toLocaleString(undefined, { minimumFractionDigits: 2 });
       
-      document.getElementById('userUsdtBalance').textContent = `${formatted} ${currency}`;
-      document.getElementById('panelAvailableUsdt').textContent = `${formatted} ${currency}`;
-    } catch (e) { 
-        console.error("Ошибка баланса:", e); 
-        document.getElementById('userUsdtBalance').textContent = "Ошибка сети";
+      document.getElementById('userUsdtBalance').textContent = `${formatted} USDT`;
+      document.getElementById('panelAvailableUsdt').textContent = `${formatted} USDT`;
+    } catch (e) {
+      console.error("Balance error:", e);
+      document.getElementById('userUsdtBalance').textContent = "Network error";
     }
   }
 
@@ -266,7 +827,7 @@
       const change = parseFloat(data.priceChangePercent).toFixed(2);
       
       document.getElementById('livePrice').textContent = price;
-      document.getElementById('pairPriceDisplay').textContent = `${price} USDT`;
+      document.getElementById('pairPriceDisplay').textContent = `$${price}`;
       
       const changeEl = document.getElementById('liveChange');
       const changeDisplayEl = document.getElementById('pairChangeDisplay');
@@ -275,38 +836,43 @@
       changeEl.textContent = text;
       changeDisplayEl.textContent = text;
       changeEl.className = `percent-badge ${change >= 0 ? 'badge-green' : 'badge-red'}`;
-      changeDisplayEl.style.color = change >= 0 ? '#00ff88' : '#ff4d4d';
-    } catch (e) { console.error("Ошибка цены:", e); }
+      changeDisplayEl.className = `pair-change ${change >= 0 ? 'positive' : 'negative'}`;
+    } catch (e) {
+      console.error("Price error:", e);
+    }
   }
 
   async function loadActiveTrades() {
     if (!userId) return;
     const container = document.getElementById('activeTradesContainer');
+    const lang = localStorage.getItem('nexo_lang') || 'en';
+    
     try {
       const res = await fetch(`/api/trades/history/${userId}?symbol=${coinSymbol}`);
       const payload = await res.json();
       const trades = Array.isArray(payload?.data) ? payload.data : [];
 
       if (!trades.length) {
-        container.innerHTML = '<div class="text-center py-3 small-text" style="color: #9fb3ff">Нет сделок</div>';
+        const noTradesText = lang === 'ru' ? 'Нет сделок' : 'No trades yet';
+        container.innerHTML = `<div class="empty-trades">${noTradesText}</div>`;
         return;
       }
 
       container.innerHTML = trades.slice(0, 10).map((trade) => {
         const isActive = trade.status === 'active';
         const isWin = trade.status === 'successful';
-        const isLoss = trade.status === 'failed';
         
         const sign = isWin ? '+' : '-';
-        const colorClass = isWin ? 'profit-plus' : '';
-        const statusColor = isActive ? '#4db8ff' : (isWin ? '#00ff88' : '#ff4d4d');
-        const statusText = isActive ? 'active' : (isWin ? 'win' : 'loss');
+        const statusClass = isActive ? 'active' : (isWin ? 'win' : 'loss');
+        const statusText = isActive ? (lang === 'ru' ? 'активно' : 'active') : 
+                          (isWin ? (lang === 'ru' ? 'выигрыш' : 'win') : (lang === 'ru' ? 'проигрыш' : 'loss'));
+        
         const arrow = trade.direction === 'up' ? '↑' : '↓';
-        const arrowColor = trade.direction === 'up' ? '#00ff88' : '#ff4d4d';
+        const arrowColor = trade.direction === 'up' ? 'var(--success)' : 'var(--danger)';
         
         const created = trade.createdAt ? new Date(trade.createdAt) : new Date();
+        const dateLocale = lang === 'ru' ? 'ru-RU' : 'en-US';
         
-        // Calculate expiresAt from duration if not provided
         let expiresAt = trade.expiresAt;
         if (isActive && !expiresAt && trade.duration) {
           const createdTime = new Date(trade.createdAt).getTime();
@@ -314,45 +880,43 @@
         }
         
         if (isActive && expiresAt) {
-          // Active trade with timer
           const tradeId = trade.id;
           return `
-            <div class="order-item" id="trade-${tradeId}" style="border: 1px solid #4db8ff; background: rgba(77, 184, 255, 0.1);">
+            <div class="trade-item active" id="trade-${tradeId}">
               <div>
-                <div class="order-price" style="color: #fff;">
+                <div class="trade-amount">
                   ${Number(trade.fromAmount || 0).toFixed(2)} USDT 
                   <span style="color: ${arrowColor}; font-size: 18px;">${arrow}</span>
                 </div>
-                <div class="order-date">${created.toLocaleDateString('ru-RU')} ${created.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</div>
+                <div class="trade-date">${created.toLocaleDateString(dateLocale)} ${created.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' })}</div>
               </div>
               <div style="text-align: right;">
-                <div class="trade-timer" data-trade-id="${tradeId}" data-expires="${expiresAt}" data-amount="${trade.fromAmount}" style="font-size: 18px; font-weight: bold; color: #4db8ff;">--:--</div>
-                <div class="small-text" style="color: ${statusColor};">${statusText}</div>
+                <div class="trade-timer" data-trade-id="${tradeId}" data-expires="${expiresAt}" data-amount="${trade.fromAmount}">--:--</div>
+                <div class="trade-status ${statusClass}">${statusText}</div>
               </div>
             </div>
           `;
         } else {
-          // Closed trade
           return `
-            <div class="order-item">
+            <div class="trade-item">
               <div>
-                <div class="order-price ${colorClass}">
+                <div class="trade-amount ${statusClass}">
                   ${sign} ${Number(trade.fromAmount || 0).toFixed(2)} USDT 
                   <span style="color: ${arrowColor};">${arrow}</span>
                 </div>
-                <div class="order-date">${created.toLocaleDateString('ru-RU')} ${created.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</div>
+                <div class="trade-date">${created.toLocaleDateString(dateLocale)} ${created.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' })}</div>
               </div>
-              <div class="small-text" style="color: ${statusColor};">${statusText}</div>
+              <div class="trade-status ${statusClass}">${statusText}</div>
             </div>
           `;
         }
       }).join('');
 
-      // Start timers for active trades
       startActiveTradeTimers();
       
     } catch {
-      container.innerHTML = '<div class="text-center py-3 small-text" style="color: #9fb3ff">Ошибка загрузки сделок</div>';
+      const errorText = lang === 'ru' ? 'Ошибка загрузки' : 'Loading error';
+      container.innerHTML = `<div class="empty-trades">${errorText}</div>`;
     }
   }
 
@@ -369,9 +933,8 @@
         const remaining = Math.max(0, Math.floor((expiresAt - now) / 1000));
         
         if (remaining <= 0) {
-          // Timer expired - close trade
           timerEl.textContent = '00:00';
-          timerEl.style.color = '#ff4d4d';
+          timerEl.style.color = 'var(--danger)';
           closeAndRefreshTrade(tradeId, amount);
           return;
         }
@@ -380,9 +943,8 @@
         const secs = remaining % 60;
         timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
         
-        // Pulse animation when < 10 seconds
         if (remaining <= 10) {
-          timerEl.style.color = '#ff4d4d';
+          timerEl.style.color = 'var(--danger)';
           timerEl.style.animation = 'pulse 0.5s infinite';
         }
         
@@ -394,6 +956,8 @@
   }
 
   async function closeAndRefreshTrade(tradeId, amount) {
+    const lang = localStorage.getItem('nexo_lang') || 'en';
+    
     try {
       const response = await fetch(`/api/trades/close/${tradeId}`, {
         method: 'POST',
@@ -404,17 +968,17 @@
       const result = payload.data?.result;
       const profit = payload.data?.profit || 0;
 
-      // Show notification
       if (result === 'win') {
-        showTradeNotification(`✅ Сделка выиграна! +${profit.toFixed(2)} USDT`, true);
+        const msg = lang === 'ru' ? `✅ Выигрыш! +${profit.toFixed(2)} USDT` : `✅ Trade won! +${profit.toFixed(2)} USDT`;
+        showTradeNotification(msg, 'win');
       } else {
-        showTradeNotification(`❌ Сделка проиграна. -${amount.toFixed(2)} USDT`, false);
+        const msg = lang === 'ru' ? `❌ Проигрыш. -${amount.toFixed(2)} USDT` : `❌ Trade lost. -${amount.toFixed(2)} USDT`;
+        showTradeNotification(msg, 'loss');
       }
 
     } catch (err) {
       console.error('Close trade error:', err);
     } finally {
-      // Refresh trades and balance
       await loadActiveTrades();
       await loadUserBalance();
       
@@ -424,23 +988,9 @@
     }
   }
 
-  function showTradeNotification(message, isWin) {
-    // Create notification element
+  function showTradeNotification(message, type) {
     const notif = document.createElement('div');
-    notif.style.cssText = `
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 15px 25px;
-      border-radius: 12px;
-      font-weight: bold;
-      z-index: 99999;
-      animation: slideIn 0.3s ease;
-      background: ${isWin ? 'linear-gradient(180deg, #28a745, #218838)' : 'linear-gradient(180deg, #ff4d4f, #d9363e)'};
-      color: white;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-    `;
+    notif.className = `notification ${type}`;
     notif.textContent = message;
     document.body.appendChild(notif);
     
@@ -451,23 +1001,25 @@
   }
 
   async function executeTrade() {
+    const lang = localStorage.getItem('nexo_lang') || 'en';
     const amount = parseFloat(document.getElementById('tradeAmount').value);
     const balanceStr = document.getElementById('panelAvailableUsdt').textContent;
     const balance = parseFloat(balanceStr.replace(/[^0-9.]/g, ''));
     
-    if (isNaN(amount) || amount < 1) { alert("Минимальная сумма сделки: 1 USDT"); return; }
+    const minAmountText = lang === 'ru' ? 'Минимальная сумма: 1 USDT' : 'Minimum amount: 1 USDT';
+    if (isNaN(amount) || amount < 1) { alert(minAmountText); return; }
+    
     if (amount > balance) {
-        const alertBox = document.getElementById('balanceAlert');
-        alertBox.style.display = 'block';
-        setTimeout(() => alertBox.style.display = 'none', 3000);
-        return;
+      const alertBox = document.getElementById('balanceAlert');
+      alertBox.style.display = 'block';
+      setTimeout(() => alertBox.style.display = 'none', 3000);
+      return;
     }
 
     const btn = document.getElementById('panelSubmitBtn');
     btn.disabled = true;
-    btn.innerText = "Открытие...";
+    btn.innerText = lang === 'ru' ? 'Открытие...' : 'Opening...';
 
-    // Get selected time
     const activeTimeBtn = document.querySelector('#timeSelection .time-btn.active');
     const timeText = activeTimeBtn ? activeTimeBtn.textContent : '30s';
 
@@ -488,33 +1040,32 @@
 
       const payload = await response.json();
       if (!response.ok) {
-        // Check if trading is blocked
         if (payload?.tradingBlocked) {
-          showTradeNotification('⛔ Торговля ограничена. Обратитесь в поддержку.', false);
+          const blockedText = lang === 'ru' ? '⛔ Торговля ограничена' : '⛔ Trading blocked';
+          showTradeNotification(blockedText, 'loss');
         } else {
-          alert(payload?.error || 'Не удалось открыть сделку');
+          alert(payload?.error || (lang === 'ru' ? 'Не удалось открыть сделку' : 'Failed to open trade'));
         }
         btn.disabled = false;
-        btn.innerText = 'Открыть сделку';
+        btn.innerText = lang === 'ru' ? 'Открыть сделку' : 'Open Trade';
         return;
       }
 
-      // Trade created successfully
-      showTradeNotification(`🚀 Сделка открыта на ${timeText}!`, true);
+      const successText = lang === 'ru' ? `🚀 Сделка открыта на ${timeText}!` : `🚀 Trade opened for ${timeText}!`;
+      showTradeNotification(successText, 'info');
       
-      // Close panel
       document.getElementById('tradeAmount').value = '';
       closeTrade();
       
-      // Refresh data - timer will appear in history
       await loadUserBalance();
       await loadActiveTrades();
 
     } catch (err) {
-      alert('Ошибка сети');
+      alert(lang === 'ru' ? 'Ошибка сети' : 'Network error');
     } finally {
       btn.disabled = false;
-      btn.innerText = 'Открыть сделку';
+      const openText = lang === 'ru' ? 'Открыть сделку' : 'Open Trade';
+      btn.innerText = openText;
     }
   }
 
@@ -524,12 +1075,21 @@
   }
 
   function openTrade(type) {
+    const lang = localStorage.getItem('nexo_lang') || 'en';
     currentTradeType = type;
     document.getElementById('tradePanel').classList.add('active');
     document.getElementById('panelOverlay').style.display = 'block';
-    document.getElementById('panelTitle').textContent = type === 'buy' ? 'Прогноз: ВВЕРХ' : 'Прогноз: ВНИЗ';
+    
+    const titleEl = document.getElementById('panelTitle');
     const btn = document.getElementById('panelSubmitBtn');
-    btn.className = `btn-trade w-100 ${type === 'buy' ? 'btn-buy' : 'btn-sell'}`;
+    
+    if (type === 'buy') {
+      titleEl.innerHTML = `<span class="arrow-up">↑</span> <span>${lang === 'ru' ? 'Прогноз: ВВЕРХ' : 'Predict: UP'}</span>`;
+      btn.className = 'panel-submit up';
+    } else {
+      titleEl.innerHTML = `<span class="arrow-down">↓</span> <span>${lang === 'ru' ? 'Прогноз: ВНИЗ' : 'Predict: DOWN'}</span>`;
+      btn.className = 'panel-submit down';
+    }
   }
 
   function closeTrade() {
@@ -540,7 +1100,7 @@
   window.addEventListener('DOMContentLoaded', () => {
     if (tg?.expand) tg.expand();
     document.getElementById('pairName').textContent = `${coinSymbol} / USDT`;
-    document.getElementById('coinIcon').textContent = coinSymbol[0];
+    document.getElementById('coinIcon').textContent = coinSymbol.slice(0, 2);
 
     initChart();
     updateLivePrice();

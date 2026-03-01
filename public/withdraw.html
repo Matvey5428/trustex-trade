@@ -1,166 +1,345 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Вывод средств - Nexo Trade</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<script src="js/auth.js" defer></script>
-<script src="js/api.js" defer></script>
-<script src="js/balance.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Withdraw - TrustEx</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="js/auth.js" defer></script>
+    <script src="js/api.js" defer></script>
+    <script src="js/balance.js" defer></script>
+    <script src="js/i18n.js" defer></script>
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-card: #1c2128;
+            --bg-hover: #262c36;
+            --accent: #00d4aa;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --border: #30363d;
+            --success: #3fb950;
+            --danger: #f85149;
+        }
 
-<style>
-/* --- ПОЛНОЕ СООТВЕТСТВИЕ ДИЗАЙНУ EXCHANGE.HTML --- */
-body{
-    background: radial-gradient(circle at top, #101a34, #060b1a 70%);
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding-top: 40px;
-    padding-bottom: 120px; 
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    color: #e8f1ff;
-    margin: 0;
-}
-.exchange-card{
-    width: 380px;
-    background: linear-gradient(180deg, #16254d, #0f1b3a);
-    border-radius: 24px;
-    padding: 18px;
-    box-shadow: 0 20px 50px rgba(0,0,0,.6), inset 0 0 0 1px rgba(120,170,255,.15);
-    z-index: 1;
-}
-.header{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 14px;
-}
-.back-btn{
-    background: linear-gradient(180deg, #3a6cff, #2b4ed1);
-    border: none; color: white; border-radius: 12px; padding: 8px 16px; font-weight: 500;
-}
-.refresh-btn{
-    background: transparent; border: 1px solid rgba(120,170,255,.4);
-    color: #8fb3ff; border-radius: 12px; padding: 8px 14px; cursor: pointer;
-}
-.title{ font-size: 18px; font-weight: 600; margin-bottom: 15px; text-align: center; }
+        * { box-sizing: border-box; }
 
-.input-wrap{ margin-top: 14px; }
-.input-label { font-size: 13px; color: #9bb6ff; margin-bottom: 6px; padding-left: 4px; }
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0 0 100px 0;
+        }
 
-.amount-input {
-    background: transparent !important; border: none !important; 
-    border-bottom: 2px solid rgba(150,190,255,.3) !important;
-    border-radius: 0 !important; color: white !important; font-size: 18px !important; 
-    padding: 8px 0 !important; width: 100%;
-}
-.amount-input:focus { 
-    box-shadow: none !important; border-color: #6fa2ff !important; 
-}
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 20px 16px;
+        }
 
-.exchange-btn{
-    margin-top: 25px; width: 100%; padding: 14px; border: none; border-radius: 16px;
-    font-size: 18px; font-weight: 600; color: #0c1a3a;
-    background: linear-gradient(180deg, #9dd0ff, #6ba9ff);
-    box-shadow: 0 8px 20px rgba(80,140,255,.5); cursor: pointer;
-}
-.exchange-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
 
-.balance-box {
-    background: rgba(255,255,255,.04); border-radius: 16px;
-    padding: 14px; text-align: center; margin-bottom: 15px;
-}
-.balance-box small { color: #9bb6ff; display: block; margin-bottom: 4px; }
-.balance-box div { font-size: 18px; font-weight: bold; }
+        .back-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
 
-#topAlert{
-    position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-20px);
-    min-width: 320px; padding: 14px 18px; color: white; font-weight: 500;
-    text-align: center; border-radius: 14px; opacity: 0; pointer-events: none;
-    transition: all 0.3s ease; z-index: 9999;
-}
-#topAlert.show{ opacity: 1; transform: translateX(-50%) translateY(0); }
+        .back-btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+        }
 
-.mobile-bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; }
-.mobile-toggle {
-    width: 100%; background: linear-gradient(180deg, #2a3f6b, #243b63);
-    color: #cfe9ff; border: none; padding: 18px 20px; display: flex;
-    justify-content: space-between; align-items: center;
-    border-top-left-radius: 20px; border-top-right-radius: 20px;
-}
-.mobile-icon {
-    width: 32px; height: 32px; background: rgba(255,255,255,0.1);
-    border-radius: 50%; display: flex; align-items: center; justify-content: center;
-}
-.mobile-content { background: linear-gradient(180deg, #182848 0%, #101c3a 100%); padding: 20px; }
-.mobile-item { padding: 14px 15px; border-radius: 12px; color: #cfe9ff; margin-bottom: 10px; text-decoration: none; display: block;}
-.mobile-item.active { background: rgba(100, 170, 255, 0.2); }
-.mobile-badge { background: #333; font-size: 10px; padding: 4px 8px; border-radius: 10px; color: #aaa; }
-.mobile-arrow { transition: 0.3s; }
-</style>
+        .page-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .lang-select-small {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            margin-left: auto;
+            cursor: pointer;
+        }
+
+        .section-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .balance-display {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .balance-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .balance-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .input-group-modern {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px 16px;
+            margin-bottom: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .input-group-modern:focus-within { border-color: var(--accent); }
+
+        .input-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .form-input {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 16px;
+            font-weight: 500;
+            width: 100%;
+            outline: none;
+        }
+
+        .form-input::placeholder { color: var(--text-muted); }
+
+        .form-select-modern {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 14px 16px;
+            border-radius: 14px;
+            font-size: 15px;
+            width: 100%;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238b949e' viewBox='0 0 16 16'%3E%3Cpath d='M8 10.5l-5-5h10l-5 5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+        }
+
+        .form-select-modern:focus { border-color: var(--accent); outline: none; }
+
+        .btn-primary-modern {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            color: #fff;
+            margin-top: 10px;
+        }
+
+        .btn-primary-modern:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(248, 81, 73, 0.3);
+        }
+
+        .btn-primary-modern:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #topAlert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            min-width: 300px;
+            max-width: 90%;
+            padding: 14px 20px;
+            color: white;
+            font-weight: 500;
+            text-align: center;
+            border-radius: 14px;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            z-index: 9999;
+        }
+
+        #topAlert.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .mobile-bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+        }
+
+        .mobile-toggle {
+            width: 100%;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: none;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mobile-content { background: var(--bg-card); padding: 16px; }
+
+        .mobile-item {
+            padding: 14px 16px;
+            border-radius: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+
+        .mobile-item:hover, .mobile-item.active {
+            background: var(--bg-hover);
+            color: var(--accent);
+        }
+
+        .mobile-badge {
+            background: var(--bg-hover);
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            color: var(--text-muted);
+            margin-left: auto;
+        }
+
+        .refresh-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .refresh-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+    </style>
 </head>
+<body data-i18n-title="withdrawTitle">
 
-<body>
 <div id="topAlert"></div>
 
-<div class="exchange-card">
-    <div class="header">
-        <button class="back-btn" onclick="history.back()">Назад</button>
-        <button class="refresh-btn" id="refreshBtn">Обновить</button>
-    </div>
-
-    <div class="title">Вывод средств</div>
-
-    <div class="balance-box">
-        <small>Доступно к выводу</small>
-        <div id="balanceText">Загрузка...</div>
-    </div>
-
-    <div class="input-wrap">
-        <div class="input-label">Выберите валюту</div>
-        <select id="currencySelect" class="form-control amount-input" style="background: #16254d !important; border-bottom: 2px solid rgba(150,190,255,.3) !important;">
-            <option value="RUB">Российский рубль (₽)</option>
-            <option value="USDT">Tether (USDT)</option>
+<div class="app-container">
+    <div class="page-header">
+        <button class="back-btn" onclick="history.back()">← <span data-i18n="back">Back</span></button>
+        <h1 class="page-title" data-i18n="withdrawTitle">Withdraw Funds</h1>
+        <select class="lang-select-small" id="languageSelect">
+            <option value="en">🇬🇧 EN</option>
+            <option value="ru">🇷🇺 RU</option>
         </select>
     </div>
 
-    <div class="input-wrap">
-        <div class="input-label">Сумма вывода</div>
-        <input type="number" class="form-control amount-input" id="withdrawAmount" placeholder="0.00" step="any">
-    </div>
-
-    <div class="input-wrap">
-        <div class="input-label">Номер карты или кошелька</div>
-        <input type="text" class="form-control amount-input" id="walletAddress" placeholder="4276 **** **** 0000">
-    </div>
-
-    <div class="input-wrap">
-        <div class="input-label">ФИО получателя</div>
-        <input type="text" class="form-control amount-input" id="userFullName" placeholder="ИВАН ИВАНОВ">
-    </div>
-
-    <button class="exchange-btn" id="withdrawBtn">Вывести средства</button>
-</div>
-
-<div class="mobile-bottom-nav">
-    <button class="mobile-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mobileMenu">
-        <div class="d-flex align-items-center gap-2">
-            <div class="mobile-icon">💰</div>
-            <span>Активы</span>
+    <div class="section-card">
+        <div class="balance-display">
+            <div class="balance-label" data-i18n="availableBalance">Available for withdrawal</div>
+            <div class="balance-value" id="balanceText">Loading...</div>
+            <button class="refresh-btn mt-2" id="refreshBtn">🔄 <span data-i18n="refresh">Refresh</span></button>
         </div>
-        <div class="mobile-arrow">⌃</div>
-    </button>
-    <div class="collapse" id="mobileMenu">
-        <div class="mobile-content">
-            <a href="index.html" class="mobile-item active">💰 Активы</a>
-            <a href="trading.html" class="mobile-item">📊 Торговля</a>
-            <a href="staking.html" class="mobile-item">📦 Стейкинг</a>
-            <div class="mobile-item disabled d-flex justify-content-between">
-                <span>📦 Бинарные опционы</span>
-                <span class="mobile-badge">В разработке</span>
+
+        <div class="input-group-modern">
+            <label class="input-label" data-i18n="selectWithdrawCurrency">Select currency</label>
+            <select id="currencySelect" class="form-select-modern">
+                <option value="RUB">🇷🇺 Russian Ruble (₽)</option>
+                <option value="USDT">💵 Tether (USDT)</option>
+            </select>
+        </div>
+
+        <div class="input-group-modern">
+            <label class="input-label" data-i18n="withdrawAmount">Withdrawal Amount</label>
+            <input type="number" class="form-input" id="withdrawAmount" placeholder="0.00" step="any">
+        </div>
+
+        <div class="input-group-modern">
+            <label class="input-label" data-i18n="cardOrWallet">Card or wallet number</label>
+            <input type="text" class="form-input" id="walletAddress" placeholder="4276 **** **** 0000">
+        </div>
+
+        <div class="input-group-modern">
+            <label class="input-label" data-i18n="recipientName">Recipient name</label>
+            <input type="text" class="form-input" id="userFullName" placeholder="JOHN DOE">
+        </div>
+
+        <button class="btn-primary-modern" id="withdrawBtn">
+            ⬇️ <span data-i18n="withdrawFunds">Withdraw Funds</span>
+        </button>
+    </div>
+
+    <div class="mobile-bottom-nav">
+        <button class="mobile-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mobileMenu">
+            <div class="d-flex align-items-center gap-3"><span>💰</span><span class="fw-bold" data-i18n="assets">Assets</span></div>
+            <span>▲</span>
+        </button>
+        <div class="collapse" id="mobileMenu">
+            <div class="mobile-content">
+                <a href="index.html" class="mobile-item"><span>💰</span> <span data-i18n="assets">Assets</span></a>
+                <a href="trading.html" class="mobile-item"><span>📊</span> <span data-i18n="trading">Trading</span></a>
+                <a href="terminal.html" class="mobile-item"><span>📈</span> <span data-i18n="terminal">Terminal</span></a>
+                <div class="mobile-item" style="opacity: 0.5; cursor: not-allowed;"><span>⚡</span> <span data-i18n="binaryOptions">Binary Options</span><span class="mobile-badge" data-i18n="soon">Soon</span></div>
             </div>
         </div>
     </div>
@@ -169,10 +348,7 @@ body{
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 const tg = window.Telegram?.WebApp;
-if (tg) {
-    tg.ready();
-    tg.expand();
-}
+if (tg) { tg.ready(); tg.expand(); }
 
 let userId = null;
 let rubBalance = 0;
@@ -186,7 +362,7 @@ const withdrawBtn = document.getElementById('withdrawBtn');
 
 function showAlert(msg, success = false) {
     topAlert.innerText = msg;
-    topAlert.style.background = success ? 'linear-gradient(180deg,#28a745,#218838)' : 'linear-gradient(180deg,#ff4d4f,#d9363e)';
+    topAlert.style.background = success ? 'linear-gradient(135deg, #3fb950, #2ea043)' : 'linear-gradient(135deg, #f85149, #da3633)';
     topAlert.classList.add('show');
     setTimeout(() => topAlert.classList.remove('show'), 3000);
 }
@@ -209,38 +385,31 @@ async function resolveUserId() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ telegramId })
     });
-
     const payload = await res.json();
-    if (!res.ok || !payload?.data?.telegram_id) {
-        throw new Error(payload?.error || 'Не удалось получить аккаунт');
-    }
-
+    if (!res.ok || !payload?.data?.telegram_id) throw new Error(payload?.error || 'Failed');
     return payload.data.telegram_id;
 }
 
 async function loadUserData() {
     if (!userId) return;
     try {
-        // Используем balance.js данные если доступны
         if (window.USER_BALANCES) {
             rubBalance = window.USER_BALANCES.rub || 0;
             usdtBalance = window.USER_BALANCES.usdt || 0;
-            balanceText.innerText = `${rubBalance.toFixed(2)} ₽ | ${usdtBalance.toFixed(2)} $`;
+            balanceText.innerText = `${rubBalance.toFixed(2)} ₽ | ${usdtBalance.toFixed(2)} USDT`;
             return;
         }
-        
-        // Fallback: загрузить через API
-        const res = await fetch(`/api/profile/${userId}?t=${new Date().getTime()}`);
+        const res = await fetch(`/api/profile/${userId}?t=${Date.now()}`);
         const payload = await res.json();
         const data = payload.data || {};
         if (!payload.error) {
             rubBalance = parseFloat(data.rub) || 0;
             usdtBalance = parseFloat(data.usdt) || 0;
-            balanceText.innerText = `${rubBalance.toFixed(2)} ₽ | ${usdtBalance.toFixed(2)} $`;
+            balanceText.innerText = `${rubBalance.toFixed(2)} ₽ | ${usdtBalance.toFixed(2)} USDT`;
         }
     } catch (err) {
-        console.error('Ошибка загрузки:', err);
-        balanceText.innerText = "Ошибка соединения";
+        console.error('Load error:', err);
+        balanceText.innerText = "Connection error";
     }
 }
 
@@ -250,11 +419,10 @@ async function withdraw() {
     const name = document.getElementById('userFullName').value.trim();
     const currency = currencySelect.value;
 
-    if (amount <= 0) return showAlert("Введите корректную сумму");
-    if (wallet.length < 8) return showAlert("Введите корректные реквизиты");
-    if (name.length < 3) return showAlert("Введите ФИО получателя");
+    if (amount <= 0) return showAlert(window.t ? t('enterAmount') : "Enter valid amount");
+    if (wallet.length < 8) return showAlert("Enter valid card/wallet number");
+    if (name.length < 3) return showAlert(window.t ? t('recipientName') : "Enter recipient name");
 
-    // Используем актуальные балансы из USER_BALANCES
     let currentBal;
     if (window.USER_BALANCES) {
         currentBal = (currency === 'RUB') ? (window.USER_BALANCES.rub || 0) : (window.USER_BALANCES.usdt || 0);
@@ -262,11 +430,10 @@ async function withdraw() {
         currentBal = (currency === 'RUB') ? rubBalance : usdtBalance;
     }
     
-    if (amount > currentBal) return showAlert("Недостаточно средств на балансе!");
+    if (amount > currentBal) return showAlert(window.t ? t('insufficientFunds') : "Insufficient funds!");
 
-    // Блокировка кнопки для предотвращения повторных кликов
     withdrawBtn.disabled = true;
-    withdrawBtn.innerText = "Обработка...";
+    withdrawBtn.innerHTML = '⏳ ' + (window.t ? t('processing') : 'Processing...');
 
     try {
         const response = await fetch('/api/transactions/withdraw', {
@@ -278,19 +445,18 @@ async function withdraw() {
                 currency: currency,
                 wallet: wallet,
                 full_name: name,
-                initData: tg?.initData || "" 
+                initData: tg?.initData || ""
             })
         });
 
         const result = await response.json();
 
         if (response.ok) {
-            showAlert(`Заявка на вывод ${amount} ${currency} создана!`, true);
+            showAlert(`✅ ${window.t ? t('withdrawSuccess') : 'Withdrawal request created!'} ${amount} ${currency}`, true);
             withdrawAmount.value = "";
             document.getElementById('walletAddress').value = "";
             document.getElementById('userFullName').value = "";
             
-            // Обновить локальные балансы
             if (currency === 'RUB') {
                 rubBalance -= amount;
                 if (window.USER_BALANCES) window.USER_BALANCES.rub = rubBalance;
@@ -298,40 +464,31 @@ async function withdraw() {
                 usdtBalance -= amount;
                 if (window.USER_BALANCES) window.USER_BALANCES.usdt = usdtBalance;
             }
-            
-            // Обновить отображение баланса
-            balanceText.innerText = `${rubBalance.toFixed(2)} ₽ | ${usdtBalance.toFixed(2)} $`;
-            
-            // Также обновить через BalanceManager если доступен
-            if (typeof BalanceManager !== 'undefined') {
-                await BalanceManager.refresh();
-            }
+            balanceText.innerText = `${rubBalance.toFixed(2)} ₽ | ${usdtBalance.toFixed(2)} USDT`;
+            if (typeof BalanceManager !== 'undefined') await BalanceManager.refresh();
         } else {
-            showAlert(result.error || "Ошибка при выводе");
+            showAlert(result.error || (window.t ? t('error') : "Withdrawal error"));
         }
     } catch (e) {
-        showAlert("Ошибка сервера. Попробуйте позже.");
+        showAlert("Server error. Try again later.");
     } finally {
         withdrawBtn.disabled = false;
-        withdrawBtn.innerText = "Вывести средства";
+        withdrawBtn.innerHTML = '⬇️ <span data-i18n="withdrawFunds">' + (window.t ? t('withdrawFunds') : 'Withdraw Funds') + '</span>';
     }
 }
 
 withdrawBtn.onclick = withdraw;
 document.getElementById('refreshBtn').onclick = loadUserData;
+
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         userId = await resolveUserId();
-        // Небольшая задержка чтобы balance.js успел загрузить данные
-        setTimeout(() => {
-            loadUserData();
-        }, 200);
+        setTimeout(() => { loadUserData(); }, 200);
     } catch (e) {
         console.error('init_error', e);
-        showAlert('Ошибка инициализации');
+        showAlert('Initialization error');
     }
 });
 </script>
-
 </body>
 </html>

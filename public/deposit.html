@@ -1,217 +1,412 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Пополнение - Nexo Trade</title>
+    <title>Deposit - TrustEx</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="js/auth.js" defer></script>
     <script src="js/api.js" defer></script>
     <script src="js/balance.js" defer></script>
+    <script src="js/i18n.js" defer></script>
     <style>
         :root {
-            --bg-dark: #060b1a;
-            --card-bg-solid: #162447; 
-            --accent-blue: #4db8ff;
-            --text-main: #ffffff;
-            --text-secondary: #9fb3ff;
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-card: #1c2128;
+            --bg-hover: #262c36;
+            --accent: #00d4aa;
+            --accent-hover: #00f5c4;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --border: #30363d;
+            --success: #3fb950;
+            --danger: #f85149;
         }
+
+        * { box-sizing: border-box; }
 
         body {
-            background: var(--bg-dark);
-            color: var(--text-main);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             min-height: 100vh;
             margin: 0;
-            padding: 20px 15px 140px 15px;
+            padding: 0 0 100px 0;
         }
 
-        .app-container { width: 100%; max-width: 500px; margin: 0 auto; }
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 20px 16px;
+        }
 
-        .main-card {
-            background: var(--card-bg-solid) !important;
-            border-radius: 25px !important;
-            padding: 25px !important;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-            border: none;
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
         }
 
         .back-btn {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(120,170,255,0.3);
-            color: var(--text-main);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px 16px;
             border-radius: 12px;
-            padding: 8px 18px;
             font-size: 14px;
-            margin-bottom: 20px;
+            font-weight: 500;
             cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+        }
+
+        .page-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .section-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
         }
 
         .section-title {
-            color: #69b7ff; margin-bottom: 25px; position: relative;
-            font-size: 1.2rem; font-weight: 600;
-        }
-        .section-title::after {
-            content: ""; width: 40px; height: 3px; background: #69b7ff;
-            position: absolute; bottom: -6px; left: 0; border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
         }
 
         .asset-item {
-            background: #24366e; border-radius: 18px; padding: 15px;
-            margin-bottom: 12px; display: flex; justify-content: space-between;
-            align-items: center; cursor: pointer; border: 1px solid transparent;
-            transition: 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
         }
-        .asset-item:active { transform: scale(0.98); background: #2b3e75; }
+
+        .asset-item:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+            transform: translateX(4px);
+        }
+
+        .asset-item:last-child { margin-bottom: 0; }
 
         .asset-left { display: flex; align-items: center; gap: 12px; }
+
         .coin {
-            width: 42px; height: 42px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: bold;
-        }
-        .gold { background: linear-gradient(45deg,#caa84f,#f4d06f); color: #000; }
-        .btc { background: #f7931a; }
-        .ton { background: #2da6ff; }
-        .eth { background: #888; }
-        .usdt { background: #26a17b; }
-
-        .asset-name { font-weight: bold; }
-        .asset-price { font-size: 12px; color: #9bbcff; }
-        .asset-right { text-align: right; font-weight: bold; }
-
-        #paymentScreen { display: none; animation: fadeIn 0.3s; }
-        .buy-title { font-size: 22px; font-weight: bold; margin-bottom: 20px; color: #4db8ff; }
-
-        .input-group-custom {
-            background: #060b1a; border-radius: 15px; padding: 15px;
-            margin-bottom: 15px; border: 1px solid rgba(77, 184, 255, 0.3);
-        }
-        .input-group-custom input {
-            background: transparent; border: none; color: white;
-            font-size: 24px; width: 100%; outline: none; font-weight: bold;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
         }
 
-        .presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 25px; }
+        .coin.rub { background: linear-gradient(135deg, #ffd700, #ffaa00); color: #000; }
+        .coin.btc { background: #f7931a; color: #fff; }
+        .coin.ton { background: #0098ea; color: #fff; }
+        .coin.eth { background: #627eea; color: #fff; }
+        .coin.usdt { background: #26a17b; color: #fff; }
+
+        .asset-name { font-weight: 600; font-size: 15px; }
+        .asset-price { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+        .asset-balance { font-weight: 600; font-size: 14px; text-align: right; }
+
+        #paymentScreen { display: none; animation: fadeIn 0.3s ease; }
+
+        .payment-header { text-align: center; margin-bottom: 24px; }
+
+        .payment-currency {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-secondary);
+            padding: 12px 24px;
+            border-radius: 16px;
+        }
+
+        .payment-currency .coin { width: 48px; height: 48px; font-size: 20px; }
+        .payment-currency-name { font-size: 24px; font-weight: 700; }
+
+        .input-group-modern {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .input-group-modern:focus-within { border-color: var(--accent); }
+
+        .input-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .input-row { display: flex; justify-content: space-between; align-items: center; }
+
+        .amount-input {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 28px;
+            font-weight: 700;
+            width: 70%;
+            outline: none;
+        }
+
+        .amount-input::placeholder { color: var(--text-muted); }
+        .currency-tag { font-size: 16px; font-weight: 600; color: var(--accent); }
+
+        .presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+
         .preset-btn {
-            background: #2b3e75; border: 1px solid #3b82f6;
-            color: white; border-radius: 10px; padding: 10px 5px; font-size: 13px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 12px 8px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .submit-btn {
-            width: 100%; padding: 16px; border-radius: 15px; border: none;
-            background: linear-gradient(90deg, #38bdf8, #3b82f6);
-            color: white; font-weight: bold; font-size: 16px;
-            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
-            margin-bottom: 10px;
+        .preset-btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+            color: var(--accent);
         }
 
-        .link-btn {
-            width: 100%; padding: 14px; border-radius: 15px;
-            background: transparent; border: 2px solid #3b82f6;
-            color: #3b82f6; font-weight: bold; font-size: 14px;
+        .btn-primary-modern {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: linear-gradient(135deg, var(--accent), #00b894);
+            color: #000;
+            margin-bottom: 12px;
         }
 
-        .mobile-bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; }
+        .btn-primary-modern:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 212, 170, 0.3);
+        }
+
+        .btn-secondary-modern {
+            width: 100%;
+            padding: 14px;
+            background: transparent;
+            border: 1px solid var(--accent);
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary-modern:hover { background: rgba(0, 212, 170, 0.1); }
+
+        .mobile-bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+        }
+
         .mobile-toggle {
-            width: 100%; background: linear-gradient(180deg, #2a3f6b, #243b63);
-            color: #cfe9ff; border: none; padding: 18px 20px;
-            display: flex; justify-content: space-between; align-items: center;
-            border-top-left-radius: 20px; border-top-right-radius: 20px;
+            width: 100%;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: none;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .mobile-content { background: linear-gradient(180deg, #182848 0%, #101c3a 100%); padding: 20px; }
-        .mobile-item { padding: 14px 15px; border-radius: 12px; color: #cfe9ff; margin-bottom: 10px; text-decoration: none; display: block; }
-        .mobile-item.active { background: rgba(100, 170, 255, 0.2); }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .mobile-content { background: var(--bg-card); padding: 16px; }
+
+        .mobile-item {
+            padding: 14px 16px;
+            border-radius: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+
+        .mobile-item:hover, .mobile-item.active {
+            background: var(--bg-hover);
+            color: var(--accent);
+        }
+
+        .mobile-badge {
+            background: var(--bg-hover);
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            color: var(--text-muted);
+            margin-left: auto;
+        }
+
+        .lang-select-small {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            margin-left: auto;
+            cursor: pointer;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
-<body>
+<body data-i18n-title="depositTitle">
 
 <div class="app-container">
-
     <div id="selectionScreen">
-        <button class="back-btn" onclick="window.location.href='index.html'">← Назад</button>
-        
-        <div class="main-card">
-            <h5 class="section-title">Валютные счета</h5>
+        <div class="page-header">
+            <button class="back-btn" onclick="window.location.href='index.html'">← <span data-i18n="back">Back</span></button>
+            <h1 class="page-title" data-i18n="depositTitle">Deposit</h1>
+            <select class="lang-select-small" id="languageSelect">
+                <option value="en">🇬🇧 EN</option>
+                <option value="ru">🇷🇺 RU</option>
+            </select>
+        </div>
+
+        <div class="section-card">
+            <div class="section-title">💵 <span data-i18n="fiatAccounts">Fiat Currencies</span></div>
             <div class="asset-item" onclick="openPayment('RUB')">
                 <div class="asset-left">
-                    <div class="coin gold">₽</div>
+                    <div class="coin rub">₽</div>
                     <div>
-                        <div class="asset-name">Российский рубль</div>
-                        <div class="asset-price" id="price-RUB">загрузка...</div>
+                        <div class="asset-name" data-i18n="rub">Russian Ruble</div>
+                        <div class="asset-price" id="price-RUB">...</div>
                     </div>
                 </div>
-                <div class="asset-right" id="bal-RUB">0.00 ₽</div>
+                <div class="asset-balance" id="bal-RUB">0.00 ₽</div>
             </div>
         </div>
 
-        <div class="main-card">
-            <h5 class="section-title">Криптовалюты</h5>
+        <div class="section-card">
+            <div class="section-title">🪙 <span data-i18n="crypto">Cryptocurrencies</span></div>
             <div class="asset-item" onclick="openPayment('BTC')">
                 <div class="asset-left">
                     <div class="coin btc">₿</div>
                     <div><div class="asset-name">Bitcoin</div><div class="asset-price" id="price-BTC">...</div></div>
                 </div>
-                <div class="asset-right" id="bal-BTC">0.00 BTC</div>
+                <div class="asset-balance" id="bal-BTC">0.00 BTC</div>
             </div>
             <div class="asset-item" onclick="openPayment('TON')">
                 <div class="asset-left">
                     <div class="coin ton">T</div>
                     <div><div class="asset-name">Toncoin</div><div class="asset-price" id="price-TON">...</div></div>
                 </div>
-                <div class="asset-right" id="bal-TON">0.00 TON</div>
+                <div class="asset-balance" id="bal-TON">0.00 TON</div>
             </div>
             <div class="asset-item" onclick="openPayment('ETH')">
                 <div class="asset-left">
                     <div class="coin eth">◆</div>
                     <div><div class="asset-name">Ethereum</div><div class="asset-price" id="price-ETH">...</div></div>
                 </div>
-                <div class="asset-right" id="bal-ETH">0.00 ETH</div>
+                <div class="asset-balance" id="bal-ETH">0.00 ETH</div>
             </div>
             <div class="asset-item" onclick="openPayment('USDT')">
                 <div class="asset-left">
                     <div class="coin usdt">₮</div>
-                    <div><div class="asset-name">Tether</div><div class="asset-price">1.00 $</div></div>
+                    <div><div class="asset-name">Tether USDT</div><div class="asset-price">≈ $1.00</div></div>
                 </div>
-                <div class="asset-right" id="bal-USDT">0.00 USDT</div>
+                <div class="asset-balance" id="bal-USDT">0.00 USDT</div>
             </div>
         </div>
     </div>
 
     <div id="paymentScreen">
-        <button class="back-btn" onclick="closePayment()">← К выбору</button>
-        <div class="main-card">
-            <div class="buy-title">Вы покупаете <span id="selectedCurrency">RUB</span></div>
-            <div class="small-text mb-2" style="color:#94a3b8; font-size: 14px;">Количество*</div>
-            <div class="input-group-custom">
-                <div class="d-flex justify-content-between align-items-center">
-                    <input type="number" id="amountInput" placeholder="0" inputmode="decimal">
-                    <span id="currencyTag" style="color:#4db8ff; font-weight:bold">RUB</span>
+        <div class="page-header">
+            <button class="back-btn" onclick="closePayment()">← <span data-i18n="back">Back</span></button>
+            <h1 class="page-title" data-i18n="depositTitle">Deposit</h1>
+        </div>
+
+        <div class="section-card">
+            <div class="payment-header">
+                <div class="payment-currency">
+                    <div class="coin" id="paymentCoinIcon">₽</div>
+                    <span class="payment-currency-name" id="selectedCurrency">RUB</span>
                 </div>
             </div>
+
+            <div class="input-group-modern">
+                <div class="input-label" data-i18n="amount">Amount</div>
+                <div class="input-row">
+                    <input type="number" class="amount-input" id="amountInput" placeholder="0.00" inputmode="decimal">
+                    <span class="currency-tag" id="currencyTag">RUB</span>
+                </div>
+            </div>
+
             <div class="presets" id="presetContainer"></div>
-            <button class="submit-btn" id="submitBtn" onclick="submitDeposit()">💳 Пополнить</button>
-            <button class="link-btn" id="linkBtn" onclick="sendPaymentLink()">🔗 Получить ссылку</button>
+
+            <button class="btn-primary-modern" id="submitBtn" onclick="submitDeposit()">💳 <span data-i18n="confirmDeposit">Confirm Deposit</span></button>
+            <button class="btn-secondary-modern" id="linkBtn" onclick="sendPaymentLink()">🔗 Get Payment Link</button>
         </div>
     </div>
 
     <div class="mobile-bottom-nav">
         <button class="mobile-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mobileMenu">
-            <div class="d-flex align-items-center gap-2">
-                <div class="mobile-icon">💰</div>
-                <span class="fw-bold">Активы</span>
-            </div>
-            <div class="mobile-arrow">⌃</div>
+            <div class="d-flex align-items-center gap-3"><span>💰</span><span class="fw-bold" data-i18n="assets">Assets</span></div>
+            <span>▲</span>
         </button>
         <div class="collapse" id="mobileMenu">
             <div class="mobile-content">
-                <a href="index.html" class="mobile-item">💰 Активы</a>
-                <a href="trading.html" class="mobile-item">📊 Торговля</a>
-                <a href="staking.html" class="mobile-item">📦 Стейкинг</a>
+                <a href="index.html" class="mobile-item"><span>💰</span> <span data-i18n="assets">Assets</span></a>
+                <a href="trading.html" class="mobile-item"><span>📊</span> <span data-i18n="trading">Trading</span></a>
+                <a href="terminal.html" class="mobile-item"><span>📈</span> <span data-i18n="terminal">Terminal</span></a>
+                <div class="mobile-item" style="opacity: 0.5; cursor: not-allowed;"><span>⚡</span> <span data-i18n="binaryOptions">Binary Options</span><span class="mobile-badge" data-i18n="soon">Soon</span></div>
             </div>
         </div>
     </div>
@@ -220,13 +415,18 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const tg = window.Telegram?.WebApp;
-    if (tg) {
-        tg.ready();
-        tg.expand();
-    }
+    if (tg) { tg.ready(); tg.expand(); }
 
     let userId = null;
     let currentSymbol = 'RUB';
+
+    const coinIcons = {
+        'RUB': { symbol: '₽', class: 'rub' },
+        'BTC': { symbol: '₿', class: 'btc' },
+        'TON': { symbol: 'T', class: 'ton' },
+        'ETH': { symbol: '◆', class: 'eth' },
+        'USDT': { symbol: '₮', class: 'usdt' }
+    };
 
     const presets = {
         'RUB': [5000, 10000, 25000, 50000],
@@ -242,11 +442,10 @@
             const data = await res.json();
             const prices = {};
             data.forEach(item => prices[item.symbol] = parseFloat(item.price).toLocaleString());
-            
-            if(document.getElementById('price-BTC')) document.getElementById('price-BTC').innerText = `${prices['BTCUSDT']} $`;
-            if(document.getElementById('price-ETH')) document.getElementById('price-ETH').innerText = `${prices['ETHUSDT']} $`;
-            if(document.getElementById('price-TON')) document.getElementById('price-TON').innerText = `${prices['TONUSDT']} $`;
-        } catch (e) { console.log("Курсы не загружены"); }
+            if(document.getElementById('price-BTC')) document.getElementById('price-BTC').innerText = `$${prices['BTCUSDT']}`;
+            if(document.getElementById('price-ETH')) document.getElementById('price-ETH').innerText = `$${prices['ETHUSDT']}`;
+            if(document.getElementById('price-TON')) document.getElementById('price-TON').innerText = `$${prices['TONUSDT']}`;
+        } catch (e) { console.log("Prices not loaded"); }
     }
 
     function getClientTelegramId() {
@@ -268,16 +467,13 @@
             body: JSON.stringify({ telegramId })
         });
         const payload = await res.json();
-        if (!res.ok || !payload?.data?.telegram_id) {
-            throw new Error(payload?.error || 'Не удалось получить аккаунт');
-        }
+        if (!res.ok || !payload?.data?.telegram_id) throw new Error(payload?.error || 'Failed');
         return payload.data.telegram_id;
     }
 
     async function loadUserBalances() {
         if (!userId) return;
         try {
-            // Используем balance.js данные если доступны
             if (window.USER_BALANCES) {
                 document.getElementById('bal-RUB').innerText = `${(window.USER_BALANCES.rub || 0).toFixed(2)} ₽`;
                 document.getElementById('bal-BTC').innerText = `${(window.USER_BALANCES.btc || 0).toFixed(6)} BTC`;
@@ -286,18 +482,15 @@
                 document.getElementById('bal-USDT').innerText = `${(window.USER_BALANCES.usdt || 0).toFixed(2)} USDT`;
                 return;
             }
-            
-            // Fallback
             const res = await fetch(`/api/profile/${userId}`);
             const payload = await res.json();
             const data = payload?.data || {};
-            
             document.getElementById('bal-RUB').innerText = `${(data.rub || 0).toFixed(2)} ₽`;
             document.getElementById('bal-BTC').innerText = `${(data.btc || 0).toFixed(6)} BTC`;
             document.getElementById('bal-ETH').innerText = `${(data.eth || 0).toFixed(6)} ETH`;
             document.getElementById('bal-TON').innerText = `${(data.ton || 0).toFixed(2)} TON`;
             document.getElementById('bal-USDT').innerText = `${(data.usdt || 0).toFixed(2)} USDT`;
-        } catch (e) { console.error("Ошибка баланса:", e); }
+        } catch (e) { console.error("Balance error:", e); }
     }
 
     function openPayment(symbol) {
@@ -307,7 +500,10 @@
         document.getElementById('selectedCurrency').innerText = symbol;
         document.getElementById('currencyTag').innerText = symbol;
         document.getElementById('amountInput').value = '';
-
+        const iconData = coinIcons[symbol] || coinIcons['RUB'];
+        const iconEl = document.getElementById('paymentCoinIcon');
+        iconEl.innerText = iconData.symbol;
+        iconEl.className = 'coin ' + iconData.class;
         const container = document.getElementById('presetContainer');
         container.innerHTML = '';
         (presets[symbol] || [10, 50, 100, 500]).forEach(val => {
@@ -326,132 +522,69 @@
 
     async function submitDeposit() {
         const amount = parseFloat(document.getElementById('amountInput').value);
-        if (!amount || amount <= 0) {
-            alert("Введите сумму");
-            return;
-        }
-
+        if (!amount || amount <= 0) { alert(window.t ? t('enterAmount') : "Enter amount"); return; }
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
-        btn.innerText = "Создание заявки...";
-
+        btn.innerHTML = '⏳ ' + (window.t ? t('processing') : 'Processing...');
         try {
-            // Для USDT используем CryptoBot
             if (currentSymbol === 'USDT') {
                 const response = await fetch('/api/transactions/create-invoice', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId,
-                        amount: amount
-                    })
+                    body: JSON.stringify({ userId, amount })
                 });
-
                 const result = await response.json();
                 if (response.ok && result.success) {
-                    // Показываем инфо и открываем оплату
-                    alert(`✅ Заявка создана!\n\nСумма: ${amount} USDT\n\nСейчас откроется окно оплаты через CryptoBot.`);
-                    
-                    // Открываем ссылку на оплату через Telegram API
+                    alert(`✅ ${window.t ? t('depositSuccess') : 'Deposit created!'}\n\nAmount: ${amount} USDT`);
                     if (result.data.pay_url) {
-                        if (tg && tg.openLink) {
-                            tg.openLink(result.data.pay_url);
-                        } else if (tg && tg.openTelegramLink && result.data.bot_invoice_url) {
-                            tg.openTelegramLink(result.data.bot_invoice_url);
-                        } else {
-                            window.location.href = result.data.pay_url;
-                        }
+                        if (tg && tg.openLink) tg.openLink(result.data.pay_url);
+                        else if (tg && tg.openTelegramLink && result.data.bot_invoice_url) tg.openTelegramLink(result.data.bot_invoice_url);
+                        else window.location.href = result.data.pay_url;
                     }
-                    
                     closePayment();
-                } else {
-                    alert("Ошибка: " + (result.error || "Попробуйте позже"));
-                }
+                } else alert((window.t ? t('error') : 'Error') + ": " + (result.error || "Try again"));
             } else {
-                // Для других валют - старая логика
                 const response = await fetch('/api/transactions/deposit', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId,
-                        amount: amount,
-                        currency: currentSymbol
-                    })
+                    body: JSON.stringify({ userId, amount, currency: currentSymbol })
                 });
-
                 const result = await response.json();
-                if (response.ok) {
-                    alert('Заявка создана! Ожидайте подтверждения.');
-                    closePayment();
-                    loadUserBalances();
-                } else {
-                    alert("Ошибка: " + (result.error || "Попробуйте позже"));
-                }
+                if (response.ok) { alert('✅ ' + (window.t ? t('depositPending') : 'Deposit pending!')); closePayment(); loadUserBalances(); }
+                else alert((window.t ? t('error') : 'Error') + ": " + (result.error || "Try again"));
             }
-        } catch (e) {
-            alert("Ошибка сети");
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "💳 Пополнить";
-        }
+        } catch (e) { alert("Network error"); }
+        finally { btn.disabled = false; btn.innerHTML = '💳 <span data-i18n="confirmDeposit">' + (window.t ? t('confirmDeposit') : 'Confirm Deposit') + '</span>'; }
     }
 
     async function sendPaymentLink() {
         const amount = parseFloat(document.getElementById('amountInput').value);
-        if (!amount || amount <= 0) {
-            alert("Введите сумму");
-            return;
-        }
-
-        if (currentSymbol !== 'USDT') {
-            alert("Ссылка доступна только для USDT");
-            return;
-        }
-
+        if (!amount || amount <= 0) { alert(window.t ? t('enterAmount') : "Enter amount"); return; }
+        if (currentSymbol !== 'USDT') { alert("Payment link available only for USDT"); return; }
         const btn = document.getElementById('linkBtn');
         btn.disabled = true;
-        btn.innerText = "Создание ссылки...";
-
+        btn.innerHTML = '⏳ Creating...';
         try {
             const response = await fetch('/api/transactions/create-invoice', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId,
-                    amount: amount,
-                    sendToBot: true
-                })
+                body: JSON.stringify({ userId, amount, sendToBot: true })
             });
-
             const result = await response.json();
-            if (response.ok && result.success) {
-                alert(`✅ Ссылка на оплату ${amount} USDT отправлена вам в бот!\n\nВы можете переслать её тому, кто будет оплачивать.`);
-                closePayment();
-            } else {
-                alert("Ошибка: " + (result.error || "Попробуйте позже"));
-            }
-        } catch (e) {
-            alert("Ошибка сети");
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "🔗 Получить ссылку";
-        }
+            if (response.ok && result.success) { alert(`✅ Link for ${amount} USDT sent!`); closePayment(); }
+            else alert("Error: " + (result.error || "Try again"));
+        } catch (e) { alert("Network error"); }
+        finally { btn.disabled = false; btn.innerHTML = '🔗 Get Payment Link'; }
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
         try {
             userId = await resolveUserId();
-            // Небольшая задержка чтобы balance.js успел загрузить данные
-            setTimeout(async () => {
-                await loadUserBalances();
-            }, 200);
+            setTimeout(async () => { await loadUserBalances(); }, 200);
             updateMarketPrices();
             setInterval(updateMarketPrices, 15000);
-        } catch (e) {
-            console.error('init_error', e);
-        }
+        } catch (e) { console.error('init_error', e); }
     });
 </script>
-
 </body>
 </html>

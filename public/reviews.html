@@ -1,217 +1,664 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Все отзывы - Nexo Trade</title>
+  <title>TrustEx - Reviews</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="js/i18n.js" defer></script>
   <script src="js/auth.js" defer></script>
   <script src="js/api.js" defer></script>
-  <script src="js/balance.js" defer></script>
   <style>
-    body {
-      background: #060b1a; 
-      color: #fff;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px 15px 140px 15px; 
-      display: flex;
-      justify-content: center;
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-card: #1c2128;
+      --bg-hover: #262c36;
+      --accent: #00d4aa;
+      --accent-dim: rgba(0, 212, 170, 0.1);
+      --text-primary: #f0f6fc;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --border-color: #30363d;
+      --success: #3fb950;
+      --danger: #f85149;
+      --warning: #d29922;
+      --star-color: #ffc107;
     }
-    .app-container { width: 100%; max-width: 500px; position: relative; }
-
-    .header-box {
+    
+    * { box-sizing: border-box; }
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      padding-bottom: 100px;
+    }
+    
+    .app-container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    
+    /* Header */
+    .page-header {
       display: flex;
       align-items: center;
-      gap: 15px;
-      margin-bottom: 25px;
+      justify-content: space-between;
+      padding: 12px 0;
+      margin-bottom: 20px;
     }
-
+    
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
     .back-btn {
-      background: #2b3e75; border: none; color: white; 
-      padding: 8px 15px; border-radius: 12px; font-size: 14px;
-      cursor: pointer;
-    }
-
-    .reviews-section {
-      background: linear-gradient(180deg, #182848 0%, #0f1c3d 100%);
-      border-radius: 25px; padding: 30px 20px;
-      box-shadow: 0 0 40px rgba(0, 150, 255, 0.15);
-      min-height: 200px;
-    }
-
-    .review-card {
-      background: rgba(255, 255, 255, 0.05); border-radius: 20px; 
-      padding: 20px; margin-bottom: 15px; backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.05);
-    }
-
-    .stars { color: #38bdf8; font-size: 16px; margin-top: 8px; }
-    .review-name { font-weight: bold; font-size: 16px; }
-    .review-role { color: #9fb3ff; font-size: 13px; }
-    .review-date { color: #69b7ff; font-size: 12px; }
-
-    .mobile-bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; }
-    .mobile-toggle {
-        width: 100%; background: linear-gradient(180deg, #2a3f6b, #243b63);
-        color: #cfe9ff; border: none; padding: 18px 20px; display: flex;
-        justify-content: space-between; align-items: center;
-        border-top-left-radius: 20px; border-top-right-radius: 20px;
-    }
-    .mobile-icon {
-        width: 32px; height: 32px; background: rgba(255,255,255,0.1);
-        border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    }
-    .mobile-arrow { transition: 0.3s; }
-    .mobile-toggle[aria-expanded="true"] .mobile-arrow { transform: rotate(180deg); }
-    .mobile-content { background: linear-gradient(180deg, #182848 0%, #101c3a 100%); padding: 20px; }
-    .mobile-item { padding: 14px 15px; border-radius: 12px; color: #cfe9ff; margin-bottom: 10px; text-decoration: none; display: block;}
-
-    #backToTop {
-      position: fixed;
-      left: calc(50% + 190px); 
-      bottom: 110px;
-      width: 45px;
-      height: 45px;
-      background: linear-gradient(180deg, #38bdf8, #3b82f6);
-      color: white;
-      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background: var(--bg-card);
       border-radius: 12px;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 18px;
+      transition: all 0.2s;
+    }
+    
+    .back-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+    
+    .page-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0;
+    }
+    
+    .lang-selector {
+      display: flex;
+      background: var(--bg-card);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+    
+    .lang-btn {
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #000;
+    }
+    
+    /* Stats Card */
+    .stats-card {
+      background: linear-gradient(135deg, var(--accent) 0%, #00a884 100%);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 20px;
+      color: #000;
+    }
+    
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .stats-main {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    
+    .stats-number {
+      font-size: 42px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    
+    .stats-label {
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    
+    .stats-rating {
+      text-align: right;
+    }
+    
+    .rating-value {
+      font-size: 28px;
+      font-weight: 700;
+    }
+    
+    .rating-stars {
+      font-size: 14px;
+      margin-top: 4px;
+    }
+    
+    /* Filter Tabs */
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    
+    .filter-tab {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    
+    .filter-tab:hover {
+      background: var(--bg-hover);
+    }
+    
+    .filter-tab.active {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+    
+    /* Review Card */
+    .reviews-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .review-card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 18px;
+      border: 1px solid var(--border-color);
+      transition: all 0.2s;
+    }
+    
+    .review-card:hover {
+      background: var(--bg-hover);
+    }
+    
+    .review-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    
+    .review-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .user-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 16px;
+      color: #fff;
+    }
+    
+    .user-info {}
+    
+    .user-name {
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 2px;
+    }
+    
+    .user-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--accent-dim);
+      color: var(--accent);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    
+    .review-date {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+    
+    .review-text {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    
+    .review-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .review-stars {
+      color: var(--star-color);
+      font-size: 14px;
+      letter-spacing: 2px;
+    }
+    
+    .review-helpful {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+    
+    .helpful-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    
+    .helpful-btn:hover {
+      background: var(--bg-hover);
+      color: var(--accent);
+    }
+    
+    /* Loading & Empty states */
+    .loading-state,
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+    
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border-color);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Back to Top */
+    .back-to-top {
+      position: fixed;
+      right: 20px;
+      bottom: 100px;
+      width: 48px;
+      height: 48px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 20px;
       cursor: pointer;
-      box-shadow: 0 5px 15px rgba(0, 150, 255, 0.3);
-      z-index: 1000;
+      box-shadow: 0 4px 20px rgba(0, 212, 170, 0.3);
       opacity: 0;
       visibility: hidden;
-      transition: all 0.3s ease;
+      transition: all 0.3s;
+      z-index: 1000;
     }
-
-    @media (max-width: 500px) {
-      #backToTop { left: auto; right: 20px; }
+    
+    .back-to-top.show {
+      opacity: 1;
+      visibility: visible;
     }
-
-    #backToTop.show { opacity: 1; visibility: visible; }
+    
+    /* Bottom Nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-around;
+      padding: 12px 0;
+      z-index: 9998;
+    }
+    
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 11px;
+      padding: 4px 16px;
+      transition: all 0.2s;
+    }
+    
+    .nav-item.active {
+      color: var(--accent);
+    }
+    
+    .nav-icon {
+      font-size: 20px;
+    }
   </style>
 </head>
 <body>
 
 <div class="app-container">
-    <div class="header-box">
-      <button class="back-btn" onclick="window.location.href='index.html'">← Назад</button>
-      <h4 class="m-0" id="reviewsCountTitle">Все отзывы (0)</h4>
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <a href="index.html" class="back-btn">←</a>
+      <h1 class="page-title" data-i18n="reviews">Reviews</h1>
     </div>
-
-    <div class="reviews-section" id="allReviewsContainer">
-        <div class="text-center py-4 text-secondary">Загрузка отзывов...</div>
+    <div class="lang-selector">
+      <button class="lang-btn active" onclick="switchLang('en')">EN</button>
+      <button class="lang-btn" onclick="switchLang('ru')">RU</button>
     </div>
+  </div>
 
-    <div class="mobile-bottom-nav">
-        <button class="mobile-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mobileMenu">
-            <div class="d-flex align-items-center gap-2">
-                <div class="mobile-icon">💰</div>
-                <span class="fw-bold">Активы</span>
-            </div>
-            <div class="mobile-arrow">⌃</div>
-        </button>
-        <div class="collapse" id="mobileMenu">
-            <div class="mobile-content">
-                <a href="index.html" class="mobile-item">💰 Активы</a>
-                <a href="trading.html" class="mobile-item">📊 Торговля</a>
-                <a href="staking.html" class="mobile-item">📦 Стейкинг</a>
-            </div>
+  <!-- Stats Card -->
+  <div class="stats-card">
+    <div class="stats-row">
+      <div>
+        <div class="stats-main">
+          <span class="stats-number" id="totalReviews">0</span>
+          <span class="stats-label" data-i18n="reviewsCount">reviews</span>
         </div>
+      </div>
+      <div class="stats-rating">
+        <div class="rating-value">4.9</div>
+        <div class="rating-stars">★★★★★</div>
+      </div>
     </div>
+  </div>
 
-    <button id="backToTop" title="Наверх">↑</button>
+  <!-- Filter Tabs -->
+  <div class="filter-tabs">
+    <button class="filter-tab active" data-filter="all" data-i18n="all">All</button>
+    <button class="filter-tab" data-filter="5">★★★★★</button>
+    <button class="filter-tab" data-filter="4">★★★★</button>
+    <button class="filter-tab" data-filter="3">★★★</button>
+  </div>
+
+  <!-- Reviews List -->
+  <div class="reviews-list" id="reviewsContainer">
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <div data-i18n="loading">Loading...</div>
+    </div>
+  </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Back to Top -->
+<button class="back-to-top" id="backToTop">↑</button>
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav">
+  <a href="index.html" class="nav-item">
+    <span class="nav-icon">💼</span>
+    <span data-i18n="assets">Assets</span>
+  </a>
+  <a href="trading.html" class="nav-item">
+    <span class="nav-icon">📊</span>
+    <span data-i18n="trading">Trading</span>
+  </a>
+  <a href="exchange.html" class="nav-item">
+    <span class="nav-icon">🔄</span>
+    <span data-i18n="exchange">Exchange</span>
+  </a>
+</div>
+
 <script>
-    const container = document.getElementById('allReviewsContainer');
-    const title = document.getElementById('reviewsCountTitle');
+  const tg = window.Telegram?.WebApp;
+  if (tg?.expand) tg.expand();
 
-    // Функция загрузки данных из бэкенда
-    function buildFallbackReviews() {
-        return Array.from({ length: 36 }, (_, i) => ({
-            author_name: `Пользователь #${1001 + i}`,
-            user_id: 1001 + i,
-            date: '18.10.2025',
-            text: 'Отличная платформа! Все операции проходят быстро, интерфейс удобный и понятный.',
-            rating: 5
-        }));
+  const container = document.getElementById('reviewsContainer');
+  const totalEl = document.getElementById('totalReviews');
+  let allReviews = [];
+  let currentFilter = 'all';
+  
+  // Language switcher
+  function switchLang(lang) {
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    if (typeof applyLanguage === 'function') {
+      applyLanguage(lang);
+    }
+    renderReviews(filterReviews());
+  }
+
+  // Initialize language
+  document.addEventListener('DOMContentLoaded', () => {
+    const savedLang = localStorage.getItem('nexo_lang') || 'en';
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.textContent.toLowerCase() === savedLang);
+    });
+  });
+
+  // Sample reviews generator
+  function generateReviews() {
+    const lang = localStorage.getItem('nexo_lang') || 'en';
+    
+    const namesEN = ['Alex M.', 'Sarah K.', 'Michael R.', 'Emily J.', 'David L.', 'Jessica W.', 'Chris B.', 'Amanda P.', 'Ryan T.', 'Nicole S.', 'Brandon H.', 'Megan C.', 'Tyler D.', 'Ashley F.', 'Kevin G.', 'Stephanie N.'];
+    const namesRU = ['Алексей М.', 'Мария К.', 'Михаил Р.', 'Елена Ж.', 'Дмитрий Л.', 'Анна В.', 'Кирилл Б.', 'Ольга П.', 'Роман Т.', 'Наталья С.', 'Борис Х.', 'Марина Ц.', 'Тимур Д.', 'Алина Ф.', 'Константин Г.', 'Светлана Н.'];
+    
+    const reviewsEN = [
+      'Excellent platform! Fast transactions and intuitive interface. Highly recommended.',
+      'Been using TrustEx for 3 months now. Great experience overall, support is responsive.',
+      'The best trading platform I\'ve used. Low fees and reliable execution.',
+      'Easy to use, even for beginners. The mobile interface is clean and modern.',
+      'Withdrawals are processed quickly. Very satisfied with the service.',
+      'Professional platform with great security features. Feel safe trading here.',
+      'Love the new design! Much better than before. Keep up the good work!',
+      'Competitive rates and fast exchange. Will continue using TrustEx.',
+      'Customer support helped me resolve an issue within hours. Impressive!',
+      'Simple registration process and smooth verification. Started trading in minutes.',
+      'The charting tools are excellent. Perfect for technical analysis.',
+      'Fast deposits and withdrawals. No issues so far.',
+      'Great liquidity and tight spreads. Professional trading experience.',
+      'Mobile app works flawlessly. Trade on the go without any problems.',
+      'Transparent fees and no hidden charges. Honest platform.',
+      'The binary options feature is amazing. Easy to predict and earn.'
+    ];
+    
+    const reviewsRU = [
+      'Отличная платформа! Быстрые транзакции и интуитивный интерфейс. Рекомендую.',
+      'Использую TrustEx уже 3 месяца. Отличный опыт, поддержка отвечает быстро.',
+      'Лучшая торговая платформа. Низкие комиссии и надежное исполнение.',
+      'Легко использовать даже новичкам. Мобильный интерфейс чистый и современный.',
+      'Выводы обрабатываются быстро. Очень доволен сервисом.',
+      'Профессиональная платформа с отличной безопасностью. Торгую здесь спокойно.',
+      'Новый дизайн огонь! Намного лучше, чем было. Так держать!',
+      'Конкурентные курсы и быстрый обмен. Буду продолжать использовать TrustEx.',
+      'Поддержка помогла решить проблему за пару часов. Впечатляет!',
+      'Простая регистрация и быстрая верификация. Начал торговать за минуты.',
+      'Инструменты графиков отличные. Идеально для технического анализа.',
+      'Быстрые депозиты и выводы. Проблем пока не было.',
+      'Хорошая ликвидность и узкие спреды. Профессиональный трейдинг.',
+      'Мобильное приложение работает отлично. Торгую на ходу без проблем.',
+      'Прозрачные комиссии без скрытых платежей. Честная платформа.',
+      'Бинарные опционы - супер функция. Легко прогнозировать и зарабатывать.'
+    ];
+    
+    const names = lang === 'ru' ? namesRU : namesEN;
+    const reviews = lang === 'ru' ? reviewsRU : reviewsEN;
+    const badges = lang === 'ru' ? ['Верифицирован', 'Трейдер', 'Активный', 'Pro'] : ['Verified', 'Trader', 'Active', 'Pro'];
+    
+    const result = [];
+    const daysAgo = [1, 2, 3, 5, 7, 10, 14, 21, 30];
+    
+    for (let i = 0; i < 36; i++) {
+      const nameIdx = i % names.length;
+      const reviewIdx = i % reviews.length;
+      const rating = i < 28 ? 5 : (i < 33 ? 4 : 3);
+      const dayOffset = daysAgo[i % daysAgo.length];
+      const date = new Date();
+      date.setDate(date.getDate() - dayOffset);
+      
+      result.push({
+        id: 1001 + i,
+        name: names[nameIdx],
+        initials: names[nameIdx].split(' ').map(n => n[0]).join(''),
+        badge: badges[i % badges.length],
+        text: reviews[reviewIdx],
+        rating: rating,
+        date: date.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US'),
+        helpful: Math.floor(Math.random() * 20) + 1
+      });
+    }
+    
+    return result;
+  }
+
+  async function loadReviews() {
+    try {
+      const response = await fetch('/api/reviews');
+      
+      if (response.ok) {
+        const payload = await response.json();
+        allReviews = Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : []);
+      }
+
+      if (!allReviews.length) {
+        allReviews = generateReviews();
+      }
+      
+      totalEl.textContent = allReviews.length;
+      renderReviews(allReviews);
+      
+    } catch (error) {
+      console.error("Error loading reviews:", error);
+      allReviews = generateReviews();
+      totalEl.textContent = allReviews.length;
+      renderReviews(allReviews);
+    }
+  }
+
+  function filterReviews() {
+    if (currentFilter === 'all') return allReviews;
+    return allReviews.filter(r => r.rating === parseInt(currentFilter));
+  }
+
+  function renderReviews(reviews) {
+    const lang = localStorage.getItem('nexo_lang') || 'en';
+    
+    if (!reviews.length) {
+      const emptyText = lang === 'ru' ? 'Отзывов не найдено' : 'No reviews found';
+      container.innerHTML = `<div class="empty-state">${emptyText}</div>`;
+      return;
+    }
+    
+    // Re-generate reviews when language changes to get correct text
+    if (allReviews.length && !allReviews[0].text.match(lang === 'ru' ? /[а-яА-Я]/ : /[a-zA-Z]/)) {
+      allReviews = generateReviews();
+      reviews = filterReviews();
+      totalEl.textContent = allReviews.length;
     }
 
-    async function loadReviews() {
-        try {
-            const response = await fetch('/api/reviews');
-            let reviews = [];
+    container.innerHTML = reviews.map(review => {
+      const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
+      const colors = ['#4f46e5', '#7c3aed', '#2563eb', '#0891b2', '#059669', '#d97706', '#dc2626'];
+      const bgColor = colors[review.id % colors.length];
+      
+      return `
+        <div class="review-card">
+          <div class="review-header">
+            <div class="review-user">
+              <div class="user-avatar" style="background: linear-gradient(135deg, ${bgColor} 0%, ${bgColor}dd 100%);">
+                ${review.initials || review.name?.charAt(0) || '?'}
+              </div>
+              <div class="user-info">
+                <div class="user-name">${review.name || review.author_name || 'User'}</div>
+                <div class="user-badge">✓ ${review.badge || (lang === 'ru' ? 'Верифицирован' : 'Verified')}</div>
+              </div>
+            </div>
+            <div class="review-date">${review.date || ''}</div>
+          </div>
+          <div class="review-text">${review.text}</div>
+          <div class="review-footer">
+            <div class="review-stars">${stars}</div>
+            <div class="review-helpful">
+              <button class="helpful-btn">👍</button>
+              <span>${review.helpful || ''}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 
-            if (response.ok) {
-                const payload = await response.json();
-                reviews = Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : []);
-            }
+  // Filter tabs
+  document.querySelectorAll('.filter-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentFilter = tab.dataset.filter;
+      renderReviews(filterReviews());
+    });
+  });
 
-            if (!reviews.length) {
-                reviews = buildFallbackReviews();
-            }
-            
-            if (reviews.length > 0) {
-                renderReviews(reviews);
-                title.innerText = `Все отзывы (${reviews.length})`;
-            } else {
-                container.innerHTML = '<div class="text-center py-4 text-secondary">Отзывов пока нет. Будьте первым!</div>';
-            }
-        } catch (error) {
-            console.error("Ошибка загрузки отзывов:", error);
-            const fallback = buildFallbackReviews();
-            renderReviews(fallback);
-            title.innerText = `Все отзывы (${fallback.length})`;
-        }
+  // Back to top button
+  const backToTopBtn = document.getElementById('backToTop');
+  
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 300) {
+      backToTopBtn.classList.add('show');
+    } else {
+      backToTopBtn.classList.remove('show');
     }
+  });
+  
+  backToTopBtn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
 
-    // Функция отрисовки карточек
-    function renderReviews(reviews) {
-        container.innerHTML = '';
-        reviews.forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'review-card';
-            card.innerHTML = `
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <div class="review-name">${item.author_name}</div>
-                        <div class="review-role">Пользователь #${item.user_id}</div>
-                    </div>
-                    <div class="review-date">${item.date || 'Недавно'}</div>
-                </div>
-                <p class="mt-3 mb-2" style="font-size: 14px; line-height: 1.5;">
-                    ${item.text}
-                </p>
-                <div class="stars">${'★'.repeat(item.rating || 5)}${'☆'.repeat(5 - (item.rating || 5))}</div>
-            `;
-            container.appendChild(card);
-        });
-    }
-
-    // Логика кнопки "Наверх"
-    const backToTopBtn = document.getElementById('backToTop');
-    window.onscroll = function() {
-        if (document.documentElement.scrollTop > 400 || document.body.scrollTop > 400) {
-            backToTopBtn.classList.add('show');
-        } else {
-            backToTopBtn.classList.remove('show');
-        }
-    };
-
-    backToTopBtn.onclick = function() {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    // Запуск при загрузке
-    document.addEventListener('DOMContentLoaded', loadReviews);
+  // Initialize
+  loadReviews();
 </script>
 </body>
 </html>
