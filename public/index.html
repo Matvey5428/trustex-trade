@@ -1671,8 +1671,8 @@
     
     const lang = localStorage.getItem('nexo_lang') || 'ru';
     const confirmText = lang === 'ru' 
-      ? 'Подать заявку на верификацию?' 
-      : 'Submit verification request?';
+      ? 'Для прохождения верификации вы будете перенаправлены в чат поддержки. Продолжить?' 
+      : 'You will be redirected to support chat for verification. Continue?';
     
     if (!confirm(confirmText)) return;
     
@@ -1680,32 +1680,14 @@
       const res = await fetch('/api/user/verification/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId })
+        body: JSON.stringify({ userId, sendChatMessage: true })
       });
       
       const data = await res.json();
       
       if (data.success) {
-        const successText = lang === 'ru' 
-          ? '✅ Заявка на верификацию отправлена! Ожидайте ответа.' 
-          : '✅ Verification request submitted! Please wait for response.';
-        alert(successText);
-        
-        // Update UI
-        const verifStatusEl = document.getElementById('verificationStatus');
-        const verificationBtn = document.getElementById('verificationBtn');
-        const verificationBtnText = document.getElementById('verificationBtnText');
-        
-        if (verifStatusEl) {
-          verifStatusEl.textContent = '⏳ На рассмотрении';
-          verifStatusEl.style.color = '#ffc107';
-        }
-        if (verificationBtn) {
-          verificationBtn.disabled = true;
-          if (verificationBtnText) {
-            verificationBtnText.textContent = 'Заявка отправлена';
-          }
-        }
+        // Redirect to support chat
+        window.location.href = 'support.html';
       } else {
         alert(data.error || 'Error');
       }

@@ -127,7 +127,7 @@ router.get('/:userId', async (req, res) => {
  */
 router.post('/verification/request', async (req, res) => {
   try {
-    const { userId } = req.body;
+    const { userId, sendChatMessage } = req.body;
     
     if (!userId) {
       return res.status(400).json({ success: false, error: 'userId required' });
@@ -154,7 +154,9 @@ router.post('/verification/request', async (req, res) => {
     }
     
     if (user.verification_pending) {
-      return res.status(400).json({ success: false, error: 'Request already pending' });
+      // If already pending, just redirect to chat
+      res.json({ success: true, message: 'Request already pending' });
+      return;
     }
     
     // Update user - set verification_pending
@@ -162,6 +164,28 @@ router.post('/verification/request', async (req, res) => {
       'UPDATE users SET verification_pending = TRUE WHERE telegram_id = $1',
       [userId.toString()]
     );
+    
+    // Send verification message to support chat
+    if (sendChatMessage) {
+      const verificationMessage = `Здравствуйте! Меня зовут Владимир, я специалист службы верификации TrustEx.
+
+Для подтверждения вашей личности и продолжения работы с платформой, пожалуйста, предоставьте следующую информацию:
+
+📝 ФИО (полностью)
+📍 Город проживания  
+📅 Дата рождения
+
+После проверки данных ваш аккаунт будет верифицирован в течение 24 часов.
+
+С уважением,
+Служба верификации TrustEx`;
+      
+      await pool.query(
+        `INSERT INTO support_messages (user_id, sender, message, is_read, created_at) 
+         VALUES ($1, 'support', $2, FALSE, NOW())`,
+        [user.id, verificationMessage]
+      );
+    }
     
     // Send notifications to manager and admin
     const { getBot } = require('../bot');
