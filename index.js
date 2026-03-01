@@ -117,6 +117,14 @@ async function initDatabase() {
       ADD COLUMN IF NOT EXISTS verification_pending BOOLEAN DEFAULT FALSE
     `);
 
+    // One-time cleanup: delete old verification messages without proper line breaks
+    await pool.query(`
+      DELETE FROM support_messages 
+      WHERE sender = 'support' 
+        AND message LIKE '%специалист службы верификации%'
+        AND message NOT LIKE '%' || E'\n' || '%'
+    `);
+
     // Performance indexes
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)`);
