@@ -1390,13 +1390,7 @@
       const key = el.getAttribute('data-i18n');
       el.textContent = t(key);
     });
-    // Update verification text based on user
-    if (window.CURRENT_USER) {
-      const verifEl = document.getElementById('verification');
-      if (verifEl) {
-        verifEl.textContent = window.CURRENT_USER.verified ? t('verified') : t('notVerified');
-      }
-    }
+    // Verification is now handled by loadUserData() from API profile
   }
 
   function getClientTelegramId() {
