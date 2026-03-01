@@ -353,6 +353,78 @@ router.get('/user/:telegramId/history', adminCheck, async (req, res) => {
 });
 
 /**
+ * POST /api/admin/withdrawal/:id/return
+ * Return withdrawal to user (refund balance)
+ */
+router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Get withdrawal with user info
+    let withdrawalResult;
+    if (req.isMainAdmin) {
+      withdrawalResult = await pool.query(
+        `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.first_name
+         FROM withdraw_requests wr 
+         JOIN users u ON wr.user_id = u.id 
+         WHERE wr.id = $1`,
+        [id]
+      );
+    } else {
+      withdrawalResult = await pool.query(
+        `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.first_name
+         FROM withdraw_requests wr 
+         JOIN users u ON wr.user_id = u.id 
+         WHERE wr.id = $1 AND u.manager_id = $2`,
+        [id, req.managerId]
+      );
+    }
+    
+    if (withdrawalResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Withdrawal not found' });
+    }
+    
+    const withdrawal = withdrawalResult.rows[0];
+    
+    if (withdrawal.status !== 'pending') {
+      return res.status(400).json({ success: false, error: 'Withdrawal already processed' });
+    }
+    
+    // Return balance to user
+    const newBalance = parseFloat(withdrawal.balance_usdt) + parseFloat(withdrawal.amount);
+    
+    await pool.query(
+      'UPDATE users SET balance_usdt = $1, updated_at = NOW() WHERE id = $2',
+      [newBalance, withdrawal.user_internal_id]
+    );
+    
+    // Update withdrawal status to rejected
+    await pool.query(
+      'UPDATE withdraw_requests SET status = $1 WHERE id = $2',
+      ['rejected', id]
+    );
+    
+    // Send message to user's support chat
+    const returnMessage = `❌ Ваша заявка на вывод ${parseFloat(withdrawal.amount).toFixed(2)} USDT была отклонена.\n\nСредства возвращены на ваш баланс.\n\nЕсли у вас есть вопросы, напишите нам.`;
+    
+    await pool.query(
+      `INSERT INTO support_messages (user_id, sender, message, is_read, created_at) 
+       VALUES ($1, 'support', $2, FALSE, NOW())`,
+      [withdrawal.user_internal_id, returnMessage]
+    );
+    
+    res.json({
+      success: true,
+      message: 'Withdrawal returned',
+      newBalance
+    });
+  } catch (error) {
+    console.error('Return withdrawal error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
  * PUT /api/admin/user/:telegramId
  * Update user balance and mode (admin or manager for their users)
  */

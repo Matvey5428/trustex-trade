@@ -1016,6 +1016,7 @@
             'rejected': { bg: 'rgba(255,68,68,0.2)', color: '#ff4444', text: '❌ Отклонён' }
           };
           const st = statusColors[item.status] || statusColors['pending'];
+          const isPending = item.status === 'pending';
           return `
             <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; margin-bottom: 8px; border-left: 3px solid #ff9800;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -1024,6 +1025,7 @@
               </div>
               <div style="font-size: 11px; color: #8892b0; margin-top: 5px;">Вывод • ${date}</div>
               <div style="font-size: 10px; color: #666; margin-top: 3px; word-break: break-all;">${item.wallet || ''}</div>
+              ${isPending ? `<button onclick="returnWithdrawal('${item.id}')" style="width: 100%; margin-top: 8px; padding: 6px; background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%); border: none; border-radius: 6px; color: #fff; font-weight: 600; font-size: 12px; cursor: pointer;">↩️ Вернуть средства</button>` : ''}
             </div>
           `;
         }
@@ -1084,6 +1086,38 @@
             }
           }
           loadStats();
+        } else {
+          showToast('❌ ' + data.error, 'error');
+        }
+      } catch (e) {
+        showToast('❌ Ошибка', 'error');
+      }
+    }
+    
+    async function returnWithdrawal(withdrawalId) {
+      if (!confirm('Вернуть средства пользователю? Вывод будет отклонён.')) return;
+      
+      try {
+        const res = await fetch(`${API_BASE}/withdrawal/${withdrawalId}/return`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminId })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast('✅ Средства возвращены!', 'success');
+          if (currentUser) {
+            loadUserInvoices(currentUser.telegram_id);
+            // Refresh user data
+            const userRes = await fetch(`${API_BASE}/user/${currentUser.telegram_id}?adminId=${adminId}`);
+            const userData = await userRes.json();
+            if (userData.success) {
+              currentUser = userData.data;
+              document.getElementById('newBalance').value = parseFloat(currentUser.balance_usdt).toFixed(2);
+            }
+          }
         } else {
           showToast('❌ ' + data.error, 'error');
         }
