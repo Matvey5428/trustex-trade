@@ -3,228 +3,640 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Nexo Trade</title>
+  <title>TrustEx</title>
   
   <!-- Telegram Web App SDK - REQUIRED for Mini App -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-card: #1c2128;
+      --bg-hover: #262c36;
+      --accent: #00d4aa;
+      --accent-hover: #00eebb;
+      --text-primary: #f0f6fc;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --border: #30363d;
+      --success: #3fb950;
+      --danger: #f85149;
+      --warning: #d29922;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      background: #060b1a;
-      color: #fff;
-      font-family: Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       margin: 0;
-      padding: 20px 15px 140px 15px;
-      display: flex;
-      justify-content: center;
+      padding: 0 0 80px 0;
+      min-height: 100vh;
     }
 
     .app-container {
       width: 100%;
-      max-width: 500px;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 16px;
     }
 
+    /* Header */
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 0;
+      margin-bottom: 8px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--accent) 0%, #00a896 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      color: #0d1117;
+    }
+
+    .logo-text {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .logo-text span {
+      color: var(--accent);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .header-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .header-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    /* Cards */
     .card-custom, .profile-box, .section-card {
-      background: #162447 !important;
-      border: none !important;
-      border-radius: 25px !important;
-      padding: 25px !important;
-      margin-bottom: 20px !important;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+      background: var(--bg-card) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 16px !important;
+      padding: 20px !important;
+      margin-bottom: 16px !important;
+      box-shadow: none !important;
     }
 
-    .balance { font-size: 32px; font-weight: bold; color: #4db8ff; }
+    /* Balance Card */
+    .balance-card {
+      background: linear-gradient(135deg, #1a2332 0%, #0d1117 100%);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    .balance-label {
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .balance { 
+      font-size: 36px; 
+      font-weight: 700; 
+      color: var(--text-primary);
+      letter-spacing: -0.5px;
+    }
+
+    .balance-change {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--success);
+      margin-left: 8px;
+    }
+
     .action-wrapper {
       display: flex;
-      justify-content: center;
-      gap: 30px;
-      flex-wrap: nowrap;
-    }
-    .action-box {
-      width: 70px; height: 70px; border-radius: 18px;
-      background: #2b3e75; border: none; color: white; font-size: 22px;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 24px;
     }
 
+    .action-item {
+      flex: 1;
+      text-align: center;
+    }
+
+    .action-box {
+      width: 100%;
+      height: 52px;
+      border-radius: 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .action-box:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #0d1117;
+    }
+
+    .action-item .label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+    }
+
+    /* Assets */
     .asset-item {
-      background: #24366e; border-radius: 15px; padding: 15px;
-      margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .asset-item:hover {
+      background: var(--bg-hover);
+      border-color: var(--accent);
+    }
+
+    .asset-item:last-child {
+      margin-bottom: 0;
     }
 
     .section-title {
-      color: #69b7ff; margin-bottom: 20px; position: relative; font-size: 1.2rem;
+      color: var(--text-primary);
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .section-title::after {
-      content: ""; width: 40px; height: 3px; background: #69b7ff;
-      position: absolute; bottom: -6px; left: 0; border-radius: 5px;
+      display: none;
     }
 
-    .small-text { color: #9fb3ff; font-size: 14px; }
+    .small-text { color: var(--text-secondary); font-size: 13px; }
+
     .coin {
-      width: 42px; height: 42px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center; font-weight: bold;
-    }
-    .gold { background: linear-gradient(45deg,#caa84f,#f4d06f); color: #000; }
-    .btc { background: #f7931a; }
-    .ton { background: #2da6ff; }
-    .eth { background: #888; }
-    .usdt { background: #26a17b; }
-
-    .history-item {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 20px;
-      padding: 15px;
-      margin-bottom: 12px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
-      text-align: left;
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .gold { background: linear-gradient(135deg, #ffd93d 0%, #f0a500 100%); color: #000; }
+    .btc { background: linear-gradient(135deg, #f7931a 0%, #e2750a 100%); color: #fff; }
+    .ton { background: linear-gradient(135deg, #0098ea 0%, #0079c2 100%); color: #fff; }
+    .eth { background: linear-gradient(135deg, #627eea 0%, #4c63c0 100%); color: #fff; }
+    .usdt { background: linear-gradient(135deg, #26a17b 0%, #1a8a68 100%); color: #fff; }
+
+    .asset-name {
+      font-weight: 500;
+      font-size: 15px;
+      color: var(--text-primary);
+    }
+
+    .asset-price {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .asset-right {
+      text-align: right;
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--text-primary);
+    }
+
+    /* Profile Section */
+    .profile-box h6 {
+      color: var(--text-primary);
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 16px;
+    }
+
+    .profile-stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .profile-stat:last-child {
+      border-bottom: none;
+    }
+
+    .profile-stat-label {
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .profile-stat-value {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    /* History */
+    .history-item {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      transition: all 0.2s;
+    }
+
+    .history-item:hover {
+      border-color: var(--accent);
     }
 
     .history-icon {
-      width: 48px; height: 48px;
-      background: rgba(59, 130, 246, 0.15);
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px; margin-right: 15px;
+      width: 42px;
+      height: 42px;
+      background: var(--bg-card);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin-right: 12px;
     }
 
     .history-info { flex-grow: 1; }
-    .history-type { font-weight: bold; font-size: 16px; margin-bottom: 2px; }
-    .history-date { font-size: 12px; color: #9fb3ff; line-height: 1.2; }
+    .history-type { font-weight: 500; font-size: 14px; margin-bottom: 2px; color: var(--text-primary); }
+    .history-date { font-size: 12px; color: var(--text-muted); }
     
     .history-amount { text-align: right; }
-    .amount-val { font-weight: bold; font-size: 17px; }
-    .amount-cur { font-size: 12px; color: #9fb3ff; text-transform: uppercase; }
+    .amount-val { font-weight: 600; font-size: 15px; }
+    .amount-cur { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
 
-    .text-plus { color: #00ff88; }
-    .text-minus { color: #ff4d4d; }
+    .text-plus { color: var(--success); }
+    .text-minus { color: var(--danger); }
 
+    /* Reviews Section */
     .reviews-section {
-      background: linear-gradient(180deg, #182848 0%, #0f1c3d 100%);
-      border-radius: 25px; padding: 40px 30px; color: #fff;
-      box-shadow: 0 0 40px rgba(0, 150, 255, 0.15); margin: 40px auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
     }
+
+    .section-subtitle {
+      color: var(--text-secondary);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
     .nav-btn {
-      width: 55px; height: 55px; border-radius: 12px; border: 2px solid #3b82f6;
-      background: transparent; color: #3b82f6; display: flex; align-items: center;
-      justify-content: center; font-size: 22px; transition: 0.3s;
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: all 0.2s;
+      cursor: pointer;
     }
+
+    .nav-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
     .review-card {
-      background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 25px;
-      margin: 20px 0; backdrop-filter: blur(10px);
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin: 16px 0;
       display: none;
     }
-    .review-card.active { display: block; animation: fadeIn 0.4s; }
-    .stars { color: #38bdf8; font-size: 18px; margin-top: 10px; }
+
+    .review-card.active { display: block; animation: fadeIn 0.3s; }
+    .stars { color: var(--accent); font-size: 16px; margin-top: 8px; }
+    
     .all-reviews-btn {
-      background: linear-gradient(90deg, #38bdf8, #3b82f6); border: none;
-      border-radius: 12px; padding: 12px 25px; color: white; font-weight: 500;
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      padding: 10px 20px;
+      color: #0d1117;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
     }
 
-    .analytics-btn-group, .history-btn-group {
-      display: flex; gap: 8px; flex-wrap: nowrap; margin-bottom: 20px;
-      overflow-x: auto; padding-bottom: 5px;
+    .all-reviews-btn:hover {
+      background: var(--accent-hover);
     }
+
+    .reviews-footer {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    /* Analytics */
+    .analytics-btn-group, .history-btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: nowrap;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
     .analytics-btn-group::-webkit-scrollbar,
     .history-btn-group::-webkit-scrollbar { display: none; }    
 
     .btn-period, .btn-filter {
-      background: rgba(255, 255, 255, 0.05); border: 1px solid #3b82f6;
-      color: #fff; padding: 8px 12px; border-radius: 10px;
-      font-size: 13px; transition: 0.3s; white-space: nowrap; flex: 1; text-align: center;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+      white-space: nowrap;
+      flex: 1;
+      text-align: center;
+      cursor: pointer;
     }
-    .btn-period.active, .btn-filter.active { background: #3b82f6; }
+
+    .btn-period:hover, .btn-filter:hover {
+      border-color: var(--accent);
+      color: var(--text-primary);
+    }
+
+    .btn-period.active, .btn-filter.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #0d1117;
+    }
     
     .stat-box {
-      background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 15px; padding: 15px; margin-bottom: 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    .stat-label { color: #9fb3ff; font-size: 13px; margin-bottom: 4px; }
-    .stat-value { font-size: 18px; font-weight: bold; }
-    .text-success-custom { color: #00ff88; }
-    .text-danger-custom { color: #ff4d4d; }
+
+    .stat-label { color: var(--text-secondary); font-size: 13px; }
+    .stat-value { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+    .text-success-custom { color: var(--success); }
+    .text-danger-custom { color: var(--danger); }
 
     .stat-period-box {
-      background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 20px; padding: 20px; margin-bottom: 15px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
     }
-    .period-name { font-size: 18px; font-weight: bold; color: #4db8ff; margin-bottom: 12px; }
-    .period-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
-    .period-label { color: #9fb3ff; font-size: 14px; }
-    .period-value { font-weight: bold; font-size: 16px; }
-    .period-value small { color: #9fb3ff; font-weight: normal; margin-left: 5px; }
 
-    .mobile-bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; }
+    .period-name { 
+      font-size: 15px; 
+      font-weight: 600; 
+      color: var(--accent); 
+      margin-bottom: 12px; 
+    }
+
+    .period-row { 
+      display: flex; 
+      justify-content: space-between; 
+      margin-bottom: 8px; 
+    }
+
+    .period-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .period-label { color: var(--text-secondary); font-size: 13px; }
+    .period-value { font-weight: 600; font-size: 14px; color: var(--text-primary); }
+    .period-value small { color: var(--text-muted); font-weight: normal; margin-left: 5px; font-size: 12px; }
+
+    /* Bottom Navigation */
+    .mobile-bottom-nav { 
+      position: fixed; 
+      bottom: 0; 
+      left: 0; 
+      right: 0; 
+      z-index: 9999;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+    }
+
     .mobile-toggle {
-        width: 100%; background: linear-gradient(180deg, #2a3f6b, #243b63);
-        color: #cfe9ff; border: none; padding: 18px 20px; display: flex;
-        justify-content: space-between; align-items: center;
-        border-top-left-radius: 20px; border-top-right-radius: 20px;
+      width: 100%;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: none;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top-left-radius: 16px;
+      border-top-right-radius: 16px;
     }
-    .mobile-icon {
-        width: 32px; height: 32px; background: rgba(255,255,255,0.1);
-        border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    }
-    .mobile-content { background: linear-gradient(180deg, #182848 0%, #101c3a 100%); padding: 20px; }
-    .mobile-item { padding: 14px 15px; border-radius: 12px; color: #cfe9ff; margin-bottom: 10px; text-decoration: none; display: block;}
-    .mobile-item.active { background: rgba(100, 170, 255, 0.2); }
 
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .mobile-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0d1117;
+    }
+
+    .mobile-content { 
+      background: var(--bg-card); 
+      padding: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .mobile-item { 
+      padding: 14px 16px; 
+      border-radius: 10px; 
+      color: var(--text-primary); 
+      margin-bottom: 8px; 
+      text-decoration: none; 
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .mobile-item:hover {
+      background: var(--bg-hover);
+    }
+
+    .mobile-item.active { 
+      background: rgba(0, 212, 170, 0.15); 
+      color: var(--accent);
+    }
+
+    .mobile-badge {
+      font-size: 11px;
+      background: var(--warning);
+      color: #0d1117;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    .mobile-arrow {
+      transition: transform 0.2s;
+    }
+
+    .mobile-toggle.collapsed .mobile-arrow {
+      transform: rotate(180deg);
+    }
+
+    @keyframes fadeIn { 
+      from { opacity: 0; transform: translateY(8px); } 
+      to { opacity: 1; transform: translateY(0); } 
+    }
 
     @media (max-width: 380px) {
-      .btn-period, .btn-filter { font-size: 11px; padding: 6px 4px; }
+      .btn-period, .btn-filter { font-size: 11px; padding: 6px 8px; }
       .history-btn-group { gap: 4px; }
-      .action-wrapper { gap: 15px; }
-      .action-box { width: 60px; height: 60px; font-size: 20px; }
-      .action-item .label { font-size: 12px; }
+      .action-wrapper { gap: 8px; }
+      .action-box { height: 48px; font-size: 16px; }
+      .action-item .label { font-size: 11px; }
     }
     
+    /* Support FAB */
     .support-fab {
       position: fixed;
-      bottom: 100px;
-      right: 20px;
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #4db8ff 0%, #2ea3e8 100%);
+      bottom: 90px;
+      right: 16px;
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: var(--accent);
       border: none;
-      box-shadow: 0 4px 15px rgba(77, 184, 255, 0.4);
+      box-shadow: 0 4px 16px rgba(0, 212, 170, 0.3);
       cursor: pointer;
       z-index: 1000;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 24px;
-      transition: transform 0.2s, box-shadow 0.2s;
+      font-size: 22px;
+      transition: all 0.2s;
     }
     
     .support-fab:hover {
-      transform: scale(1.1);
-      box-shadow: 0 6px 20px rgba(77, 184, 255, 0.6);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 212, 170, 0.4);
     }
     
     .support-fab:active {
-      transform: scale(0.95);
+      transform: translateY(0);
     }
     
     .support-badge {
       position: absolute;
-      top: -5px;
-      right: -5px;
-      background: #ff4444;
+      top: -4px;
+      right: -4px;
+      background: var(--danger);
       color: #fff;
-      font-size: 11px;
-      font-weight: bold;
-      min-width: 20px;
-      height: 20px;
-      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 600;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 9px;
       display: none;
       align-items: center;
       justify-content: center;
       padding: 0 5px;
+    }
+
+    /* Chart Placeholder */
+    #pnlChartPlaceholder {
+      color: var(--text-muted);
+      font-size: 13px;
     }
   </style>
 </head>
@@ -238,10 +650,24 @@
 
 <div class="app-container">
 
-    <div class="card-custom text-center">
-      <div class="small-text mb-2">Общий баланс</div>
+    <!-- Header -->
+    <div class="app-header">
+      <div class="logo">
+        <div class="logo-icon">T</div>
+        <div class="logo-text">Trust<span>Ex</span></div>
+      </div>
+      <div class="header-actions">
+        <button class="header-btn" onclick="window.location.href='trading.html'" title="Торговля">📊</button>
+      </div>
+    </div>
+
+    <!-- Balance Card -->
+    <div class="balance-card">
+      <div class="balance-label">
+        <span>💎</span> Общий баланс
+      </div>
       <div class="balance" id="totalBalance">$0.00</div>
-      <div class="action-wrapper mt-4">      
+      <div class="action-wrapper">      
         <div class="action-item">
           <button class="action-box" onclick="window.location.href='deposit.html'">↑</button>
           <div class="label">Пополнить</div>
@@ -257,25 +683,30 @@
       </div>
     </div>
 
-    <div class="profile-box">
-      <h6 class="mb-3">Профиль</h6>
-      <div class="mb-3"><div class="fw-bold" id="userIdDisplay">0</div><div class="small-text">ID аккаунта</div></div>
-      <div class="mb-3"><div class="fw-bold" id="stats">0 / <span style="color: #00ff88">0</span> / <span style="color: #ff4d4d">0</span></div><div class="small-text">Статистика</div></div>
-      <div class="mb-3"><div class="fw-bold" id="tradingVolume">0.00 USDT</div><div class="small-text">Объем торгов</div></div>
-      <div><div class="text-warning fw-bold" id="verification">Неизвестно</div><div class="small-text">Нажмите, чтобы пройти</div></div>
-    </div>
-
-    <div class="profile-box" style="background: #1a2d4d !important; font-size: 12px;">
-      <h6 class="mb-2" style="color: #69b7ff;">DEBUG INFO</h6>
-      <div style="color: #9fb3ff; line-height: 1.6;">
-        <div>Telegram ID: <span id="debugTelegramId">не зі доступен</span></div>
-        <div>User ID: <span id="debugUserId">загрузка...</span></div>
-        <div>Статус: <span id="debugStatus">инициализация...</span></div>
+    <!-- Profile -->
+    <div class="section-card">
+      <h5 class="section-title">👤 Профиль</h5>
+      <div class="profile-stat">
+        <span class="profile-stat-label">ID аккаунта</span>
+        <span class="profile-stat-value" id="userIdDisplay">0</span>
+      </div>
+      <div class="profile-stat">
+        <span class="profile-stat-label">Статистика (всего / побед / проигрышей)</span>
+        <span class="profile-stat-value" id="stats">0 / <span style="color: var(--success)">0</span> / <span style="color: var(--danger)">0</span></span>
+      </div>
+      <div class="profile-stat">
+        <span class="profile-stat-label">Объем торгов</span>
+        <span class="profile-stat-value" id="tradingVolume">0.00 USDT</span>
+      </div>
+      <div class="profile-stat">
+        <span class="profile-stat-label">Верификация</span>
+        <span class="profile-stat-value" style="color: var(--warning)" id="verification">Неизвестно</span>
       </div>
     </div>
 
+    <!-- Fiat -->
     <div class="section-card">
-      <h5 class="section-title">Валютные счета</h5>
+      <h5 class="section-title">💰 Валютные счета</h5>
       <div class="asset-item">
         <div class="asset-left d-flex align-items-center gap-3">
           <div class="coin gold">₽</div>
@@ -285,8 +716,9 @@
       </div>
     </div>
 
+    <!-- Crypto -->
     <div class="section-card">
-      <h5 class="section-title">Криптовалюты</h5>
+      <h5 class="section-title">🪙 Криптовалюты</h5>
       <div class="asset-item">
         <div class="asset-left d-flex align-items-center gap-3"><div class="coin btc">₿</div><div><div class="asset-name">Bitcoin</div><div class="asset-price" id="btcPrice">... $</div></div></div>
         <div class="asset-right" id="btcBalance">0.00 $</div>
@@ -305,9 +737,10 @@
       </div>
     </div>
 
+    <!-- Reviews -->
     <div class="reviews-section">
-      <div class="section-title">Отзывы клиентов</div>
-      <div class="section-subtitle">Что говорят пользователи о платформе.</div>
+      <h5 class="section-title">⭐ Отзывы клиентов</h5>
+      <div class="section-subtitle">Что говорят пользователи о платформе</div>
       <div class="d-flex gap-2 mt-3">
         <button class="nav-btn" id="prevReview">←</button>
         <button class="nav-btn" id="nextReview">→</button>
@@ -319,10 +752,11 @@
       </div>
     </div>
 
+    <!-- Analytics -->
     <div class="section-card">
-        <h5 class="section-title">Аналитика торговли</h5>
-        <div class="analytics-btn-group mt-3">
-            <button class="btn-period active" onclick="selectPeriod(this, 'all')">Все время</button>
+        <h5 class="section-title">📈 Аналитика торговли</h5>
+        <div class="analytics-btn-group">
+            <button class="btn-period active" onclick="selectPeriod(this, 'all')">Все</button>
             <button class="btn-period" onclick="selectPeriod(this, 'year')">Год</button>
             <button class="btn-period" onclick="selectPeriod(this, 'month')">Месяц</button>
             <button class="btn-period" onclick="selectPeriod(this, 'week')">Неделя</button>
@@ -331,23 +765,25 @@
         <div class="stat-box"><div class="stat-label">Win Rate</div><div class="stat-value" id="winRate">0.0%</div></div>
         <div class="stat-box"><div class="stat-label">Средняя прибыль</div><div class="stat-value text-success-custom" id="avgProfit">+0.00 USDT</div></div>
         <div class="stat-box"><div class="stat-label">Средний убыток</div><div class="stat-value text-danger-custom" id="avgLoss">0.00 USDT</div></div>
-        <div class="stat-box"><div class="stat-label">Максимальный выигрыш</div><div class="stat-value text-success-custom" id="maxWin">+0.00 USDT</div></div>
-        <div class="stat-box"><div class="stat-label">Максимальный проигрыш</div><div class="stat-value text-danger-custom" id="maxLoss">0.00 USDT</div></div>
+        <div class="stat-box"><div class="stat-label">Макс. выигрыш</div><div class="stat-value text-success-custom" id="maxWin">+0.00 USDT</div></div>
+        <div class="stat-box"><div class="stat-label">Макс. проигрыш</div><div class="stat-value text-danger-custom" id="maxLoss">0.00 USDT</div></div>
         <div class="stat-box"><div class="stat-label">Profit Factor</div><div class="stat-value" id="profitFactor">0.00</div></div>
     </div>
 
-    <div class="section-card text-center">
-        <h5 class="section-title text-start">График доходности (P&L)</h5>
-        <div id="pnlChartContainer" style="height: 250px; position: relative;">
+    <!-- P&L Chart -->
+    <div class="section-card">
+        <h5 class="section-title">📊 График доходности (P&L)</h5>
+        <div id="pnlChartContainer" style="height: 220px; position: relative;">
             <canvas id="pnlChart"></canvas>
-            <div id="pnlChartPlaceholder" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; color: #9fb3ff;">
-                <span>Недостаточно данных для построения графика</span>
+            <div id="pnlChartPlaceholder" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center;">
+                <span>Недостаточно данных</span>
             </div>
         </div>
     </div>
 
+    <!-- Period Stats -->
     <div class="section-card">
-        <h5 class="section-title">Статистика по периодам</h5>
+        <h5 class="section-title">📅 Статистика по периодам</h5>
         <div class="stat-period-box">
             <div class="period-name">Сегодня</div>
             <div class="period-row"><span class="period-label">Прибыль</span><span class="period-value text-success-custom" id="pProfitToday">+0.00 USDT</span></div>
@@ -365,36 +801,44 @@
         </div>
     </div>
 
+    <!-- Transaction History -->
     <div class="section-card">
-        <h5 class="section-title">История транзакций</h5>
-        <div class="history-btn-group mt-3">
+        <h5 class="section-title">🔄 История транзакций</h5>
+        <div class="history-btn-group">
             <button class="btn-filter active" onclick="filterHistory('all')">Все (0)</button>
             <button class="btn-filter" onclick="filterHistory('withdraw')">Выводы (0)</button>
             <button class="btn-filter" onclick="filterHistory('deposit')">Пополнения (0)</button>
         </div>
-        <div id="historyContent" style="min-height: 150px; color: #9fb3ff;">
+        <div id="historyContent" style="min-height: 120px;">
             <div style="height: 150px; display: flex; align-items: center; justify-content: center;">
                 <span>История транзакций пуста</span>
             </div>
         </div>
     </div>
 
+    <!-- Bottom Navigation -->
     <div class="mobile-bottom-nav">
         <button class="mobile-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mobileMenu">
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-3">
                 <div class="mobile-icon">💰</div>
-                <span class="fw-bold">Активы</span>
+                <span class="fw-bold" style="font-size: 15px;">Активы</span>
             </div>
-            <div class="mobile-arrow">⌃</div>
+            <div class="mobile-arrow">▲</div>
         </button>
         <div class="collapse" id="mobileMenu">
             <div class="mobile-content">
-                <a href="index.html" class="mobile-item active">💰 Активы</a>
-                <a href="trading.html" class="mobile-item">📊 Торговля</a>
-                <a href="staking.html" class="mobile-item">📦 Стейкинг</a>
-                <div class="mobile-item disabled d-flex justify-content-between">
-                    <span>📦 Бинарные опционы</span>
-                    <span class="mobile-badge">В разработке</span>
+                <a href="index.html" class="mobile-item active">
+                    <span>💰</span> Активы
+                </a>
+                <a href="trading.html" class="mobile-item">
+                    <span>📊</span> Торговля
+                </a>
+                <a href="terminal.html" class="mobile-item">
+                    <span>📈</span> Терминал
+                </a>
+                <div class="mobile-item disabled" style="opacity: 0.5; cursor: not-allowed;">
+                    <span>⚡</span> Бинарные опционы
+                    <span class="mobile-badge">Скоро</span>
                 </div>
             </div>
         </div>
@@ -419,11 +863,6 @@
 
   function getClientTelegramId() {
     const telegramId = TelegramAuth.getTelegramId();
-    if (telegramId) {
-      document.getElementById('debugTelegramId').textContent = String(telegramId) + ' ✅ реальный';
-    } else {
-      document.getElementById('debugTelegramId').textContent = 'недоступен ⚠️';
-    }
     return telegramId;
   }
 
@@ -431,13 +870,10 @@
     try {
       const user = TelegramAuth.getCurrentUser();
       if (user) {
-        document.getElementById('debugUserId').textContent = user.id;
-        document.getElementById('debugStatus').textContent = '✅ авторизован';
         return user.id;
       }
       throw new Error('User not found');
     } catch (error) {
-      document.getElementById('debugStatus').textContent = '❌ ошибка';
       throw error;
     }
   }
@@ -490,12 +926,12 @@
         if (statsRes.ok) {
           const statsPayload = await statsRes.json();
           const s = statsPayload.data || {};
-          document.getElementById('stats').innerHTML = `${s.total || 0} / <span style="color: #00ff88">${s.wins || 0}</span> / <span style="color: #ff4d4d">${s.losses || 0}</span>`;
+          document.getElementById('stats').innerHTML = `${s.total || 0} / <span style="color: #3fb950">${s.wins || 0}</span> / <span style="color: #f85149">${s.losses || 0}</span>`;
         } else {
-          document.getElementById('stats').innerHTML = '0 / <span style="color: #00ff88">0</span> / <span style="color: #ff4d4d">0</span>';
+          document.getElementById('stats').innerHTML = '0 / <span style="color: #3fb950">0</span> / <span style="color: #f85149">0</span>';
         }
       } catch (e) {
-        document.getElementById('stats').innerHTML = '0 / <span style="color: #00ff88">0</span> / <span style="color: #ff4d4d">0</span>';
+        document.getElementById('stats').innerHTML = '0 / <span style="color: #3fb950">0</span> / <span style="color: #f85149">0</span>';
       }
       
       // Объем торгов (из БД или 0)
