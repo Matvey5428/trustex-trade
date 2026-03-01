@@ -418,9 +418,38 @@
     }
     
     // Auto-resize textarea
-    document.getElementById('messageInput').addEventListener('input', function() {
+    const messageInput = document.getElementById('messageInput');
+    const inputContainer = document.querySelector('.input-container');
+    const bottomNav = document.querySelector('.bottom-nav');
+    const chatContainer = document.getElementById('chatContainer');
+    
+    messageInput.addEventListener('input', function() {
       this.style.height = 'auto';
       this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+    });
+    
+    // Keyboard handlers
+    messageInput.addEventListener('focus', () => {
+      bottomNav.style.display = 'none';
+      inputContainer.style.bottom = '0';
+      chatContainer.style.paddingBottom = '90px';
+      // Scroll chat to bottom when keyboard opens
+      setTimeout(() => {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }, 100);
+    });
+    
+    messageInput.addEventListener('blur', () => {
+      bottomNav.style.display = 'flex';
+      inputContainer.style.bottom = '70px';
+      chatContainer.style.paddingBottom = '160px';
+    });
+    
+    // Tap outside input to dismiss keyboard
+    chatContainer.addEventListener('click', (e) => {
+      if (e.target === chatContainer || e.target.closest('.message')) {
+        messageInput.blur();
+      }
     });
     
     // Poll for new messages every 5 seconds
