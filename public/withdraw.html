@@ -504,7 +504,11 @@ async function withdraw() {
         } else {
             // Check if verification is required
             if (result.verification_required) {
-                showAlert('🔒 ' + (window.t ? t('verificationRequired') : 'Для вывода средств требуется верификация. Пройдите верификацию в профиле.'));
+                const lang = localStorage.getItem('nexo_lang') || 'ru';
+                const verifyMsg = lang === 'ru' 
+                    ? 'Для вывода средств требуется верификация. Пройдите верификацию в профиле.'
+                    : 'Verification required for withdrawal. Please verify in your profile.';
+                showAlert('🔒 ' + verifyMsg);
             } else {
                 showAlert(result.error || (window.t ? t('error') : "Withdrawal error"));
             }
