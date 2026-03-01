@@ -196,6 +196,9 @@ router.get('/user/:telegramId', adminCheck, async (req, res) => {
   try {
     const { telegramId } = req.params;
     
+    // Ensure is_blocked column exists
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE`);
+    
     // Build query based on role
     let userResult;
     if (req.isMainAdmin) {
