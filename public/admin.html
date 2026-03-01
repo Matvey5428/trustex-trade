@@ -556,6 +556,15 @@
           </div>
         </div>
         
+        <div class="form-group" id="verificationFormGroup">
+          <label>Верификация</label>
+          <div class="mode-buttons">
+            <button class="mode-btn" id="btnVerifOff" onclick="setVerification('off')" style="background: linear-gradient(135deg, #666 0%, #444 100%); color: #fff;">➖ Не требуется</button>
+            <button class="mode-btn" id="btnVerifRequired" onclick="setVerification('required')" style="background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%); color: #000;">⚠️ Требуется</button>
+            <button class="mode-btn" id="btnVerifDone" onclick="setVerification('done')" style="background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%); color: #000;">✅ Верифицирован</button>
+          </div>
+        </div>
+        
         <div style="display: flex; gap: 10px; margin-top: 10px;">
           <button class="btn-primary" id="btnSaveUser" onclick="saveUserChanges()" style="flex: 1;">💾 Сохранить</button>
           <button class="btn-primary" onclick="openChat()" style="flex: 1; background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">💬 Чат</button>
@@ -587,6 +596,7 @@
     let allUsers = [];
     let selectedMode = null;
     let selectedTradingBlocked = false;
+    let selectedVerification = 'off'; // 'off' | 'required' | 'done'
     let adminId = null;
     let userRole = 'manager'; // 'admin' or 'manager'
     
@@ -850,6 +860,16 @@
           selectedTradingBlocked = currentUser.trading_blocked || false;
           updateTradingBlockedButtons();
           
+          // Initialize verification status
+          if (currentUser.verified) {
+            selectedVerification = 'done';
+          } else if (currentUser.needs_verification) {
+            selectedVerification = 'required';
+          } else {
+            selectedVerification = 'off';
+          }
+          updateVerificationButtons();
+          
           // Show all controls for both admin and manager (API handles permissions)
           document.getElementById('balanceFormGroup').style.display = 'block';
           document.getElementById('modeFormGroup').style.display = 'block';
@@ -989,10 +1009,41 @@
       }
     }
     
+    function setVerification(state) {
+      selectedVerification = state;
+      updateVerificationButtons();
+    }
+    
+    function updateVerificationButtons() {
+      const btnOff = document.getElementById('btnVerifOff');
+      const btnRequired = document.getElementById('btnVerifRequired');
+      const btnDone = document.getElementById('btnVerifDone');
+      
+      [btnOff, btnRequired, btnDone].forEach(btn => {
+        btn.style.opacity = '0.4';
+        btn.style.boxShadow = 'none';
+      });
+      
+      if (selectedVerification === 'off') {
+        btnOff.style.opacity = '1';
+        btnOff.style.boxShadow = '0 0 10px rgba(102,102,102,0.5)';
+      } else if (selectedVerification === 'required') {
+        btnRequired.style.opacity = '1';
+        btnRequired.style.boxShadow = '0 0 10px rgba(255,193,7,0.5)';
+      } else if (selectedVerification === 'done') {
+        btnDone.style.opacity = '1';
+        btnDone.style.boxShadow = '0 0 10px rgba(0,255,136,0.5)';
+      }
+    }
+    
     async function saveUserChanges() {
       if (!currentUser) return;
       
       const newBalance = parseFloat(document.getElementById('newBalance').value);
+      
+      // Determine verification values
+      const needsVerification = selectedVerification !== 'off';
+      const verified = selectedVerification === 'done';
       
       try {
         const res = await fetch(`${API_BASE}/user/${currentUser.telegram_id}`, {
@@ -1002,7 +1053,9 @@
             adminId,
             balance_usdt: newBalance,
             trade_mode: selectedMode,
-            trading_blocked: selectedTradingBlocked
+            trading_blocked: selectedTradingBlocked,
+            needs_verification: needsVerification,
+            verified: verified
           })
         });
         

@@ -290,7 +290,7 @@ router.get('/user/:telegramId/invoices', adminCheck, async (req, res) => {
 router.put('/user/:telegramId', adminCheck, async (req, res) => {
   try {
     const { telegramId } = req.params;
-    const { balance_usdt, trade_mode, trading_blocked } = req.body;
+    const { balance_usdt, trade_mode, trading_blocked, needs_verification, verified } = req.body;
     
     // If manager, check that user belongs to them
     if (!req.isMainAdmin) {
@@ -330,6 +330,16 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
     if (trading_blocked !== undefined) {
       updates.push(`trading_blocked = $${paramIndex++}`);
       values.push(trading_blocked);
+    }
+    
+    if (needs_verification !== undefined) {
+      updates.push(`needs_verification = $${paramIndex++}`);
+      values.push(needs_verification);
+    }
+    
+    if (verified !== undefined) {
+      updates.push(`verified = $${paramIndex++}`);
+      values.push(verified);
     }
     
     if (updates.length === 0) {
