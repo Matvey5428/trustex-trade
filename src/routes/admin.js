@@ -1086,4 +1086,76 @@ router.post('/user/:telegramId/assign', adminCheck, mainAdminOnly, async (req, r
   }
 });
 
+// =============================================
+// MESSAGE TEMPLATES ENDPOINTS
+// =============================================
+
+/**
+ * GET /api/admin/templates
+ * Get all message templates
+ */
+router.get('/templates', adminCheck, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, title, message, created_at FROM message_templates ORDER BY created_at DESC'
+    );
+    
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('Get templates error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * POST /api/admin/templates
+ * Create new message template
+ */
+router.post('/templates', adminCheck, async (req, res) => {
+  try {
+    const { title, message } = req.body;
+    const adminId = req.adminId;
+    
+    if (!title || !message) {
+      return res.status(400).json({ success: false, error: 'Title and message required' });
+    }
+    
+    const result = await pool.query(
+      'INSERT INTO message_templates (title, message, created_by) VALUES ($1, $2, $3) RETURNING *',
+      [title.trim(), message.trim(), adminId]
+    );
+    
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Create template error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * DELETE /api/admin/templates/:id
+ * Delete message template
+ */
+router.delete('/templates/:id', adminCheck, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await pool.query('DELETE FROM message_templates WHERE id = $1', [id]);
+    
+    res.json({
+      success: true,
+      message: 'Template deleted'
+    });
+  } catch (error) {
+    console.error('Delete template error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
 module.exports = router;

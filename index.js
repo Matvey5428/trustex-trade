@@ -125,6 +125,17 @@ async function initDatabase() {
         AND message NOT LIKE '%' || E'\n' || '%'
     `);
 
+    // Run migration: create message_templates table for quick replies
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS message_templates (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        title VARCHAR(100) NOT NULL,
+        message TEXT NOT NULL,
+        created_by VARCHAR(50),
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
     // Performance indexes
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)`);

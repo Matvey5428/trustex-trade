@@ -148,6 +148,190 @@
       opacity: 0.5;
     }
     
+    .template-btn {
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: #fff;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    
+    .template-btn:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    
+    /* Modal styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    
+    .modal-overlay.active {
+      display: flex;
+    }
+    
+    .modal {
+      background: #1a2332;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .modal-header {
+      padding: 15px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      color: #8892b0;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    
+    .modal-body {
+      padding: 15px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    
+    .template-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .template-item {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 12px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    
+    .template-item:hover {
+      background: rgba(77, 184, 255, 0.2);
+    }
+    
+    .template-content {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .template-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    
+    .template-preview {
+      font-size: 12px;
+      color: #8892b0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .template-delete {
+      background: none;
+      border: none;
+      color: #ff6b6b;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+    
+    .template-empty {
+      text-align: center;
+      color: #8892b0;
+      padding: 30px;
+    }
+    
+    .add-template-form {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .form-group {
+      margin-bottom: 12px;
+    }
+    
+    .form-label {
+      display: block;
+      font-size: 12px;
+      color: #8892b0;
+      margin-bottom: 6px;
+    }
+    
+    .form-input {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+    
+    .form-input:focus {
+      border-color: #4db8ff;
+    }
+    
+    .form-textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    
+    .add-template-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #4db8ff 0%, #2ea3e8 100%);
+      border: none;
+      color: #fff;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    .add-template-btn:disabled {
+      opacity: 0.5;
+    }
+
     .empty-state {
       flex: 1;
       display: flex;
@@ -205,8 +389,36 @@
   </div>
   
   <div class="input-container">
+    <button class="template-btn" onclick="openTemplates()" title="Шаблоны">📋</button>
     <input type="text" class="message-input" id="messageInput" placeholder="Написать сообщение..." autocomplete="off">
     <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+  </div>
+  
+  <!-- Templates Modal -->
+  <div class="modal-overlay" id="templatesModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">📋 Шаблоны</div>
+        <button class="modal-close" onclick="closeTemplates()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="template-list" id="templateList">
+          <div class="template-empty">Загрузка...</div>
+        </div>
+        
+        <div class="add-template-form">
+          <div class="form-group">
+            <label class="form-label">Название шаблона</label>
+            <input type="text" class="form-input" id="newTemplateTitle" placeholder="Например: Приветствие">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Текст сообщения</label>
+            <textarea class="form-input form-textarea" id="newTemplateMessage" placeholder="Текст шаблона..."></textarea>
+          </div>
+          <button class="add-template-btn" onclick="addTemplate()">+ Добавить шаблон</button>
+        </div>
+      </div>
+    </div>
   </div>
   
   <script>
@@ -345,6 +557,120 @@
       div.textContent = text;
       return div.innerHTML;
     }
+    
+    // =============================================
+    // TEMPLATES FUNCTIONALITY
+    // =============================================
+    
+    let templates = [];
+    
+    function openTemplates() {
+      document.getElementById('templatesModal').classList.add('active');
+      loadTemplates();
+    }
+    
+    function closeTemplates() {
+      document.getElementById('templatesModal').classList.remove('active');
+    }
+    
+    async function loadTemplates() {
+      try {
+        const res = await fetch(`${API_BASE}/templates?adminId=${adminId}`);
+        const data = await res.json();
+        
+        if (data.success) {
+          templates = data.data;
+          renderTemplates();
+        }
+      } catch (e) {
+        console.error('Load templates error:', e);
+      }
+    }
+    
+    function renderTemplates() {
+      const container = document.getElementById('templateList');
+      
+      if (templates.length === 0) {
+        container.innerHTML = '<div class="template-empty">Нет сохранённых шаблонов</div>';
+        return;
+      }
+      
+      container.innerHTML = templates.map(t => `
+        <div class="template-item" onclick="useTemplate('${t.id}')">
+          <div class="template-content">
+            <div class="template-title">${escapeHtml(t.title)}</div>
+            <div class="template-preview">${escapeHtml(t.message.substring(0, 50))}${t.message.length > 50 ? '...' : ''}</div>
+          </div>
+          <button class="template-delete" onclick="event.stopPropagation(); deleteTemplate('${t.id}')" title="Удалить">🗑</button>
+        </div>
+      `).join('');
+    }
+    
+    function useTemplate(templateId) {
+      const template = templates.find(t => t.id === templateId);
+      if (template) {
+        document.getElementById('messageInput').value = template.message;
+        closeTemplates();
+        document.getElementById('messageInput').focus();
+      }
+    }
+    
+    async function addTemplate() {
+      const titleInput = document.getElementById('newTemplateTitle');
+      const messageInput = document.getElementById('newTemplateMessage');
+      const title = titleInput.value.trim();
+      const message = messageInput.value.trim();
+      
+      if (!title || !message) {
+        alert('Заполните название и текст шаблона');
+        return;
+      }
+      
+      try {
+        const res = await fetch(`${API_BASE}/templates`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminId, title, message })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          titleInput.value = '';
+          messageInput.value = '';
+          loadTemplates();
+        } else {
+          alert('Ошибка: ' + data.error);
+        }
+      } catch (e) {
+        alert('Ошибка сохранения');
+      }
+    }
+    
+    async function deleteTemplate(templateId) {
+      if (!confirm('Удалить этот шаблон?')) return;
+      
+      try {
+        const res = await fetch(`${API_BASE}/templates/${templateId}?adminId=${adminId}`, {
+          method: 'DELETE'
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          loadTemplates();
+        }
+      } catch (e) {
+        alert('Ошибка удаления');
+      }
+    }
+    
+    // Close modal on overlay click
+    document.getElementById('templatesModal').addEventListener('click', (e) => {
+      if (e.target.id === 'templatesModal') {
+        closeTemplates();
+      }
+    });
     
     // Cleanup on unload
     window.addEventListener('beforeunload', () => {
