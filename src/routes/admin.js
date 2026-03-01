@@ -228,7 +228,8 @@ router.get('/user/:telegramId', adminCheck, async (req, res) => {
       data: {
         ...user,
         trade_mode: user.trade_mode || 'loss',
-        trades_count: parseInt(tradesResult.rows[0].count)
+        trades_count: parseInt(tradesResult.rows[0].count),
+        is_blocked: user.is_blocked || false
       }
     });
   } catch (error) {
@@ -367,16 +368,17 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
 });
 
 /**
- * DELETE /api/admin/user/:telegramId
- * Delete user and block them (main admin only)
+ * POST /api/admin/user/:telegramId/block
+ * Block or unblock user (main admin only)
  */
-router.delete('/user/:telegramId', adminCheck, mainAdminOnly, async (req, res) => {
+router.post('/user/:telegramId/block', adminCheck, mainAdminOnly, async (req, res) => {
   try {
     const { telegramId } = req.params;
+    const { blocked } = req.body; // true = block, false = unblock
     
-    // Get user info before deletion
+    // Get user info
     const userResult = await pool.query(
-      'SELECT id, first_name, username FROM users WHERE telegram_id = $1',
+      'SELECT id, first_name, username, is_blocked FROM users WHERE telegram_id = $1',
       [telegramId]
     );
     
@@ -385,56 +387,54 @@ router.delete('/user/:telegramId', adminCheck, mainAdminOnly, async (req, res) =
     }
     
     const user = userResult.rows[0];
-    const userId = user.id;
     const name = user.first_name || user.username || 'User';
     
-    // Send block notification to user
+    // Add column if not exists
+    await pool.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE
+    `);
+    
+    // Update block status
+    await pool.query(
+      'UPDATE users SET is_blocked = $1 WHERE telegram_id = $2',
+      [blocked, telegramId]
+    );
+    
+    // Send notification to user
     try {
       const { getBot } = require('../bot');
       const mainBot = getBot();
       if (mainBot) {
-        await mainBot.sendMessage(telegramId, 
-          '⛔ Ваш аккаунт был заблокирован администратором.\n\n' +
-          'Для получения информации обратитесь в поддержку.'
-        );
+        if (blocked) {
+          await mainBot.sendMessage(telegramId, 
+            '⛔ Ваш аккаунт был заблокирован администратором.\n\n' +
+            'Для получения информации обратитесь в поддержку.'
+          );
+        } else {
+          await mainBot.sendMessage(telegramId, 
+            '✅ Ваш аккаунт был разблокирован.\n\n' +
+            'Добро пожаловать обратно!'
+          );
+        }
       }
     } catch (e) {
-      console.log('Could not notify blocked user:', e.message);
+      console.log('Could not notify user:', e.message);
     }
-    
-    // Delete all related data
-    await pool.query('DELETE FROM orders WHERE user_id = $1', [userId]);
-    await pool.query('DELETE FROM transactions WHERE user_id = $1', [userId]);
-    await pool.query('DELETE FROM crypto_invoices WHERE user_id = $1', [userId]);
-    await pool.query('DELETE FROM users WHERE id = $1', [userId]);
-    
-    // Add to blocked list
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS blocked_users (
-        telegram_id VARCHAR(50) PRIMARY KEY,
-        reason TEXT,
-        blocked_at TIMESTAMP DEFAULT NOW()
-      )
-    `);
-    await pool.query(
-      'INSERT INTO blocked_users (telegram_id, reason) VALUES ($1, $2) ON CONFLICT (telegram_id) DO NOTHING',
-      [telegramId, 'Deleted by admin via web panel']
-    );
     
     // Log admin action
     await pool.query(
       `INSERT INTO admin_logs (action, details, created_at) VALUES ($1, $2, NOW())`,
-      ['user_delete', JSON.stringify({ adminId: req.adminId, telegramId, userName: name })]
+      [blocked ? 'user_block' : 'user_unblock', JSON.stringify({ adminId: req.adminId, telegramId, userName: name })]
     );
     
-    console.log(`🗑 Admin ${req.adminId} deleted user ${telegramId} (${name})`);
+    console.log(`${blocked ? '⛔' : '✅'} Admin ${req.adminId} ${blocked ? 'blocked' : 'unblocked'} user ${telegramId} (${name})`);
     
     res.json({
       success: true,
-      message: `Пользователь ${name} удалён и заблокирован`
+      message: blocked ? `Пользователь ${name} заблокирован` : `Пользователь ${name} разблокирован`
     });
   } catch (error) {
-    console.error('Admin delete error:', error);
+    console.error('Admin block error:', error);
     res.status(500).json({ success: false, error: 'Server error: ' + error.message });
   }
 });

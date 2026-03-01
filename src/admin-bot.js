@@ -250,7 +250,7 @@ function registerAdminHandlers() {
             { text: '💰 Изменить баланс', callback_data: `balance_${user.telegram_id}` }
           ],
           [
-            { text: '🗑 Удалить пользователя', callback_data: `delete_${user.telegram_id}` }
+            { text: user.is_blocked ? '✅ Разблокировать' : '⛔ Заблокировать', callback_data: `block_${user.telegram_id}` }
           ]
         ]
       };
@@ -456,8 +456,8 @@ function registerAdminHandlers() {
       );
     }
     
-    // Delete user - request confirmation
-    if (data.startsWith('delete_') && !data.startsWith('delete_confirm_')) {
+    // Block/Unblock user - request confirmation
+    if (data.startsWith('block_') && !data.startsWith('block_confirm_')) {
       if (!isMainAdmin(query.from.id)) {
         return bot.answerCallbackQuery(query.id, { text: '⛔ Только для главного админа' });
       }
@@ -465,49 +465,52 @@ function registerAdminHandlers() {
       const telegramId = data.split('_')[1];
       
       try {
-        const result = await pool.query('SELECT first_name, username FROM users WHERE telegram_id = $1', [telegramId]);
+        const result = await pool.query('SELECT first_name, username, is_blocked FROM users WHERE telegram_id = $1', [telegramId]);
         if (result.rows.length === 0) {
           return bot.answerCallbackQuery(query.id, { text: '❌ Пользователь не найден' });
         }
         
         const user = result.rows[0];
         const name = user.first_name || user.username || 'Без имени';
+        const isBlocked = user.is_blocked;
+        const action = isBlocked ? 'разблокировать' : 'заблокировать';
         
         bot.answerCallbackQuery(query.id);
         bot.sendMessage(chatId, 
-          `⚠️ *Подтверждение удаления*\n\n` +
-          `Вы уверены, что хотите удалить пользователя *${name}*?\n\n` +
-          `🆔 Telegram ID: \`${telegramId}\`\n\n` +
-          `❗ Пользователь будет заблокирован и все его данные будут удалены.`,
+          `⚠️ *Подтверждение*\n\n` +
+          `Вы уверены, что хотите ${action} пользователя *${name}*?\n\n` +
+          `🆔 Telegram ID: \`${telegramId}\``,
           {
             parse_mode: 'Markdown',
             reply_markup: {
               inline_keyboard: [
                 [
-                  { text: '✅ Да, удалить', callback_data: `delete_confirm_${telegramId}` },
-                  { text: '❌ Отмена', callback_data: 'delete_cancel' }
+                  { text: isBlocked ? '✅ Да, разблокировать' : '⛔ Да, заблокировать', callback_data: `block_confirm_${telegramId}_${isBlocked ? '0' : '1'}` },
+                  { text: '❌ Отмена', callback_data: 'block_cancel' }
                 ]
               ]
             }
           }
         );
       } catch (e) {
-        console.error('Delete user error:', e);
+        console.error('Block user error:', e);
         bot.answerCallbackQuery(query.id, { text: '❌ Ошибка' });
       }
     }
     
-    // Delete user - confirmed
-    if (data.startsWith('delete_confirm_')) {
+    // Block/Unblock user - confirmed
+    if (data.startsWith('block_confirm_')) {
       if (!isMainAdmin(query.from.id)) {
         return bot.answerCallbackQuery(query.id, { text: '⛔ Только для главного админа' });
       }
       
-      const telegramId = data.replace('delete_confirm_', '');
+      const parts = data.replace('block_confirm_', '').split('_');
+      const telegramId = parts[0];
+      const setBlocked = parts[1] === '1';
       
       try {
-        // Get user info before deletion
-        const userResult = await pool.query('SELECT id, first_name, username FROM users WHERE telegram_id = $1', [telegramId]);
+        // Get user info
+        const userResult = await pool.query('SELECT first_name, username FROM users WHERE telegram_id = $1', [telegramId]);
         
         if (userResult.rows.length === 0) {
           bot.answerCallbackQuery(query.id, { text: '❌ Пользователь не найден' });
@@ -515,48 +518,40 @@ function registerAdminHandlers() {
         }
         
         const user = userResult.rows[0];
-        const userId = user.id;
         const name = user.first_name || user.username || 'Без имени';
         
-        // Block user in main bot (send block message)
+        // Add column if not exists
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE`);
+        
+        // Update block status
+        await pool.query('UPDATE users SET is_blocked = $1 WHERE telegram_id = $2', [setBlocked, telegramId]);
+        
+        // Notify user
         try {
           const { getBot } = require('./bot');
           const mainBot = getBot();
           if (mainBot) {
-            await mainBot.sendMessage(telegramId, 
-              '⛔ Ваш аккаунт был заблокирован администратором.\n\n' +
-              'Для получения информации обратитесь в поддержку.'
-            );
+            if (setBlocked) {
+              await mainBot.sendMessage(telegramId, 
+                '⛔ Ваш аккаунт был заблокирован администратором.\n\n' +
+                'Для получения информации обратитесь в поддержку.'
+              );
+            } else {
+              await mainBot.sendMessage(telegramId, 
+                '✅ Ваш аккаунт был разблокирован.\n\n' +
+                'Добро пожаловать обратно!'
+              );
+            }
           }
         } catch (e) {
-          console.log('Could not notify blocked user:', e.message);
+          console.log('Could not notify user:', e.message);
         }
-        
-        // Delete all related data
-        await pool.query('DELETE FROM orders WHERE user_id = $1', [userId]);
-        await pool.query('DELETE FROM transactions WHERE user_id = $1', [userId]);
-        await pool.query('DELETE FROM crypto_invoices WHERE user_id = $1', [userId]);
-        await pool.query('DELETE FROM users WHERE id = $1', [userId]);
-        
-        // Add to blocked list (create table if not exists)
-        await pool.query(`
-          CREATE TABLE IF NOT EXISTS blocked_users (
-            telegram_id VARCHAR(50) PRIMARY KEY,
-            reason TEXT,
-            blocked_at TIMESTAMP DEFAULT NOW()
-          )
-        `);
-        await pool.query(
-          'INSERT INTO blocked_users (telegram_id, reason) VALUES ($1, $2) ON CONFLICT (telegram_id) DO NOTHING',
-          [telegramId, 'Deleted by admin']
-        );
         
         // Update message
         bot.editMessageText(
-          `✅ *Пользователь удалён*\n\n` +
+          `${setBlocked ? '⛔' : '✅'} *Пользователь ${setBlocked ? 'заблокирован' : 'разблокирован'}*\n\n` +
           `👤 ${name}\n` +
-          `🆔 Telegram ID: \`${telegramId}\`\n\n` +
-          `Пользователь заблокирован и удалён из базы данных.`,
+          `🆔 Telegram ID: \`${telegramId}\``,
           {
             chat_id: chatId,
             message_id: query.message.message_id,
@@ -564,17 +559,17 @@ function registerAdminHandlers() {
           }
         );
         
-        bot.answerCallbackQuery(query.id, { text: '✅ Пользователь удалён' });
-        console.log(`🗑 Admin deleted user ${telegramId} (${name})`);
+        bot.answerCallbackQuery(query.id, { text: setBlocked ? '⛔ Заблокирован' : '✅ Разблокирован' });
+        console.log(`${setBlocked ? '⛔' : '✅'} Admin ${setBlocked ? 'blocked' : 'unblocked'} user ${telegramId} (${name})`);
         
       } catch (e) {
-        console.error('Delete user error:', e);
+        console.error('Block user error:', e);
         bot.answerCallbackQuery(query.id, { text: '❌ Ошибка: ' + e.message });
       }
     }
     
-    // Delete cancelled
-    if (data === 'delete_cancel') {
+    // Block cancelled
+    if (data === 'block_cancel') {
       bot.answerCallbackQuery(query.id, { text: 'Отменено' });
       bot.deleteMessage(chatId, query.message.message_id);
     }

@@ -561,8 +561,8 @@
           <button class="btn-primary" onclick="openChat()" style="flex: 1; background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">💬 Чат</button>
         </div>
         
-        <div style="margin-top: 10px;" id="deleteUserBtnContainer">
-          <button class="btn-primary" onclick="deleteUser()" style="width: 100%; background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);">🗑 Удалить пользователя</button>
+        <div style="margin-top: 10px;" id="blockUserBtnContainer">
+          <button class="btn-primary" id="btnBlockUser" onclick="toggleBlockUser()" style="width: 100%; background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);">⛔ Заблокировать</button>
         </div>
         
         <!-- User Payment History -->
@@ -818,6 +818,12 @@
               <span class="user-detail-value">@${currentUser.username || 'нет'}</span>
             </div>
             <div class="user-detail-row">
+              <span class="user-detail-label">Статус аккаунта</span>
+              <span class="user-detail-value" style="color: ${currentUser.is_blocked ? '#ff4444' : '#00ff88'};">
+                ${currentUser.is_blocked ? '⛔ Заблокирован' : '✅ Активен'}
+              </span>
+            </div>
+            <div class="user-detail-row">
               <span class="user-detail-label">Текущий баланс</span>
               <span class="user-detail-value">${formatMoney(currentUser.balance_usdt)} USDT</span>
             </div>
@@ -849,8 +855,17 @@
           document.getElementById('modeFormGroup').style.display = 'block';
           document.getElementById('btnSaveUser').style.display = 'block';
           
-          // Show delete button only for main admin
-          document.getElementById('deleteUserBtnContainer').style.display = userRole === 'admin' ? 'block' : 'none';
+          // Show block button only for main admin and update its state
+          const blockContainer = document.getElementById('blockUserBtnContainer');
+          const blockBtn = document.getElementById('btnBlockUser');
+          blockContainer.style.display = userRole === 'admin' ? 'block' : 'none';
+          if (currentUser.is_blocked) {
+            blockBtn.textContent = '✅ Разблокировать';
+            blockBtn.style.background = 'linear-gradient(135deg, #00ff88 0%, #00cc6a 100%)';
+          } else {
+            blockBtn.textContent = '⛔ Заблокировать';
+            blockBtn.style.background = 'linear-gradient(135deg, #ff4444 0%, #cc0000 100%)';
+          }
           
           document.getElementById('userModal').classList.add('active');
           
@@ -1006,32 +1021,38 @@
       }
     }
     
-    async function deleteUser() {
+    async function toggleBlockUser() {
       if (!currentUser) return;
       
       const name = currentUser.first_name || currentUser.username || 'пользователя';
+      const isBlocked = currentUser.is_blocked;
+      const action = isBlocked ? 'разблокировать' : 'заблокировать';
       
-      if (!confirm(`⚠️ Вы уверены, что хотите удалить ${name}?\n\nПользователь будет заблокирован и все его данные удалены. Это действие необратимо!`)) {
+      if (!confirm(`⚠️ Вы уверены, что хотите ${action} ${name}?`)) {
         return;
       }
       
       try {
-        const res = await fetch(`${API_BASE}/user/${currentUser.telegram_id}?adminId=${adminId}`, {
-          method: 'DELETE'
+        const res = await fetch(`${API_BASE}/user/${currentUser.telegram_id}/block`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminId, blocked: !isBlocked })
         });
         
         const data = await res.json();
         
         if (data.success) {
           showToast('✅ ' + data.message, 'success');
-          closeModal();
+          // Update current user state
+          currentUser.is_blocked = !isBlocked;
+          // Refresh modal
+          openUser(currentUser.telegram_id);
           loadUsers();
-          loadStats();
         } else {
           showToast('❌ ' + data.error, 'error');
         }
       } catch (e) {
-        showToast('❌ Ошибка удаления', 'error');
+        showToast('❌ Ошибка', 'error');
       }
     }
     
