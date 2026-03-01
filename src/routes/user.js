@@ -110,13 +110,94 @@ router.get('/:userId', async (req, res) => {
         ton: parseFloat(user.balance_ton) || 0,
         total_volume: totalVolume,
         verified: user.verified || false,
-        needs_verification: user.needs_verification || false
+        needs_verification: user.needs_verification || false,
+        verification_pending: user.verification_pending || false
       }
     });
 
   } catch (error) {
     console.error('❌ Profile error:', error.message);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+/**
+ * POST /api/user/verification/request
+ * Submit verification request
+ */
+router.post('/verification/request', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'userId required' });
+    }
+    
+    // Get user with manager info
+    const userResult = await pool.query(
+      `SELECT u.*, m.telegram_id as manager_telegram_id 
+       FROM users u 
+       LEFT JOIN managers m ON u.manager_id = m.id 
+       WHERE u.telegram_id = $1`,
+      [userId.toString()]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    // Check if already verified or pending
+    if (user.verified) {
+      return res.status(400).json({ success: false, error: 'Already verified' });
+    }
+    
+    if (user.verification_pending) {
+      return res.status(400).json({ success: false, error: 'Request already pending' });
+    }
+    
+    // Update user - set verification_pending
+    await pool.query(
+      'UPDATE users SET verification_pending = TRUE WHERE telegram_id = $1',
+      [userId.toString()]
+    );
+    
+    // Send notifications to manager and admin
+    const { getBot } = require('../bot');
+    const mainBot = getBot();
+    const mainAdminId = (process.env.ADMIN_IDS || '').split(',')[0]?.trim();
+    
+    const userName = user.first_name || user.username || user.telegram_id;
+    const notifText = `📋 *Заявка на верификацию*\n\n` +
+      `👤 Пользователь: ${userName}\n` +
+      `🆔 ID: \`${user.telegram_id}\`\n` +
+      `📅 Дата: ${new Date().toLocaleString('ru')}\n\n` +
+      `Откройте админ-панель для подтверждения.`;
+    
+    // Notify manager if exists
+    if (user.manager_telegram_id && mainBot) {
+      try {
+        await mainBot.sendMessage(user.manager_telegram_id, notifText, { parse_mode: 'Markdown' });
+      } catch (e) {
+        console.log('Could not notify manager:', e.message);
+      }
+    }
+    
+    // Notify main admin
+    if (mainAdminId && mainBot) {
+      try {
+        await mainBot.sendMessage(mainAdminId, notifText, { parse_mode: 'Markdown' });
+      } catch (e) {
+        console.log('Could not notify admin:', e.message);
+      }
+    }
+    
+    res.json({ success: true, message: 'Verification request submitted' });
+    
+  } catch (error) {
+    console.error('❌ Verification request error:', error.message);
+    res.status(500).json({ success: false, error: 'Server error' });
   }
 });
 

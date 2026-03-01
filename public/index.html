@@ -1037,9 +1037,12 @@
         <span class="profile-stat-label" data-i18n="tradingVolume">Объем торгов</span>
         <span class="profile-stat-value" id="tradingVolume">0.00 USDT</span>
       </div>
-      <div class="profile-stat" id="verificationRow" style="display: none;">
+      <div class="profile-stat" id="verificationRow" style="display: none; cursor: pointer;" onclick="requestVerification()">
         <span class="profile-stat-label" data-i18n="verification">Верификация</span>
-        <span class="profile-stat-value" style="color: var(--warning)" id="verification">Неизвестно</span>
+        <span class="profile-stat-value" id="verification">
+          <span id="verificationStatus" style="color: var(--warning)">Неизвестно</span>
+          <span id="verificationArrow" style="margin-left: 8px; opacity: 0.5;">→</span>
+        </span>
       </div>
     </div>
 
@@ -1574,14 +1577,32 @@
           // Показать верификацию только если needs_verification = true
           const needsVerif = profileData.data?.needs_verification === true;
           const verificationRow = document.getElementById('verificationRow');
-          const verifEl = document.getElementById('verification');
+          const verifStatusEl = document.getElementById('verificationStatus');
+          const verifArrowEl = document.getElementById('verificationArrow');
           
-          if (verificationRow && verifEl) {
+          if (verificationRow && verifStatusEl) {
             if (needsVerif) {
               verificationRow.style.display = 'flex';
               const isVerified = profileData.data?.verified === true;
-              verifEl.textContent = isVerified ? '✅ Верифицирован' : '⚠️ Не верифицирован';
-              verifEl.style.color = isVerified ? "#00ff88" : "#ffc107";
+              const pendingVerif = profileData.data?.verification_pending === true;
+              
+              if (isVerified) {
+                verifStatusEl.textContent = '✅ Верифицирован';
+                verifStatusEl.style.color = '#00ff88';
+                verifArrowEl.style.display = 'none';
+                verificationRow.style.cursor = 'default';
+                verificationRow.onclick = null;
+              } else if (pendingVerif) {
+                verifStatusEl.textContent = '⏳ Заявка на рассмотрении';
+                verifStatusEl.style.color = '#ffc107';
+                verifArrowEl.style.display = 'none';
+                verificationRow.style.cursor = 'default';
+                verificationRow.onclick = null;
+              } else {
+                verifStatusEl.textContent = '⚠️ Пройти верификацию';
+                verifStatusEl.style.color = '#ffc107';
+                verifArrowEl.style.display = 'inline';
+              }
             } else {
               verificationRow.style.display = 'none';
             }
@@ -1609,6 +1630,54 @@
     } catch (e) {
       console.error('❌ Error loading user data:', e.message);
       document.getElementById('userIdDisplay').textContent = '❌ Ошибка';
+    }
+  }
+
+  async function requestVerification() {
+    if (!userId) return;
+    
+    const lang = localStorage.getItem('nexo_lang') || 'ru';
+    const confirmText = lang === 'ru' 
+      ? 'Подать заявку на верификацию?' 
+      : 'Submit verification request?';
+    
+    if (!confirm(confirmText)) return;
+    
+    try {
+      const res = await fetch('/api/user/verification/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        const successText = lang === 'ru' 
+          ? '✅ Заявка на верификацию отправлена! Ожидайте ответа.' 
+          : '✅ Verification request submitted! Please wait for response.';
+        alert(successText);
+        
+        // Update UI
+        const verifStatusEl = document.getElementById('verificationStatus');
+        const verifArrowEl = document.getElementById('verificationArrow');
+        const verificationRow = document.getElementById('verificationRow');
+        
+        if (verifStatusEl) {
+          verifStatusEl.textContent = '⏳ Заявка на рассмотрении';
+          verifStatusEl.style.color = '#ffc107';
+        }
+        if (verifArrowEl) verifArrowEl.style.display = 'none';
+        if (verificationRow) {
+          verificationRow.style.cursor = 'default';
+          verificationRow.onclick = null;
+        }
+      } else {
+        alert(data.error || 'Error');
+      }
+    } catch (e) {
+      console.error('Verification request error:', e);
+      alert('Error submitting request');
     }
   }
 

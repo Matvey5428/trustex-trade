@@ -340,6 +340,9 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
     if (verified !== undefined) {
       updates.push(`verified = $${paramIndex++}`);
       values.push(verified);
+      // Reset pending status when verification is set
+      updates.push(`verification_pending = $${paramIndex++}`);
+      values.push(false);
     }
     
     if (updates.length === 0) {

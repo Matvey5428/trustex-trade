@@ -111,6 +111,12 @@ async function initDatabase() {
       ADD COLUMN IF NOT EXISTS needs_verification BOOLEAN DEFAULT FALSE
     `);
 
+    // Run migration: add verification_pending column to users
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS verification_pending BOOLEAN DEFAULT FALSE
+    `);
+
     // Performance indexes
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)`);
