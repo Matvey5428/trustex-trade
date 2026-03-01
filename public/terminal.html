@@ -530,93 +530,96 @@
       to { transform: translateX(-50%) translateY(-20px); opacity: 0; }
     }
     
-    /* Notification */
+    /* Notification - Professional Exchange Style */
     .notification {
       position: fixed;
-      top: 20px;
+      top: 16px;
       left: 50%;
       transform: translateX(-50%);
-      padding: 14px 20px 14px 16px;
-      border-radius: 16px;
-      font-weight: 600;
+      min-width: 340px;
+      max-width: 420px;
+      padding: 16px 20px;
+      border-radius: 8px;
       font-size: 14px;
       z-index: 99999;
-      animation: notifSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      animation: notifSlideIn 0.25s ease-out;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
       display: flex;
       align-items: center;
-      gap: 10px;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      max-width: 90vw;
+      gap: 14px;
     }
     
     .notification-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 10px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
       flex-shrink: 0;
     }
     
-    .notification-content {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
+    .notification-icon svg {
+      width: 14px;
+      height: 14px;
     }
     
-    .notification-title {
-      font-weight: 700;
-      font-size: 14px;
-    }
-    
-    .notification-subtitle {
-      font-weight: 400;
-      font-size: 12px;
-      opacity: 0.8;
+    .notification-text {
+      flex: 1;
+      font-weight: 500;
+      line-height: 1.4;
     }
 
     .notification.win {
-      background: linear-gradient(135deg, rgba(63, 185, 80, 0.95) 0%, rgba(46, 160, 67, 0.95) 100%);
-      color: #fff;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: #1e3a2f;
+      border: 1px solid #2d5a45;
+      color: #4ade80;
     }
     
     .notification.win .notification-icon {
-      background: rgba(255, 255, 255, 0.2);
+      background: #22c55e;
+    }
+    
+    .notification.win .notification-icon svg {
+      fill: #fff;
     }
 
     .notification.loss {
-      background: linear-gradient(135deg, rgba(248, 81, 73, 0.95) 0%, rgba(218, 54, 51, 0.95) 100%);
-      color: #fff;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: #3a1e1e;
+      border: 1px solid #5a2d2d;
+      color: #f87171;
     }
     
     .notification.loss .notification-icon {
-      background: rgba(255, 255, 255, 0.2);
+      background: #ef4444;
+    }
+    
+    .notification.loss .notification-icon svg {
+      fill: #fff;
     }
 
     .notification.info {
-      background: linear-gradient(135deg, rgba(0, 212, 170, 0.95) 0%, rgba(0, 168, 132, 0.95) 100%);
-      color: #000;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: #1e2d3a;
+      border: 1px solid #2d4a5a;
+      color: #38bdf8;
     }
     
     .notification.info .notification-icon {
-      background: rgba(0, 0, 0, 0.15);
+      background: #0ea5e9;
+    }
+    
+    .notification.info .notification-icon svg {
+      fill: #fff;
     }
     
     @keyframes notifSlideIn {
-      from { transform: translateX(-50%) translateY(-100px); opacity: 0; }
+      from { transform: translateX(-50%) translateY(-60px); opacity: 0; }
       to { transform: translateX(-50%) translateY(0); opacity: 1; }
     }
     
     @keyframes notifSlideOut {
       from { transform: translateX(-50%) translateY(0); opacity: 1; }
-      to { transform: translateX(-50%) translateY(-100px); opacity: 0; }
+      to { transform: translateX(-50%) translateY(-60px); opacity: 0; }
     }
     
     /* Bottom Navigation Bar */
@@ -1118,41 +1121,30 @@
   }
 
   function showTradeNotification(message, type) {
-    // Remove existing notifications
     document.querySelectorAll('.notification').forEach(n => n.remove());
     
-    const lang = localStorage.getItem('nexo_lang') || 'en';
     const notif = document.createElement('div');
     notif.className = `notification ${type}`;
     
-    // Determine icon and title based on type
-    let icon = '🚀';
-    let title = lang === 'ru' ? 'Сделка открыта' : 'Trade Opened';
+    // SVG icons for professional look
+    const icons = {
+      win: '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>',
+      loss: '<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>',
+      info: '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>'
+    };
     
-    if (type === 'win') {
-      icon = '🎉';
-      title = lang === 'ru' ? 'Победа!' : 'Success!';
-    } else if (type === 'loss') {
-      icon = '⚠️';
-      title = lang === 'ru' ? 'Внимание' : 'Attention';
-    }
-    
-    // Parse message to create structured content
-    const cleanMessage = message.replace(/^[✅❌🚀⛔️\s]+/, '');
+    const cleanMessage = message.replace(/^[✅❌🚀⛔️🎉⚠️\s]+/, '');
     
     notif.innerHTML = `
-      <div class="notification-icon">${icon}</div>
-      <div class="notification-content">
-        <div class="notification-title">${title}</div>
-        <div class="notification-subtitle">${cleanMessage}</div>
-      </div>
+      <div class="notification-icon">${icons[type] || icons.info}</div>
+      <div class="notification-text">${cleanMessage}</div>
     `;
     
     document.body.appendChild(notif);
     
     setTimeout(() => {
-      notif.style.animation = 'notifSlideOut 0.3s ease forwards';
-      setTimeout(() => notif.remove(), 300);
+      notif.style.animation = 'notifSlideOut 0.2s ease-in forwards';
+      setTimeout(() => notif.remove(), 200);
     }, 3000);
   }
 
