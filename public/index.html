@@ -1209,6 +1209,9 @@
 <script src="/js/balance.js"></script>
 <script>
   const tg = window.Telegram?.WebApp;
+  const isDev = window.location.hostname === 'localhost';
+  const log = isDev ? console.log.bind(console) : () => {};
+  
   if (tg) {
     tg.ready();
     tg.expand();
@@ -1581,7 +1584,7 @@
       // Загрузить историю транзакций
       await loadTransactionHistory();
       
-      console.log('✅ User data loaded:', user);
+      log('✅ User data loaded:', user);
     } catch (e) {
       console.error('❌ Error loading user data:', e.message);
       document.getElementById('userIdDisplay').textContent = '❌ Ошибка';
@@ -1864,17 +1867,17 @@
 
   window.addEventListener('DOMContentLoaded', async () => {
     try {
-      console.log('🚀 Initializing TrustEx...');
+      log('🚀 Initializing TrustEx...');
       
       // Обновить тикер сразу
       updatePriceTicker();
       
       // Проверить авторизацию
       if (!TelegramAuth.isAuthenticated()) {
-        console.log('🔄 Not authenticated, logging in...');
+        log('🔄 Not authenticated, logging in...');
         await TelegramAuth.login();
       } else {
-        console.log('✅ Already authenticated');
+        log('✅ Already authenticated');
         window.CURRENT_USER = TelegramAuth.getCurrentUser();
         window.AUTH_TOKEN = TelegramAuth.getToken();
       }
@@ -1890,7 +1893,7 @@
       initReviews();
       initSettings();
       checkUnreadSupport();
-      console.log('✅ Init complete');
+      log('✅ Init complete');
     } catch (e) {
       console.error('❌ Initialization error:', e.message);
       alert('Ошибка авторизации: ' + e.message);
