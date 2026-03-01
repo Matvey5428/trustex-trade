@@ -243,6 +243,29 @@
             margin-left: 6px;
             font-weight: 600;
         }
+        
+        /* New badge */
+        .new-badge {
+            background: linear-gradient(135deg, #00d4aa, #00b894);
+            color: #000;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 6px;
+            font-weight: 600;
+        }
+        
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
     </style>
 </head>
 <body data-i18n-title="tradingPairs">
@@ -257,10 +280,10 @@
     </div>
 
     <div class="market-tabs">
-        <button class="market-tab active" data-i18n="all">All</button>
-        <button class="market-tab" data-i18n="favorites">⭐ Favorites</button>
-        <button class="market-tab">🔥 Hot</button>
-        <button class="market-tab">New</button>
+        <button class="market-tab active" data-filter="all" data-i18n="all">Все</button>
+        <button class="market-tab" data-filter="favorites" data-i18n="favorites">⭐ Избранное</button>
+        <button class="market-tab" data-filter="hot">🔥 Hot</button>
+        <button class="market-tab" data-filter="new">🆕 New</button>
     </div>
 
     <div class="search-box">
@@ -275,7 +298,7 @@
     </div>
 
     <div id="pairsContainer">
-        <a href="terminal.html?symbol=BTC" class="trade-card" data-symbol="BTCUSDT">
+        <a href="terminal.html?symbol=BTC" class="trade-card" data-symbol="BTCUSDT" data-category="hot">
             <div class="coin-info">
                 <img src="https://cryptologos.cc/logos/bitcoin-btc-logo.png" class="coin-logo">
                 <div><div class="pair-name">BTC<span class="hot-badge">HOT</span></div><div class="pair-label">BTC / USDT</div></div>
@@ -284,16 +307,16 @@
             <div class="change-percent" id="change-BTCUSDT">...</div>
         </a>
 
-        <a href="terminal.html?symbol=ETH" class="trade-card" data-symbol="ETHUSDT">
+        <a href="terminal.html?symbol=ETH" class="trade-card" data-symbol="ETHUSDT" data-category="hot">
             <div class="coin-info">
                 <img src="https://cryptologos.cc/logos/ethereum-eth-logo.png" class="coin-logo">
-                <div><div class="pair-name">ETH</div><div class="pair-label">ETH / USDT</div></div>
+                <div><div class="pair-name">ETH<span class="hot-badge">HOT</span></div><div class="pair-label">ETH / USDT</div></div>
             </div>
             <div class="current-price" id="price-ETHUSDT">...</div>
             <div class="change-percent" id="change-ETHUSDT">...</div>
         </a>
 
-        <a href="terminal.html?symbol=SOL" class="trade-card" data-symbol="SOLUSDT">
+        <a href="terminal.html?symbol=SOL" class="trade-card" data-symbol="SOLUSDT" data-category="hot">
             <div class="coin-info">
                 <img src="https://cryptologos.cc/logos/solana-sol-logo.png" class="coin-logo">
                 <div><div class="pair-name">SOL<span class="hot-badge">HOT</span></div><div class="pair-label">SOL / USDT</div></div>
@@ -302,16 +325,16 @@
             <div class="change-percent" id="change-SOLUSDT">...</div>
         </a>
 
-        <a href="terminal.html?symbol=XRP" class="trade-card" data-symbol="XRPUSDT">
+        <a href="terminal.html?symbol=XRP" class="trade-card" data-symbol="XRPUSDT" data-category="hot">
             <div class="coin-info">
                 <img src="https://cryptologos.cc/logos/ripple-xrp-logo.png" class="coin-logo">
-                <div><div class="pair-name">XRP</div><div class="pair-label">XRP / USDT</div></div>
+                <div><div class="pair-name">XRP<span class="hot-badge">HOT</span></div><div class="pair-label">XRP / USDT</div></div>
             </div>
             <div class="current-price" id="price-XRPUSDT">...</div>
             <div class="change-percent" id="change-XRPUSDT">...</div>
         </a>
 
-        <a href="terminal.html?symbol=BNB" class="trade-card" data-symbol="BNBUSDT">
+        <a href="terminal.html?symbol=BNB" class="trade-card" data-symbol="BNBUSDT" data-category="" data-category="">
             <div class="coin-info">
                 <img src="https://cryptologos.cc/logos/binance-coin-bnb-logo.png" class="coin-logo">
                 <div><div class="pair-name">BNB</div><div class="pair-label">BNB / USDT</div></div>
@@ -320,16 +343,16 @@
             <div class="change-percent" id="change-BNBUSDT">...</div>
         </a>
 
-        <a href="terminal.html?symbol=TON" class="trade-card" data-symbol="TONUSDT">
+        <a href="terminal.html?symbol=TON" class="trade-card" data-symbol="TONUSDT" data-category="new">
             <div class="coin-info">
                 <img src="https://cryptologos.cc/logos/toncoin-ton-logo.png" class="coin-logo">
-                <div><div class="pair-name">TON</div><div class="pair-label">TON / USDT</div></div>
+                <div><div class="pair-name">TON<span class="new-badge">NEW</span></div><div class="pair-label">TON / USDT</div></div>
             </div>
             <div class="current-price" id="price-TONUSDT">...</div>
             <div class="change-percent" id="change-TONUSDT">...</div>
         </a>
 
-        <a href="terminal.html?symbol=DOGE" class="trade-card" data-symbol="DOGEUSDT">
+        <a href="terminal.html?symbol=DOGE" class="trade-card" data-symbol="DOGEUSDT" data-category="">
             <div class="coin-info">
                 <img src="https://cryptologos.cc/logos/dogecoin-doge-logo.png" class="coin-logo">
                 <div><div class="pair-name">DOGE</div><div class="pair-label">DOGE / USDT</div></div>
@@ -338,7 +361,7 @@
             <div class="change-percent" id="change-DOGEUSDT">...</div>
         </a>
 
-        <a href="terminal.html?symbol=ADA" class="trade-card" data-symbol="ADAUSDT">
+        <a href="terminal.html?symbol=ADA" class="trade-card" data-symbol="ADAUSDT" data-category="">
             <div class="coin-info">
                 <img src="https://cryptologos.cc/logos/cardano-ada-logo.png" class="coin-logo">
                 <div><div class="pair-name">ADA</div><div class="pair-label">ADA / USDT</div></div>
@@ -347,7 +370,7 @@
             <div class="change-percent" id="change-ADAUSDT">...</div>
         </a>
 
-        <a href="terminal.html?symbol=TRX" class="trade-card" data-symbol="TRXUSDT">
+        <a href="terminal.html?symbol=TRX" class="trade-card" data-symbol="TRXUSDT" data-category="">
             <div class="coin-info">
                 <img src="https://cryptologos.cc/logos/tron-trx-logo.png" class="coin-logo">
                 <div><div class="pair-name">TRX</div><div class="pair-label">TRX / USDT</div></div>
@@ -356,7 +379,7 @@
             <div class="change-percent" id="change-TRXUSDT">...</div>
         </a>
 
-        <a href="terminal.html?symbol=PEPE" class="trade-card" data-symbol="PEPEUSDT">
+        <a href="terminal.html?symbol=PEPE" class="trade-card" data-symbol="PEPEUSDT" data-category="hot">
             <div class="coin-info">
                 <img src="https://cryptologos.cc/logos/pepe-pepe-logo.png" class="coin-logo">
                 <div><div class="pair-name">PEPE<span class="hot-badge">MEME</span></div><div class="pair-label">PEPE / USDT</div></div>
@@ -365,7 +388,7 @@
             <div class="change-percent" id="change-PEPEUSDT">...</div>
         </a>
 
-        <a href="terminal.html?symbol=LINK" class="trade-card" data-symbol="LINKUSDT">
+        <a href="terminal.html?symbol=LINK" class="trade-card" data-symbol="LINKUSDT" data-category="">
             <div class="coin-info">
                 <img src="https://cryptologos.cc/logos/chainlink-link-logo.png" class="coin-logo">
                 <div><div class="pair-name">LINK</div><div class="pair-label">LINK / USDT</div></div>
@@ -374,16 +397,16 @@
             <div class="change-percent" id="change-LINKUSDT">...</div>
         </a>
 
-        <a href="terminal.html?symbol=SUI" class="trade-card" data-symbol="SUIUSDT">
+        <a href="terminal.html?symbol=SUI" class="trade-card" data-symbol="SUIUSDT" data-category="new">
             <div class="coin-info">
                 <img src="https://cryptologos.cc/logos/sui-sui-logo.png" class="coin-logo">
-                <div><div class="pair-name">SUI</div><div class="pair-label">SUI / USDT</div></div>
+                <div><div class="pair-name">SUI<span class="new-badge">NEW</span></div><div class="pair-label">SUI / USDT</div></div>
             </div>
             <div class="current-price" id="price-SUIUSDT">...</div>
             <div class="change-percent" id="change-SUIUSDT">...</div>
         </a>
 
-        <a href="terminal.html?symbol=NEAR" class="trade-card" data-symbol="NEARUSDT">
+        <a href="terminal.html?symbol=NEAR" class="trade-card" data-symbol="NEARUSDT" data-category="">
             <div class="coin-info">
                 <img src="https://cryptologos.cc/logos/near-protocol-near-logo.png" class="coin-logo">
                 <div><div class="pair-name">NEAR</div><div class="pair-label">NEAR / USDT</div></div>
@@ -392,19 +415,19 @@
             <div class="change-percent" id="change-NEARUSDT">...</div>
         </a>
 
-        <a href="terminal.html?symbol=APT" class="trade-card" data-symbol="APTUSDT">
+        <a href="terminal.html?symbol=APT" class="trade-card" data-symbol="APTUSDT" data-category="new">
             <div class="coin-info">
                 <img src="https://cryptologos.cc/logos/aptos-apt-logo.png" class="coin-logo">
-                <div><div class="pair-name">APT</div><div class="pair-label">APT / USDT</div></div>
+                <div><div class="pair-name">APT<span class="new-badge">NEW</span></div><div class="pair-label">APT / USDT</div></div>
             </div>
             <div class="current-price" id="price-APTUSDT">...</div>
             <div class="change-percent" id="change-APTUSDT">...</div>
         </a>
 
-        <a href="terminal.html?symbol=WLD" class="trade-card" data-symbol="WLDUSDT">
+        <a href="terminal.html?symbol=WLD" class="trade-card" data-symbol="WLDUSDT" data-category="new">
             <div class="coin-info">
                 <img src="https://cryptologos.cc/logos/worldcoin-wld-logo.png" class="coin-logo">
-                <div><div class="pair-name">WLD</div><div class="pair-label">WLD / USDT</div></div>
+                <div><div class="pair-name">WLD<span class="new-badge">NEW</span></div><div class="pair-label">WLD / USDT</div></div>
             </div>
             <div class="current-price" id="price-WLDUSDT">...</div>
             <div class="change-percent" id="change-WLDUSDT">...</div>
@@ -430,13 +453,114 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Search filter
-    document.getElementById('searchInput').addEventListener('input', function(e) {
-        const query = e.target.value.toLowerCase();
+    // Favorites storage
+    const FAVORITES_KEY = 'trustex_favorites';
+    function getFavorites() {
+        try {
+            return JSON.parse(localStorage.getItem(FAVORITES_KEY)) || [];
+        } catch { return []; }
+    }
+    function saveFavorites(favs) {
+        localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs));
+    }
+    function toggleFavorite(symbol) {
+        const favs = getFavorites();
+        const idx = favs.indexOf(symbol);
+        if (idx === -1) favs.push(symbol);
+        else favs.splice(idx, 1);
+        saveFavorites(favs);
+        return idx === -1;
+    }
+    function isFavorite(symbol) {
+        return getFavorites().includes(symbol);
+    }
+    
+    // Current filter
+    let currentFilter = 'all';
+    
+    // Filter tabs
+    const tabs = document.querySelectorAll('.market-tab');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            currentFilter = tab.dataset.filter || 'all';
+            applyFilter();
+        });
+    });
+    
+    function applyFilter() {
         const cards = document.querySelectorAll('.trade-card');
+        const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+        let visibleCount = 0;
+        
         cards.forEach(card => {
-            const symbol = card.dataset.symbol.toLowerCase();
-            card.style.display = symbol.includes(query) ? 'grid' : 'none';
+            const symbol = card.dataset.symbol;
+            const category = card.dataset.category || '';
+            const matchesSearch = symbol.toLowerCase().includes(searchQuery);
+            
+            let matchesFilter = false;
+            switch(currentFilter) {
+                case 'all':
+                    matchesFilter = true;
+                    break;
+                case 'favorites':
+                    matchesFilter = isFavorite(symbol);
+                    break;
+                case 'hot':
+                    matchesFilter = category === 'hot';
+                    break;
+                case 'new':
+                    matchesFilter = category === 'new';
+                    break;
+                default:
+                    matchesFilter = true;
+            }
+            
+            const show = matchesSearch && matchesFilter;
+            card.style.display = show ? 'grid' : 'none';
+            if (show) visibleCount++;
+        });
+        
+        // Show empty state
+        let emptyEl = document.getElementById('emptyState');
+        if (visibleCount === 0) {
+            if (!emptyEl) {
+                emptyEl = document.createElement('div');
+                emptyEl.id = 'emptyState';
+                emptyEl.className = 'empty-state';
+                document.getElementById('pairsContainer').appendChild(emptyEl);
+            }
+            if (currentFilter === 'favorites') {
+                emptyEl.innerHTML = '<div class="empty-state-icon">⭐</div><div>Нет избранных пар</div><div style="font-size:12px;margin-top:8px;color:#64748b;">Дважды нажмите на пару чтобы добавить</div>';
+            } else {
+                emptyEl.innerHTML = '<div class="empty-state-icon">🔍</div><div>Ничего не найдено</div>';
+            }
+            emptyEl.style.display = 'block';
+        } else if (emptyEl) {
+            emptyEl.style.display = 'none';
+        }
+    }
+    
+    // Search filter
+    document.getElementById('searchInput').addEventListener('input', applyFilter);
+    
+    // Double-click to add/remove favorite
+    document.querySelectorAll('.trade-card').forEach(card => {
+        card.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+            const symbol = card.dataset.symbol;
+            const added = toggleFavorite(symbol);
+            
+            // Visual feedback
+            const feedback = document.createElement('div');
+            feedback.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:#fff;padding:12px 24px;border-radius:12px;z-index:9999;font-size:14px;';
+            feedback.textContent = added ? '⭐ Добавлено в избранное' : '✖ Удалено из избранного';
+            document.body.appendChild(feedback);
+            setTimeout(() => feedback.remove(), 1500);
+            
+            // Refresh if on favorites tab
+            if (currentFilter === 'favorites') applyFilter();
         });
     });
 
