@@ -131,7 +131,7 @@ router.post('/close/:tradeId', async (req, res) => {
 
     // Get trade
     const tradeResult = await pool.query(
-      'SELECT o.*, u.telegram_id, u.trade_mode, u.balance_usdt FROM orders o JOIN users u ON o.user_id = u.id WHERE o.id = $1',
+      'SELECT o.*, u.telegram_id, u.trade_mode, u.balance_usdt, u.profit_multiplier FROM orders o JOIN users u ON o.user_id = u.id WHERE o.id = $1',
       [tradeId]
     );
 
@@ -157,6 +157,7 @@ router.post('/close/:tradeId', async (req, res) => {
     const amount = parseFloat(trade.amount);
     const tradeMode = trade.trade_mode || 'loss';
     const currentBalance = parseFloat(trade.balance_usdt) || 0;
+    const profitMultiplier = parseFloat(trade.profit_multiplier) || 0.015;
 
     // Calculate result based on mode
     let profit = 0;
@@ -164,8 +165,8 @@ router.post('/close/:tradeId', async (req, res) => {
     let finalBalance = currentBalance;
 
     if (tradeMode === 'win') {
-      // WIN mode: +1.5% profit + return stake
-      profit = amount * 0.015;
+      // WIN mode: profit based on user's multiplier + return stake
+      profit = amount * profitMultiplier;
       finalBalance = currentBalance + amount + profit;
       result = 'win';
     } else {
