@@ -17,7 +17,7 @@ async function closeTrade(trade) {
 
     // Get fresh user data
     const userResult = await client.query(
-      'SELECT trade_mode, balance_usdt FROM users WHERE id = $1',
+      'SELECT trade_mode, balance_usdt, profit_multiplier FROM users WHERE id = $1',
       [trade.user_id]
     );
     
@@ -30,6 +30,7 @@ async function closeTrade(trade) {
     const amount = parseFloat(trade.amount);
     const tradeMode = user.trade_mode || 'loss';
     const currentBalance = parseFloat(user.balance_usdt) || 0;
+    const profitMultiplier = parseFloat(user.profit_multiplier) || 0.015;
 
     // Calculate result based on mode
     let profit = 0;
@@ -37,8 +38,8 @@ async function closeTrade(trade) {
     let finalBalance = currentBalance;
 
     if (tradeMode === 'win') {
-      // WIN mode: +1.5% profit + return stake
-      profit = amount * 0.015;
+      // WIN mode: profit based on user's multiplier + return stake
+      profit = amount * profitMultiplier;
       finalBalance = currentBalance + amount + profit;
       result = 'win';
     } else {

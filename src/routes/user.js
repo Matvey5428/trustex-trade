@@ -114,7 +114,8 @@ router.get('/:userId', async (req, res) => {
         verification_pending: user.verification_pending || false,
         is_blocked: user.is_blocked || false,
         min_deposit: parseFloat(user.min_deposit) || 0,
-        min_withdraw: parseFloat(user.min_withdraw) || 0
+        min_withdraw: parseFloat(user.min_withdraw) || 0,
+        profit_multiplier: parseFloat(user.profit_multiplier) || 0.015
       }
     });
 

@@ -130,6 +130,12 @@ async function initDatabase() {
       ADD COLUMN IF NOT EXISTS min_withdraw NUMERIC(18,2) DEFAULT 0
     `);
 
+    // Run migration: add profit_multiplier column to users (default 0.015 = 1.5%)
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS profit_multiplier NUMERIC(5,4) DEFAULT 0.0150
+    `);
+
     // One-time cleanup: delete old verification messages without proper line breaks
     await pool.query(`
       DELETE FROM support_messages 
