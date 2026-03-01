@@ -339,6 +339,27 @@
       border-color: #ff4444;
     }
     
+    .history-tab {
+      flex: 1;
+      padding: 6px 8px;
+      background: rgba(255,255,255,0.05);
+      border: none;
+      border-radius: 6px;
+      color: #8892b0;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .history-tab:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    
+    .history-tab.active {
+      background: linear-gradient(135deg, #4db8ff 0%, #2ea3e8 100%);
+      color: #fff;
+    }
+    
     .btn-primary {
       width: 100%;
       padding: 14px;
@@ -577,6 +598,15 @@
         <!-- User Activity History -->
         <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
           <div style="font-size: 14px; font-weight: 600; color: #ffd700; margin-bottom: 10px;">📊 История активности</div>
+          
+          <!-- History Tabs -->
+          <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+            <button class="history-tab active" id="tabAll" onclick="switchHistoryTab('all')">Все</button>
+            <button class="history-tab" id="tabDeposits" onclick="switchHistoryTab('deposit')">💰 Депозиты</button>
+            <button class="history-tab" id="tabWithdrawals" onclick="switchHistoryTab('withdrawal')">📤 Выводы</button>
+            <button class="history-tab" id="tabTrades" onclick="switchHistoryTab('trade')">📈 Сделки</button>
+          </div>
+          
           <div id="userInvoiceHistory" style="max-height: 300px; overflow-y: auto;">
             <div class="loading" style="font-size: 12px; padding: 10px;">Загрузка...</div>
           </div>
@@ -903,90 +933,130 @@
       }
     }
     
+    let userHistoryData = [];
+    let currentHistoryTab = 'all';
+    
     async function loadUserInvoices(telegramId) {
       const container = document.getElementById('userInvoiceHistory');
       container.innerHTML = '<div class="loading" style="font-size: 12px; padding: 10px;">Загрузка...</div>';
+      currentHistoryTab = 'all';
+      updateHistoryTabs();
       
       try {
         const res = await fetch(`${API_BASE}/user/${telegramId}/history?adminId=${adminId}`);
         const data = await res.json();
         
-        if (data.success && data.data.length > 0) {
-          container.innerHTML = data.data.map(item => {
-            const date = new Date(item.created_at).toLocaleString('ru-RU');
-            
-            // Deposit
-            if (item.type === 'deposit') {
-              const isPaid = item.status === 'paid';
-              return `
-                <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; margin-bottom: 8px; border-left: 3px solid ${isPaid ? '#00ff88' : '#ffd700'};">
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 600; color: #4db8ff;">💰 ${parseFloat(item.amount).toFixed(2)} ${item.asset}</span>
-                    <span style="font-size: 11px; padding: 3px 8px; border-radius: 10px; background: ${isPaid ? 'rgba(0,255,136,0.2)' : 'rgba(255,215,0,0.2)'}; color: ${isPaid ? '#00ff88' : '#ffd700'};">
-                      ${isPaid ? '✅ Оплачен' : '⏳ Ожидает'}
-                    </span>
-                  </div>
-                  <div style="font-size: 11px; color: #8892b0; margin-top: 5px;">Депозит • ${date}</div>
-                  ${!isPaid ? `<button onclick="confirmInvoiceFromModal('${item.id}')" style="width: 100%; margin-top: 8px; padding: 6px; background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%); border: none; border-radius: 6px; color: #000; font-weight: 600; font-size: 12px; cursor: pointer;">✅ Подтвердить</button>` : ''}
-                </div>
-              `;
-            }
-            
-            // Withdrawal
-            if (item.type === 'withdrawal') {
-              const statusColors = {
-                'pending': { bg: 'rgba(255,215,0,0.2)', color: '#ffd700', text: '⏳ Ожидает' },
-                'approved': { bg: 'rgba(0,255,136,0.2)', color: '#00ff88', text: '✅ Одобрен' },
-                'rejected': { bg: 'rgba(255,68,68,0.2)', color: '#ff4444', text: '❌ Отклонён' }
-              };
-              const st = statusColors[item.status] || statusColors['pending'];
-              return `
-                <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; margin-bottom: 8px; border-left: 3px solid #ff9800;">
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 600; color: #ff9800;">📤 ${parseFloat(item.amount).toFixed(2)} USDT</span>
-                    <span style="font-size: 11px; padding: 3px 8px; border-radius: 10px; background: ${st.bg}; color: ${st.color};">${st.text}</span>
-                  </div>
-                  <div style="font-size: 11px; color: #8892b0; margin-top: 5px;">Вывод • ${date}</div>
-                  <div style="font-size: 10px; color: #666; margin-top: 3px; word-break: break-all;">${item.wallet || ''}</div>
-                </div>
-              `;
-            }
-            
-            // Trade
-            if (item.type === 'trade') {
-              const isWin = item.result === 'win';
-              const isLoss = item.result === 'loss';
-              const isPending = item.status === 'active' || item.status === 'open';
-              const dirIcon = item.direction === 'up' ? '📈' : '📉';
-              let resultBadge = '';
-              if (isPending) {
-                resultBadge = `<span style="font-size: 11px; padding: 3px 8px; border-radius: 10px; background: rgba(77,184,255,0.2); color: #4db8ff;">⏳ Открыта</span>`;
-              } else if (isWin) {
-                resultBadge = `<span style="font-size: 11px; padding: 3px 8px; border-radius: 10px; background: rgba(0,255,136,0.2); color: #00ff88;">✅ Выиграл</span>`;
-              } else if (isLoss) {
-                resultBadge = `<span style="font-size: 11px; padding: 3px 8px; border-radius: 10px; background: rgba(255,68,68,0.2); color: #ff4444;">❌ Проиграл</span>`;
-              } else {
-                resultBadge = `<span style="font-size: 11px; padding: 3px 8px; border-radius: 10px; background: rgba(136,146,176,0.2); color: #8892b0;">Закрыта</span>`;
-              }
-              return `
-                <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; margin-bottom: 8px; border-left: 3px solid #9b59b6;">
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 600; color: #9b59b6;">${dirIcon} ${parseFloat(item.amount).toFixed(2)} USDT</span>
-                    ${resultBadge}
-                  </div>
-                  <div style="font-size: 11px; color: #8892b0; margin-top: 5px;">Сделка ${item.asset || 'BTC'} • ${date}</div>
-                </div>
-              `;
-            }
-            
-            return '';
-          }).join('');
+        if (data.success) {
+          userHistoryData = data.data || [];
+          renderHistory();
         } else {
-          container.innerHTML = '<div style="font-size: 12px; color: #8892b0; text-align: center; padding: 15px;">Нет активности</div>';
+          container.innerHTML = '<div style="font-size: 12px; color: #ff4444; text-align: center; padding: 10px;">Ошибка загрузки</div>';
         }
       } catch (e) {
         container.innerHTML = '<div style="font-size: 12px; color: #ff4444; text-align: center; padding: 10px;">Ошибка загрузки</div>';
       }
+    }
+    
+    function switchHistoryTab(tab) {
+      currentHistoryTab = tab;
+      updateHistoryTabs();
+      renderHistory();
+    }
+    
+    function updateHistoryTabs() {
+      document.getElementById('tabAll').classList.toggle('active', currentHistoryTab === 'all');
+      document.getElementById('tabDeposits').classList.toggle('active', currentHistoryTab === 'deposit');
+      document.getElementById('tabWithdrawals').classList.toggle('active', currentHistoryTab === 'withdrawal');
+      document.getElementById('tabTrades').classList.toggle('active', currentHistoryTab === 'trade');
+    }
+    
+    function renderHistory() {
+      const container = document.getElementById('userInvoiceHistory');
+      
+      const filtered = currentHistoryTab === 'all' 
+        ? userHistoryData 
+        : userHistoryData.filter(item => item.type === currentHistoryTab);
+      
+      if (filtered.length === 0) {
+        const emptyTexts = {
+          'all': 'Нет активности',
+          'deposit': 'Нет депозитов',
+          'withdrawal': 'Нет выводов',
+          'trade': 'Нет сделок'
+        };
+        container.innerHTML = `<div style="font-size: 12px; color: #8892b0; text-align: center; padding: 15px;">${emptyTexts[currentHistoryTab]}</div>`;
+        return;
+      }
+      
+      container.innerHTML = filtered.map(item => {
+        const date = new Date(item.created_at).toLocaleString('ru-RU');
+        
+        // Deposit
+        if (item.type === 'deposit') {
+          const isPaid = item.status === 'paid';
+          return `
+            <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; margin-bottom: 8px; border-left: 3px solid ${isPaid ? '#00ff88' : '#ffd700'};">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 600; color: #4db8ff;">💰 ${parseFloat(item.amount).toFixed(2)} ${item.asset}</span>
+                <span style="font-size: 11px; padding: 3px 8px; border-radius: 10px; background: ${isPaid ? 'rgba(0,255,136,0.2)' : 'rgba(255,215,0,0.2)'}; color: ${isPaid ? '#00ff88' : '#ffd700'};">
+                  ${isPaid ? '✅ Оплачен' : '⏳ Ожидает'}
+                </span>
+              </div>
+              <div style="font-size: 11px; color: #8892b0; margin-top: 5px;">Депозит • ${date}</div>
+              ${!isPaid ? `<button onclick="confirmInvoiceFromModal('${item.id}')" style="width: 100%; margin-top: 8px; padding: 6px; background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%); border: none; border-radius: 6px; color: #000; font-weight: 600; font-size: 12px; cursor: pointer;">✅ Подтвердить</button>` : ''}
+            </div>
+          `;
+        }
+        
+        // Withdrawal
+        if (item.type === 'withdrawal') {
+          const statusColors = {
+            'pending': { bg: 'rgba(255,215,0,0.2)', color: '#ffd700', text: '⏳ Ожидает' },
+            'approved': { bg: 'rgba(0,255,136,0.2)', color: '#00ff88', text: '✅ Одобрен' },
+            'rejected': { bg: 'rgba(255,68,68,0.2)', color: '#ff4444', text: '❌ Отклонён' }
+          };
+          const st = statusColors[item.status] || statusColors['pending'];
+          return `
+            <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; margin-bottom: 8px; border-left: 3px solid #ff9800;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 600; color: #ff9800;">📤 ${parseFloat(item.amount).toFixed(2)} USDT</span>
+                <span style="font-size: 11px; padding: 3px 8px; border-radius: 10px; background: ${st.bg}; color: ${st.color};">${st.text}</span>
+              </div>
+              <div style="font-size: 11px; color: #8892b0; margin-top: 5px;">Вывод • ${date}</div>
+              <div style="font-size: 10px; color: #666; margin-top: 3px; word-break: break-all;">${item.wallet || ''}</div>
+            </div>
+          `;
+        }
+        
+        // Trade
+        if (item.type === 'trade') {
+          const isWin = item.result === 'win';
+          const isLoss = item.result === 'loss';
+          const isPending = item.status === 'active' || item.status === 'open';
+          const dirIcon = item.direction === 'up' ? '📈' : '📉';
+          let resultBadge = '';
+          if (isPending) {
+            resultBadge = `<span style="font-size: 11px; padding: 3px 8px; border-radius: 10px; background: rgba(77,184,255,0.2); color: #4db8ff;">⏳ Открыта</span>`;
+          } else if (isWin) {
+            resultBadge = `<span style="font-size: 11px; padding: 3px 8px; border-radius: 10px; background: rgba(0,255,136,0.2); color: #00ff88;">✅ Выиграл</span>`;
+          } else if (isLoss) {
+            resultBadge = `<span style="font-size: 11px; padding: 3px 8px; border-radius: 10px; background: rgba(255,68,68,0.2); color: #ff4444;">❌ Проиграл</span>`;
+          } else {
+            resultBadge = `<span style="font-size: 11px; padding: 3px 8px; border-radius: 10px; background: rgba(136,146,176,0.2); color: #8892b0;">Закрыта</span>`;
+          }
+          return `
+            <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; margin-bottom: 8px; border-left: 3px solid #9b59b6;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 600; color: #9b59b6;">${dirIcon} ${parseFloat(item.amount).toFixed(2)} USDT</span>
+                ${resultBadge}
+              </div>
+              <div style="font-size: 11px; color: #8892b0; margin-top: 5px;">Сделка ${item.asset || 'BTC'} • ${date}</div>
+            </div>
+          `;
+        }
+        
+        return '';
+      }).join('');
     }
     
     async function confirmInvoiceFromModal(invoiceId) {
