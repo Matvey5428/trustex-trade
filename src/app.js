@@ -39,19 +39,19 @@ app.use(cors({
 
 app.use(express.json());
 
-// Static files with aggressive caching
+// Static files - no cache for development, short cache for production
 app.use(express.static(path.join(__dirname, '../public'), {
-  maxAge: '1d',
   etag: true,
   lastModified: true,
   setHeaders: (res, filePath) => {
-    // Cache JS/CSS files longer
-    if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
-      res.setHeader('Cache-Control', 'public, max-age=604800'); // 7 days
-    }
-    // HTML files - shorter cache
+    // No cache for HTML - always fresh
     if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'public, max-age=3600'); // 1 hour
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    } else if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
+      // Short cache for JS/CSS
+      res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minutes
     }
   }
 }));
@@ -69,6 +69,12 @@ if (process.env.NODE_ENV !== 'production') {
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Version check (for cache busting)
+const APP_VERSION = Date.now().toString();
+app.get('/version', (req, res) => {
+  res.json({ version: APP_VERSION, deployed: new Date().toISOString() });
 });
 
 // API Routes
