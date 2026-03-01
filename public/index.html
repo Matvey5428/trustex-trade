@@ -638,6 +638,135 @@
       color: var(--text-muted);
       font-size: 13px;
     }
+
+    /* Price Ticker */
+    .price-ticker {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+      padding: 10px 0;
+      margin: 0 -16px 16px -16px;
+    }
+
+    .ticker-track {
+      display: flex;
+      gap: 32px;
+      animation: tickerScroll 20s linear infinite;
+      width: max-content;
+    }
+
+    .ticker-track:hover {
+      animation-play-state: paused;
+    }
+
+    @keyframes tickerScroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .ticker-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      font-size: 13px;
+    }
+
+    .ticker-symbol {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .ticker-price {
+      color: var(--text-secondary);
+    }
+
+    .ticker-change {
+      font-weight: 500;
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .ticker-change.up {
+      color: var(--success);
+      background: rgba(63, 185, 80, 0.15);
+    }
+
+    .ticker-change.down {
+      color: var(--danger);
+      background: rgba(248, 81, 73, 0.15);
+    }
+
+    /* Security Block */
+    .security-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .security-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .security-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    .security-score {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .security-score.high { color: var(--success); }
+    .security-score.medium { color: var(--warning); }
+    .security-score.low { color: var(--danger); }
+
+    .security-items {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .security-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .security-item .icon {
+      font-size: 14px;
+    }
+
+    .security-item .status {
+      margin-left: auto;
+      font-weight: 600;
+    }
+
+    .security-item .status.active { color: var(--success); }
+    .security-item .status.inactive { color: var(--text-muted); }
+    .security-item .status.warning { color: var(--warning); }
   </style>
 </head>
 <body>
@@ -661,6 +790,63 @@
       </div>
     </div>
 
+    <!-- Price Ticker -->
+    <div class="price-ticker">
+      <div class="ticker-track" id="tickerTrack">
+        <div class="ticker-item">
+          <span class="ticker-symbol">BTC</span>
+          <span class="ticker-price" id="tickerBtcPrice">$0.00</span>
+          <span class="ticker-change up" id="tickerBtcChange">+0.00%</span>
+        </div>
+        <div class="ticker-item">
+          <span class="ticker-symbol">ETH</span>
+          <span class="ticker-price" id="tickerEthPrice">$0.00</span>
+          <span class="ticker-change up" id="tickerEthChange">+0.00%</span>
+        </div>
+        <div class="ticker-item">
+          <span class="ticker-symbol">TON</span>
+          <span class="ticker-price" id="tickerTonPrice">$0.00</span>
+          <span class="ticker-change up" id="tickerTonChange">+0.00%</span>
+        </div>
+        <div class="ticker-item">
+          <span class="ticker-symbol">SOL</span>
+          <span class="ticker-price" id="tickerSolPrice">$0.00</span>
+          <span class="ticker-change up" id="tickerSolChange">+0.00%</span>
+        </div>
+        <div class="ticker-item">
+          <span class="ticker-symbol">XRP</span>
+          <span class="ticker-price" id="tickerXrpPrice">$0.00</span>
+          <span class="ticker-change up" id="tickerXrpChange">+0.00%</span>
+        </div>
+        <!-- Duplicate for seamless loop -->
+        <div class="ticker-item">
+          <span class="ticker-symbol">BTC</span>
+          <span class="ticker-price" id="tickerBtcPrice2">$0.00</span>
+          <span class="ticker-change up" id="tickerBtcChange2">+0.00%</span>
+        </div>
+        <div class="ticker-item">
+          <span class="ticker-symbol">ETH</span>
+          <span class="ticker-price" id="tickerEthPrice2">$0.00</span>
+          <span class="ticker-change up" id="tickerEthChange2">+0.00%</span>
+        </div>
+        <div class="ticker-item">
+          <span class="ticker-symbol">TON</span>
+          <span class="ticker-price" id="tickerTonPrice2">$0.00</span>
+          <span class="ticker-change up" id="tickerTonChange2">+0.00%</span>
+        </div>
+        <div class="ticker-item">
+          <span class="ticker-symbol">SOL</span>
+          <span class="ticker-price" id="tickerSolPrice2">$0.00</span>
+          <span class="ticker-change up" id="tickerSolChange2">+0.00%</span>
+        </div>
+        <div class="ticker-item">
+          <span class="ticker-symbol">XRP</span>
+          <span class="ticker-price" id="tickerXrpPrice2">$0.00</span>
+          <span class="ticker-change up" id="tickerXrpChange2">+0.00%</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Balance Card -->
     <div class="balance-card">
       <div class="balance-label">
@@ -679,6 +865,40 @@
         <div class="action-item">
           <button class="action-box" onclick="window.location.href='exchange.html'">⇄</button>
           <div class="label">Обменять</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Security -->
+    <div class="security-card">
+      <div class="security-header">
+        <div class="security-title">
+          <span>🛡️</span> Безопасность
+        </div>
+        <div class="security-score medium" id="securityScore">
+          <span>●</span> Средняя
+        </div>
+      </div>
+      <div class="security-items">
+        <div class="security-item">
+          <span class="icon">✉️</span>
+          <span>Email</span>
+          <span class="status inactive" id="securityEmail">—</span>
+        </div>
+        <div class="security-item">
+          <span class="icon">🔐</span>
+          <span>2FA</span>
+          <span class="status inactive" id="security2fa">Откл</span>
+        </div>
+        <div class="security-item">
+          <span class="icon">✅</span>
+          <span>KYC</span>
+          <span class="status inactive" id="securityKyc">Нет</span>
+        </div>
+        <div class="security-item">
+          <span class="icon">🕐</span>
+          <span>Последний вход</span>
+          <span class="status warning" id="securityLastLogin">—</span>
         </div>
       </div>
     </div>
@@ -883,6 +1103,141 @@
     if(el) el.textContent = val; 
   };
 
+  async function updatePriceTicker() {
+    try {
+      const symbols = ["BTCUSDT", "ETHUSDT", "TONUSDT", "SOLUSDT", "XRPUSDT"];
+      const [pricesRes, tickerRes] = await Promise.all([
+        fetch(`https://api.binance.com/api/v3/ticker/price?symbols=${JSON.stringify(symbols)}`),
+        fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${JSON.stringify(symbols)}`)
+      ]);
+      
+      const prices = await pricesRes.json();
+      const tickers = await tickerRes.json();
+      
+      const tickerData = {};
+      tickers.forEach(t => {
+        tickerData[t.symbol] = {
+          price: parseFloat(t.lastPrice),
+          change: parseFloat(t.priceChangePercent)
+        };
+      });
+
+      const updateTicker = (symbol, idPrice, idChange, idPrice2, idChange2) => {
+        const data = tickerData[symbol + 'USDT'];
+        if (!data) return;
+        
+        const priceStr = data.price >= 100 ? 
+          `$${data.price.toLocaleString('en-US', {maximumFractionDigits: 2})}` : 
+          `$${data.price.toFixed(4)}`;
+        
+        const changeStr = data.change >= 0 ? `+${data.change.toFixed(2)}%` : `${data.change.toFixed(2)}%`;
+        const changeClass = data.change >= 0 ? 'up' : 'down';
+        
+        [idPrice, idPrice2].forEach(id => updateEl(id, priceStr));
+        [idChange, idChange2].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.textContent = changeStr;
+            el.className = 'ticker-change ' + changeClass;
+          }
+        });
+      };
+
+      updateTicker('BTC', 'tickerBtcPrice', 'tickerBtcChange', 'tickerBtcPrice2', 'tickerBtcChange2');
+      updateTicker('ETH', 'tickerEthPrice', 'tickerEthChange', 'tickerEthPrice2', 'tickerEthChange2');
+      updateTicker('TON', 'tickerTonPrice', 'tickerTonChange', 'tickerTonPrice2', 'tickerTonChange2');
+      updateTicker('SOL', 'tickerSolPrice', 'tickerSolChange', 'tickerSolPrice2', 'tickerSolChange2');
+      updateTicker('XRP', 'tickerXrpPrice', 'tickerXrpChange', 'tickerXrpPrice2', 'tickerXrpChange2');
+    } catch (e) {
+      console.error('Ticker update error:', e);
+    }
+  }
+
+  function updateSecurityBlock(user) {
+    // Email
+    const emailEl = document.getElementById('securityEmail');
+    if (emailEl) {
+      if (user.email) {
+        emailEl.textContent = '✓';
+        emailEl.className = 'status active';
+      } else {
+        emailEl.textContent = '—';
+        emailEl.className = 'status inactive';
+      }
+    }
+
+    // 2FA
+    const tfaEl = document.getElementById('security2fa');
+    if (tfaEl) {
+      if (user.two_factor_enabled) {
+        tfaEl.textContent = 'Вкл';
+        tfaEl.className = 'status active';
+      } else {
+        tfaEl.textContent = 'Откл';
+        tfaEl.className = 'status inactive';
+      }
+    }
+
+    // KYC
+    const kycEl = document.getElementById('securityKyc');
+    if (kycEl) {
+      if (user.verified) {
+        kycEl.textContent = '✓';
+        kycEl.className = 'status active';
+      } else {
+        kycEl.textContent = 'Нет';
+        kycEl.className = 'status inactive';
+      }
+    }
+
+    // Last login 
+    const lastLoginEl = document.getElementById('securityLastLogin');
+    if (lastLoginEl) {
+      if (user.last_login) {
+        const date = new Date(user.last_login);
+        const now = new Date();
+        const diff = Math.floor((now - date) / (1000 * 60));
+        
+        if (diff < 5) {
+          lastLoginEl.textContent = 'Сейчас';
+          lastLoginEl.className = 'status active';
+        } else if (diff < 60) {
+          lastLoginEl.textContent = `${diff} мин назад`;
+          lastLoginEl.className = 'status active';
+        } else if (diff < 1440) {
+          lastLoginEl.textContent = `${Math.floor(diff/60)}ч назад`;
+          lastLoginEl.className = 'status warning';
+        } else {
+          lastLoginEl.textContent = `${Math.floor(diff/1440)}д назад`;
+          lastLoginEl.className = 'status warning';
+        }
+      } else {
+        lastLoginEl.textContent = 'Сейчас';
+        lastLoginEl.className = 'status active';
+      }
+    }
+
+    // Security score
+    const scoreEl = document.getElementById('securityScore');
+    if (scoreEl) {
+      let score = 0;
+      if (user.email) score++;
+      if (user.two_factor_enabled) score++;
+      if (user.verified) score++;
+      
+      if (score >= 3) {
+        scoreEl.innerHTML = '<span>●</span> Высокая';
+        scoreEl.className = 'security-score high';
+      } else if (score >= 1) {
+        scoreEl.innerHTML = '<span>●</span> Средняя';
+        scoreEl.className = 'security-score medium';
+      } else {
+        scoreEl.innerHTML = '<span>●</span> Низкая';
+        scoreEl.className = 'security-score low';
+      }
+    }
+  }
+
   async function updateMarketPrices() {
     try {
         const symbols = ["BTCUSDT", "ETHUSDT", "TONUSDT"];
@@ -915,6 +1270,9 @@
 
       // Установить глобальный userId
       userId = user.telegram_id;
+
+      // Обновить блок безопасности
+      updateSecurityBlock(user);
 
       // Показать Telegram ID как ID аккаунта
       const telegramId = user.telegram_id;
@@ -1242,7 +1600,10 @@
 
   window.addEventListener('DOMContentLoaded', async () => {
     try {
-      console.log('🚀 Initializing Nexo Trade...');
+      console.log('🚀 Initializing TrustEx...');
+      
+      // Обновить тикер сразу
+      updatePriceTicker();
       
       // Проверить авторизацию
       if (!TelegramAuth.isAuthenticated()) {
@@ -1267,13 +1628,14 @@
       console.log('✅ Init complete');
     } catch (e) {
       console.error('❌ Initialization error:', e.message);
-      document.getElementById('debugStatus').textContent = '❌ ошибка: ' + e.message;
-      
-      // Показать ошибку на экране
       alert('Ошибка авторизации: ' + e.message);
     }
   });
 
+  // Обновление тикера каждые 10 секунд
+  setInterval(updatePriceTicker, 10000);
+
+  // Обновление данных пользователя каждые 5 секунд
   setInterval(() => {
     if (userId) {
       loadUserData();
