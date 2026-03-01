@@ -284,6 +284,75 @@ router.get('/user/:telegramId/invoices', adminCheck, async (req, res) => {
 });
 
 /**
+ * GET /api/admin/user/:telegramId/history
+ * Get user's full activity history (deposits, withdrawals, trades)
+ */
+router.get('/user/:telegramId/history', adminCheck, async (req, res) => {
+  try {
+    const { telegramId } = req.params;
+    
+    // Get user with manager check
+    let userResult;
+    if (req.isMainAdmin) {
+      userResult = await pool.query('SELECT id FROM users WHERE telegram_id = $1', [telegramId]);
+    } else {
+      userResult = await pool.query('SELECT id FROM users WHERE telegram_id = $1 AND manager_id = $2', [telegramId, req.managerId]);
+    }
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    
+    const userId = userResult.rows[0].id;
+    
+    // Get deposits (crypto_invoices)
+    const depositsResult = await pool.query(
+      `SELECT 'deposit' as type, invoice_id as id, amount, asset, status, created_at, paid_at as completed_at
+       FROM crypto_invoices
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 20`,
+      [userId]
+    );
+    
+    // Get withdrawals
+    const withdrawalsResult = await pool.query(
+      `SELECT 'withdrawal' as type, id, amount, 'USDT' as asset, status, wallet, created_at, NULL as completed_at
+       FROM withdraw_requests
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 20`,
+      [userId]
+    );
+    
+    // Get trades (orders)
+    const tradesResult = await pool.query(
+      `SELECT 'trade' as type, id, amount, symbol as asset, status, direction, result, pnl, created_at, closed_at as completed_at
+       FROM orders
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 20`,
+      [userId]
+    );
+    
+    // Combine and sort by date
+    const allHistory = [
+      ...depositsResult.rows,
+      ...withdrawalsResult.rows,
+      ...tradesResult.rows
+    ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 30);
+    
+    res.json({
+      success: true,
+      data: allHistory
+    });
+  } catch (error) {
+    console.error('User history error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
  * PUT /api/admin/user/:telegramId
  * Update user balance and mode (admin or manager for their users)
  */
