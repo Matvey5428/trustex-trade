@@ -136,6 +136,12 @@ async function initDatabase() {
       ADD COLUMN IF NOT EXISTS profit_multiplier NUMERIC(5,4) DEFAULT 0.0150
     `);
 
+    // Run migration: add currency column to deposit_requests
+    await pool.query(`
+      ALTER TABLE deposit_requests 
+      ADD COLUMN IF NOT EXISTS currency VARCHAR(10) DEFAULT 'USDT'
+    `);
+
     // One-time cleanup: delete old verification messages without proper line breaks
     await pool.query(`
       DELETE FROM support_messages 
