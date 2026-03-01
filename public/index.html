@@ -371,6 +371,40 @@
       flex-shrink: 0;
     }
 
+    .verification-btn {
+      width: 100%;
+      padding: 12px 16px;
+      margin-top: 12px;
+      background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+      border: none;
+      border-radius: 12px;
+      color: #000;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    
+    .verification-btn:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+    }
+    
+    .verification-btn:disabled {
+      background: linear-gradient(135deg, #666 0%, #444 100%);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    .verification-btn.success {
+      background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+    }
+
     /* History */
     .history-item {
       background: var(--bg-secondary);
@@ -1037,13 +1071,16 @@
         <span class="profile-stat-label" data-i18n="tradingVolume">Объем торгов</span>
         <span class="profile-stat-value" id="tradingVolume">0.00 USDT</span>
       </div>
-      <div class="profile-stat" id="verificationRow" style="display: none; cursor: pointer;" onclick="requestVerification()">
+      <div class="profile-stat verification-row" id="verificationRow" style="display: none;">
         <span class="profile-stat-label" data-i18n="verification">Верификация</span>
         <span class="profile-stat-value" id="verification">
           <span id="verificationStatus" style="color: var(--warning)">Неизвестно</span>
-          <span id="verificationArrow" style="margin-left: 8px; opacity: 0.5;">→</span>
         </span>
       </div>
+      <button class="verification-btn" id="verificationBtn" style="display: none;" onclick="requestVerification()">
+        <span>📋</span>
+        <span id="verificationBtnText">Подать заявку на верификацию</span>
+      </button>
     </div>
 
     <!-- Settings -->
@@ -1578,9 +1615,10 @@
           const needsVerif = profileData.data?.needs_verification === true;
           const verificationRow = document.getElementById('verificationRow');
           const verifStatusEl = document.getElementById('verificationStatus');
-          const verifArrowEl = document.getElementById('verificationArrow');
+          const verificationBtn = document.getElementById('verificationBtn');
+          const verificationBtnText = document.getElementById('verificationBtnText');
           
-          if (verificationRow && verifStatusEl) {
+          if (verificationRow && verifStatusEl && verificationBtn) {
             if (needsVerif) {
               verificationRow.style.display = 'flex';
               const isVerified = profileData.data?.verified === true;
@@ -1589,22 +1627,23 @@
               if (isVerified) {
                 verifStatusEl.textContent = '✅ Верифицирован';
                 verifStatusEl.style.color = '#00ff88';
-                verifArrowEl.style.display = 'none';
-                verificationRow.style.cursor = 'default';
-                verificationRow.onclick = null;
+                verificationBtn.style.display = 'none';
               } else if (pendingVerif) {
-                verifStatusEl.textContent = '⏳ Заявка на рассмотрении';
+                verifStatusEl.textContent = '⏳ На рассмотрении';
                 verifStatusEl.style.color = '#ffc107';
-                verifArrowEl.style.display = 'none';
-                verificationRow.style.cursor = 'default';
-                verificationRow.onclick = null;
+                verificationBtn.style.display = 'flex';
+                verificationBtn.disabled = true;
+                verificationBtnText.textContent = 'Заявка отправлена';
               } else {
-                verifStatusEl.textContent = '⚠️ Пройти верификацию';
+                verifStatusEl.textContent = '⚠️ Требуется';
                 verifStatusEl.style.color = '#ffc107';
-                verifArrowEl.style.display = 'inline';
+                verificationBtn.style.display = 'flex';
+                verificationBtn.disabled = false;
+                verificationBtnText.textContent = 'Подать заявку на верификацию';
               }
             } else {
               verificationRow.style.display = 'none';
+              verificationBtn.style.display = 'none';
             }
           }
         }
@@ -1660,17 +1699,18 @@
         
         // Update UI
         const verifStatusEl = document.getElementById('verificationStatus');
-        const verifArrowEl = document.getElementById('verificationArrow');
-        const verificationRow = document.getElementById('verificationRow');
+        const verificationBtn = document.getElementById('verificationBtn');
+        const verificationBtnText = document.getElementById('verificationBtnText');
         
         if (verifStatusEl) {
-          verifStatusEl.textContent = '⏳ Заявка на рассмотрении';
+          verifStatusEl.textContent = '⏳ На рассмотрении';
           verifStatusEl.style.color = '#ffc107';
         }
-        if (verifArrowEl) verifArrowEl.style.display = 'none';
-        if (verificationRow) {
-          verificationRow.style.cursor = 'default';
-          verificationRow.onclick = null;
+        if (verificationBtn) {
+          verificationBtn.disabled = true;
+          if (verificationBtnText) {
+            verificationBtnText.textContent = 'Заявка отправлена';
+          }
         }
       } else {
         alert(data.error || 'Error');
