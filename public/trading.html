@@ -52,10 +52,27 @@
         .page-header {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            gap: 16px;
             margin-bottom: 20px;
             padding-bottom: 16px;
             border-bottom: 1px solid var(--border);
+        }
+
+        .back-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent);
         }
 
         .page-title {
@@ -65,6 +82,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            flex: 1;
         }
 
         .lang-select-small {
@@ -279,6 +297,7 @@
 
 <div class="app-container">
     <div class="page-header">
+        <button class="back-btn" onclick="window.location.href='index.html'">← <span data-i18n="back">Назад</span></button>
         <h1 class="page-title">📊 <span data-i18n="tradingPairs">Trading Pairs</span></h1>
         <select class="lang-select-small" id="languageSelect">
             <option value="en">🇬🇧 EN</option>
