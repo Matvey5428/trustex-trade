@@ -90,6 +90,13 @@ router.get('/:userId', async (req, res) => {
 
     const user = result.rows[0];
 
+    // Calculate total trading volume from orders
+    const volumeResult = await pool.query(
+      'SELECT COALESCE(SUM(amount), 0) as total_volume FROM orders WHERE user_id = $1',
+      [user.id]
+    );
+    const totalVolume = parseFloat(volumeResult.rows[0].total_volume) || 0;
+
     res.json({
       success: true,
       data: {
@@ -100,7 +107,8 @@ router.get('/:userId', async (req, res) => {
         usdt: parseFloat(user.balance_usdt) || 0,
         btc: parseFloat(user.balance_btc) || 0,
         eth: parseFloat(user.balance_eth) || 0,
-        ton: parseFloat(user.balance_ton) || 0
+        ton: parseFloat(user.balance_ton) || 0,
+        total_volume: totalVolume
       }
     });
 

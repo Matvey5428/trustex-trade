@@ -1558,9 +1558,17 @@
         document.getElementById('stats').innerHTML = '0 / <span style="color: #3fb950">0</span> / <span style="color: #f85149">0</span>';
       }
       
-      // Объем торгов (из БД или 0)
-      const tradingVol = parseFloat(user.total_volume) || 0;
-      updateEl('tradingVolume', `${tradingVol.toFixed(2)} USDT`);
+      // Объем торгов (из API профиля)
+      try {
+        const profileRes = await fetch(`/api/profile/${telegramId}`);
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          const tradingVol = parseFloat(profileData.data?.total_volume) || 0;
+          updateEl('tradingVolume', `${tradingVol.toFixed(2)} USDT`);
+        }
+      } catch (e) {
+        updateEl('tradingVolume', '0.00 USDT');
+      }
       
       // Статус верификации
       const verifEl = document.getElementById('verification');
