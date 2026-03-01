@@ -365,10 +365,11 @@
       container.innerHTML = messages.map(msg => {
         const time = new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
         const isUser = msg.sender === 'user';
+        const formattedMessage = msg.message.replace(/\n/g, '<br>');
         
         return `
           <div class="message ${isUser ? 'user' : 'admin'}">
-            ${msg.message}
+            ${formattedMessage}
             <div class="message-time">${time}</div>
           </div>
         `;
