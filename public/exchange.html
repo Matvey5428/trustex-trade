@@ -325,16 +325,13 @@
         .swap-container {
             display: flex;
             justify-content: center;
+            align-items: center;
+            height: 40px;
             position: relative;
-            height: 28px;
             z-index: 10;
-            margin: -14px 0;
         }
 
         .swap-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
             width: 56px;
             height: 56px;
             border-radius: 16px;
@@ -352,24 +349,24 @@
         }
 
         .swap-btn:hover {
-            transform: translateY(-50%) scale(1.1);
+            transform: scale(1.1);
             box-shadow: 0 12px 32px rgba(0, 212, 170, 0.4);
         }
 
         .swap-btn:active {
-            transform: translateY(-50%) scale(0.95);
+            transform: scale(0.95);
         }
 
         .swap-btn.rotated {
-            transform: translateY(-50%) rotate(180deg);
+            transform: rotate(180deg);
         }
 
         .swap-btn.rotated:hover {
-            transform: translateY(-50%) rotate(180deg) scale(1.1);
+            transform: rotate(180deg) scale(1.1);
         }
 
         .currency-gap {
-            height: 8px;
+            display: none;
         }
 
         /* Result Preview */
