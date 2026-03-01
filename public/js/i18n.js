@@ -13,6 +13,7 @@ const i18n = {
     
     // Navigation
     assets: 'Assets',
+    markets: 'Markets',
     trading: 'Trading',
     terminal: 'Terminal',
     binaryOptions: 'Binary Options',
@@ -22,6 +23,7 @@ const i18n = {
     deposit: 'Deposit',
     withdraw: 'Withdraw',
     exchange: 'Exchange',
+    exchangeAction: 'Exchange',
     notifications: 'Notifications',
     language: 'Language',
     version: 'Version',
@@ -171,6 +173,7 @@ const i18n = {
     
     // Navigation
     assets: 'Активы',
+    markets: 'Рынки',
     trading: 'Торговля',
     terminal: 'Терминал',
     binaryOptions: 'Бинарные опционы',
@@ -179,7 +182,8 @@ const i18n = {
     totalBalance: 'Общий баланс',
     deposit: 'Пополнить',
     withdraw: 'Вывести',
-    exchange: 'Обменять',
+    exchange: 'Обмен',
+    exchangeAction: 'Обменять',
     notifications: 'Уведомления',
     language: 'Язык',
     version: 'Версия',
