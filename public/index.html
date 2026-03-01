@@ -1171,6 +1171,7 @@
   let userId = null;
   let RUB_RATE = 79.10;
   let allTransactions = [];
+  let currentHistoryFilter = 'all';
   let currentLang = localStorage.getItem('language') || 'ru';
 
   // Translations
@@ -1490,7 +1491,7 @@
           createdAt: tx.created_at
         }));
         updateFilterCounts();
-        filterHistory('all');
+        filterHistory(currentHistoryFilter);
       }
     } catch (e) {
       console.error('Error loading transaction history:', e);
@@ -1671,6 +1672,7 @@
   }
 
   function filterHistory(type) {
+    currentHistoryFilter = type;
     const container = document.getElementById('historyContent');
     document.querySelectorAll('.btn-filter').forEach(btn => {
         btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${type}'`));
