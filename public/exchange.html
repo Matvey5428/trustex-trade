@@ -548,76 +548,55 @@
             animation: fadeInUp 0.5s ease;
         }
 
-        /* Bottom Navigation */
-        .mobile-bottom-nav { 
-            position: fixed; 
-            bottom: 0; 
-            left: 0; 
-            right: 0; 
+        /* Bottom Navigation Bar */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
             z-index: 9999;
-            background: var(--bg-secondary);
-            border-top: 1px solid var(--border);
-        }
-
-        .mobile-toggle {
-            width: 100%;
-            background: var(--bg-card);
-            color: var(--text-primary);
-            border: none;
-            padding: 16px 20px;
+            background: linear-gradient(180deg, rgba(22, 27, 34, 0.98) 0%, rgba(13, 17, 23, 1) 100%);
+            border-top: 1px solid rgba(48, 54, 61, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 8px 0 max(8px, env(safe-area-inset-bottom));
             display: flex;
-            justify-content: space-between;
+            justify-content: space-around;
             align-items: center;
-            border-top-left-radius: 16px;
-            border-top-right-radius: 16px;
         }
 
-        .mobile-icon {
-            width: 32px;
-            height: 32px;
-            background: var(--accent);
-            border-radius: 8px;
+        .nav-item {
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: #0d1117;
+            text-decoration: none;
+            color: var(--text-muted);
+            padding: 6px 16px;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            min-width: 60px;
+            position: relative;
         }
 
-        .mobile-content { 
-            background: var(--bg-card); 
-            padding: 16px;
-            border-top: 1px solid var(--border);
+        .nav-item:hover { color: var(--text-secondary); }
+        .nav-item.active { color: var(--accent); }
+
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 3px;
+            background: var(--accent);
+            border-radius: 0 0 3px 3px;
         }
 
-        .mobile-item { 
-            padding: 14px 16px; 
-            border-radius: 10px; 
-            color: var(--text-primary); 
-            margin-bottom: 8px; 
-            text-decoration: none; 
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
-        .mobile-item:hover {
-            background: var(--bg-hover);
-        }
-
-        .mobile-item.active { 
-            background: rgba(0, 212, 170, 0.15); 
-            color: var(--accent);
-        }
-
-        .mobile-badge {
-            font-size: 11px;
-            background: var(--gold);
-            color: #0d1117;
-            padding: 4px 8px;
-            border-radius: 6px;
+        .nav-icon { font-size: 22px; margin-bottom: 4px; }
+        .nav-label { font-size: 10px; font-weight: 500; }
+        .nav-item.active .nav-label { font-weight: 600; }
             font-weight: 600;
             margin-left: auto;
         }
@@ -959,41 +938,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 </script>
 
-<!-- Bottom Navigation -->
-<div class="mobile-bottom-nav">
-    <button class="mobile-toggle collapsed" type="button" onclick="this.classList.toggle('collapsed'); document.getElementById('mobileMenu').classList.toggle('show');">
-        <div class="d-flex" style="display: flex; align-items: center; gap: 12px;">
-            <div class="mobile-icon">💱</div>
-            <span style="font-weight: 600; font-size: 15px;">Обмен</span>
-        </div>
-        <div class="mobile-arrow">▲</div>
-    </button>
-    <div id="mobileMenu" class="mobile-content" style="display: none;">
-        <a href="index.html" class="mobile-item">
-            <span>💰</span> <span>Активы</span>
-        </a>
-        <a href="exchange.html" class="mobile-item active">
-            <span>💱</span> <span>Обмен</span>
-        </a>
-        <a href="trading.html" class="mobile-item">
-            <span>📊</span> <span>Торговля</span>
-        </a>
-        <a href="terminal.html" class="mobile-item">
-            <span>📈</span> <span>Терминал</span>
-        </a>
-        <div class="mobile-item" style="opacity: 0.5; cursor: not-allowed;">
-            <span>⚡</span> <span>Бинарные опционы</span>
-            <span class="mobile-badge">Скоро</span>
-        </div>
-    </div>
-</div>
-
-<script>
-// Mobile menu toggle
-document.querySelector('.mobile-toggle').addEventListener('click', function() {
-    const menu = document.getElementById('mobileMenu');
-    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-});
-</script>
+<!-- Bottom Navigation Bar -->
+<nav class="bottom-nav">
+    <a href="index.html" class="nav-item">
+        <span class="nav-icon">💰</span>
+        <span class="nav-label" data-i18n="assets">Активы</span>
+    </a>
+    <a href="trading.html" class="nav-item">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label" data-i18n="markets">Рынки</span>
+    </a>
+    <a href="exchange.html" class="nav-item active">
+        <span class="nav-icon">💱</span>
+        <span class="nav-label" data-i18n="exchange">Обмен</span>
+    </a>
+    <a href="terminal.html" class="nav-item">
+        <span class="nav-icon">📈</span>
+        <span class="nav-label" data-i18n="terminal">Терминал</span>
+    </a>
+    <a href="reviews.html" class="nav-item">
+        <span class="nav-icon">⭐</span>
+        <span class="nav-label" data-i18n="reviews">Отзывы</span>
+    </a>
+</nav>
 </body>
 </html>
