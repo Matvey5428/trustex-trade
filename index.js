@@ -104,7 +104,15 @@ async function initDatabase() {
       ALTER TABLE users 
       ADD COLUMN IF NOT EXISTS trading_blocked BOOLEAN DEFAULT FALSE
     `);
-    
+
+    // Performance indexes
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_crypto_invoices_invoice_id ON crypto_invoices(invoice_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_managers_ref_code ON managers(ref_code)`);
+
     console.log('✅ Migrations applied');
   } catch (err) {
     console.error('⚠️ Database error:', err.message);

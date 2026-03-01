@@ -5,6 +5,7 @@
 
 const express = require('express');
 const cors = require('cors');
+const compression = require('compression');
 const path = require('path');
 require('dotenv').config();
 
@@ -20,6 +21,16 @@ const { processAdminUpdate, getAdminWebhookPath } = require('./admin-bot');
 
 const app = express();
 
+// Gzip compression for all responses
+app.use(compression({
+  level: 6,
+  threshold: 1024, // Only compress responses > 1KB
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) return false;
+    return compression.filter(req, res);
+  }
+}));
+
 // Middlewares
 app.use(cors({
   origin: process.env.CORS_ORIGIN || '*',
@@ -27,15 +38,33 @@ app.use(cors({
 }));
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
 
-// Request logging для DEBUG
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api')) {
-    console.log(`📨 ${req.method} ${req.path}`);
+// Static files with aggressive caching
+app.use(express.static(path.join(__dirname, '../public'), {
+  maxAge: '1d',
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, filePath) => {
+    // Cache JS/CSS files longer
+    if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
+      res.setHeader('Cache-Control', 'public, max-age=604800'); // 7 days
+    }
+    // HTML files - shorter cache
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'public, max-age=3600'); // 1 hour
+    }
   }
-  next();
-});
+}));
+
+// Request logging (only in development)
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      console.log(`📨 ${req.method} ${req.path}`);
+    }
+    next();
+  });
+}
 
 // Health check
 app.get('/health', (req, res) => {
