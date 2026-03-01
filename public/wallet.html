@@ -1,148 +1,182 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Кошелек - TrustEx</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="js/auth.js?v=2" defer></script>
     <script src="js/api.js" defer></script>
     <script src="js/balance.js" defer></script>
-    <script src="js/i18n.js" defer></script>
-    <style>body { opacity: 0; } body.i18n-ready { opacity: 1; transition: opacity 0.15s ease-out; }</style>
-    <script>(function() { var lang = localStorage.getItem('nexo_lang') || 'ru'; document.documentElement.lang = lang; setTimeout(function() { document.body && document.body.classList.add('i18n-ready'); }, 500); })();</script>
+    <style>body { opacity: 0; } body.ready { opacity: 1; transition: opacity 0.2s; }</style>
+    <script>setTimeout(() => document.body?.classList.add('ready'), 300);</script>
     <style>
         :root {
-            --bg-primary: #0d1117;
-            --bg-secondary: #161b22;
-            --bg-card: #1c2128;
-            --bg-hover: #262c36;
-            --accent: #00d4aa;
-            --text-primary: #e6edf3;
-            --text-secondary: #8b949e;
-            --border: #30363d;
-            --success: #3fb950;
-            --danger: #f85149;
+            --bg-primary: #0b0e11;
+            --bg-secondary: #12161c;
+            --bg-card: #1e2329;
+            --bg-elevated: #2b3139;
+            --accent: #f0b90b;
+            --accent-hover: #fcd535;
+            --green: #03a66d;
+            --green-light: rgba(3, 166, 109, 0.1);
+            --red: #cf304a;
+            --red-light: rgba(207, 48, 74, 0.1);
+            --text-primary: #eaecef;
+            --text-secondary: #848e9c;
+            --text-muted: #5e6673;
+            --border: #2b3139;
         }
 
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
         body {
             background: var(--bg-primary);
             color: var(--text-primary);
             font-family: 'Inter', -apple-system, sans-serif;
             min-height: 100vh;
-            margin: 0;
-            padding: 0 0 100px 0;
+            padding-bottom: 90px;
         }
 
-        .app-container {
+        .wallet-container {
             max-width: 480px;
             margin: 0 auto;
-            padding: 20px 16px;
         }
 
-        .page-header {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 24px;
-            padding-bottom: 16px;
+        /* Header */
+        .wallet-header {
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+            padding: 16px 16px 24px;
             border-bottom: 1px solid var(--border);
         }
 
-        .back-btn {
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .header-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
             background: var(--bg-card);
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-            padding: 10px 16px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 500;
+            border: none;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
             transition: all 0.2s;
-            text-decoration: none;
         }
 
-        .back-btn:hover {
-            background: var(--bg-hover);
-            border-color: var(--accent);
+        .header-btn:hover {
+            background: var(--bg-elevated);
             color: var(--text-primary);
         }
 
-        .page-title {
-            font-size: 22px;
-            font-weight: 700;
-            margin: 0;
+        .header-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
         }
 
-        .balance-card {
-            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 24px;
-            margin-bottom: 24px;
-            text-align: center;
+        /* Balance Section */
+        .balance-section {
+            text-align: left;
         }
 
         .balance-label {
-            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
             color: var(--text-secondary);
             margin-bottom: 8px;
         }
 
-        .balance-amount {
-            font-size: 36px;
-            font-weight: 700;
-            color: var(--text-primary);
+        .eye-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
         }
 
-        .action-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 24px;
+        .eye-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .total-balance {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+
+        .balance-change {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .balance-change.positive { color: var(--green); }
+        .balance-change.negative { color: var(--red); }
+
+        .balance-usd {
+            color: var(--text-secondary);
+        }
+
+        /* Action Buttons */
+        .action-row {
+            display: flex;
+            gap: 12px;
+            padding: 20px 16px;
         }
 
         .action-btn {
+            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 12px;
-            padding: 28px 20px;
-            border-radius: 20px;
+            gap: 8px;
+            padding: 16px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
             text-decoration: none;
-            transition: all 0.3s;
-            border: 1px solid transparent;
+            color: var(--text-primary);
+            transition: all 0.2s;
         }
 
-        .action-btn.deposit {
-            background: linear-gradient(135deg, rgba(63, 185, 80, 0.15) 0%, rgba(63, 185, 80, 0.05) 100%);
-            border-color: rgba(63, 185, 80, 0.3);
+        .action-btn:hover {
+            background: var(--bg-elevated);
+            border-color: var(--accent);
         }
 
-        .action-btn.deposit:hover {
-            background: linear-gradient(135deg, rgba(63, 185, 80, 0.25) 0%, rgba(63, 185, 80, 0.1) 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(63, 185, 80, 0.2);
-        }
-
-        .action-btn.withdraw {
-            background: linear-gradient(135deg, rgba(248, 81, 73, 0.15) 0%, rgba(248, 81, 73, 0.05) 100%);
-            border-color: rgba(248, 81, 73, 0.3);
-        }
-
-        .action-btn.withdraw:hover {
-            background: linear-gradient(135deg, rgba(248, 81, 73, 0.25) 0%, rgba(248, 81, 73, 0.1) 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(248, 81, 73, 0.2);
+        .action-btn:active {
+            transform: scale(0.98);
         }
 
         .action-icon {
-            width: 56px;
-            height: 56px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -150,73 +184,153 @@
         }
 
         .action-btn.deposit .action-icon {
-            background: linear-gradient(135deg, #3fb950 0%, #2ea043 100%);
+            background: var(--green-light);
+            color: var(--green);
         }
 
         .action-btn.withdraw .action-icon {
-            background: linear-gradient(135deg, #f85149 0%, #da3633 100%);
+            background: var(--red-light);
+            color: var(--red);
+        }
+
+        .action-btn.trade .action-icon {
+            background: rgba(240, 185, 11, 0.1);
+            color: var(--accent);
         }
 
         .action-icon svg {
-            width: 28px;
-            height: 28px;
-            fill: white;
+            width: 22px;
+            height: 22px;
+            fill: currentColor;
         }
 
-        .action-label {
+        .action-text {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Assets Section */
+        .section {
+            padding: 0 16px;
+            margin-bottom: 16px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .section-title {
             font-size: 16px;
             font-weight: 600;
-            color: var(--text-primary);
         }
 
-        .action-desc {
+        .section-link {
+            font-size: 13px;
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .asset-list {
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .asset-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s;
+        }
+
+        .asset-item:last-child {
+            border-bottom: none;
+        }
+
+        .asset-item:hover {
+            background: var(--bg-elevated);
+        }
+
+        .asset-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .asset-icon.usdt { background: #26a17b; color: white; }
+        .asset-icon.btc { background: #f7931a; color: white; }
+        .asset-icon.eth { background: #627eea; color: white; }
+        .asset-icon.ton { background: #0088cc; color: white; }
+
+        .asset-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .asset-name {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .asset-fullname {
             font-size: 12px;
             color: var(--text-secondary);
         }
 
+        .asset-balance {
+            text-align: right;
+        }
+
+        .asset-amount {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .asset-value {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Quick Info */
+        .quick-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 0 16px;
+            margin-bottom: 16px;
+        }
+
         .info-card {
             background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px;
+            border-radius: 12px;
+            padding: 16px;
         }
 
-        .info-title {
-            font-size: 14px;
+        .info-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .info-value {
+            font-size: 18px;
             font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
-        .info-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .info-list li {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border);
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-
-        .info-list li:last-child {
-            border-bottom: none;
-        }
-
-        .info-list li svg {
-            width: 20px;
-            height: 20px;
-            fill: var(--accent);
-            flex-shrink: 0;
-        }
+        .info-value.green { color: var(--green); }
 
         /* Bottom Navigation */
         .bottom-nav {
@@ -244,9 +358,7 @@
             padding: 4px 16px;
         }
 
-        .nav-item.active {
-            color: var(--accent);
-        }
+        .nav-item.active { color: var(--accent); }
 
         .nav-item.active::before {
             content: '';
@@ -272,63 +384,155 @@
             fill: currentColor;
         }
 
-        .nav-label {
-            font-weight: 500;
+        .nav-label { font-weight: 500; }
+
+        /* Skeleton Loading */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-balance {
+            width: 180px;
+            height: 32px;
+            margin-bottom: 8px;
+        }
+
+        .skeleton-text {
+            width: 100px;
+            height: 16px;
         }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <div class="page-header">
-        <a href="index.html" class="back-btn">← Назад</a>
-        <h1 class="page-title">💳 Кошелек</h1>
+<div class="wallet-container">
+    <!-- Header -->
+    <div class="wallet-header">
+        <div class="header-top">
+            <span class="header-title">Кошелек</span>
+            <div class="header-actions">
+                <a href="index.html" class="header-btn" title="На главную">
+                    <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                </a>
+                <a href="support.html" class="header-btn" title="Поддержка">
+                    <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+                </a>
+            </div>
+        </div>
+
+        <div class="balance-section">
+            <div class="balance-label">
+                Общий баланс
+                <button class="eye-btn" id="toggleBalance" title="Скрыть баланс">
+                    <svg viewBox="0 0 24 24" id="eyeIcon"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                </button>
+            </div>
+            <div class="total-balance" id="totalBalance">
+                <span class="skeleton skeleton-balance"></span>
+            </div>
+            <div class="balance-change positive" id="balanceChange">
+                <span class="skeleton skeleton-text"></span>
+            </div>
+        </div>
     </div>
 
-    <div class="balance-card">
-        <div class="balance-label">Доступный баланс</div>
-        <div class="balance-amount" id="balanceDisplay">0.00 USDT</div>
-    </div>
-
-    <div class="action-buttons">
+    <!-- Action Buttons -->
+    <div class="action-row">
         <a href="deposit.html" class="action-btn deposit">
             <div class="action-icon">
-                <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
             </div>
-            <span class="action-label">Пополнить</span>
-            <span class="action-desc">Через криптовалюту</span>
+            <span class="action-text">Пополнить</span>
         </a>
         <a href="withdraw.html" class="action-btn withdraw">
             <div class="action-icon">
-                <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M12 4l1.41 1.41L7.83 11H20v2H7.83l5.58 5.59L12 20l-8-8z"/></svg>
             </div>
-            <span class="action-label">Вывести</span>
-            <span class="action-desc">На ваш кошелек</span>
+            <span class="action-text">Вывести</span>
+        </a>
+        <a href="trading.html" class="action-btn trade">
+            <div class="action-icon">
+                <svg viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg>
+            </div>
+            <span class="action-text">Торговля</span>
         </a>
     </div>
 
-    <div class="info-card">
-        <div class="info-title">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="var(--accent)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-            Информация
+    <!-- Quick Info -->
+    <div class="quick-info">
+        <div class="info-card">
+            <div class="info-label">Доступно для вывода</div>
+            <div class="info-value" id="availableBalance">$0.00</div>
         </div>
-        <ul class="info-list">
-            <li>
-                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                Мгновенное зачисление депозитов
-            </li>
-            <li>
-                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                Вывод обрабатывается до 24 часов
-            </li>
-            <li>
-                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                Комиссия сети оплачивается отдельно
-            </li>
-        </ul>
+        <div class="info-card">
+            <div class="info-label">Активные сделки</div>
+            <div class="info-value green" id="activeTrades">0</div>
+        </div>
+    </div>
+
+    <!-- Assets -->
+    <div class="section">
+        <div class="section-header">
+            <span class="section-title">Активы</span>
+        </div>
+        <div class="asset-list" id="assetList">
+            <div class="asset-item">
+                <div class="asset-icon usdt">₮</div>
+                <div class="asset-info">
+                    <div class="asset-name">USDT</div>
+                    <div class="asset-fullname">Tether</div>
+                </div>
+                <div class="asset-balance">
+                    <div class="asset-amount" id="usdtBalance">0.00</div>
+                    <div class="asset-value" id="usdtValue">≈ $0.00</div>
+                </div>
+            </div>
+            <div class="asset-item">
+                <div class="asset-icon btc">₿</div>
+                <div class="asset-info">
+                    <div class="asset-name">BTC</div>
+                    <div class="asset-fullname">Bitcoin</div>
+                </div>
+                <div class="asset-balance">
+                    <div class="asset-amount" id="btcBalance">0.00000000</div>
+                    <div class="asset-value" id="btcValue">≈ $0.00</div>
+                </div>
+            </div>
+            <div class="asset-item">
+                <div class="asset-icon eth">Ξ</div>
+                <div class="asset-info">
+                    <div class="asset-name">ETH</div>
+                    <div class="asset-fullname">Ethereum</div>
+                </div>
+                <div class="asset-balance">
+                    <div class="asset-amount" id="ethBalance">0.00000000</div>
+                    <div class="asset-value" id="ethValue">≈ $0.00</div>
+                </div>
+            </div>
+            <div class="asset-item">
+                <div class="asset-icon ton">◊</div>
+                <div class="asset-info">
+                    <div class="asset-name">TON</div>
+                    <div class="asset-fullname">Toncoin</div>
+                </div>
+                <div class="asset-balance">
+                    <div class="asset-amount" id="tonBalance">0.00</div>
+                    <div class="asset-value" id="tonValue">≈ $0.00</div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
+<!-- Bottom Navigation -->
 <nav class="bottom-nav">
     <a href="index.html" class="nav-item">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span>
@@ -355,23 +559,136 @@
         tg.expand();
     }
 
-    async function loadBalance() {
+    let balanceHidden = false;
+    let userData = null;
+    let prices = { btc: 0, eth: 0, ton: 0 };
+
+    // Toggle balance visibility
+    document.getElementById('toggleBalance').addEventListener('click', () => {
+        balanceHidden = !balanceHidden;
+        updateBalanceDisplay();
+    });
+
+    function formatNumber(num, decimals = 2) {
+        return parseFloat(num || 0).toLocaleString(undefined, {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals
+        });
+    }
+
+    function hideValue(value) {
+        return '••••••';
+    }
+
+    function updateBalanceDisplay() {
+        if (!userData) return;
+        
+        const usdt = parseFloat(userData.usdt || 0);
+        const btc = parseFloat(userData.btc || 0);
+        const eth = parseFloat(userData.eth || 0);
+        const ton = parseFloat(userData.ton || 0);
+
+        const btcValue = btc * prices.btc;
+        const ethValue = eth * prices.eth;
+        const tonValue = ton * prices.ton;
+        const totalUsd = usdt + btcValue + ethValue + tonValue;
+
+        // Update total balance
+        document.getElementById('totalBalance').innerHTML = balanceHidden 
+            ? hideValue() 
+            : `$${formatNumber(totalUsd)}`;
+
+        document.getElementById('balanceChange').innerHTML = balanceHidden 
+            ? '' 
+            : `<span class="balance-usd">≈ ${formatNumber(totalUsd)} USDT</span>`;
+
+        // Update available balance
+        document.getElementById('availableBalance').textContent = balanceHidden 
+            ? hideValue() 
+            : `$${formatNumber(usdt)}`;
+
+        // Update asset balances
+        document.getElementById('usdtBalance').textContent = balanceHidden 
+            ? hideValue() 
+            : formatNumber(usdt);
+        document.getElementById('usdtValue').textContent = balanceHidden 
+            ? '' 
+            : `≈ $${formatNumber(usdt)}`;
+
+        document.getElementById('btcBalance').textContent = balanceHidden 
+            ? hideValue() 
+            : formatNumber(btc, 8);
+        document.getElementById('btcValue').textContent = balanceHidden 
+            ? '' 
+            : `≈ $${formatNumber(btcValue)}`;
+
+        document.getElementById('ethBalance').textContent = balanceHidden 
+            ? hideValue() 
+            : formatNumber(eth, 8);
+        document.getElementById('ethValue').textContent = balanceHidden 
+            ? '' 
+            : `≈ $${formatNumber(ethValue)}`;
+
+        document.getElementById('tonBalance').textContent = balanceHidden 
+            ? hideValue() 
+            : formatNumber(ton, 4);
+        document.getElementById('tonValue').textContent = balanceHidden 
+            ? '' 
+            : `≈ $${formatNumber(tonValue)}`;
+
+        // Update eye icon
+        document.getElementById('eyeIcon').innerHTML = balanceHidden 
+            ? '<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>'
+            : '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>';
+    }
+
+    async function loadPrices() {
+        try {
+            const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbols=["BTCUSDT","ETHUSDT","TONUSDT"]');
+            const data = await res.json();
+            data.forEach(item => {
+                if (item.symbol === 'BTCUSDT') prices.btc = parseFloat(item.price);
+                if (item.symbol === 'ETHUSDT') prices.eth = parseFloat(item.price);
+                if (item.symbol === 'TONUSDT') prices.ton = parseFloat(item.price);
+            });
+        } catch (e) {
+            console.log('Price fetch error:', e);
+        }
+    }
+
+    async function loadData() {
         const telegramId = tg?.initDataUnsafe?.user?.id || localStorage.getItem('nexo_guest_telegram_id');
         if (!telegramId) return;
         
         try {
+            // Load prices first
+            await loadPrices();
+
+            // Load user data
             const res = await fetch(`/api/profile/${telegramId}`);
             if (res.ok) {
                 const data = await res.json();
-                const usdt = parseFloat(data.data?.usdt || 0);
-                document.getElementById('balanceDisplay').textContent = `${usdt.toLocaleString(undefined, {minimumFractionDigits: 2})} USDT`;
+                userData = data.data;
+                updateBalanceDisplay();
+            }
+
+            // Load active trades count
+            const tradesRes = await fetch(`/api/trades/history/${telegramId}?limit=100`);
+            if (tradesRes.ok) {
+                const tradesData = await tradesRes.json();
+                const activeTrades = (tradesData.data || []).filter(t => t.status === 'active').length;
+                document.getElementById('activeTrades').textContent = activeTrades;
             }
         } catch (e) {
-            console.error('Balance load error:', e);
+            console.error('Data load error:', e);
+            document.getElementById('totalBalance').textContent = '$0.00';
+            document.getElementById('balanceChange').innerHTML = '';
         }
     }
 
-    loadBalance();
+    loadData();
+    // Refresh every 30 seconds
+    setInterval(loadData, 30000);
 </script>
 </body>
 </html>
