@@ -346,6 +346,13 @@
             justify-content: space-around;
             align-items: center;
             min-height: 70px;
+            transition: transform 0.15s ease;
+        }
+        
+        /* Hide nav when keyboard is open */
+        body.keyboard-open .bottom-nav {
+            transform: translateY(100%);
+            pointer-events: none;
         }
 
         .nav-item {
@@ -672,7 +679,7 @@
                 if (item.symbol === 'TONUSDT') prices.ton = parseFloat(item.price);
             });
         } catch (e) {
-            console.log('Price fetch error:', e);
+            /* silent */
         }
     }
 
@@ -700,7 +707,6 @@
                 document.getElementById('activeTrades').textContent = activeTrades;
             }
         } catch (e) {
-            console.error('Data load error:', e);
             document.getElementById('totalBalance').textContent = '$0.00';
             document.getElementById('balanceChange').innerHTML = '';
         }

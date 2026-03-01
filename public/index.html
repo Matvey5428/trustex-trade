@@ -612,6 +612,13 @@
       justify-content: space-around;
       align-items: center;
       min-height: 70px;
+      transition: transform 0.15s ease;
+    }
+    
+    /* Hide nav when keyboard is open */
+    body.keyboard-open .bottom-nav {
+      transform: translateY(100%);
+      pointer-events: none;
     }
 
     .nav-item {
@@ -1534,7 +1541,7 @@
       updateTicker('SOL', 'tickerSolPrice', 'tickerSolChange', 'tickerSolPrice2', 'tickerSolChange2');
       updateTicker('XRP', 'tickerXrpPrice', 'tickerXrpChange', 'tickerXrpPrice2', 'tickerXrpChange2');
     } catch (e) {
-      console.error('Ticker update error:', e);
+      /* silent */
     }
   }
 
@@ -1588,10 +1595,7 @@
   async function loadUserData() {
     try {
       const user = window.CURRENT_USER;
-      if (!user) {
-        console.warn('No user data available');
-        return;
-      }
+      if (!user) return;
 
       // Установить глобальный userId
       userId = user.telegram_id;
@@ -1685,7 +1689,6 @@
       
       log('✅ User data loaded:', user);
     } catch (e) {
-      console.error('❌ Error loading user data:', e.message);
       document.getElementById('userIdDisplay').textContent = '❌ Ошибка';
     }
   }
@@ -1716,7 +1719,6 @@
         alert(data.error || 'Error');
       }
     } catch (e) {
-      console.error('Verification request error:', e);
       alert('Error submitting request');
     }
   }
@@ -1735,7 +1737,7 @@
         filterHistory(currentHistoryFilter);
       }
     } catch (e) {
-      console.error('Error loading transaction history:', e);
+      /* silent */
     }
   }
 
@@ -1759,7 +1761,7 @@
         updateEl('maxWin', `+${a.maxWin || '0.00'} USDT`);
         updateEl('maxLoss', `-${a.maxLoss || '0.00'} USDT`);
         updateEl('profitFactor', a.profitFactor || '0.00');
-    } catch (e) { console.error('loadAnalyticsData error:', e); }
+    } catch (e) { /* silent */ }
   }
 
   async function loadPeriodStats() {
@@ -1790,7 +1792,7 @@
           }
         }
       }
-    } catch (e) { console.error('loadPeriodStats error:', e); }
+    } catch (e) { /* silent */ }
   }
 
   let pnlChart = null;
@@ -1895,7 +1897,7 @@
         }
       });
       
-    } catch (e) { console.error('loadPnlChart error:', e); }
+    } catch (e) { /* silent */ }
   }
 
   function updateFilterCounts() {
@@ -1991,7 +1993,7 @@
         badge.style.display = 'none';
       }
     } catch (e) {
-      console.error('Check unread error:', e);
+      /* silent */
     }
   }
 
@@ -2025,7 +2027,6 @@
       checkUnreadSupport();
       log('✅ Init complete');
     } catch (e) {
-      console.error('❌ Initialization error:', e.message);
       alert('Ошибка авторизации: ' + e.message);
     }
   });

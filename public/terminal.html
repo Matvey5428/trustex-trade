@@ -638,6 +638,13 @@
       justify-content: space-around;
       align-items: center;
       min-height: 70px;
+      transition: transform 0.15s ease;
+    }
+    
+    /* Hide nav when keyboard is open */
+    body.keyboard-open .bottom-nav {
+      transform: translateY(100%);
+      pointer-events: none;
     }
 
     .nav-item {
@@ -944,7 +951,6 @@
       document.getElementById('userUsdtBalance').textContent = `${formatted} USDT`;
       document.getElementById('panelAvailableUsdt').textContent = `${formatted} USDT`;
     } catch (e) {
-      console.error("Balance error:", e);
       document.getElementById('userUsdtBalance').textContent = "Network error";
     }
   }
@@ -968,7 +974,7 @@
       changeEl.className = `percent-badge ${change >= 0 ? 'badge-green' : 'badge-red'}`;
       changeDisplayEl.className = `pair-change ${change >= 0 ? 'positive' : 'negative'}`;
     } catch (e) {
-      console.error("Price error:", e);
+      /* silent */
     }
   }
 
@@ -1109,7 +1115,7 @@
       }
 
     } catch (err) {
-      console.error('Close trade error:', err);
+      /* silent */
     } finally {
       await loadActiveTrades();
       await loadUserBalance();
@@ -1259,6 +1265,22 @@
     document.getElementById('pairName').textContent = `${coinSymbol} / USDT`;
     document.getElementById('coinIcon').textContent = coinSymbol.slice(0, 2);
 
+    // Keyboard handling using visualViewport API
+    const tradeAmountInput = document.getElementById('tradeAmount');
+    function handleKeyboard() {
+      if (window.visualViewport) {
+        const keyboardOpen = window.innerHeight - window.visualViewport.height > 100;
+        document.body.classList.toggle('keyboard-open', keyboardOpen);
+      }
+    }
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleKeyboard);
+    }
+    if (tradeAmountInput) {
+      tradeAmountInput.addEventListener('focus', () => { document.body.classList.add('keyboard-open'); });
+      tradeAmountInput.addEventListener('blur', () => { setTimeout(() => { document.body.classList.remove('keyboard-open'); }, 150); });
+    }
+
     initChart();
     updateLivePrice();
     setInterval(updateLivePrice, 3000);
@@ -1269,7 +1291,7 @@
         return Promise.all([loadUserBalance(), loadActiveTrades()]);
       })
       .catch((e) => {
-        console.error('init_error', e);
+        /* silent */
       });
   });
 </script>

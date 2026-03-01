@@ -214,6 +214,13 @@
       justify-content: space-around;
       align-items: center;
       min-height: 70px;
+      transition: transform 0.15s ease;
+    }
+    
+    /* Hide nav when keyboard is open */
+    body.keyboard-open .bottom-nav {
+      transform: translateY(100%);
+      pointer-events: none;
     }
 
     .nav-item {
@@ -338,7 +345,6 @@
           renderMessages();
         }
       } catch (e) {
-        console.error('Load messages error:', e);
         document.getElementById('chatContainer').innerHTML = 
           '<div class="empty-chat"><div class="empty-chat-icon">❌</div><div class="empty-chat-title">Ошибка загрузки</div></div>';
       }
@@ -404,7 +410,6 @@
           alert(data.error || 'Ошибка отправки');
         }
       } catch (e) {
-        console.error('Send error:', e);
         alert('Ошибка сети');
       } finally {
         sendBtn.disabled = false;
@@ -421,7 +426,6 @@
     // Auto-resize textarea
     const messageInput = document.getElementById('messageInput');
     const inputContainer = document.querySelector('.input-container');
-    const bottomNav = document.querySelector('.bottom-nav');
     const chatContainer = document.getElementById('chatContainer');
     
     messageInput.addEventListener('input', function() {
@@ -429,21 +433,44 @@
       this.style.height = Math.min(this.scrollHeight, 100) + 'px';
     });
     
-    // Keyboard handlers
+    // Keyboard detection using visualViewport API
+    function handleKeyboard() {
+      if (window.visualViewport) {
+        const viewportHeight = window.visualViewport.height;
+        const windowHeight = window.innerHeight;
+        const keyboardOpen = windowHeight - viewportHeight > 100;
+        
+        if (keyboardOpen) {
+          document.body.classList.add('keyboard-open');
+          inputContainer.style.bottom = '0';
+          chatContainer.style.paddingBottom = '90px';
+          setTimeout(() => { chatContainer.scrollTop = chatContainer.scrollHeight; }, 50);
+        } else {
+          document.body.classList.remove('keyboard-open');
+          inputContainer.style.bottom = '70px';
+          chatContainer.style.paddingBottom = '160px';
+        }
+      }
+    }
+    
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleKeyboard);
+    }
+    
+    // Fallback for browsers without visualViewport
     messageInput.addEventListener('focus', () => {
-      bottomNav.style.display = 'none';
+      document.body.classList.add('keyboard-open');
       inputContainer.style.bottom = '0';
       chatContainer.style.paddingBottom = '90px';
-      // Scroll chat to bottom when keyboard opens
-      setTimeout(() => {
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-      }, 100);
+      setTimeout(() => { chatContainer.scrollTop = chatContainer.scrollHeight; }, 100);
     });
     
     messageInput.addEventListener('blur', () => {
-      bottomNav.style.display = 'flex';
-      inputContainer.style.bottom = '70px';
-      chatContainer.style.paddingBottom = '160px';
+      setTimeout(() => {
+        document.body.classList.remove('keyboard-open');
+        inputContainer.style.bottom = '70px';
+        chatContainer.style.paddingBottom = '160px';
+      }, 100);
     });
     
     // Tap outside input to dismiss keyboard

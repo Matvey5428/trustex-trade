@@ -31,7 +31,6 @@ const API = {
 
       // Если 401 - пользователь не авторизован или сессия истекла
       if (response.status === 401) {
-        console.warn('⚠️ Unauthorized (401) - session expired');
         TelegramAuth.logout();
         window.location.href = '/';
         throw new Error('Session expired');
@@ -39,13 +38,11 @@ const API = {
 
       // Если 403 - доступ запрещён
       if (response.status === 403) {
-        console.error('❌ Forbidden (403) - access denied');
         throw new Error('Access denied');
       }
 
       // Если 429 - rate limit
       if (response.status === 429) {
-        console.error('❌ Too many requests (429)');
         throw new Error('Too many requests. Please try again later.');
       }
 
@@ -60,7 +57,6 @@ const API = {
 
       return data;
     } catch (error) {
-      console.error(`❌ API ${options.method || 'GET'} ${endpoint}:`, error.message);
       throw error;
     }
   },

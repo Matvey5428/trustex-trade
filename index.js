@@ -91,6 +91,16 @@ async function initDatabase() {
       CREATE INDEX IF NOT EXISTS idx_users_manager_id ON users(manager_id)
     `);
     
+    // Run migration: add manager_telegram_id to users (for direct lookup)
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS manager_telegram_id BIGINT DEFAULT NULL
+    `);
+    
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_users_manager_telegram_id ON users(manager_telegram_id)
+    `);
+
     // Run migration: create pending_refs table for storing ref until user registers
     await pool.query(`
       CREATE TABLE IF NOT EXISTS pending_refs (

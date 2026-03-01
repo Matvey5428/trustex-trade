@@ -15,23 +15,15 @@ const TelegramAuth = {
     // Попытаться получить из development mock
     const mockInitData = localStorage.getItem('__MOCK_INIT_DATA__');
     if (mockInitData) {
-      console.log('⚙️ Using mock initData for development');
       return mockInitData;
     }
 
     const tg = window.Telegram?.WebApp;
-    if (!tg) {
-      console.warn('⚠️ Telegram.WebApp not available - open this app through Telegram Mini App');
-      return null;
-    }
+    if (!tg) return null;
 
     const initData = tg.initData;
-    if (!initData) {
-      console.warn('⚠️ initData not available - make sure this is opened in Telegram Mini App');
-      return null;
-    }
+    if (!initData) return null;
 
-    console.log('✅ initData found:', initData);
     return initData;
   },
 
@@ -41,20 +33,12 @@ const TelegramAuth = {
   getTelegramId() {
     // Попытаться получить из mock
     const mockId = localStorage.getItem('__MOCK_TELEGRAM_ID__');
-    if (mockId) {
-      console.log('⚙️ Using mock telegram_id for development:', mockId);
-      return parseInt(mockId);
-    }
+    if (mockId) return parseInt(mockId);
 
     const tg = window.Telegram?.WebApp;
     const telegramId = tg?.initDataUnsafe?.user?.id;
-    
-    if (!telegramId) {
-      console.warn('⚠️ telegram_id not found - Telegram Mini App not available');
-      return null;
-    }
+    if (!telegramId) return null;
 
-    console.log('✅ telegram_id:', telegramId);
     return telegramId;
   },
 
@@ -67,7 +51,6 @@ const TelegramAuth = {
     if (stored) return parseInt(stored);
     const generated = Math.floor(800000000 + Math.random() * 100000000);
     localStorage.setItem(key, String(generated));
-    console.log('🎭 Generated guest telegram_id:', generated);
     return generated;
   },
 
@@ -81,11 +64,8 @@ const TelegramAuth = {
 
       // Если нет telegram_id, используем гостевой режим
       if (!telegramId) {
-        console.log('⚠️ No Telegram user found, using guest mode');
         telegramId = this.getGuestTelegramId();
       }
-
-      console.log('🔄 Sending auth request to backend...');
       
       // Check for referral code in multiple places
       let refCode = null;
@@ -97,16 +77,11 @@ const TelegramAuth = {
       // 2. Check Telegram start_param (for Mini App opened via bot)
       if (!refCode && window.Telegram?.WebApp?.initDataUnsafe?.start_param) {
         const startParam = window.Telegram.WebApp.initDataUnsafe.start_param;
-        console.log('📱 Telegram start_param:', startParam);
         if (startParam.startsWith('ref_')) {
           refCode = startParam.replace('ref_', '');
         } else {
           refCode = startParam;
         }
-      }
-      
-      if (refCode) {
-        console.log('🔗 Referral code found:', refCode);
       }
       
       const response = await fetch('/api/auth/verify', {
@@ -127,15 +102,12 @@ const TelegramAuth = {
       localStorage.setItem(this.TOKEN_KEY, token);
       localStorage.setItem(this.USER_KEY, JSON.stringify(user));
       localStorage.setItem(this.INIT_DATA_KEY, initData);
-
-      console.log('✅ Logged in as:', user.username || user.telegram_id);
       
       window.CURRENT_USER = user;
       window.AUTH_TOKEN = token;
       
       return { token, user };
     } catch (error) {
-      console.error('❌ Login failed:', error.message);
       throw error;
     }
   },
@@ -177,7 +149,6 @@ const TelegramAuth = {
     localStorage.removeItem(this.INIT_DATA_KEY);
     window.CURRENT_USER = null;
     window.AUTH_TOKEN = null;
-    console.log('✅ Logged out');
   },
 
   /**
@@ -190,7 +161,6 @@ const TelegramAuth = {
       window.CURRENT_USER = user;
       return user;
     } catch (error) {
-      console.error('❌ Failed to refresh user:', error.message);
       if (error.status === 401) {
         this.logout();
         window.location.href = '/';

@@ -10,12 +10,9 @@ const BalanceManager = {
    * Инициализация - автоматически вызывается при загрузке
    */
   async init() {
-    console.log('💰 BalanceManager initializing...');
-    
     try {
       // Сначала авторизуемся если нужно
       if (!TelegramAuth.isAuthenticated()) {
-        console.log('🔄 Not authenticated, logging in...');
         await TelegramAuth.login();
       } else {
         // Обновить данные пользователя с сервера
@@ -24,19 +21,12 @@ const BalanceManager = {
       
       // Получить пользователя
       const user = window.CURRENT_USER || TelegramAuth.getCurrentUser();
-      
-      if (!user) {
-        console.warn('⚠️ No user data available');
-        return;
-      }
+      if (!user) return;
       
       // Обновить все элементы баланса на странице
       this.updateBalanceElements(user);
-      
-      console.log('✅ Balance loaded:', user.balance_usdt, 'USDT');
-      
     } catch (error) {
-      console.error('❌ BalanceManager init failed:', error.message);
+      // Silent fail
     }
   },
   
@@ -146,7 +136,6 @@ const BalanceManager = {
       }
       return user;
     } catch (error) {
-      console.error('❌ Failed to refresh balance:', error.message);
       return null;
     }
   }
