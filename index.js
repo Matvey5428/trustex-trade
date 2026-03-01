@@ -132,8 +132,15 @@ async function initDatabase() {
         title VARCHAR(100) NOT NULL,
         message TEXT NOT NULL,
         created_by VARCHAR(50),
+        owner_id VARCHAR(50),
         created_at TIMESTAMP DEFAULT NOW()
       )
+    `);
+
+    // Add owner_id column if not exists (for personal templates)
+    await pool.query(`
+      ALTER TABLE message_templates 
+      ADD COLUMN IF NOT EXISTS owner_id VARCHAR(50)
     `);
 
     // Performance indexes

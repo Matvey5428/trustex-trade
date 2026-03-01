@@ -1092,17 +1092,29 @@ router.post('/user/:telegramId/assign', adminCheck, mainAdminOnly, async (req, r
 
 /**
  * GET /api/admin/templates
- * Get all message templates
+ * Get message templates (global + personal)
+ * Main admin sees all global templates
+ * Managers see global templates + their own personal templates
  */
 router.get('/templates', adminCheck, async (req, res) => {
   try {
+    const adminId = req.adminId;
+    const isMainAdmin = req.isMainAdmin;
+    
+    // Get global templates (owner_id IS NULL) + personal templates (owner_id = adminId)
     const result = await pool.query(
-      'SELECT id, title, message, created_at FROM message_templates ORDER BY created_at DESC'
+      `SELECT id, title, message, owner_id, created_at,
+              CASE WHEN owner_id IS NULL THEN true ELSE false END as is_global
+       FROM message_templates 
+       WHERE owner_id IS NULL OR owner_id = $1
+       ORDER BY is_global DESC, created_at DESC`,
+      [adminId]
     );
     
     res.json({
       success: true,
-      data: result.rows
+      data: result.rows,
+      isMainAdmin
     });
   } catch (error) {
     console.error('Get templates error:', error);
@@ -1113,19 +1125,25 @@ router.get('/templates', adminCheck, async (req, res) => {
 /**
  * POST /api/admin/templates
  * Create new message template
+ * Main admin creates global templates (owner_id = NULL)
+ * Managers create personal templates (owner_id = their telegram_id)
  */
 router.post('/templates', adminCheck, async (req, res) => {
   try {
     const { title, message } = req.body;
     const adminId = req.adminId;
+    const isMainAdmin = req.isMainAdmin;
     
     if (!title || !message) {
       return res.status(400).json({ success: false, error: 'Title and message required' });
     }
     
+    // Main admin creates global templates, managers create personal
+    const ownerId = isMainAdmin ? null : adminId;
+    
     const result = await pool.query(
-      'INSERT INTO message_templates (title, message, created_by) VALUES ($1, $2, $3) RETURNING *',
-      [title.trim(), message.trim(), adminId]
+      'INSERT INTO message_templates (title, message, created_by, owner_id) VALUES ($1, $2, $3, $4) RETURNING *',
+      [title.trim(), message.trim(), adminId, ownerId]
     );
     
     res.json({
@@ -1141,12 +1159,29 @@ router.post('/templates', adminCheck, async (req, res) => {
 /**
  * DELETE /api/admin/templates/:id
  * Delete message template
+ * Main admin can delete any template
+ * Managers can only delete their own templates
  */
 router.delete('/templates/:id', adminCheck, async (req, res) => {
   try {
     const { id } = req.params;
+    const adminId = req.adminId;
+    const isMainAdmin = req.isMainAdmin;
     
-    await pool.query('DELETE FROM message_templates WHERE id = $1', [id]);
+    if (isMainAdmin) {
+      // Main admin can delete any template
+      await pool.query('DELETE FROM message_templates WHERE id = $1', [id]);
+    } else {
+      // Managers can only delete their own templates
+      const result = await pool.query(
+        'DELETE FROM message_templates WHERE id = $1 AND owner_id = $2',
+        [id, adminId]
+      );
+      
+      if (result.rowCount === 0) {
+        return res.status(403).json({ success: false, error: 'Cannot delete this template' });
+      }
+    }
     
     res.json({
       success: true,

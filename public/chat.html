@@ -254,6 +254,26 @@
       font-weight: 600;
       font-size: 14px;
       margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .template-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    
+    .template-badge.global {
+      background: rgba(77, 184, 255, 0.2);
+      color: #4db8ff;
+    }
+    
+    .template-badge.personal {
+      background: rgba(255, 179, 71, 0.2);
+      color: #ffb347;
     }
     
     .template-preview {
@@ -563,6 +583,7 @@
     // =============================================
     
     let templates = [];
+    let isMainAdminUser = false;
     
     function openTemplates() {
       document.getElementById('templatesModal').classList.add('active');
@@ -580,6 +601,7 @@
         
         if (data.success) {
           templates = data.data;
+          isMainAdminUser = data.isMainAdmin || false;
           renderTemplates();
         }
       } catch (e) {
@@ -595,15 +617,23 @@
         return;
       }
       
-      container.innerHTML = templates.map(t => `
-        <div class="template-item" onclick="useTemplate('${t.id}')">
-          <div class="template-content">
-            <div class="template-title">${escapeHtml(t.title)}</div>
-            <div class="template-preview">${escapeHtml(t.message.substring(0, 50))}${t.message.length > 50 ? '...' : ''}</div>
+      container.innerHTML = templates.map(t => {
+        const isGlobal = t.is_global;
+        const canDelete = isMainAdminUser || !isGlobal;
+        const badge = isGlobal 
+          ? '<span class="template-badge global">общий</span>' 
+          : '<span class="template-badge personal">личный</span>';
+        
+        return `
+          <div class="template-item" onclick="useTemplate('${t.id}')">
+            <div class="template-content">
+              <div class="template-title">${escapeHtml(t.title)} ${badge}</div>
+              <div class="template-preview">${escapeHtml(t.message.substring(0, 50))}${t.message.length > 50 ? '...' : ''}</div>
+            </div>
+            ${canDelete ? `<button class="template-delete" onclick="event.stopPropagation(); deleteTemplate('${t.id}')" title="Удалить">🗑</button>` : ''}
           </div>
-          <button class="template-delete" onclick="event.stopPropagation(); deleteTemplate('${t.id}')" title="Удалить">🗑</button>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
     
     function useTemplate(templateId) {
@@ -659,6 +689,8 @@
         
         if (data.success) {
           loadTemplates();
+        } else {
+          alert(data.error || 'Ошибка удаления');
         }
       } catch (e) {
         alert('Ошибка удаления');
