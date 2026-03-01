@@ -19,6 +19,20 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'telegramId is required' });
     }
 
+    // Check if user is blocked
+    const blockedCheck = await pool.query(
+      'SELECT telegram_id FROM blocked_users WHERE telegram_id = $1',
+      [String(telegramId)]
+    );
+    
+    if (blockedCheck.rows.length > 0) {
+      return res.status(403).json({ 
+        error: 'Account blocked', 
+        blocked: true,
+        message: 'Ваш аккаунт заблокирован. Обратитесь в поддержку.'
+      });
+    }
+
     // Try to find existing user
     let result = await pool.query(
       'SELECT * FROM users WHERE telegram_id = $1',

@@ -248,6 +248,9 @@ function registerAdminHandlers() {
           ],
           [
             { text: '💰 Изменить баланс', callback_data: `balance_${user.telegram_id}` }
+          ],
+          [
+            { text: '🗑 Удалить пользователя', callback_data: `delete_${user.telegram_id}` }
           ]
         ]
       };
@@ -451,6 +454,129 @@ function registerAdminHandlers() {
         `💰 Введите новый баланс:\n\n\`/setbalance ${telegramId} [сумма]\`\n\nПример: \`/setbalance ${telegramId} 1000\``,
         { parse_mode: 'Markdown' }
       );
+    }
+    
+    // Delete user - request confirmation
+    if (data.startsWith('delete_') && !data.startsWith('delete_confirm_')) {
+      if (!isMainAdmin(query.from.id)) {
+        return bot.answerCallbackQuery(query.id, { text: '⛔ Только для главного админа' });
+      }
+      
+      const telegramId = data.split('_')[1];
+      
+      try {
+        const result = await pool.query('SELECT first_name, username FROM users WHERE telegram_id = $1', [telegramId]);
+        if (result.rows.length === 0) {
+          return bot.answerCallbackQuery(query.id, { text: '❌ Пользователь не найден' });
+        }
+        
+        const user = result.rows[0];
+        const name = user.first_name || user.username || 'Без имени';
+        
+        bot.answerCallbackQuery(query.id);
+        bot.sendMessage(chatId, 
+          `⚠️ *Подтверждение удаления*\n\n` +
+          `Вы уверены, что хотите удалить пользователя *${name}*?\n\n` +
+          `🆔 Telegram ID: \`${telegramId}\`\n\n` +
+          `❗ Пользователь будет заблокирован и все его данные будут удалены.`,
+          {
+            parse_mode: 'Markdown',
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  { text: '✅ Да, удалить', callback_data: `delete_confirm_${telegramId}` },
+                  { text: '❌ Отмена', callback_data: 'delete_cancel' }
+                ]
+              ]
+            }
+          }
+        );
+      } catch (e) {
+        console.error('Delete user error:', e);
+        bot.answerCallbackQuery(query.id, { text: '❌ Ошибка' });
+      }
+    }
+    
+    // Delete user - confirmed
+    if (data.startsWith('delete_confirm_')) {
+      if (!isMainAdmin(query.from.id)) {
+        return bot.answerCallbackQuery(query.id, { text: '⛔ Только для главного админа' });
+      }
+      
+      const telegramId = data.replace('delete_confirm_', '');
+      
+      try {
+        // Get user info before deletion
+        const userResult = await pool.query('SELECT id, first_name, username FROM users WHERE telegram_id = $1', [telegramId]);
+        
+        if (userResult.rows.length === 0) {
+          bot.answerCallbackQuery(query.id, { text: '❌ Пользователь не найден' });
+          return;
+        }
+        
+        const user = userResult.rows[0];
+        const userId = user.id;
+        const name = user.first_name || user.username || 'Без имени';
+        
+        // Block user in main bot (send block message)
+        try {
+          const { getBot } = require('./bot');
+          const mainBot = getBot();
+          if (mainBot) {
+            await mainBot.sendMessage(telegramId, 
+              '⛔ Ваш аккаунт был заблокирован администратором.\n\n' +
+              'Для получения информации обратитесь в поддержку.'
+            );
+          }
+        } catch (e) {
+          console.log('Could not notify blocked user:', e.message);
+        }
+        
+        // Delete all related data
+        await pool.query('DELETE FROM orders WHERE user_id = $1', [userId]);
+        await pool.query('DELETE FROM transactions WHERE user_id = $1', [userId]);
+        await pool.query('DELETE FROM crypto_invoices WHERE user_id = $1', [userId]);
+        await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+        
+        // Add to blocked list (create table if not exists)
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS blocked_users (
+            telegram_id VARCHAR(50) PRIMARY KEY,
+            reason TEXT,
+            blocked_at TIMESTAMP DEFAULT NOW()
+          )
+        `);
+        await pool.query(
+          'INSERT INTO blocked_users (telegram_id, reason) VALUES ($1, $2) ON CONFLICT (telegram_id) DO NOTHING',
+          [telegramId, 'Deleted by admin']
+        );
+        
+        // Update message
+        bot.editMessageText(
+          `✅ *Пользователь удалён*\n\n` +
+          `👤 ${name}\n` +
+          `🆔 Telegram ID: \`${telegramId}\`\n\n` +
+          `Пользователь заблокирован и удалён из базы данных.`,
+          {
+            chat_id: chatId,
+            message_id: query.message.message_id,
+            parse_mode: 'Markdown'
+          }
+        );
+        
+        bot.answerCallbackQuery(query.id, { text: '✅ Пользователь удалён' });
+        console.log(`🗑 Admin deleted user ${telegramId} (${name})`);
+        
+      } catch (e) {
+        console.error('Delete user error:', e);
+        bot.answerCallbackQuery(query.id, { text: '❌ Ошибка: ' + e.message });
+      }
+    }
+    
+    // Delete cancelled
+    if (data === 'delete_cancel') {
+      bot.answerCallbackQuery(query.id, { text: 'Отменено' });
+      bot.deleteMessage(chatId, query.message.message_id);
     }
     
     // Confirm invoice payment manually

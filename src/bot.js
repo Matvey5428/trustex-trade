@@ -110,6 +110,22 @@ function registerHandlers() {
 
     console.log(`📨 /start from ${user.id} (@${user.username || 'no_username'})${startParam ? ` with param: ${startParam}` : ''}`);
 
+    // Check if user is blocked
+    try {
+      const blockedCheck = await pool.query(
+        'SELECT telegram_id FROM blocked_users WHERE telegram_id = $1',
+        [String(user.id)]
+      );
+      
+      if (blockedCheck.rows.length > 0) {
+        return bot.sendMessage(chatId, 
+          '⛔ Ваш аккаунт заблокирован.\n\nДля получения информации обратитесь в поддержку.'
+        );
+      }
+    } catch (e) {
+      // Table might not exist yet, continue
+    }
+
     // Handle referral link
     if (startParam && startParam.startsWith('ref_')) {
       const refCode = startParam.replace('ref_', '');
