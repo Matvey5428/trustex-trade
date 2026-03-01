@@ -1035,9 +1035,10 @@
       const payload = await response.json();
       const result = payload.data?.result;
       const profit = payload.data?.profit || 0;
+      const totalWin = amount + profit;
 
       if (result === 'win') {
-        const msg = lang === 'ru' ? `✅ Выигрыш! +${profit.toFixed(2)} USDT` : `✅ Trade won! +${profit.toFixed(2)} USDT`;
+        const msg = lang === 'ru' ? `✅ Выигрыш! +${totalWin.toFixed(2)} USDT` : `✅ Trade won! +${totalWin.toFixed(2)} USDT`;
         showTradeNotification(msg, 'win');
       } else {
         const msg = lang === 'ru' ? `❌ Проигрыш. -${amount.toFixed(2)} USDT` : `❌ Trade lost. -${amount.toFixed(2)} USDT`;
