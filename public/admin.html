@@ -1222,7 +1222,12 @@
         
         if (data.success) {
           showToast('✅ Изменения сохранены', 'success');
-          closeModal();
+          // Update currentUser with new values
+          currentUser.balance_usdt = newBalance;
+          currentUser.trade_mode = selectedMode;
+          currentUser.trading_blocked = selectedTradingBlocked;
+          currentUser.needs_verification = needsVerification;
+          currentUser.verified = verified;
           loadUsers();
           loadStats();
         } else {
