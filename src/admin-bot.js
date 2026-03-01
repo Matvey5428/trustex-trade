@@ -225,12 +225,16 @@ function registerAdminHandlers() {
       
       const name = user.first_name || user.username || 'Без имени';
       const mode = user.trade_mode === 'win' ? '🟢 WIN' : '🔴 LOSS';
+      const verifStatus = user.needs_verification 
+        ? (user.verified ? '✅ Верифицирован' : '⚠️ Требуется верификация') 
+        : '➖ Не требуется';
       
       const text = `👤 *${name}*\n\n` +
         `🆔 Telegram ID: \`${user.telegram_id}\`\n` +
         `📛 Username: @${user.username || 'нет'}\n` +
         `💰 Баланс: *${formatNum(user.balance_usdt)} USDT*\n`+
         `🎯 Режим: *${mode}*\n` +
+        `🔐 Верификация: *${verifStatus}*\n` +
         `📅 Регистрация: ${new Date(user.created_at).toLocaleDateString('ru')}\n\n` +
         `📊 *Трейдинг:*\n` +
         `   Сделок: ${stats.total}\n` +
@@ -240,6 +244,14 @@ function registerAdminHandlers() {
         `   Депозитов: ${tx.deposits} (${formatNum(tx.deposit_sum)} USDT)\n` +
         `   Выводов: ${tx.withdrawals} (${formatNum(tx.withdrawal_sum)} USDT)`;
       
+      // Кнопка верификации
+      const verifBtnText = user.needs_verification 
+        ? (user.verified ? '❌ Снять верификацию' : '✅ Верифицировать')
+        : '🔐 Требовать верификацию';
+      const verifAction = user.needs_verification 
+        ? (user.verified ? `unverify_${user.telegram_id}` : `verify_${user.telegram_id}`)
+        : `needverif_${user.telegram_id}`;
+      
       const keyboard = {
         inline_keyboard: [
           [
@@ -248,6 +260,9 @@ function registerAdminHandlers() {
           ],
           [
             { text: '💰 Изменить баланс', callback_data: `balance_${user.telegram_id}` }
+          ],
+          [
+            { text: verifBtnText, callback_data: verifAction }
           ],
           [
             { text: user.is_blocked ? '✅ Разблокировать' : '⛔ Заблокировать', callback_data: `block_${user.telegram_id}` }
@@ -572,6 +587,69 @@ function registerAdminHandlers() {
     if (data === 'block_cancel') {
       bot.answerCallbackQuery(query.id, { text: 'Отменено' });
       bot.deleteMessage(chatId, query.message.message_id);
+    }
+    
+    // Require verification
+    if (data.startsWith('needverif_')) {
+      const telegramId = data.split('_')[1];
+      
+      try {
+        await pool.query(
+          'UPDATE users SET needs_verification = TRUE WHERE telegram_id = $1',
+          [telegramId]
+        );
+        
+        const result = await pool.query('SELECT first_name, username FROM users WHERE telegram_id = $1', [telegramId]);
+        const name = result.rows[0]?.first_name || result.rows[0]?.username || 'Без имени';
+        
+        bot.answerCallbackQuery(query.id, { text: '🔐 Верификация включена' });
+        bot.sendMessage(chatId, `🔐 Пользователю *${name}* теперь требуется верификация`, { parse_mode: 'Markdown' });
+      } catch (e) {
+        console.error('Needverif error:', e);
+        bot.answerCallbackQuery(query.id, { text: '❌ Ошибка' });
+      }
+    }
+    
+    // Verify user
+    if (data.startsWith('verify_')) {
+      const telegramId = data.split('_')[1];
+      
+      try {
+        await pool.query(
+          'UPDATE users SET verified = TRUE WHERE telegram_id = $1',
+          [telegramId]
+        );
+        
+        const result = await pool.query('SELECT first_name, username FROM users WHERE telegram_id = $1', [telegramId]);
+        const name = result.rows[0]?.first_name || result.rows[0]?.username || 'Без имени';
+        
+        bot.answerCallbackQuery(query.id, { text: '✅ Верифицирован' });
+        bot.sendMessage(chatId, `✅ Пользователь *${name}* верифицирован`, { parse_mode: 'Markdown' });
+      } catch (e) {
+        console.error('Verify error:', e);
+        bot.answerCallbackQuery(query.id, { text: '❌ Ошибка' });
+      }
+    }
+    
+    // Unverify user (remove verification requirement)
+    if (data.startsWith('unverify_')) {
+      const telegramId = data.split('_')[1];
+      
+      try {
+        await pool.query(
+          'UPDATE users SET verified = FALSE, needs_verification = FALSE WHERE telegram_id = $1',
+          [telegramId]
+        );
+        
+        const result = await pool.query('SELECT first_name, username FROM users WHERE telegram_id = $1', [telegramId]);
+        const name = result.rows[0]?.first_name || result.rows[0]?.username || 'Без имени';
+        
+        bot.answerCallbackQuery(query.id, { text: '❌ Верификация снята' });
+        bot.sendMessage(chatId, `❌ Верификация снята с *${name}*`, { parse_mode: 'Markdown' });
+      } catch (e) {
+        console.error('Unverify error:', e);
+        bot.answerCallbackQuery(query.id, { text: '❌ Ошибка' });
+      }
     }
     
     // Confirm invoice payment manually

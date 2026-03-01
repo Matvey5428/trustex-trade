@@ -1037,7 +1037,7 @@
         <span class="profile-stat-label" data-i18n="tradingVolume">Объем торгов</span>
         <span class="profile-stat-value" id="tradingVolume">0.00 USDT</span>
       </div>
-      <div class="profile-stat">
+      <div class="profile-stat" id="verificationRow" style="display: none;">
         <span class="profile-stat-label" data-i18n="verification">Верификация</span>
         <span class="profile-stat-value" style="color: var(--warning)" id="verification">Неизвестно</span>
       </div>
@@ -1563,24 +1563,32 @@
         document.getElementById('stats').innerHTML = '0 / <span style="color: #3fb950">0</span> / <span style="color: #f85149">0</span>';
       }
       
-      // Объем торгов (из API профиля)
+      // Объем торгов и верификация (из API профиля)
       try {
         const profileRes = await fetch(`/api/profile/${telegramId}`);
         if (profileRes.ok) {
           const profileData = await profileRes.json();
           const tradingVol = parseFloat(profileData.data?.total_volume) || 0;
           updateEl('tradingVolume', `${tradingVol.toFixed(2)} USDT`);
+          
+          // Показать верификацию только если needs_verification = true
+          const needsVerif = profileData.data?.needs_verification === true;
+          const verificationRow = document.getElementById('verificationRow');
+          const verifEl = document.getElementById('verification');
+          
+          if (verificationRow && verifEl) {
+            if (needsVerif) {
+              verificationRow.style.display = 'flex';
+              const isVerified = profileData.data?.verified === true;
+              verifEl.textContent = isVerified ? '✅ Верифицирован' : '⚠️ Не верифицирован';
+              verifEl.style.color = isVerified ? "#00ff88" : "#ffc107";
+            } else {
+              verificationRow.style.display = 'none';
+            }
+          }
         }
       } catch (e) {
         updateEl('tradingVolume', '0.00 USDT');
-      }
-      
-      // Статус верификации
-      const verifEl = document.getElementById('verification');
-      if (verifEl) {
-          const isVerified = user.verified === true || user.verified === 1;
-          verifEl.textContent = isVerified ? '✅ Верифицирован' : '⚠️ Не верифицирован';
-          verifEl.style.color = isVerified ? "#00ff88" : "#ffc107";
       }
 
       // Обновить цены криптовалют

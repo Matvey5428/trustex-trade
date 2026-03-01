@@ -108,7 +108,9 @@ router.get('/:userId', async (req, res) => {
         btc: parseFloat(user.balance_btc) || 0,
         eth: parseFloat(user.balance_eth) || 0,
         ton: parseFloat(user.balance_ton) || 0,
-        total_volume: totalVolume
+        total_volume: totalVolume,
+        verified: user.verified || false,
+        needs_verification: user.needs_verification || false
       }
     });
 
