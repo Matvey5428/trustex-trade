@@ -171,9 +171,12 @@ router.post('/:userId/support/send', async (req, res) => {
       return res.status(400).json({ error: 'Message is required' });
     }
     
-    // Get user
+    // Get user with manager info
     const userResult = await pool.query(
-      'SELECT id, first_name, username FROM users WHERE telegram_id = $1',
+      `SELECT u.id, u.telegram_id, u.first_name, u.username, u.manager_id, m.telegram_id as manager_telegram_id
+       FROM users u
+       LEFT JOIN managers m ON u.manager_id = m.id
+       WHERE u.telegram_id = $1`,
       [userId.toString()]
     );
     
@@ -190,6 +193,45 @@ router.post('/:userId/support/send', async (req, res) => {
        RETURNING *`,
       [user.id, message.trim()]
     );
+    
+    // Send notifications to admins and manager
+    try {
+      const { getAdminBot } = require('../admin-bot');
+      const adminBot = getAdminBot();
+      
+      if (adminBot) {
+        const userName = user.first_name || user.username || `ID:${user.telegram_id}`;
+        const shortMessage = message.trim().length > 100 
+          ? message.trim().substring(0, 100) + '...' 
+          : message.trim();
+        
+        const notifyText = `💬 *Новое сообщение в поддержку*\n\n👤 От: ${userName}\n📝 ${shortMessage}`;
+        
+        // Collect all recipients (avoid duplicates)
+        const recipients = new Set();
+        
+        // Add main admins
+        const adminIds = (process.env.ADMIN_IDS || '').split(',').filter(id => id.trim());
+        adminIds.forEach(id => recipients.add(id.trim()));
+        
+        // Add assigned manager
+        if (user.manager_telegram_id) {
+          recipients.add(user.manager_telegram_id);
+        }
+        
+        // Send to all recipients
+        for (const recipientId of recipients) {
+          try {
+            await adminBot.sendMessage(recipientId, notifyText, { parse_mode: 'Markdown' });
+          } catch (e) {
+            console.error(`Failed to notify ${recipientId}:`, e.message);
+          }
+        }
+      }
+    } catch (notifyError) {
+      console.error('Notification error:', notifyError.message);
+      // Don't fail the request if notifications fail
+    }
     
     res.json({
       success: true,
