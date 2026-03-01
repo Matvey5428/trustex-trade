@@ -90,6 +90,7 @@ const i18n = {
     withdrawFunds: 'Withdraw Funds',
     withdrawSuccess: 'Withdrawal request submitted',
     insufficientFunds: 'Insufficient funds',
+    verificationRequired: 'Verification required for withdrawal. Please verify in your profile.',
     minWithdraw: 'Minimum withdrawal',
     
     // Exchange page
@@ -250,6 +251,7 @@ const i18n = {
     withdrawFunds: 'Вывести средства',
     withdrawSuccess: 'Заявка на вывод создана',
     insufficientFunds: 'Недостаточно средств',
+    verificationRequired: 'Для вывода средств требуется верификация. Пройдите верификацию в профиле.',
     minWithdraw: 'Мин. вывод',
     
     // Exchange page

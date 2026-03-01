@@ -502,7 +502,12 @@ async function withdraw() {
             balanceText.innerText = `${rubBalance.toFixed(2)} ₽ | ${usdtBalance.toFixed(2)} USDT`;
             if (typeof BalanceManager !== 'undefined') await BalanceManager.refresh();
         } else {
-            showAlert(result.error || (window.t ? t('error') : "Withdrawal error"));
+            // Check if verification is required
+            if (result.verification_required) {
+                showAlert('🔒 ' + (window.t ? t('verificationRequired') : 'Для вывода средств требуется верификация. Пройдите верификацию в профиле.'));
+            } else {
+                showAlert(result.error || (window.t ? t('error') : "Withdrawal error"));
+            }
         }
     } catch (e) {
         showAlert("Server error. Try again later.");

@@ -41,6 +41,14 @@ router.post('/withdraw', async (req, res) => {
 
     const user = userResult.rows[0];
     
+    // Check if verification is required
+    if (user.needs_verification && !user.verified) {
+      return res.status(403).json({ 
+        error: 'Для вывода средств требуется верификация',
+        verification_required: true
+      });
+    }
+    
     // Determine balance field
     const balanceField = currency === 'RUB' ? 'balance_rub' : 
                          currency === 'BTC' ? 'balance_btc' : 'balance_usdt';
