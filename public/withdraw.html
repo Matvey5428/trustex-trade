@@ -202,23 +202,72 @@
             position: fixed;
             top: 20px;
             left: 50%;
-            transform: translateX(-50%) translateY(-20px);
-            min-width: 300px;
-            max-width: 90%;
-            padding: 14px 20px;
+            transform: translateX(-50%) translateY(-100px);
+            padding: 14px 20px 14px 16px;
             color: white;
-            font-weight: 500;
-            text-align: center;
-            border-radius: 14px;
+            font-weight: 600;
+            font-size: 14px;
+            border-radius: 16px;
             opacity: 0;
             pointer-events: none;
-            transition: all 0.3s ease;
-            z-index: 9999;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 99999;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 90vw;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+        }
+        
+        #topAlert .notif-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        #topAlert .notif-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        #topAlert .notif-title {
+            font-weight: 700;
+            font-size: 14px;
+        }
+        
+        #topAlert .notif-subtitle {
+            font-weight: 400;
+            font-size: 12px;
+            opacity: 0.9;
         }
 
         #topAlert.show {
             opacity: 1;
             transform: translateX(-50%) translateY(0);
+        }
+        
+        #topAlert.success {
+            background: linear-gradient(135deg, rgba(63, 185, 80, 0.95) 0%, rgba(46, 160, 67, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        #topAlert.error {
+            background: linear-gradient(135deg, rgba(248, 81, 73, 0.95) 0%, rgba(218, 54, 51, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        #topAlert.warning {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.95) 0%, rgba(217, 119, 6, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         /* Bottom Navigation Bar */
@@ -399,11 +448,33 @@ const withdrawAmount = document.getElementById('withdrawAmount');
 const currencySelect = document.getElementById('currencySelect');
 const withdrawBtn = document.getElementById('withdrawBtn');
 
-function showAlert(msg, success = false) {
-    topAlert.innerText = msg;
-    topAlert.style.background = success ? 'linear-gradient(135deg, #3fb950, #2ea043)' : 'linear-gradient(135deg, #f85149, #da3633)';
+function showAlert(msg, success = false, type = null) {
+    const lang = localStorage.getItem('nexo_lang') || 'en';
+    let icon = success ? '🎉' : '⚠️';
+    let title = success 
+        ? (lang === 'ru' ? 'Успешно!' : 'Success!') 
+        : (lang === 'ru' ? 'Внимание' : 'Attention');
+    let className = success ? 'success' : 'error';
+    
+    // Check for lock/verification messages
+    if (msg.includes('🔒') || msg.includes('verif')) {
+        icon = '🔒';
+        title = lang === 'ru' ? 'Верификация' : 'Verification';
+        className = 'warning';
+    }
+    
+    const cleanMsg = msg.replace(/^[✅❌⚠️🎉🔒\s]+/, '');
+    
+    topAlert.innerHTML = `
+        <div class="notif-icon">${icon}</div>
+        <div class="notif-content">
+            <div class="notif-title">${title}</div>
+            <div class="notif-subtitle">${cleanMsg}</div>
+        </div>
+    `;
+    topAlert.className = className;
     topAlert.classList.add('show');
-    setTimeout(() => topAlert.classList.remove('show'), 3000);
+    setTimeout(() => topAlert.classList.remove('show'), 3500);
 }
 
 function getClientTelegramId() {
