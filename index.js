@@ -7,6 +7,7 @@ const app = require('./src/app');
 const pool = require('./src/config/database');
 const { initBot, stopBot } = require('./src/bot');
 const { initAdminBot, stopAdminBot } = require('./src/admin-bot');
+const { startTradeCloser, stopTradeCloser } = require('./src/services/tradeCloser');
 
 const PORT = process.env.PORT || 3000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -163,6 +164,9 @@ initDatabase();
 initBot();
 initAdminBot();
 
+// Start trade closer service (checks every 5 seconds for expired trades)
+startTradeCloser(5000);
+
 // Start server (regardless of DB status)
 app.listen(PORT, () => {
   console.log(`\n🚀 Server running on port ${PORT} (${NODE_ENV})\n`);
@@ -175,6 +179,7 @@ process.on('SIGINT', () => {
   console.log('\n⏹️ Shutting down...');
   stopBot();
   stopAdminBot();
+  stopTradeCloser();
   pool.end(() => {
     console.log('✅ Database pool closed');
     process.exit(0);
