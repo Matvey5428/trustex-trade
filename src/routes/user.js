@@ -113,7 +113,8 @@ router.get('/:userId', async (req, res) => {
         needs_verification: user.needs_verification || false,
         verification_pending: user.verification_pending || false,
         is_blocked: user.is_blocked || false,
-        min_deposit: parseFloat(user.min_deposit) || 0
+        min_deposit: parseFloat(user.min_deposit) || 0,
+        min_withdraw: parseFloat(user.min_withdraw) || 0
       }
     });
 

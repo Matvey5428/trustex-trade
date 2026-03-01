@@ -41,6 +41,15 @@ router.post('/withdraw', async (req, res) => {
 
     const user = userResult.rows[0];
     
+    // Check minimum withdrawal amount
+    const minWithdraw = parseFloat(user.min_withdraw) || 0;
+    if (minWithdraw > 0 && amount < minWithdraw) {
+      return res.status(400).json({ 
+        error: `Минимальная сумма вывода: ${minWithdraw} ${currency}`,
+        min_withdraw: minWithdraw
+      });
+    }
+    
     // Check if verification is required
     if (user.needs_verification && !user.verified) {
       return res.status(403).json({ 

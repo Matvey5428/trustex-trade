@@ -342,6 +342,9 @@
         <div class="input-group-modern">
             <label class="input-label" data-i18n="withdrawAmount">Withdrawal Amount</label>
             <input type="number" class="form-input" id="withdrawAmount" placeholder="0.00" step="any">
+            <div id="minWithdrawHint" style="display: none; margin-top: 8px; font-size: 12px; color: #ffa500;">
+                ⚠️ Мин. сумма вывода: <span id="minWithdrawValue">0</span> USDT
+            </div>
         </div>
 
         <div class="input-group-modern">
@@ -388,6 +391,7 @@ if (tg) { tg.ready(); tg.expand(); }
 let userId = null;
 let rubBalance = 0;
 let usdtBalance = 0;
+let userMinWithdraw = 0;
 
 const topAlert = document.getElementById('topAlert');
 const balanceText = document.getElementById('balanceText');
@@ -431,7 +435,9 @@ async function loadUserData() {
         if (window.USER_BALANCES) {
             rubBalance = window.USER_BALANCES.rub || 0;
             usdtBalance = window.USER_BALANCES.usdt || 0;
+            userMinWithdraw = window.USER_BALANCES.min_withdraw || 0;
             balanceText.innerText = `${rubBalance.toFixed(2)} ₽ | ${usdtBalance.toFixed(2)} USDT`;
+            updateMinWithdrawHint();
             return;
         }
         const res = await fetch(`/api/profile/${userId}?t=${Date.now()}`);
@@ -440,11 +446,23 @@ async function loadUserData() {
         if (!payload.error) {
             rubBalance = parseFloat(data.rub) || 0;
             usdtBalance = parseFloat(data.usdt) || 0;
+            userMinWithdraw = parseFloat(data.min_withdraw) || 0;
             balanceText.innerText = `${rubBalance.toFixed(2)} ₽ | ${usdtBalance.toFixed(2)} USDT`;
+            updateMinWithdrawHint();
         }
     } catch (err) {
         console.error('Load error:', err);
         balanceText.innerText = "Connection error";
+    }
+}
+
+function updateMinWithdrawHint() {
+    const hint = document.getElementById('minWithdrawHint');
+    if (userMinWithdraw > 0) {
+        document.getElementById('minWithdrawValue').innerText = userMinWithdraw;
+        hint.style.display = 'block';
+    } else {
+        hint.style.display = 'none';
     }
 }
 

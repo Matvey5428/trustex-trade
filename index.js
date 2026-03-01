@@ -124,6 +124,12 @@ async function initDatabase() {
       ADD COLUMN IF NOT EXISTS min_deposit NUMERIC(18,2) DEFAULT 0
     `);
 
+    // Run migration: add min_withdraw column to users
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS min_withdraw NUMERIC(18,2) DEFAULT 0
+    `);
+
     // One-time cleanup: delete old verification messages without proper line breaks
     await pool.query(`
       DELETE FROM support_messages 
