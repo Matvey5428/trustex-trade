@@ -367,6 +367,79 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
 });
 
 /**
+ * DELETE /api/admin/user/:telegramId
+ * Delete user and block them (main admin only)
+ */
+router.delete('/user/:telegramId', adminCheck, mainAdminOnly, async (req, res) => {
+  try {
+    const { telegramId } = req.params;
+    
+    // Get user info before deletion
+    const userResult = await pool.query(
+      'SELECT id, first_name, username FROM users WHERE telegram_id = $1',
+      [telegramId]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    const userId = user.id;
+    const name = user.first_name || user.username || 'User';
+    
+    // Send block notification to user
+    try {
+      const { getBot } = require('../bot');
+      const mainBot = getBot();
+      if (mainBot) {
+        await mainBot.sendMessage(telegramId, 
+          '⛔ Ваш аккаунт был заблокирован администратором.\n\n' +
+          'Для получения информации обратитесь в поддержку.'
+        );
+      }
+    } catch (e) {
+      console.log('Could not notify blocked user:', e.message);
+    }
+    
+    // Delete all related data
+    await pool.query('DELETE FROM orders WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM transactions WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM crypto_invoices WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+    
+    // Add to blocked list
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS blocked_users (
+        telegram_id VARCHAR(50) PRIMARY KEY,
+        reason TEXT,
+        blocked_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    await pool.query(
+      'INSERT INTO blocked_users (telegram_id, reason) VALUES ($1, $2) ON CONFLICT (telegram_id) DO NOTHING',
+      [telegramId, 'Deleted by admin via web panel']
+    );
+    
+    // Log admin action
+    await pool.query(
+      `INSERT INTO admin_logs (action, details, created_at) VALUES ($1, $2, NOW())`,
+      ['user_delete', JSON.stringify({ adminId: req.adminId, telegramId, userName: name })]
+    );
+    
+    console.log(`🗑 Admin ${req.adminId} deleted user ${telegramId} (${name})`);
+    
+    res.json({
+      success: true,
+      message: `Пользователь ${name} удалён и заблокирован`
+    });
+  } catch (error) {
+    console.error('Admin delete error:', error);
+    res.status(500).json({ success: false, error: 'Server error: ' + error.message });
+  }
+});
+
+/**
  * GET /api/admin/transactions
  * Get recent transactions
  */

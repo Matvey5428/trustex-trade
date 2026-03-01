@@ -561,6 +561,10 @@
           <button class="btn-primary" onclick="openChat()" style="flex: 1; background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">💬 Чат</button>
         </div>
         
+        <div style="margin-top: 10px;" id="deleteUserBtnContainer">
+          <button class="btn-primary" onclick="deleteUser()" style="width: 100%; background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);">🗑 Удалить пользователя</button>
+        </div>
+        
         <!-- User Payment History -->
         <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
           <div style="font-size: 14px; font-weight: 600; color: #ffd700; margin-bottom: 10px;">💳 История оплат</div>
@@ -845,6 +849,9 @@
           document.getElementById('modeFormGroup').style.display = 'block';
           document.getElementById('btnSaveUser').style.display = 'block';
           
+          // Show delete button only for main admin
+          document.getElementById('deleteUserBtnContainer').style.display = userRole === 'admin' ? 'block' : 'none';
+          
           document.getElementById('userModal').classList.add('active');
           
           // Load user payment history
@@ -996,6 +1003,35 @@
         }
       } catch (e) {
         showToast('❌ Ошибка сохранения', 'error');
+      }
+    }
+    
+    async function deleteUser() {
+      if (!currentUser) return;
+      
+      const name = currentUser.first_name || currentUser.username || 'пользователя';
+      
+      if (!confirm(`⚠️ Вы уверены, что хотите удалить ${name}?\n\nПользователь будет заблокирован и все его данные удалены. Это действие необратимо!`)) {
+        return;
+      }
+      
+      try {
+        const res = await fetch(`${API_BASE}/user/${currentUser.telegram_id}?adminId=${adminId}`, {
+          method: 'DELETE'
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast('✅ ' + data.message, 'success');
+          closeModal();
+          loadUsers();
+          loadStats();
+        } else {
+          showToast('❌ ' + data.error, 'error');
+        }
+      } catch (e) {
+        showToast('❌ Ошибка удаления', 'error');
       }
     }
     
