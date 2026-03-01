@@ -541,10 +541,10 @@
       justify-content: center;
       text-decoration: none;
       color: #6e7681;
-      padding: 8px 12px;
+      padding: 8px 0;
       border-radius: 12px;
-      transition: all 0.15s ease;
-      min-width: 64px;
+      transition: color 0.15s ease;
+      flex: 1;
       position: relative;
       -webkit-tap-highlight-color: transparent;
     }
@@ -579,7 +579,6 @@
       width: 24px;
       height: 24px;
       margin-bottom: 4px;
-      transition: transform 0.15s ease;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -589,10 +588,6 @@
       width: 22px;
       height: 22px;
       fill: currentColor;
-    }
-
-    .nav-item:active .nav-icon {
-      transform: scale(0.92);
     }
 
     .nav-label {
