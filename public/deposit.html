@@ -417,6 +417,9 @@
                     <input type="number" class="amount-input" id="amountInput" placeholder="0.00" inputmode="decimal">
                     <span class="currency-tag" id="currencyTag">RUB</span>
                 </div>
+                <div id="minDepositHint" style="display: none; margin-top: 8px; font-size: 12px; color: #ffa500;">
+                    ⚠️ Мин. сумма: <span id="minDepositValue">0</span> USDT
+                </div>
             </div>
 
             <div class="presets" id="presetContainer"></div>
@@ -454,6 +457,7 @@
 
     let userId = null;
     let currentSymbol = 'RUB';
+    let userMinDeposit = 0;
 
     const coinIcons = {
         'RUB': { symbol: '₽', class: 'rub' },
@@ -515,6 +519,7 @@
                 document.getElementById('bal-ETH').innerText = `${(window.USER_BALANCES.eth || 0).toFixed(6)} ETH`;
                 document.getElementById('bal-TON').innerText = `${(window.USER_BALANCES.ton || 0).toFixed(2)} TON`;
                 document.getElementById('bal-USDT').innerText = `${(window.USER_BALANCES.usdt || 0).toFixed(2)} USDT`;
+                userMinDeposit = window.USER_BALANCES.min_deposit || 0;
                 return;
             }
             const res = await fetch(`/api/profile/${userId}`);
@@ -525,6 +530,7 @@
             document.getElementById('bal-ETH').innerText = `${(data.eth || 0).toFixed(6)} ETH`;
             document.getElementById('bal-TON').innerText = `${(data.ton || 0).toFixed(2)} TON`;
             document.getElementById('bal-USDT').innerText = `${(data.usdt || 0).toFixed(2)} USDT`;
+            userMinDeposit = data.min_deposit || 0;
         } catch (e) { console.error("Balance error:", e); }
     }
 
@@ -548,6 +554,15 @@
             btn.onclick = () => document.getElementById('amountInput').value = val;
             container.appendChild(btn);
         });
+        
+        // Show min deposit hint for USDT if set
+        const minDepositHint = document.getElementById('minDepositHint');
+        if (symbol === 'USDT' && userMinDeposit > 0) {
+            document.getElementById('minDepositValue').innerText = userMinDeposit;
+            minDepositHint.style.display = 'block';
+        } else {
+            minDepositHint.style.display = 'none';
+        }
     }
 
     function closePayment() {

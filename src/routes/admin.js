@@ -431,7 +431,7 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
 router.put('/user/:telegramId', adminCheck, async (req, res) => {
   try {
     const { telegramId } = req.params;
-    const { balance_usdt, trade_mode, trading_blocked, needs_verification, verified } = req.body;
+    const { balance_usdt, trade_mode, trading_blocked, needs_verification, verified, min_deposit } = req.body;
     
     // If manager, check that user belongs to them
     if (!req.isMainAdmin) {
@@ -484,6 +484,11 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
       // Reset pending status when verification is set
       updates.push(`verification_pending = $${paramIndex++}`);
       values.push(false);
+    }
+    
+    if (min_deposit !== undefined) {
+      updates.push(`min_deposit = $${paramIndex++}`);
+      values.push(parseFloat(min_deposit) || 0);
     }
     
     if (updates.length === 0) {

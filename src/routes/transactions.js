@@ -221,7 +221,7 @@ router.post('/create-invoice', async (req, res) => {
     
     // Get user
     const userResult = await pool.query(
-      'SELECT id, telegram_id, first_name FROM users WHERE telegram_id = $1',
+      'SELECT id, telegram_id, first_name, min_deposit FROM users WHERE telegram_id = $1',
       [userId.toString()]
     );
     
@@ -230,6 +230,15 @@ router.post('/create-invoice', async (req, res) => {
     }
     
     const user = userResult.rows[0];
+    
+    // Check minimum deposit amount
+    const minDeposit = parseFloat(user.min_deposit) || 0;
+    if (minDeposit > 0 && amount < minDeposit) {
+      return res.status(400).json({ 
+        error: `Минимальная сумма пополнения: ${minDeposit} USDT`,
+        min_deposit: minDeposit
+      });
+    }
     
     // Create invoice via CryptoBot API
     const invoiceData = {

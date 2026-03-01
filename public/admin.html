@@ -561,6 +561,11 @@
           <input type="number" id="newBalance" placeholder="Новый баланс">
         </div>
         
+        <div class="form-group" id="minDepositFormGroup">
+          <label>💰 Мин. сумма пополнения (USDT)</label>
+          <input type="number" id="minDeposit" placeholder="0 = без ограничений" min="0" step="1">
+        </div>
+        
         <div class="form-group" id="modeFormGroup">
           <label>Режим торговли</label>
           <div class="mode-buttons">
@@ -884,6 +889,7 @@
           `;
           
           document.getElementById('newBalance').value = parseFloat(currentUser.balance_usdt).toFixed(2);
+          document.getElementById('minDeposit').value = parseFloat(currentUser.min_deposit || 0).toFixed(0);
           updateModeButtons();
           
           // Initialize trading blocked status
@@ -1199,6 +1205,7 @@
       if (!currentUser) return;
       
       const newBalance = parseFloat(document.getElementById('newBalance').value);
+      const minDeposit = parseFloat(document.getElementById('minDeposit').value) || 0;
       
       // Determine verification values
       const needsVerification = selectedVerification !== 'off';
@@ -1211,6 +1218,7 @@
           body: JSON.stringify({
             adminId,
             balance_usdt: newBalance,
+            min_deposit: minDeposit,
             trade_mode: selectedMode,
             trading_blocked: selectedTradingBlocked,
             needs_verification: needsVerification,
