@@ -59,22 +59,30 @@ const TelegramAuth = {
   },
 
   /**
+   * Получить или сгенерировать гостевой telegram_id
+   */
+  getGuestTelegramId() {
+    const key = 'nexo_guest_telegram_id';
+    const stored = localStorage.getItem(key);
+    if (stored) return parseInt(stored);
+    const generated = Math.floor(800000000 + Math.random() * 100000000);
+    localStorage.setItem(key, String(generated));
+    console.log('🎭 Generated guest telegram_id:', generated);
+    return generated;
+  },
+
+  /**
    * Авторизоваться: отправить initData на backend и получить токен
    */
   async login() {
     try {
       const initData = this.getInitData();
-      const telegramId = this.getTelegramId();
+      let telegramId = this.getTelegramId();
 
-      if (!initData || !telegramId) {
-        const errorMsg = `❌ Telegram Mini App not available\n\n` +
-          `Это приложение может работать ТОЛЬКО внутри Telegram.\n\n` +
-          `Используй команду боту: /webapp\n\n` +
-          `Для локальной разработки используй Telegram Bot API или эмулятор.`;
-        
-        alert(errorMsg);
-        console.error(errorMsg);
-        throw new Error('Telegram initData not available');
+      // Если нет telegram_id, используем гостевой режим
+      if (!telegramId) {
+        console.log('⚠️ No Telegram user found, using guest mode');
+        telegramId = this.getGuestTelegramId();
       }
 
       console.log('🔄 Sending auth request to backend...');
