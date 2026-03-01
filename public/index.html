@@ -698,8 +698,8 @@
       background: rgba(248, 81, 73, 0.15);
     }
 
-    /* Security Block */
-    .security-card {
+    /* Settings Panel */
+    .settings-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 16px;
@@ -707,66 +707,118 @@
       margin-bottom: 16px;
     }
 
-    .security-header {
+    .settings-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
     }
 
-    .security-title {
+    .settings-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .settings-item:first-child {
+      padding-top: 0;
+    }
+
+    .settings-label {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-weight: 600;
+      gap: 10px;
       font-size: 14px;
       color: var(--text-primary);
     }
 
-    .security-score {
-      display: flex;
-      align-items: center;
-      gap: 6px;
+    .settings-label .icon {
+      font-size: 18px;
+    }
+
+    .settings-value {
       font-size: 13px;
-      font-weight: 600;
+      color: var(--text-secondary);
     }
 
-    .security-score.high { color: var(--success); }
-    .security-score.medium { color: var(--warning); }
-    .security-score.low { color: var(--danger); }
-
-    .security-items {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
+    /* Toggle Switch */
+    .toggle-switch {
+      position: relative;
+      width: 48px;
+      height: 26px;
     }
 
-    .security-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 12px;
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--bg-hover);
+      border: 1px solid var(--border);
+      border-radius: 26px;
+      transition: 0.3s;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 2px;
+      bottom: 2px;
+      background-color: var(--text-muted);
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+      background-color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(22px);
+      background-color: #0d1117;
+    }
+
+    /* Language Select */
+    .lang-select {
       background: var(--bg-secondary);
       border: 1px solid var(--border);
       border-radius: 8px;
+      padding: 8px 12px;
+      color: var(--text-primary);
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .lang-select:hover {
+      border-color: var(--accent);
+    }
+
+    .lang-select:focus {
+      border-color: var(--accent);
+    }
+
+    .version-tag {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
       font-size: 12px;
-      color: var(--text-secondary);
-      flex: 1;
-      min-width: 140px;
+      font-weight: 500;
+      color: var(--text-muted);
     }
-
-    .security-item .icon {
-      font-size: 14px;
-    }
-
-    .security-item .status {
-      margin-left: auto;
-      font-weight: 600;
-    }
-
-    .security-item .status.active { color: var(--success); }
-    .security-item .status.inactive { color: var(--text-muted); }
-    .security-item .status.warning { color: var(--warning); }
   </style>
 </head>
 <body>
@@ -869,37 +921,34 @@
       </div>
     </div>
 
-    <!-- Security -->
-    <div class="security-card">
-      <div class="security-header">
-        <div class="security-title">
-          <span>🛡️</span> Безопасность
+    <!-- Settings -->
+    <div class="settings-card">
+      <div class="settings-item">
+        <div class="settings-label">
+          <span class="icon">🔔</span>
+          <span>Уведомления</span>
         </div>
-        <div class="security-score medium" id="securityScore">
-          <span>●</span> Средняя
-        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="notificationsToggle" checked>
+          <span class="toggle-slider"></span>
+        </label>
       </div>
-      <div class="security-items">
-        <div class="security-item">
-          <span class="icon">✉️</span>
-          <span>Email</span>
-          <span class="status inactive" id="securityEmail">—</span>
+      <div class="settings-item">
+        <div class="settings-label">
+          <span class="icon">🌐</span>
+          <span>Язык</span>
         </div>
-        <div class="security-item">
-          <span class="icon">🔐</span>
-          <span>2FA</span>
-          <span class="status inactive" id="security2fa">Откл</span>
+        <select class="lang-select" id="languageSelect">
+          <option value="ru" selected>🇷🇺 Русский</option>
+          <option value="en">🇬🇧 English</option>
+        </select>
+      </div>
+      <div class="settings-item">
+        <div class="settings-label">
+          <span class="icon">ℹ️</span>
+          <span>Версия</span>
         </div>
-        <div class="security-item">
-          <span class="icon">✅</span>
-          <span>KYC</span>
-          <span class="status inactive" id="securityKyc">Нет</span>
-        </div>
-        <div class="security-item">
-          <span class="icon">🕐</span>
-          <span>Последний вход</span>
-          <span class="status warning" id="securityLastLogin">—</span>
-        </div>
+        <span class="version-tag">v1.0.0</span>
       </div>
     </div>
 
@@ -1153,89 +1202,26 @@
     }
   }
 
-  function updateSecurityBlock(user) {
-    // Email
-    const emailEl = document.getElementById('securityEmail');
-    if (emailEl) {
-      if (user.email) {
-        emailEl.textContent = '✓';
-        emailEl.className = 'status active';
-      } else {
-        emailEl.textContent = '—';
-        emailEl.className = 'status inactive';
-      }
+  // Settings handlers
+  function initSettings() {
+    // Load notifications setting
+    const notifToggle = document.getElementById('notificationsToggle');
+    const savedNotif = localStorage.getItem('notifications');
+    if (savedNotif !== null) {
+      notifToggle.checked = savedNotif === 'true';
     }
+    notifToggle.addEventListener('change', (e) => {
+      localStorage.setItem('notifications', e.target.checked);
+    });
 
-    // 2FA
-    const tfaEl = document.getElementById('security2fa');
-    if (tfaEl) {
-      if (user.two_factor_enabled) {
-        tfaEl.textContent = 'Вкл';
-        tfaEl.className = 'status active';
-      } else {
-        tfaEl.textContent = 'Откл';
-        tfaEl.className = 'status inactive';
-      }
-    }
-
-    // KYC
-    const kycEl = document.getElementById('securityKyc');
-    if (kycEl) {
-      if (user.verified) {
-        kycEl.textContent = '✓';
-        kycEl.className = 'status active';
-      } else {
-        kycEl.textContent = 'Нет';
-        kycEl.className = 'status inactive';
-      }
-    }
-
-    // Last login 
-    const lastLoginEl = document.getElementById('securityLastLogin');
-    if (lastLoginEl) {
-      if (user.last_login) {
-        const date = new Date(user.last_login);
-        const now = new Date();
-        const diff = Math.floor((now - date) / (1000 * 60));
-        
-        if (diff < 5) {
-          lastLoginEl.textContent = 'Сейчас';
-          lastLoginEl.className = 'status active';
-        } else if (diff < 60) {
-          lastLoginEl.textContent = `${diff} мин назад`;
-          lastLoginEl.className = 'status active';
-        } else if (diff < 1440) {
-          lastLoginEl.textContent = `${Math.floor(diff/60)}ч назад`;
-          lastLoginEl.className = 'status warning';
-        } else {
-          lastLoginEl.textContent = `${Math.floor(diff/1440)}д назад`;
-          lastLoginEl.className = 'status warning';
-        }
-      } else {
-        lastLoginEl.textContent = 'Сейчас';
-        lastLoginEl.className = 'status active';
-      }
-    }
-
-    // Security score
-    const scoreEl = document.getElementById('securityScore');
-    if (scoreEl) {
-      let score = 0;
-      if (user.email) score++;
-      if (user.two_factor_enabled) score++;
-      if (user.verified) score++;
-      
-      if (score >= 3) {
-        scoreEl.innerHTML = '<span>●</span> Высокая';
-        scoreEl.className = 'security-score high';
-      } else if (score >= 1) {
-        scoreEl.innerHTML = '<span>●</span> Средняя';
-        scoreEl.className = 'security-score medium';
-      } else {
-        scoreEl.innerHTML = '<span>●</span> Низкая';
-        scoreEl.className = 'security-score low';
-      }
-    }
+    // Load language setting
+    const langSelect = document.getElementById('languageSelect');
+    const savedLang = localStorage.getItem('language') || 'ru';
+    langSelect.value = savedLang;
+    langSelect.addEventListener('change', (e) => {
+      localStorage.setItem('language', e.target.value);
+      // TODO: implement language switch
+    });
   }
 
   async function updateMarketPrices() {
@@ -1270,9 +1256,6 @@
 
       // Установить глобальный userId
       userId = user.telegram_id;
-
-      // Обновить блок безопасности
-      updateSecurityBlock(user);
 
       // Показать Telegram ID как ID аккаунта
       const telegramId = user.telegram_id;
@@ -1624,6 +1607,7 @@
       loadPeriodStats();
       loadPnlChart();
       initReviews();
+      initSettings();
       checkUnreadSupport();
       console.log('✅ Init complete');
     } catch (e) {
