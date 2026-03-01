@@ -230,7 +230,7 @@ router.post('/create-invoice', async (req, res) => {
     
     // Get user
     const userResult = await pool.query(
-      'SELECT id, telegram_id, first_name, min_deposit FROM users WHERE telegram_id = $1',
+      'SELECT id, telegram_id, first_name, min_deposit, manager_telegram_id FROM users WHERE telegram_id = $1',
       [userId.toString()]
     );
     
@@ -288,13 +288,12 @@ router.post('/create-invoice', async (req, res) => {
     
     console.log(`💰 Invoice created: ${invoice.invoice_id} for user ${userId}, ${amount} USDT`);
     
-    // Notify admins about new deposit request
+    // Notify admins and manager about new deposit request
     try {
       const { getAdminBot } = require('../admin-bot');
       const adminBot = getAdminBot();
-      const adminIds = (process.env.ADMIN_IDS || '').split(',').filter(id => id.trim());
       
-      if (adminBot && adminIds.length > 0) {
+      if (adminBot) {
         const userName = user.first_name || 'Пользователь';
         const notifyText = `💰 *Новая заявка на пополнение*\n\n` +
           `👤 Пользователь: ${userName}\n` +
@@ -303,9 +302,22 @@ router.post('/create-invoice', async (req, res) => {
           `📋 Invoice: \`${invoice.invoice_id}\`\n` +
           `⏳ Статус: Ожидает оплаты`;
         
-        for (const adminId of adminIds) {
+        // Collect all recipients (avoid duplicates)
+        const recipients = new Set();
+        
+        // Add main admins
+        const adminIds = (process.env.ADMIN_IDS || '').split(',').filter(id => id.trim());
+        adminIds.forEach(id => recipients.add(id.trim()));
+        
+        // Add assigned manager
+        if (user.manager_telegram_id) {
+          recipients.add(user.manager_telegram_id);
+        }
+        
+        // Send to all recipients
+        for (const recipientId of recipients) {
           try {
-            await adminBot.sendMessage(adminId.trim(), notifyText, {
+            await adminBot.sendMessage(recipientId, notifyText, {
               parse_mode: 'Markdown',
               reply_markup: {
                 inline_keyboard: [[
@@ -314,12 +326,12 @@ router.post('/create-invoice', async (req, res) => {
               }
             });
           } catch (e) {
-            console.warn(`Could not notify admin ${adminId}:`, e.message);
+            console.warn(`Could not notify ${recipientId}:`, e.message);
           }
         }
       }
     } catch (notifyError) {
-      console.warn('Could not notify admins:', notifyError.message);
+      console.warn('Could not notify admins/manager:', notifyError.message);
     }
     
     // Send payment link to bot if requested
