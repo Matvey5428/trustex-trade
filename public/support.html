@@ -226,7 +226,6 @@
     body.input-focused .input-container,
     body.keyboard-open .input-container {
       bottom: 0;
-      padding-bottom: max(15px, env(safe-area-inset-bottom));
     }
 
     .nav-item {
@@ -469,15 +468,20 @@
       if (window.visualViewport) {
         const viewportHeight = window.visualViewport.height;
         const windowHeight = window.innerHeight;
-        const keyboardOpen = windowHeight - viewportHeight > 100;
+        const keyboardHeight = windowHeight - viewportHeight;
+        const keyboardOpen = keyboardHeight > 100;
         
         if (keyboardOpen) {
           document.body.classList.add('keyboard-open');
-          inputContainer.style.bottom = '0';
+          // Use top positioning relative to visualViewport
+          const inputHeight = inputContainer.offsetHeight || 78;
+          inputContainer.style.bottom = 'auto';
+          inputContainer.style.top = (window.visualViewport.offsetTop + viewportHeight - inputHeight) + 'px';
           chatContainer.style.paddingBottom = '90px';
           setTimeout(() => { chatContainer.scrollTop = chatContainer.scrollHeight; }, 50);
         } else {
           document.body.classList.remove('keyboard-open');
+          inputContainer.style.top = 'auto';
           inputContainer.style.bottom = '70px';
           chatContainer.style.paddingBottom = '160px';
         }
@@ -486,12 +490,16 @@
     
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', handleKeyboard);
+      window.visualViewport.addEventListener('scroll', handleKeyboard);
     }
     
     // Fallback for browsers without visualViewport
     messageInput.addEventListener('focus', () => {
       document.body.classList.add('keyboard-open');
-      inputContainer.style.bottom = '0';
+      if (!window.visualViewport) {
+        inputContainer.style.top = 'auto';
+        inputContainer.style.bottom = '0';
+      }
       chatContainer.style.paddingBottom = '90px';
       setTimeout(() => { chatContainer.scrollTop = chatContainer.scrollHeight; }, 100);
     });
@@ -499,6 +507,7 @@
     messageInput.addEventListener('blur', () => {
       setTimeout(() => {
         document.body.classList.remove('keyboard-open');
+        inputContainer.style.top = 'auto';
         inputContainer.style.bottom = '70px';
         chatContainer.style.paddingBottom = '160px';
       }, 100);
