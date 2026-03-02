@@ -920,6 +920,14 @@
     
     const symbol = symbolMap[coinSymbol] || `BINANCE:${coinSymbol}USDT`;
     
+    // Очистить контейнер перед созданием нового виджета
+    const container = document.getElementById('tradingview_widget');
+    if (container) {
+      container.innerHTML = '';
+    }
+    
+    console.log('Creating chart for:', symbol, 'interval:', interval);
+    
     widget = new TradingView.widget({
       "autosize": true,
       "symbol": symbol,
