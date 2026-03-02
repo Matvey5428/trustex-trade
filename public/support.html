@@ -368,14 +368,34 @@
       setTimeout(() => { chatContainer.scrollTop = chatContainer.scrollHeight; }, 100);
     });
     
-    // Tap outside input to dismiss keyboard (use touchend for mobile)
-    function handleChatTap(e) {
+    // Tap outside input to dismiss keyboard (distinguish tap from scroll)
+    let touchStartY = 0;
+    let isTap = true;
+    
+    chatContainer.addEventListener('touchstart', (e) => {
+      touchStartY = e.touches[0].clientY;
+      isTap = true;
+    }, { passive: true });
+    
+    chatContainer.addEventListener('touchmove', (e) => {
+      const moveDistance = Math.abs(e.touches[0].clientY - touchStartY);
+      if (moveDistance > 10) {
+        isTap = false; // It's a scroll, not a tap
+      }
+    }, { passive: true });
+    
+    chatContainer.addEventListener('touchend', (e) => {
+      if (isTap && (e.target === chatContainer || e.target.closest('.message'))) {
+        messageInput.blur();
+      }
+    }, { passive: true });
+    
+    // Click for desktop
+    chatContainer.addEventListener('click', (e) => {
       if (e.target === chatContainer || e.target.closest('.message')) {
         messageInput.blur();
       }
-    }
-    chatContainer.addEventListener('touchend', handleChatTap, { passive: true });
-    chatContainer.addEventListener('click', handleChatTap);
+    });
     
     // Poll for new messages every 5 seconds
     setInterval(async () => {
