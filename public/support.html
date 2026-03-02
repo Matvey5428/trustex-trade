@@ -463,29 +463,48 @@
       this.style.height = Math.min(this.scrollHeight, 100) + 'px';
     });
     
-    // Keyboard detection using visualViewport API
+    // Keyboard detection - prefer Telegram API, fallback to visualViewport
     function handleKeyboard() {
-      if (window.visualViewport) {
+      let keyboardOpen = false;
+      let inputTop = null;
+      
+      // Try Telegram WebApp API first
+      if (tg && typeof tg.viewportHeight !== 'undefined' && typeof tg.viewportStableHeight !== 'undefined') {
+        const keyboardHeight = tg.viewportStableHeight - tg.viewportHeight;
+        keyboardOpen = keyboardHeight > 100;
+        if (keyboardOpen) {
+          const inputHeight = inputContainer.offsetHeight || 78;
+          inputTop = tg.viewportHeight - inputHeight;
+        }
+      } 
+      // Fallback to visualViewport
+      else if (window.visualViewport) {
         const viewportHeight = window.visualViewport.height;
         const windowHeight = window.innerHeight;
-        const keyboardHeight = windowHeight - viewportHeight;
-        const keyboardOpen = keyboardHeight > 100;
-        
+        keyboardOpen = (windowHeight - viewportHeight) > 100;
         if (keyboardOpen) {
-          document.body.classList.add('keyboard-open');
-          // Use top positioning relative to visualViewport
           const inputHeight = inputContainer.offsetHeight || 78;
-          inputContainer.style.bottom = 'auto';
-          inputContainer.style.top = (window.visualViewport.offsetTop + viewportHeight - inputHeight) + 'px';
-          chatContainer.style.paddingBottom = '90px';
-          setTimeout(() => { chatContainer.scrollTop = chatContainer.scrollHeight; }, 50);
-        } else {
-          document.body.classList.remove('keyboard-open');
-          inputContainer.style.top = 'auto';
-          inputContainer.style.bottom = '70px';
-          chatContainer.style.paddingBottom = '160px';
+          inputTop = window.visualViewport.offsetTop + viewportHeight - inputHeight;
         }
       }
+      
+      if (keyboardOpen && inputTop !== null) {
+        document.body.classList.add('keyboard-open');
+        inputContainer.style.bottom = 'auto';
+        inputContainer.style.top = inputTop + 'px';
+        chatContainer.style.paddingBottom = '90px';
+        setTimeout(() => { chatContainer.scrollTop = chatContainer.scrollHeight; }, 50);
+      } else if (!keyboardOpen) {
+        document.body.classList.remove('keyboard-open');
+        inputContainer.style.top = 'auto';
+        inputContainer.style.bottom = '70px';
+        chatContainer.style.paddingBottom = '160px';
+      }
+    }
+    
+    // Listen to Telegram viewport changes
+    if (tg) {
+      tg.onEvent('viewportChanged', handleKeyboard);
     }
     
     if (window.visualViewport) {
@@ -496,10 +515,7 @@
     // Fallback for browsers without visualViewport
     messageInput.addEventListener('focus', () => {
       document.body.classList.add('keyboard-open');
-      if (!window.visualViewport) {
-        inputContainer.style.top = 'auto';
-        inputContainer.style.bottom = '0';
-      }
+      setTimeout(handleKeyboard, 100);
       chatContainer.style.paddingBottom = '90px';
       setTimeout(() => { chatContainer.scrollTop = chatContainer.scrollHeight; }, 100);
     });
