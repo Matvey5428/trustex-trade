@@ -905,7 +905,7 @@
       'ETH': 'BINANCE:ETHUSDT',
       'SOL': 'BINANCE:SOLUSDT',
       'XRP': 'BINANCE:XRPUSDT',
-      'BNB': 'GATEIO:BNB_USDT',
+      'BNB': 'MEXC:BNBUSDT',
       'TON': 'BINANCE:TONUSDT',
       'ADA': 'BINANCE:ADAUSDT',
       'TRX': 'BINANCE:TRXUSDT',
@@ -919,46 +919,19 @@
     // Использовать точный символ из карты, или BTC как fallback
     const symbol = symbolMap[coinSymbol] || 'BINANCE:BTCUSDT';
     
-    // Очистить контейнер перед созданием нового виджета
+    // Очистить контейнер и использовать iframe напрямую
     const container = document.getElementById('tradingview_widget');
     if (container) {
-      container.innerHTML = '';
-      // Создаём уникальный div для избежания кэша TradingView
-      const uniqueId = 'tv_chart_' + coinSymbol + '_' + Date.now();
-      container.innerHTML = `<div id="${uniqueId}" style="width:100%;height:100%"></div>`;
-    }
-    
-    // Проверяем что TradingView загружен
-    if (typeof TradingView === 'undefined') {
-      return;
-    }
-    
-    const containerId = container.firstChild.id;
-    
-    try {
-      widget = new TradingView.widget({
-        "width": "100%",
-        "height": "100%",
-        "symbol": symbol,
-        "interval": interval,
-        "timezone": "Etc/UTC",
-        "theme": "dark",
-        "style": "1",
-        "locale": lang === 'ru' ? 'ru' : 'en',
-        "toolbar_bg": "#0d1117",
-        "enable_publishing": false,
-        "hide_top_toolbar": true,
-        "save_image": false,
-        "container_id": containerId,
-        "autosize": true,
-        "studies": [],
-        "show_popup_button": false,
-        "popup_width": "1000",
-        "popup_height": "650"
-      });
-      console.log('TradingView symbol:', symbol, 'coinSymbol:', coinSymbol);
-    } catch(e) {
-      // silent
+      const encodedSymbol = encodeURIComponent(symbol);
+      const locale = lang === 'ru' ? 'ru' : 'en';
+      container.innerHTML = `<iframe 
+        src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=${encodedSymbol}&interval=${interval}&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=0d1117&studies=[]&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=0&showpopupbutton=0&studies_overrides={}&overrides={}&enabled_features=[]&disabled_features=[]&locale=${locale}&utm_source=&utm_medium=widget_new&utm_campaign=chart" 
+        style="width:100%;height:100%;border:none;" 
+        frameborder="0" 
+        allowtransparency="true" 
+        scrolling="no" 
+        allowfullscreen></iframe>`;
+      console.log('TradingView iframe symbol:', symbol, 'coinSymbol:', coinSymbol);
     }
   }
 
