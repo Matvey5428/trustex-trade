@@ -907,15 +907,13 @@
       'XRP': 'BINANCE:XRPUSDT',
       'BNB': 'BINANCE:BNBUSDT',
       'TON': 'BINANCE:TONUSDT',
-      'AVAX': 'BINANCE:AVAXUSDT',
       'ADA': 'BINANCE:ADAUSDT',
       'TRX': 'BINANCE:TRXUSDT',
       'PEPE': 'BINANCE:PEPEUSDT',
       'LINK': 'BINANCE:LINKUSDT',
       'SUI': 'BINANCE:SUIUSDT',
       'NEAR': 'BINANCE:NEARUSDT',
-      'APT': 'BINANCE:APTUSDT',
-      'DOT': 'BINANCE:DOTUSDT'
+      'APT': 'BINANCE:APTUSDT'
     };
     
     // Использовать точный символ из карты, или BTC как fallback
@@ -929,11 +927,8 @@
     
     // Проверяем что TradingView загружен
     if (typeof TradingView === 'undefined') {
-      console.error('TradingView not loaded!');
       return;
     }
-    
-    console.log('initChart called:', { coinSymbol, symbol, interval });
     
     try {
       widget = new TradingView.widget({
@@ -951,9 +946,8 @@
         "save_image": false,
         "container_id": "tradingview_widget"
       });
-      console.log('Widget created successfully');
     } catch(e) {
-      console.error('Chart error:', e);
+      // silent
     }
   }
 
@@ -1290,7 +1284,6 @@
   }
 
   window.addEventListener('DOMContentLoaded', () => {
-    console.log('DOMContentLoaded start, coinSymbol:', coinSymbol);
     if (tg?.expand) tg.expand();
     
     // Hide nav when any input focused
@@ -1320,15 +1313,13 @@
       XRP: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/svg/color/xrp.svg',
       BNB: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/svg/color/bnb.svg',
       TON: 'https://assets.coingecko.com/coins/images/17980/small/ton_symbol.png',
-      AVAX: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/svg/color/avax.svg',
       ADA: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/svg/color/ada.svg',
       TRX: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/svg/color/trx.svg',
       PEPE: 'https://assets.coingecko.com/coins/images/29850/small/pepe-token.jpeg',
       LINK: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/svg/color/link.svg',
       SUI: 'https://assets.coingecko.com/coins/images/26375/small/sui_asset.jpeg',
       NEAR: 'https://assets.coingecko.com/coins/images/10365/small/near.jpg',
-      APT: 'https://assets.coingecko.com/coins/images/26455/small/aptos_round.png',
-      DOT: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/svg/color/dot.svg'
+      APT: 'https://assets.coingecko.com/coins/images/26455/small/aptos_round.png'
     };
     document.getElementById('coinIcon').src = coinIcons[coinSymbol] || coinIcons.BTC;
 
