@@ -899,8 +899,9 @@
   function initChart(interval = '1') {
     const lang = localStorage.getItem('nexo_lang') || 'ru';
     
-    // TON на Binance торгуется как TONUSDT
-    const symbol = `BINANCE:${coinSymbol}USDT`;
+    // DOT и AVAX пока показывают BTC график
+    const symbolToUse = (coinSymbol === 'DOT' || coinSymbol === 'AVAX') ? 'BTC' : coinSymbol;
+    const symbol = `BINANCE:${symbolToUse}USDT`;
     
     // Очистить контейнер перед созданием нового виджета
     const container = document.getElementById('tradingview_widget');
