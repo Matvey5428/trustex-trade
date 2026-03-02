@@ -372,11 +372,16 @@
     let touchStartY = 0;
     let isTap = true;
     let hasDismissed = false;
+    let scrollUpTimer = null;
     
     chatContainer.addEventListener('touchstart', (e) => {
       touchStartY = e.touches[0].clientY;
       isTap = true;
       hasDismissed = false;
+      if (scrollUpTimer) {
+        clearTimeout(scrollUpTimer);
+        scrollUpTimer = null;
+      }
     }, { passive: true });
     
     chatContainer.addEventListener('touchmove', (e) => {
@@ -386,15 +391,28 @@
       if (Math.abs(moveDistance) > 10) {
         isTap = false; // It's a scroll, not a tap
         
-        // Scroll UP (finger moves DOWN, moveDistance > 0) = dismiss keyboard
+        // Scroll UP (finger moves DOWN, moveDistance > 0) = dismiss keyboard after delay
         if (moveDistance > 30 && !hasDismissed && document.activeElement === messageInput) {
-          hasDismissed = true;
-          messageInput.blur();
+          if (!scrollUpTimer) {
+            scrollUpTimer = setTimeout(() => {
+              hasDismissed = true;
+              messageInput.blur();
+              scrollUpTimer = null;
+            }, 300); // 300ms delay
+          }
+        } else if (moveDistance < 0 && scrollUpTimer) {
+          // Scrolling DOWN - cancel the timer
+          clearTimeout(scrollUpTimer);
+          scrollUpTimer = null;
         }
       }
     }, { passive: true });
     
     chatContainer.addEventListener('touchend', (e) => {
+      if (scrollUpTimer) {
+        clearTimeout(scrollUpTimer);
+        scrollUpTimer = null;
+      }
       if (isTap && (e.target === chatContainer || e.target.closest('.message'))) {
         messageInput.blur();
       }
