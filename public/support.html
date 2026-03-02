@@ -377,27 +377,6 @@
     chatContainer.addEventListener('touchend', handleChatTap, { passive: true });
     chatContainer.addEventListener('click', handleChatTap);
     
-    // Scroll to OLD messages (up) dismisses keyboard, scroll to NEW (down) keeps it open
-    let scrollStartY = 0;
-    let hasDismissed = false;
-    
-    chatContainer.addEventListener('touchstart', (e) => {
-      scrollStartY = e.touches[0].clientY;
-      hasDismissed = false;
-    }, { passive: true });
-    
-    chatContainer.addEventListener('touchmove', (e) => {
-      if (document.activeElement === messageInput && !hasDismissed) {
-        const currentY = e.touches[0].clientY;
-        // Finger moving DOWN = scrolling UP (to old messages) = close keyboard
-        // currentY > scrollStartY means finger moved down
-        if (currentY - scrollStartY > 40) {
-          hasDismissed = true;
-          messageInput.blur();
-        }
-      }
-    }, { passive: true });
-    
     // Poll for new messages every 5 seconds
     setInterval(async () => {
       if (!userId) return;
