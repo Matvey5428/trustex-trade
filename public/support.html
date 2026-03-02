@@ -492,15 +492,27 @@
       }
     });
     
-    // Scroll to dismiss keyboard
-    let scrollTimeout;
-    chatContainer.addEventListener('scroll', () => {
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
-        if (document.activeElement === messageInput) {
+    // Scroll to dismiss keyboard (with delay to avoid triggering on auto-scroll)
+    let userScrolling = false;
+    let scrollStartY = 0;
+    
+    chatContainer.addEventListener('touchstart', (e) => {
+      scrollStartY = e.touches[0].clientY;
+      userScrolling = true;
+    }, { passive: true });
+    
+    chatContainer.addEventListener('touchmove', (e) => {
+      if (userScrolling && document.activeElement === messageInput) {
+        const deltaY = Math.abs(e.touches[0].clientY - scrollStartY);
+        if (deltaY > 30) {
           messageInput.blur();
+          userScrolling = false;
         }
-      }, 50);
+      }
+    }, { passive: true });
+    
+    chatContainer.addEventListener('touchend', () => {
+      userScrolling = false;
     }, { passive: true });
     
     // Poll for new messages every 5 seconds
