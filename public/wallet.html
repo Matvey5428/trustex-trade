@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="js/auth.js?v=2" defer></script>
     <script src="js/api.js" defer></script>
-    <script src="js/balance.js" defer></script>
     <style>
         :root {
             --bg-primary: #0d1117;
@@ -601,10 +600,10 @@
     });
 
     function formatNumber(num, decimals = 2) {
-        return parseFloat(num || 0).toLocaleString(undefined, {
+        return parseFloat(num || 0).toLocaleString('ru-RU', {
             minimumFractionDigits: decimals,
             maximumFractionDigits: decimals
-        });
+        }).replace(/,/g, '.');
     }
 
     function hideValue(value) {
