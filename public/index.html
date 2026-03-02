@@ -13,7 +13,7 @@
       var lang = localStorage.getItem('nexo_lang') || 'ru';
       document.documentElement.lang = lang;
       // Fallback: show body after 500ms if i18n fails
-      setTimeout(function() { document.body && document.body.classList.add('i18n-ready'); }, 500);
+
     })();
     // Disable zoom gestures
     document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
@@ -1411,6 +1411,8 @@
       const key = el.getAttribute('data-i18n');
       el.textContent = t(key);
     });
+    // Show page after translations applied
+    document.body.classList.add('i18n-ready');
     // Verification is now handled by loadUserData() from API profile
   }
 

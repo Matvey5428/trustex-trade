@@ -382,6 +382,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Fallback if DOMContentLoaded already fired
+if (document.readyState !== 'loading') {
+  applyLanguage(currentLang);
+  document.body?.classList.add('i18n-ready');
+}
+
 // Export for use in other scripts
 window.i18n = i18n;
 window.t = t;
