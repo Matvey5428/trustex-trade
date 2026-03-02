@@ -7,6 +7,13 @@ const BalanceManager = {
   RUB_RATE: 90,
   
   /**
+   * Форматирование числа с пробелами как разделителями тысяч
+   */
+  formatNumber(num, decimals = 2) {
+    return num.toLocaleString('ru-RU', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).replace(/,/g, '.');
+  },
+  
+  /**
    * Инициализация - автоматически вызывается при загрузке
    */
   async init() {
@@ -44,50 +51,51 @@ const BalanceManager = {
     const totalUsd = balanceUsdt + (balanceRub / this.RUB_RATE);
     
     // Обновить элементы по ID
+    const fmt = this.formatNumber.bind(this);
     const updates = {
       // Главный баланс
-      'totalBalance': `$${totalUsd.toFixed(2)}`,
-      'total-balance': `$${totalUsd.toFixed(2)}`,
+      'totalBalance': `$${fmt(totalUsd)}`,
+      'total-balance': `$${fmt(totalUsd)}`,
       
       // USDT баланс
-      'userUsdtBalance': `${balanceUsdt.toFixed(2)} USDT`,
-      'usdt-balance': `${balanceUsdt.toFixed(2)} USDT`,
-      'balanceUsdt': `${balanceUsdt.toFixed(2)}`,
-      'bal-USDT': `${balanceUsdt.toFixed(2)} USDT`,
-      'usdtBalance': `${balanceUsdt.toFixed(2)} $`,
+      'userUsdtBalance': `${fmt(balanceUsdt)} USDT`,
+      'usdt-balance': `${fmt(balanceUsdt)} USDT`,
+      'balanceUsdt': `${fmt(balanceUsdt)}`,
+      'bal-USDT': `${fmt(balanceUsdt)} USDT`,
+      'usdtBalance': `${fmt(balanceUsdt)} $`,
       
       // BTC баланс  
-      'userBtcBalance': `${balanceBtc.toFixed(8)} BTC`,
-      'btc-balance': `${balanceBtc.toFixed(8)} BTC`,
-      'balanceBtc': `${balanceBtc.toFixed(8)}`,
-      'bal-BTC': `${balanceBtc.toFixed(8)} BTC`,
-      'btcBalance': `${balanceBtc.toFixed(8)} $`,
+      'userBtcBalance': `${fmt(balanceBtc, 8)} BTC`,
+      'btc-balance': `${fmt(balanceBtc, 8)} BTC`,
+      'balanceBtc': `${fmt(balanceBtc, 8)}`,
+      'bal-BTC': `${fmt(balanceBtc, 8)} BTC`,
+      'btcBalance': `${fmt(balanceBtc, 8)} $`,
       
       // RUB баланс
-      'userRubBalance': `${balanceRub.toFixed(2)} ₽`,
-      'rub-balance': `${balanceRub.toFixed(2)} ₽`,
-      'balanceRub': `${balanceRub.toFixed(2)}`,
-      'bal-RUB': `${balanceRub.toFixed(2)} ₽`,
-      'rubBalance': `${balanceRub.toFixed(2)} ₽`,
+      'userRubBalance': `${fmt(balanceRub)} ₽`,
+      'rub-balance': `${fmt(balanceRub)} ₽`,
+      'balanceRub': `${fmt(balanceRub)}`,
+      'bal-RUB': `${fmt(balanceRub)} ₽`,
+      'rubBalance': `${fmt(balanceRub)} ₽`,
       
       // TON баланс
-      'bal-TON': `${balanceTon.toFixed(4)} TON`,
-      'tonBalance': `${balanceTon.toFixed(4)} $`,
+      'bal-TON': `${fmt(balanceTon, 4)} TON`,
+      'tonBalance': `${fmt(balanceTon, 4)} $`,
       
       // ETH баланс
-      'bal-ETH': `${balanceEth.toFixed(6)} ETH`,
-      'ethBalance': `${balanceEth.toFixed(6)} $`,
+      'bal-ETH': `${fmt(balanceEth, 6)} ETH`,
+      'ethBalance': `${fmt(balanceEth, 6)} $`,
       
       // Для страниц deposit/withdraw
-      'available-balance': `${balanceUsdt.toFixed(2)} USDT`,
-      'availableBalance': `${balanceUsdt.toFixed(2)} USDT`,
+      'available-balance': `${fmt(balanceUsdt)} USDT`,
+      'availableBalance': `${fmt(balanceUsdt)} USDT`,
       
       // Для exchange.html
-      'rubBalanceText': `${balanceRub.toFixed(2)} ₽`,
-      'usdtBalanceText': `${balanceUsdt.toFixed(2)} $`,
+      'rubBalanceText': `${fmt(balanceRub)} ₽`,
+      'usdtBalanceText': `${fmt(balanceUsdt)} $`,
       
       // Для withdraw.html
-      'balanceText': `${balanceRub.toFixed(2)} ₽ | ${balanceUsdt.toFixed(2)} $`,
+      'balanceText': `${fmt(balanceRub)} ₽ | ${fmt(balanceUsdt)} $`,
     };
     
     for (const [id, value] of Object.entries(updates)) {

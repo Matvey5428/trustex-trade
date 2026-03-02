@@ -1680,7 +1680,8 @@
       const btcInUsd = market ? (parseFloat(user.balance_btc) || 0) * market.btc : 0;
       const totalBalanceUsd = rbcInUsd + usdtBalance + btcInUsd;
       
-      setRealBalance(`$${totalBalanceUsd.toFixed(2)}`);
+      const formattedBalance = totalBalanceUsd.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/,/g, '.');
+      setRealBalance(`$${formattedBalance}`);
       
       // Загрузить историю транзакций
       await loadTransactionHistory();
