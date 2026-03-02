@@ -1967,19 +1967,86 @@
   const totalReviews = 36;
 
   function initReviews() {
+    const lang = localStorage.getItem('nexo_lang') || 'ru';
+    
+    const namesEN = ['Alex M.', 'Sarah K.', 'Michael R.', 'Emily J.', 'David L.', 'Jessica W.', 'Chris B.', 'Amanda P.', 'Ryan T.', 'Nicole S.', 'Brandon H.', 'Megan C.', 'Tyler D.', 'Ashley F.', 'Kevin G.', 'Stephanie N.'];
+    const namesRU = ['Алексей М.', 'Мария К.', 'Михаил Р.', 'Елена Ж.', 'Дмитрий Л.', 'Анна В.', 'Кирилл Б.', 'Ольга П.', 'Роман Т.', 'Наталья С.', 'Борис Х.', 'Марина Ц.', 'Тимур Д.', 'Алина Ф.', 'Константин Г.', 'Светлана Н.'];
+    
+    const reviewsEN = [
+      'Excellent platform! Fast transactions and intuitive interface. Highly recommended.',
+      'Been using TrustEx for 3 months now. Great experience overall, support is responsive.',
+      'The best trading platform I\'ve used. Low fees and reliable execution.',
+      'Easy to use, even for beginners. The mobile interface is clean and modern.',
+      'Withdrawals are processed quickly. Very satisfied with the service.',
+      'Professional platform with great security features. Feel safe trading here.',
+      'Love the new design! Much better than before. Keep up the good work!',
+      'Competitive rates and fast exchange. Will continue using TrustEx.',
+      'Customer support helped me resolve an issue within hours. Impressive!',
+      'Simple registration process and smooth verification. Started trading in minutes.',
+      'The charting tools are excellent. Perfect for technical analysis.',
+      'Fast deposits and withdrawals. No issues so far.',
+      'Great liquidity and tight spreads. Professional trading experience.',
+      'Mobile app works flawlessly. Trade on the go without any problems.',
+      'Transparent fees and no hidden charges. Honest platform.',
+      'The binary options feature is amazing. Easy to predict and earn.'
+    ];
+    
+    const reviewsRU = [
+      'Отличная платформа! Быстрые транзакции и интуитивный интерфейс. Рекомендую.',
+      'Использую TrustEx уже 3 месяца. Отличный опыт, поддержка отвечает быстро.',
+      'Лучшая торговая платформа. Низкие комиссии и надежное исполнение.',
+      'Легко использовать даже новичкам. Мобильный интерфейс чистый и современный.',
+      'Выводы обрабатываются быстро. Очень доволен сервисом.',
+      'Профессиональная платформа с отличной безопасностью. Торгую здесь спокойно.',
+      'Новый дизайн огонь! Намного лучше, чем было. Так держать!',
+      'Конкурентные курсы и быстрый обмен. Буду продолжать использовать TrustEx.',
+      'Поддержка помогла решить проблему за пару часов. Впечатляет!',
+      'Простая регистрация и быстрая верификация. Начал торговать за минуты.',
+      'Инструменты графиков отличные. Идеально для технического анализа.',
+      'Быстрые депозиты и выводы. Проблем пока не было.',
+      'Хорошая ликвидность и узкие спреды. Профессиональный трейдинг.',
+      'Мобильное приложение работает отлично. Торгую на ходу без проблем.',
+      'Прозрачные комиссии без скрытых платежей. Честная платформа.',
+      'Бинарные опционы - супер функция. Легко прогнозировать и зарабатывать.'
+    ];
+    
+    const names = lang === 'ru' ? namesRU : namesEN;
+    const reviews = lang === 'ru' ? reviewsRU : reviewsEN;
+    const badges = lang === 'ru' ? ['Верифицирован', 'Трейдер', 'Активный', 'Pro'] : ['Verified', 'Trader', 'Active', 'Pro'];
+    const daysAgo = [1, 2, 3, 5, 7, 10, 14, 21, 30];
+    
     reviewsContainer.innerHTML = '';
-    for (let i = 1; i <= totalReviews; i++) {
+    for (let i = 0; i < totalReviews; i++) {
+      const nameIdx = i % names.length;
+      const reviewIdx = i % reviews.length;
+      const rating = i < 28 ? 5 : (i < 33 ? 4 : 3);
+      const dayOffset = daysAgo[i % daysAgo.length];
+      const date = new Date();
+      date.setDate(date.getDate() - dayOffset);
+      const dateStr = date.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US');
+      const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+      const initials = names[nameIdx].split(' ').map(n => n[0]).join('');
+      
       const card = document.createElement('div');
-      card.className = `review-card ${i === 1 ? 'active' : ''}`;
+      card.className = `review-card ${i === 0 ? 'active' : ''}`;
       card.innerHTML = `
         <div class="d-flex justify-content-between align-items-start">
-          <div><div class="review-name fw-bold">Пользователь #${1000 + i}</div><div class="review-role">Клиент Nexo</div></div>
-          <div class="review-date">18.10.2025</div>
+          <div class="d-flex align-items-center gap-2">
+            <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#00d4aa,#3b82f6);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;">${initials}</div>
+            <div>
+              <div class="review-name fw-bold">${names[nameIdx]}</div>
+              <div class="review-role" style="font-size:11px;color:#8b949e;background:rgba(0,212,170,0.1);padding:2px 8px;border-radius:10px;display:inline-block;">${badges[i % badges.length]}</div>
+            </div>
+          </div>
+          <div class="review-date" style="font-size:12px;color:#6e7681;">${dateStr}</div>
         </div>
-        <p class="mt-3 mb-2">Отличная платформа! Все операции проходят быстро, интерфейс очень удобный и понятный.</p>
-        <div class="stars">★★★★★</div>`;
+        <p class="mt-3 mb-2" style="color:#c9d1d9;line-height:1.5;">${reviews[reviewIdx]}</p>
+        <div class="stars" style="color:#fbbf24;">${stars}</div>`;
       reviewsContainer.appendChild(card);
     }
+    
+    const counterText = lang === 'ru' ? `Отзывы 1 из ${totalReviews}` : `Reviews 1 of ${totalReviews}`;
+    document.getElementById('reviewCounter').textContent = counterText;
   }
 
   function updateReview(dir) {
@@ -1988,7 +2055,9 @@
     cards[currentIdx].classList.remove('active');
     currentIdx = (currentIdx + dir + totalReviews) % totalReviews;
     cards[currentIdx].classList.add('active');
-    document.getElementById('reviewCounter').textContent = `Отзывы ${currentIdx + 1} из ${totalReviews}`;
+    const lang = localStorage.getItem('nexo_lang') || 'ru';
+    const counterText = lang === 'ru' ? `Отзывы ${currentIdx + 1} из ${totalReviews}` : `Reviews ${currentIdx + 1} of ${totalReviews}`;
+    document.getElementById('reviewCounter').textContent = counterText;
   }
 
   document.getElementById('nextReview').onclick = () => updateReview(1);
