@@ -564,7 +564,10 @@
     <div class="modal">
       <div class="modal-header">
         <h3 id="modalUserName">Пользователь</h3>
-        <button class="modal-close" onclick="closeModal()">&times;</button>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button onclick="refreshUser()" style="background: transparent; border: none; color: #fcd535; font-size: 18px; cursor: pointer; padding: 5px; transition: transform 0.3s;" title="Обновить">🔄</button>
+          <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
       </div>
       <div class="modal-body">
         <div id="userDetails"></div>
@@ -1195,6 +1198,14 @@
       currentUser = null;
     }
     
+    async function refreshUser() {
+      if (!currentUser) return;
+      const telegramId = currentUser.telegram_id;
+      showToast('Обновление...', 'info');
+      await openUser(telegramId);
+      showToast('Данные обновлены', 'success');
+    }
+
     function openChat() {
       if (!currentUser) return;
       window.location.href = `chat.html?user=${currentUser.telegram_id}`;
