@@ -1137,6 +1137,47 @@ router.get('/managers', adminCheck, mainAdminOnly, async (req, res) => {
 });
 
 /**
+ * GET /api/admin/managers/:managerId/users
+ * Get users of a specific manager (main admin only)
+ */
+router.get('/managers/:managerId/users', adminCheck, mainAdminOnly, async (req, res) => {
+  try {
+    const { managerId } = req.params;
+    
+    // Get manager info first
+    const managerResult = await pool.query(
+      'SELECT id, telegram_id, name FROM managers WHERE id = $1',
+      [managerId]
+    );
+    
+    if (managerResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Менеджер не найден' });
+    }
+    
+    const manager = managerResult.rows[0];
+    
+    // Get users of this manager
+    const usersResult = await pool.query(`
+      SELECT 
+        u.id, u.telegram_id, u.first_name, u.username, u.balance_usdt, u.balance_rub,
+        COALESCE(u.trade_mode, 'loss') as trade_mode, u.created_at
+      FROM users u
+      WHERE u.manager_id = $1
+      ORDER BY u.created_at DESC
+    `, [managerId]);
+    
+    res.json({
+      success: true,
+      manager: manager,
+      data: usersResult.rows
+    });
+  } catch (error) {
+    console.error('Get manager users error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
  * Generate unique ref code
  */
 function generateRefCode() {

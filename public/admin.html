@@ -546,6 +546,19 @@
     </div>
   </div>
   
+  <!-- Manager Users Modal -->
+  <div class="modal-overlay" id="managerUsersModal" style="display: none;">
+    <div class="modal" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 id="managerUsersTitle">Пользователи менеджера</h3>
+        <button class="modal-close" onclick="closeManagerUsersModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+        <div id="managerUsersList"></div>
+      </div>
+    </div>
+  </div>
+  
   <!-- User Modal -->
   <div class="modal-overlay" id="userModal">
     <div class="modal">
@@ -1391,7 +1404,7 @@
               <div class="user-id">ID: ${m.telegram_id}</div>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 12px; color: #8892b0;">👥 ${m.users_count || 0}</span>
+              <button onclick="showManagerUsers('${m.id}', '${m.name || 'Менеджер'}')" style="background: rgba(77,184,255,0.1); border: none; color: #4db8ff; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px;">👥 ${m.users_count || 0}</button>
               <button onclick="deleteManager('${m.id}')" style="background: rgba(255,68,68,0.2); border: none; color: #ff4444; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px;">🗑️</button>
             </div>
           </div>
@@ -1411,6 +1424,53 @@
       }).catch(() => {
         showToast('❌ Ошибка копирования', 'error');
       });
+    }
+    
+    async function showManagerUsers(managerId, managerName) {
+      document.getElementById('managerUsersTitle').textContent = `Пользователи: ${managerName}`;
+      document.getElementById('managerUsersList').innerHTML = '<div class="loading">Загрузка...</div>';
+      document.getElementById('managerUsersModal').style.display = 'flex';
+      
+      try {
+        const res = await fetch(`${API_BASE}/managers/${managerId}/users?adminId=${adminId}`);
+        const data = await res.json();
+        
+        if (data.success) {
+          renderManagerUsers(data.data);
+        } else {
+          document.getElementById('managerUsersList').innerHTML = `<div class="error-msg">${data.error}</div>`;
+        }
+      } catch (e) {
+        document.getElementById('managerUsersList').innerHTML = '<div class="error-msg">Ошибка загрузки</div>';
+      }
+    }
+    
+    function renderManagerUsers(users) {
+      const list = document.getElementById('managerUsersList');
+      
+      if (users.length === 0) {
+        list.innerHTML = '<div class="loading">Нет пользователей</div>';
+        return;
+      }
+      
+      list.innerHTML = users.map(user => `
+        <div class="user-card" onclick="closeManagerUsersModal(); openUser('${user.telegram_id}')" style="cursor: pointer;">
+          <div class="user-info">
+            <div class="user-name">${user.first_name || user.username || '🧪 Гость'}</div>
+            <div class="user-id">ID: ${user.telegram_id}</div>
+          </div>
+          <div class="user-balance">
+            <div class="amount">${formatMoney(user.balance_usdt)} $ | ${formatMoney(user.balance_rub || 0)} ₽</div>
+            <div class="mode ${user.trade_mode === 'win' ? 'mode-win' : 'mode-loss'}">
+              ${user.trade_mode === 'win' ? '🟢 WIN' : '🔴 LOSS'}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    function closeManagerUsersModal() {
+      document.getElementById('managerUsersModal').style.display = 'none';
     }
     
     async function addManager() {
