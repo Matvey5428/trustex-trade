@@ -10,7 +10,6 @@
   <script src="js/i18n.js" defer></script>
   <script src="js/auth.js?v=2" defer></script>
   <script src="js/api.js" defer></script>
-  <script src="js/balance.js" defer></script>
   <style>body { opacity: 0; } body.i18n-ready { opacity: 1; transition: opacity 0.15s ease-out; }</style>
   <script>(function() { var lang = localStorage.getItem('nexo_lang') || 'ru'; document.documentElement.lang = lang; setTimeout(function() { document.body && document.body.classList.add('i18n-ready'); }, 500); document.addEventListener('gesturestart', function(e) { e.preventDefault(); }); document.addEventListener('gesturechange', function(e) { e.preventDefault(); }); document.addEventListener('gestureend', function(e) { e.preventDefault(); }); document.addEventListener('touchstart', function(e) { if(e.touches.length > 1) e.preventDefault(); }, { passive: false }); })();</script>
   <style>
@@ -944,7 +943,8 @@
       }
       
       const usdt = parseFloat(data.usdt || 0);
-      const formatted = usdt.toLocaleString(undefined, { minimumFractionDigits: 2 });
+      // Format with spaces as thousand separators
+      const formatted = usdt.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/,/g, '.');
       
       document.getElementById('userUsdtBalance').textContent = `${formatted} USDT`;
       document.getElementById('panelAvailableUsdt').textContent = `${formatted} USDT`;
@@ -1117,10 +1117,6 @@
     } finally {
       await loadActiveTrades();
       await loadUserBalance();
-      
-      if (typeof BalanceManager !== 'undefined') {
-        await BalanceManager.refresh();
-      }
     }
   }
 
