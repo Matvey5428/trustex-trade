@@ -91,6 +91,16 @@
             fill: currentColor;
         }
 
+        .lang-select {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
         /* Balance Section */
         .balance-section {
             text-align: left;
@@ -444,6 +454,10 @@
         <div class="header-top">
             <span class="header-title" data-i18n="wallet">Кошелек</span>
             <div class="header-actions">
+                <select class="lang-select" id="languageSelect">
+                    <option value="ru">🇷🇺 RU</option>
+                    <option value="en">🇬🇧 EN</option>
+                </select>
                 <a href="index.html" class="header-btn" title="На главную">
                     <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
                 </a>

@@ -365,6 +365,7 @@ function t(key) {
 function applyLanguage(lang) {
   if (lang) {
     currentLang = lang;
+    window.currentLang = lang; // Update global reference
     localStorage.setItem('nexo_lang', lang);
   }
   
