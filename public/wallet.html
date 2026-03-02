@@ -4,11 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Кошелек - TrustEx</title>
+    <link rel="preconnect" href="https://api.binance.com">
+    <link rel="preconnect" href="https://trustex-trade.onrender.com">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="js/i18n.js" defer></script>
     <script src="js/auth.js?v=2" defer></script>
     <script src="js/api.js" defer></script>
+    <style>body { opacity: 1; }</style>
+    <script>(function() { var lang = localStorage.getItem('nexo_lang') || 'ru'; document.documentElement.lang = lang; })();</script>
     <style>
         :root {
             --bg-primary: #0d1117;
@@ -692,19 +696,31 @@
         if (!telegramId) return;
         
         try {
-            // Load prices first
-            await loadPrices();
-
-            // Load user data
-            const res = await fetch(`/api/profile/${telegramId}`);
-            if (res.ok) {
-                const data = await res.json();
+            // Load prices and user data in parallel
+            const [pricesRes, userRes, tradesRes] = await Promise.all([
+                fetch('https://api.binance.com/api/v3/ticker/price?symbols=["BTCUSDT","ETHUSDT","TONUSDT"]'),
+                fetch(`/api/profile/${telegramId}`),
+                fetch(`/api/trades/history/${telegramId}?limit=100`)
+            ]);
+            
+            // Process prices
+            if (pricesRes.ok) {
+                const data = await pricesRes.json();
+                data.forEach(item => {
+                    if (item.symbol === 'BTCUSDT') prices.btc = parseFloat(item.price);
+                    if (item.symbol === 'ETHUSDT') prices.eth = parseFloat(item.price);
+                    if (item.symbol === 'TONUSDT') prices.ton = parseFloat(item.price);
+                });
+            }
+            
+            // Process user data
+            if (userRes.ok) {
+                const data = await userRes.json();
                 userData = data.data;
                 updateBalanceDisplay();
             }
 
-            // Load active trades count
-            const tradesRes = await fetch(`/api/trades/history/${telegramId}?limit=100`);
+            // Process active trades count
             if (tradesRes.ok) {
                 const tradesData = await tradesRes.json();
                 const activeTrades = (tradesData.data || []).filter(t => t.status === 'active').length;
