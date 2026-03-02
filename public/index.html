@@ -1287,7 +1287,7 @@
   let RUB_RATE = 79.10;
   let allTransactions = [];
   let currentHistoryFilter = 'all';
-  let currentLang = localStorage.getItem('language') || 'ru';
+  let currentLang = localStorage.getItem('nexo_lang') || 'ru';
 
   // Translations
   const i18n = {
@@ -1558,13 +1558,13 @@
 
     // Load language setting
     const langSelect = document.getElementById('languageSelect');
-    const savedLang = localStorage.getItem('language') || 'ru';
+    const savedLang = localStorage.getItem('nexo_lang') || 'ru';
     langSelect.value = savedLang;
     currentLang = savedLang;
     applyLanguage(savedLang);
     
     langSelect.addEventListener('change', (e) => {
-      localStorage.setItem('language', e.target.value);
+      localStorage.setItem('nexo_lang', e.target.value);
       applyLanguage(e.target.value);
     });
   }

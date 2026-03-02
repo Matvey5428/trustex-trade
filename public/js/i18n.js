@@ -326,7 +326,7 @@ const i18n = {
 };
 
 // Current language - default is English
-let currentLang = localStorage.getItem('language') || 'en';
+let currentLang = localStorage.getItem('nexo_lang') || 'ru';
 
 // Get translation
 function t(key) {
@@ -337,7 +337,7 @@ function t(key) {
 function applyLanguage(lang) {
   if (lang) {
     currentLang = lang;
-    localStorage.setItem('language', lang);
+    localStorage.setItem('nexo_lang', lang);
   }
   
   document.querySelectorAll('[data-i18n]').forEach(el => {
