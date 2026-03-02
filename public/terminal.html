@@ -905,7 +905,7 @@
       'ETH': 'BINANCE:ETHUSDT',
       'SOL': 'BINANCE:SOLUSDT',
       'XRP': 'BINANCE:XRPUSDT',
-      'BNB': 'CRYPTOCAP:BNB',
+      'BNB': 'KUCOIN:BNBUSDT',
       'TON': 'BINANCE:TONUSDT',
       'ADA': 'BINANCE:ADAUSDT',
       'TRX': 'BINANCE:TRXUSDT',
@@ -944,8 +944,14 @@
         "enable_publishing": false,
         "hide_top_toolbar": true,
         "save_image": false,
-        "container_id": "tradingview_widget"
+        "container_id": "tradingview_widget",
+        "autosize": true,
+        "studies": [],
+        "show_popup_button": false,
+        "popup_width": "1000",
+        "popup_height": "650"
       });
+      console.log('TradingView symbol:', symbol, 'coinSymbol:', coinSymbol);
     } catch(e) {
       // silent
     }
