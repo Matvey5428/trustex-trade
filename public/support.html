@@ -521,24 +521,22 @@
     });
     
     // Scroll to dismiss keyboard (with delay)
-    let userScrolling = false;
     let scrollStartY = 0;
     let dismissTimeout = null;
+    let scrollDistance = 0;
     
     chatContainer.addEventListener('touchstart', (e) => {
       scrollStartY = e.touches[0].clientY;
-      userScrolling = true;
-      if (dismissTimeout) {
-        clearTimeout(dismissTimeout);
-        dismissTimeout = null;
-      }
+      scrollDistance = 0;
     }, { passive: true });
     
     chatContainer.addEventListener('touchmove', (e) => {
-      if (userScrolling && document.activeElement === messageInput) {
-        const deltaY = Math.abs(e.touches[0].clientY - scrollStartY);
-        if (deltaY > 50 && !dismissTimeout) {
-          // Start timer to dismiss keyboard after 500ms of scrolling
+      if (document.activeElement === messageInput) {
+        const currentY = e.touches[0].clientY;
+        scrollDistance = Math.abs(currentY - scrollStartY);
+        
+        // Start 500ms timer when scrolled more than 50px
+        if (scrollDistance > 50 && !dismissTimeout) {
           dismissTimeout = setTimeout(() => {
             if (document.activeElement === messageInput) {
               messageInput.blur();
@@ -550,12 +548,8 @@
     }, { passive: true });
     
     chatContainer.addEventListener('touchend', () => {
-      userScrolling = false;
-      // Cancel dismiss if user stopped scrolling quickly
-      if (dismissTimeout) {
-        clearTimeout(dismissTimeout);
-        dismissTimeout = null;
-      }
+      scrollDistance = 0;
+      // Don't cancel - let the timer complete if started
     }, { passive: true });
     
     // Poll for new messages every 5 seconds
