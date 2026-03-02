@@ -1001,6 +1001,16 @@ refreshBtn.onclick = loadData;
 amountInput.addEventListener('focus', () => document.body.classList.add('input-focused'));
 amountInput.addEventListener('blur', () => setTimeout(() => document.body.classList.remove('input-focused'), 100));
 
+// Tap anywhere to dismiss keyboard
+document.addEventListener('click', (e) => {
+    const activeEl = document.activeElement;
+    if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+        if (!e.target.closest('input, textarea, button, .btn, select')) {
+            activeEl.blur();
+        }
+    }
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         userId = await resolveUserId();

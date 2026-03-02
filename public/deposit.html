@@ -742,6 +742,16 @@
             el.addEventListener('blur', () => setTimeout(() => document.body.classList.remove('input-focused'), 100));
         });
         
+        // Tap anywhere to dismiss keyboard
+        document.addEventListener('click', (e) => {
+            const activeEl = document.activeElement;
+            if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+                if (!e.target.closest('input, textarea, button, .btn, select')) {
+                    activeEl.blur();
+                }
+            }
+        });
+        
         try {
             userId = await resolveUserId();
             setTimeout(async () => { await loadUserBalances(); }, 200);
