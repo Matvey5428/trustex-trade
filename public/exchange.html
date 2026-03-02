@@ -1001,15 +1001,17 @@ refreshBtn.onclick = loadData;
 amountInput.addEventListener('focus', () => document.body.classList.add('input-focused'));
 amountInput.addEventListener('blur', () => setTimeout(() => document.body.classList.remove('input-focused'), 100));
 
-// Tap anywhere to dismiss keyboard
-document.addEventListener('click', (e) => {
+// Tap anywhere to dismiss keyboard (use touchend for mobile)
+function handleTapToDismiss(e) {
     const activeEl = document.activeElement;
     if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
-        if (!e.target.closest('input, textarea, button, .btn, select')) {
+        if (!e.target.closest('input, textarea, button, .btn, select, .quick-amount')) {
             activeEl.blur();
         }
     }
-});
+}
+document.addEventListener('touchend', handleTapToDismiss, { passive: true });
+document.addEventListener('click', handleTapToDismiss);
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {

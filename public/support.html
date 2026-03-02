@@ -368,12 +368,14 @@
       setTimeout(() => { chatContainer.scrollTop = chatContainer.scrollHeight; }, 100);
     });
     
-    // Tap outside input to dismiss keyboard
-    chatContainer.addEventListener('click', (e) => {
+    // Tap outside input to dismiss keyboard (use touchend for mobile)
+    function handleChatTap(e) {
       if (e.target === chatContainer || e.target.closest('.message')) {
         messageInput.blur();
       }
-    });
+    }
+    chatContainer.addEventListener('touchend', handleChatTap, { passive: true });
+    chatContainer.addEventListener('click', handleChatTap);
     
     // Scroll to dismiss keyboard (any direction)
     let scrollStartY = 0;

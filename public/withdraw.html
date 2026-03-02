@@ -625,15 +625,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         el.addEventListener('blur', () => setTimeout(() => document.body.classList.remove('input-focused'), 100));
     });
     
-    // Tap anywhere to dismiss keyboard
-    document.addEventListener('click', (e) => {
+    // Tap anywhere to dismiss keyboard (use touchend for mobile)
+    function handleTapToDismiss(e) {
         const activeEl = document.activeElement;
         if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
             if (!e.target.closest('input, textarea, button, .btn, select')) {
                 activeEl.blur();
             }
         }
-    });
+    }
+    document.addEventListener('touchend', handleTapToDismiss, { passive: true });
     
     try {
         userId = await resolveUserId();
