@@ -217,13 +217,16 @@
     }
     
     /* Hide nav when input is focused (keyboard open) */
-    body.input-focused .bottom-nav {
+    body.input-focused .bottom-nav,
+    body.keyboard-open .bottom-nav {
       display: none !important;
     }
     
     /* Move input to bottom when nav hidden */
-    body.input-focused .input-container {
+    body.input-focused .input-container,
+    body.keyboard-open .input-container {
       bottom: 0;
+      padding-bottom: max(15px, env(safe-area-inset-bottom));
     }
 
     .nav-item {
@@ -488,6 +491,17 @@
         messageInput.blur();
       }
     });
+    
+    // Scroll to dismiss keyboard
+    let scrollTimeout;
+    chatContainer.addEventListener('scroll', () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        if (document.activeElement === messageInput) {
+          messageInput.blur();
+        }
+      }, 50);
+    }, { passive: true });
     
     // Poll for new messages every 5 seconds
     setInterval(async () => {
