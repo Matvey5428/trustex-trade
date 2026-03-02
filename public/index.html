@@ -1591,22 +1591,69 @@
     } catch (e) { return null; }
   }
 
+  // Кэш цен для мгновенного отображения
+  let cachedMarketPrices = JSON.parse(localStorage.getItem('nexo_market_prices') || 'null');
+
+  // Мгновенно показать баланс из кэша (без API запросов)
+  function showCachedBalance(user) {
+    if (!user) return;
+    
+    userId = user.telegram_id;
+    updateEl('userIdDisplay', user.telegram_id);
+    
+    const fmt = (num, dec = 2) => num.toLocaleString('ru-RU', { minimumFractionDigits: dec, maximumFractionDigits: dec }).replace(/,/g, '.');
+    
+    // Использовать кэшированные цены или дефолтные
+    const market = cachedMarketPrices || { btc: 95000, eth: 3500, ton: 5.5 };
+    
+    const rbcInUsd = (parseFloat(user.balance_rub) || 0) / RUB_RATE;
+    const usdtBalance = parseFloat(user.balance_usdt) || 0;
+    const btcInUsd = (parseFloat(user.balance_btc) || 0) * market.btc;
+    const ethInUsd = (parseFloat(user.balance_eth) || 0) * market.eth;
+    const tonInUsd = (parseFloat(user.balance_ton) || 0) * market.ton;
+    const totalBalanceUsd = rbcInUsd + usdtBalance + btcInUsd + ethInUsd + tonInUsd;
+    
+    const formattedBalance = totalBalanceUsd.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/,/g, '.');
+    setRealBalance(`$${formattedBalance}`);
+    
+    const rubEl = document.getElementById('rubBalance');
+    const btcEl = document.getElementById('btcBalance');
+    const tonEl = document.getElementById('tonBalance');
+    const ethEl = document.getElementById('ethBalance');
+    const usdtEl = document.getElementById('usdtBalance');
+    
+    if (rubEl) { rubEl.textContent = `${fmt(parseFloat(user.balance_rub) || 0)} ₽`; rubEl.classList.remove('skeleton'); }
+    if (btcEl) { btcEl.textContent = `${fmt(btcInUsd)} $`; btcEl.classList.remove('skeleton'); }
+    if (tonEl) { tonEl.textContent = `${fmt(tonInUsd)} $`; tonEl.classList.remove('skeleton'); }
+    if (ethEl) { ethEl.textContent = `${fmt(ethInUsd)} $`; ethEl.classList.remove('skeleton'); }
+    if (usdtEl) { usdtEl.textContent = `${fmt(usdtBalance)} $`; usdtEl.classList.remove('skeleton'); }
+  }
+
   async function loadUserData() {
     try {
       const user = window.CURRENT_USER;
       if (!user) return;
 
-      // Установить глобальный userId
       userId = user.telegram_id;
-
-      // Показать Telegram ID как ID аккаунта
       const telegramId = user.telegram_id;
       updateEl('userIdDisplay', telegramId);
       
-      // Статистика из API
+      // Запустить ВСЕ запросы параллельно
+      const [statsRes, profileRes, market] = await Promise.all([
+        fetch(`/api/trades/stats/${telegramId}`).catch(() => null),
+        fetch(`/api/profile/${telegramId}`).catch(() => null),
+        updateMarketPrices()
+      ]);
+      
+      // Сохранить цены в кэш
+      if (market) {
+        cachedMarketPrices = market;
+        localStorage.setItem('nexo_market_prices', JSON.stringify(market));
+      }
+      
+      // Обработать статистику
       try {
-        const statsRes = await fetch(`/api/trades/stats/${telegramId}`);
-        if (statsRes.ok) {
+        if (statsRes?.ok) {
           const statsPayload = await statsRes.json();
           const s = statsPayload.data || {};
           document.getElementById('stats').innerHTML = `${s.total || 0} / <span style="color: #3fb950">${s.wins || 0}</span> / <span style="color: #f85149">${s.losses || 0}</span>`;
@@ -1617,13 +1664,11 @@
         document.getElementById('stats').innerHTML = '0 / <span style="color: #3fb950">0</span> / <span style="color: #f85149">0</span>';
       }
       
-      // Объем торгов и верификация (из API профиля)
+      // Обработать профиль
       try {
-        const profileRes = await fetch(`/api/profile/${telegramId}`);
-        if (profileRes.ok) {
+        if (profileRes?.ok) {
           const profileData = await profileRes.json();
           
-          // Check if user is blocked
           if (profileData.data?.is_blocked) {
             document.getElementById('blockedOverlay').style.display = 'flex';
             return;
@@ -1632,7 +1677,6 @@
           const tradingVol = parseFloat(profileData.data?.total_volume) || 0;
           updateEl('tradingVolume', `${tradingVol.toFixed(2)} USDT`);
           
-          // Показать верификацию только если needs_verification = true
           const needsVerif = profileData.data?.needs_verification === true;
           const verificationRow = document.getElementById('verificationRow');
           const verifStatusEl = document.getElementById('verificationStatus');
@@ -1672,24 +1716,20 @@
         updateEl('tradingVolume', '0.00 USDT');
       }
 
-      // Обновить цены криптовалют
-      const market = await updateMarketPrices();
-      
-      // Показать общий баланс в USD
+      // Показать баланс
+      const m = market || cachedMarketPrices || { btc: 95000, eth: 3500, ton: 5.5 };
       const rbcInUsd = (parseFloat(user.balance_rub) || 0) / RUB_RATE;
       const usdtBalance = parseFloat(user.balance_usdt) || 0;
-      const btcInUsd = market ? (parseFloat(user.balance_btc) || 0) * market.btc : 0;
-      const ethInUsd = market ? (parseFloat(user.balance_eth) || 0) * market.eth : 0;
-      const tonInUsd = market ? (parseFloat(user.balance_ton) || 0) * market.ton : 0;
+      const btcInUsd = (parseFloat(user.balance_btc) || 0) * m.btc;
+      const ethInUsd = (parseFloat(user.balance_eth) || 0) * m.eth;
+      const tonInUsd = (parseFloat(user.balance_ton) || 0) * m.ton;
       const totalBalanceUsd = rbcInUsd + usdtBalance + btcInUsd + ethInUsd + tonInUsd;
       
       const formattedBalance = totalBalanceUsd.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/,/g, '.');
       setRealBalance(`$${formattedBalance}`);
       
-      // Функция форматирования с пробелами
       const fmt = (num, dec = 2) => num.toLocaleString('ru-RU', { minimumFractionDigits: dec, maximumFractionDigits: dec }).replace(/,/g, '.');
       
-      // Заполнить балансы криптовалют
       const rubEl = document.getElementById('rubBalance');
       const btcEl = document.getElementById('btcBalance');
       const tonEl = document.getElementById('tonBalance');
@@ -1702,8 +1742,8 @@
       if (ethEl) { ethEl.textContent = `${fmt(ethInUsd)} $`; ethEl.classList.remove('skeleton'); }
       if (usdtEl) { usdtEl.textContent = `${fmt(usdtBalance)} $`; usdtEl.classList.remove('skeleton'); }
       
-      // Загрузить историю транзакций
-      await loadTransactionHistory();
+      // Загрузить историю в фоне (не блокируя)
+      loadTransactionHistory();
       
       log('✅ User data loaded:', user);
     } catch (e) {
@@ -2102,13 +2142,13 @@
     try {
       log('🚀 Initializing TrustEx...');
       
-      // Сразу показать кэшированные данные из localStorage
+      // Сразу показать кэшированные данные из localStorage (МГНОВЕННО)
       const cachedUser = TelegramAuth.getCurrentUser();
       if (cachedUser) {
         window.CURRENT_USER = cachedUser;
         window.AUTH_TOKEN = TelegramAuth.getToken();
-        // Показать кэшированный баланс мгновенно
-        loadUserData();
+        // Показать кэшированный баланс мгновенно БЕЗ API запросов
+        showCachedBalance(cachedUser);
       }
       
       // Проверить авторизацию
@@ -2119,13 +2159,14 @@
         log('✅ Already authenticated');
       }
 
-      // Обновить данные с сервера (не блокируя)
+      // Обновить данные с сервера в фоне
       TelegramAuth.refreshUser().then(() => {
-        loadUserData(); // Обновить с актуальными данными
+        loadUserData();
       });
       
       // Запустить всё параллельно
       Promise.all([
+        loadUserData(),
         loadAnalyticsData('all'),
         loadPeriodStats(),
         loadPnlChart(),
