@@ -690,7 +690,7 @@
     <div class="rate-banner">
         <div class="rate-banner-left">
             <div class="rate-live-dot"></div>
-            <span class="rate-label">Курс онлайн</span>
+            <span class="rate-label" data-i18n="onlineRate">Курс онлайн</span>
         </div>
         <span class="rate-value" id="liveRate">1 RUB = 0.012642 USDT</span>
     </div>
@@ -698,7 +698,7 @@
     <!-- Main Exchange Card -->
     <div class="exchange-card">
         <div class="exchange-header">
-            <div class="exchange-title">Мгновенный обмен</div>
+            <div class="exchange-title" data-i18n="instantExchange">Мгновенный обмен</div>
             <div class="exchange-pair" id="exchangePair">RUB → USDT</div>
         </div>
 
@@ -706,9 +706,9 @@
             <!-- From Currency -->
             <div class="currency-block" id="fromBlock">
                 <div class="currency-block-header">
-                    <span class="currency-label" id="fromLabel">Отдаёте</span>
+                    <span class="currency-label" id="fromLabel" data-i18n="youGive">Отдаёте</span>
                     <div class="balance-badge" id="fromBalance" onclick="selectAll()">
-                        <span>Баланс: <span id="fromBalanceValue">0.00</span></span>
+                        <span><span data-i18n="balanceLabel">Баланс</span>: <span id="fromBalanceValue">0.00</span></span>
                         <span class="max-label">MAX</span>
                     </div>
                 </div>
@@ -731,9 +731,9 @@
             <!-- To Currency -->
             <div class="currency-block" id="toBlock">
                 <div class="currency-block-header">
-                    <span class="currency-label" id="toLabel">Получаете</span>
+                    <span class="currency-label" id="toLabel" data-i18n="youReceive">Получаете</span>
                     <div class="balance-badge" style="cursor: default; background: transparent;">
-                        <span>Баланс: <span id="toBalanceValue">0.00</span></span>
+                        <span><span data-i18n="balanceLabel">Баланс</span>: <span id="toBalanceValue">0.00</span></span>
                     </div>
                 </div>
                 <div class="currency-main">
@@ -748,7 +748,7 @@
 
         <!-- Result Preview -->
         <div class="result-preview">
-            <span class="result-label" id="youGetLabel">Вы получите</span>
+            <span class="result-label" id="youGetLabel" data-i18n="youWillGet">Вы получите</span>
             <span class="result-value" id="resultPreview">0.00 USDT</span>
         </div>
 
@@ -762,11 +762,11 @@
         <div class="info-section">
             <div class="info-card">
                 <div class="info-card-value">0%</div>
-                <div class="info-card-label">Комиссия</div>
+                <div class="info-card-label" data-i18n="commission">Комиссия</div>
             </div>
             <div class="info-card">
-                <div class="info-card-value">~1 сек</div>
-                <div class="info-card-label">Время обмена</div>
+                <div class="info-card-value">~1 <span data-i18n="sec">сек</span></div>
+                <div class="info-card-label" data-i18n="exchangeTime">Время обмена</div>
             </div>
         </div>
 
@@ -774,15 +774,15 @@
         <div class="features">
             <div class="feature">
                 <span class="feature-icon">🔒</span>
-                <span>Безопасно</span>
+                <span data-i18n="secure">Безопасно</span>
             </div>
             <div class="feature">
                 <span class="feature-icon">⚡</span>
-                <span>Мгновенно</span>
+                <span data-i18n="instant">Мгновенно</span>
             </div>
             <div class="feature">
                 <span class="feature-icon">💎</span>
-                <span>Лучший курс</span>
+                <span data-i18n="bestRate">Лучший курс</span>
             </div>
         </div>
     </div>
@@ -1037,7 +1037,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     </a>
     <a href="wallet.html" class="nav-item">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span>
-        <span class="nav-label">Кошелек</span>
+        <span class="nav-label" data-i18n="wallet">Кошелек</span>
     </a>
 </nav>
 </body>

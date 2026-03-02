@@ -17,6 +17,9 @@ const i18n = {
     trading: 'Trading',
     terminal: 'Terminal',
     binaryOptions: 'Binary Options',
+    wallet: 'Wallet',
+    availableWithdraw: 'Available for withdrawal',
+    activeTrades: 'Active trades',
     
     // Main page
     totalBalance: 'Total Balance',
@@ -102,6 +105,16 @@ const i18n = {
     selectAll: 'All',
     exchangeBtn: 'Exchange',
     exchangeSuccess: 'Exchange successful!',
+    onlineRate: 'Online rate',
+    instantExchange: 'Instant Exchange',
+    youGive: 'You give',
+    youReceive: 'You receive',
+    balanceLabel: 'Balance',
+    commission: 'Commission',
+    exchangeTime: 'Exchange time',
+    instant: 'Instant',
+    secure: 'Secure',
+    bestRate: 'Best rate',
     
     // Trading page
     tradingPairs: 'Trading Pairs',
@@ -149,6 +162,7 @@ const i18n = {
     close: 'Close',
     
     // Time periods
+    sec: 'sec',
     sec30: '30 sec',
     min1: '1 min',
     min2: '2 min',
@@ -178,6 +192,9 @@ const i18n = {
     trading: 'Торговля',
     terminal: 'Терминал',
     binaryOptions: 'Бинарные опционы',
+    wallet: 'Кошелек',
+    availableWithdraw: 'Доступно для вывода',
+    activeTrades: 'Активные сделки',
     
     // Main page
     totalBalance: 'Общий баланс',
@@ -263,6 +280,16 @@ const i18n = {
     selectAll: 'Все',
     exchangeBtn: 'Обменять',
     exchangeSuccess: 'Обмен выполнен!',
+    onlineRate: 'Курс онлайн',
+    instantExchange: 'Мгновенный обмен',
+    youGive: 'Отдаёте',
+    youReceive: 'Получаете',
+    balanceLabel: 'Баланс',
+    commission: 'Комиссия',
+    exchangeTime: 'Время обмена',
+    instant: 'Мгновенно',
+    secure: 'Безопасно',
+    bestRate: 'Лучший курс',
     
     // Trading page
     tradingPairs: 'Торговые пары',
@@ -310,6 +337,7 @@ const i18n = {
     close: 'Закрыть',
     
     // Time periods
+    sec: 'сек',
     sec30: '30 сек',
     min1: '1 мин',
     min2: '2 мин',
