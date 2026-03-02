@@ -375,24 +375,23 @@
       }
     });
     
-    // Scroll to dismiss keyboard (with 500ms delay)
+    // Scroll to dismiss keyboard (any direction)
     let scrollStartY = 0;
-    let dismissTimeout = null;
+    let isScrolling = false;
     
     chatContainer.addEventListener('touchstart', (e) => {
       scrollStartY = e.touches[0].clientY;
+      isScrolling = false;
     }, { passive: true });
     
     chatContainer.addEventListener('touchmove', (e) => {
-      if (document.activeElement === messageInput) {
-        const scrollDistance = Math.abs(e.touches[0].clientY - scrollStartY);
-        if (scrollDistance > 50 && !dismissTimeout) {
-          dismissTimeout = setTimeout(() => {
-            if (document.activeElement === messageInput) {
-              messageInput.blur();
-            }
-            dismissTimeout = null;
-          }, 500);
+      if (document.activeElement === messageInput && !isScrolling) {
+        const currentY = e.touches[0].clientY;
+        const scrollDistance = Math.abs(currentY - scrollStartY);
+        // Close keyboard after scrolling 30px in any direction
+        if (scrollDistance > 30) {
+          isScrolling = true;
+          messageInput.blur();
         }
       }
     }, { passive: true });
