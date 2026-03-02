@@ -327,7 +327,7 @@ router.get('/user/:telegramId/history', adminCheck, async (req, res) => {
     
     // Get trades (orders)
     const tradesResult = await pool.query(
-      `SELECT 'trade' as type, id, amount, symbol as asset, status, direction, result, profit, created_at, NULL as completed_at
+      `SELECT 'trade' as type, id, amount, symbol as asset, status, direction, result, profit, duration, created_at, NULL as completed_at
        FROM orders
        WHERE user_id = $1
        ORDER BY created_at DESC

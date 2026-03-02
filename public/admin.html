@@ -1067,6 +1067,20 @@
           const dirIcon = item.direction === 'up' ? '📈' : '📉';
           const betAmount = parseFloat(item.amount) || 0;
           const profitAmount = parseFloat(item.profit) || 0;
+          const duration = parseInt(item.duration) || 0;
+          
+          // Format duration
+          let durationText = '';
+          if (duration > 0) {
+            if (duration < 60) {
+              durationText = `${duration}с`;
+            } else if (duration < 3600) {
+              durationText = `${Math.floor(duration / 60)}м`;
+            } else {
+              durationText = `${Math.floor(duration / 3600)}ч`;
+            }
+          }
+          
           let resultBadge = '';
           let profitText = '';
           if (isPending) {
@@ -1087,7 +1101,7 @@
                 ${resultBadge}
               </div>
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
-                <span style="font-size: 11px; color: #8892b0;">Сделка ${item.asset || 'BTC'} • ${date}</span>
+                <span style="font-size: 11px; color: #8892b0;">Сделка ${item.asset || 'BTC'} • ⏱ ${durationText} • ${date}</span>
                 ${profitText}
               </div>
             </div>
