@@ -909,6 +909,14 @@
       container.innerHTML = '';
     }
     
+    // Проверяем что TradingView загружен
+    if (typeof TradingView === 'undefined') {
+      console.error('TradingView not loaded!');
+      return;
+    }
+    
+    console.log('initChart called:', { coinSymbol, symbolToUse, symbol, interval });
+    
     try {
       widget = new TradingView.widget({
         "width": "100%",
@@ -925,6 +933,7 @@
         "save_image": false,
         "container_id": "tradingview_widget"
       });
+      console.log('Widget created successfully');
     } catch(e) {
       console.error('Chart error:', e);
     }
@@ -1263,6 +1272,7 @@
   }
 
   window.addEventListener('DOMContentLoaded', () => {
+    console.log('DOMContentLoaded start, coinSymbol:', coinSymbol);
     if (tg?.expand) tg.expand();
     
     // Hide nav when any input focused
