@@ -125,14 +125,8 @@
     .pair-icon {
       width: 44px;
       height: 44px;
-      background: linear-gradient(135deg, var(--accent) 0%, #00a884 100%);
       border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 16px;
-      color: #000;
+      object-fit: cover;
     }
     
     .pair-name {
@@ -732,7 +726,7 @@
   <!-- Pair Card -->
   <div class="pair-card">
     <div class="pair-left">
-      <div class="pair-icon" id="coinIcon">X</div>
+      <img class="pair-icon" id="coinIcon" src="https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/svg/color/btc.svg" alt="">
       <div>
         <div class="pair-name" id="pairName">XRP / USDT</div>
         <div class="pair-subtitle" data-i18n="cryptocurrency">Cryptocurrency</div>
@@ -1273,7 +1267,26 @@
     document.addEventListener('touchend', handleTapToDismiss, { passive: true });
     
     document.getElementById('pairName').textContent = `${coinSymbol} / USDT`;
-    document.getElementById('coinIcon').textContent = coinSymbol.slice(0, 2);
+    
+    // Coin icons map
+    const coinIcons = {
+      BTC: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/svg/color/btc.svg',
+      ETH: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/svg/color/eth.svg',
+      SOL: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/svg/color/sol.svg',
+      XRP: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/svg/color/xrp.svg',
+      BNB: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/svg/color/bnb.svg',
+      TON: 'https://assets.coingecko.com/coins/images/17980/small/ton_symbol.png',
+      DOGE: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/svg/color/doge.svg',
+      ADA: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/svg/color/ada.svg',
+      TRX: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/svg/color/trx.svg',
+      PEPE: 'https://assets.coingecko.com/coins/images/29850/small/pepe-token.jpeg',
+      LINK: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/svg/color/link.svg',
+      SUI: 'https://assets.coingecko.com/coins/images/26375/small/sui_asset.jpeg',
+      NEAR: 'https://cdn.jsdelivr.net/gh/spothq/cryptocurrency-icons@master/svg/color/near.svg',
+      APT: 'https://assets.coingecko.com/coins/images/26455/small/aptos_round.png',
+      WLD: 'https://assets.coingecko.com/coins/images/31069/small/worldcoin.jpeg'
+    };
+    document.getElementById('coinIcon').src = coinIcons[coinSymbol] || coinIcons.BTC;
 
     initChart();
     updateLivePrice();

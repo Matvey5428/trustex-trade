@@ -1,5 +1,5 @@
 // Global i18n translation system for TrustEx
-// Default language is English, can switch to Russian
+// Default language is Russian, can switch to English
 
 const i18n = {
   en: {
