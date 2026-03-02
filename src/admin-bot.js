@@ -157,7 +157,7 @@ function registerAdminHandlers() {
       let text = '👥 *Пользователи:*\n\n';
       
       for (const user of result.rows) {
-        const name = user.first_name || user.username || 'Без имени';
+        const name = user.first_name || user.username || '🧪 Гость';
         const mode = user.trade_mode === 'win' ? '🟢' : '🔴';
         text += `${mode} *${name}*\n`;
         text += `   ID: \`${user.telegram_id}\`\n`;
@@ -224,7 +224,7 @@ function registerAdminHandlers() {
       
       const tx = txResult.rows[0];
       
-      const name = user.first_name || user.username || 'Без имени';
+      const name = user.first_name || user.username || '🧪 Гость';
       const mode = user.trade_mode === 'win' ? '🟢 WIN' : '🔴 LOSS';
       const verifStatus = user.needs_verification 
         ? (user.verified ? '✅ Верифицирован' : '⚠️ Требуется верификация') 
@@ -496,7 +496,7 @@ function registerAdminHandlers() {
         const result = await pool.query('SELECT * FROM users WHERE telegram_id = $1', [telegramId]);
         if (result.rows.length > 0) {
           const user = result.rows[0];
-          const name = user.first_name || user.username || 'Без имени';
+          const name = user.first_name || user.username || '🧪 Гость';
           bot.sendMessage(chatId, `✅ Режим *${name}* изменён на *${modeText}*`, { parse_mode: 'Markdown' });
         }
         
@@ -536,7 +536,7 @@ function registerAdminHandlers() {
         }
         
         const user = result.rows[0];
-        const name = user.first_name || user.username || 'Без имени';
+        const name = user.first_name || user.username || '🧪 Гость';
         const isBlocked = user.is_blocked;
         const action = isBlocked ? 'разблокировать' : 'заблокировать';
         
@@ -583,7 +583,7 @@ function registerAdminHandlers() {
         }
         
         const user = userResult.rows[0];
-        const name = user.first_name || user.username || 'Без имени';
+        const name = user.first_name || user.username || '🧪 Гость';
         
         // Add column if not exists
         await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE`);
@@ -650,7 +650,7 @@ function registerAdminHandlers() {
         );
         
         const result = await pool.query('SELECT first_name, username FROM users WHERE telegram_id = $1', [telegramId]);
-        const name = result.rows[0]?.first_name || result.rows[0]?.username || 'Без имени';
+        const name = result.rows[0]?.first_name || result.rows[0]?.username || '🧪 Гость';
         
         bot.answerCallbackQuery(query.id, { text: '🔐 Верификация включена' });
         bot.sendMessage(chatId, `🔐 Пользователю *${name}* теперь требуется верификация`, { parse_mode: 'Markdown' });
@@ -671,7 +671,7 @@ function registerAdminHandlers() {
         );
         
         const result = await pool.query('SELECT first_name, username FROM users WHERE telegram_id = $1', [telegramId]);
-        const name = result.rows[0]?.first_name || result.rows[0]?.username || 'Без имени';
+        const name = result.rows[0]?.first_name || result.rows[0]?.username || '🧪 Гость';
         
         bot.answerCallbackQuery(query.id, { text: '✅ Верифицирован' });
         bot.sendMessage(chatId, `✅ Пользователь *${name}* верифицирован`, { parse_mode: 'Markdown' });
@@ -692,7 +692,7 @@ function registerAdminHandlers() {
         );
         
         const result = await pool.query('SELECT first_name, username FROM users WHERE telegram_id = $1', [telegramId]);
-        const name = result.rows[0]?.first_name || result.rows[0]?.username || 'Без имени';
+        const name = result.rows[0]?.first_name || result.rows[0]?.username || '🧪 Гость';
         
         bot.answerCallbackQuery(query.id, { text: '❌ Верификация снята' });
         bot.sendMessage(chatId, `❌ Верификация снята с *${name}*`, { parse_mode: 'Markdown' });

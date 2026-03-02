@@ -834,7 +834,7 @@
       list.innerHTML = users.map(user => `
         <div class="user-card" onclick="openUser('${user.telegram_id}')">
           <div class="user-info">
-            <div class="user-name">${user.first_name || user.username || 'Без имени'}</div>
+            <div class="user-name">${user.first_name || user.username || '🧪 Гость (тест)'}</div>
             <div class="user-id">ID: ${user.telegram_id}</div>
           </div>
           <div class="user-balance">
