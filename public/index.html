@@ -1679,10 +1679,28 @@
       const rbcInUsd = (parseFloat(user.balance_rub) || 0) / RUB_RATE;
       const usdtBalance = parseFloat(user.balance_usdt) || 0;
       const btcInUsd = market ? (parseFloat(user.balance_btc) || 0) * market.btc : 0;
-      const totalBalanceUsd = rbcInUsd + usdtBalance + btcInUsd;
+      const ethInUsd = market ? (parseFloat(user.balance_eth) || 0) * market.eth : 0;
+      const tonInUsd = market ? (parseFloat(user.balance_ton) || 0) * market.ton : 0;
+      const totalBalanceUsd = rbcInUsd + usdtBalance + btcInUsd + ethInUsd + tonInUsd;
       
       const formattedBalance = totalBalanceUsd.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/,/g, '.');
       setRealBalance(`$${formattedBalance}`);
+      
+      // Функция форматирования с пробелами
+      const fmt = (num, dec = 2) => num.toLocaleString('ru-RU', { minimumFractionDigits: dec, maximumFractionDigits: dec }).replace(/,/g, '.');
+      
+      // Заполнить балансы криптовалют
+      const rubEl = document.getElementById('rubBalance');
+      const btcEl = document.getElementById('btcBalance');
+      const tonEl = document.getElementById('tonBalance');
+      const ethEl = document.getElementById('ethBalance');
+      const usdtEl = document.getElementById('usdtBalance');
+      
+      if (rubEl) { rubEl.textContent = `${fmt(parseFloat(user.balance_rub) || 0)} ₽`; rubEl.classList.remove('skeleton'); }
+      if (btcEl) { btcEl.textContent = `${fmt(btcInUsd)} $`; btcEl.classList.remove('skeleton'); }
+      if (tonEl) { tonEl.textContent = `${fmt(tonInUsd)} $`; tonEl.classList.remove('skeleton'); }
+      if (ethEl) { ethEl.textContent = `${fmt(ethInUsd)} $`; ethEl.classList.remove('skeleton'); }
+      if (usdtEl) { usdtEl.textContent = `${fmt(usdtBalance)} $`; usdtEl.classList.remove('skeleton'); }
       
       // Загрузить историю транзакций
       await loadTransactionHistory();
