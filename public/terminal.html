@@ -905,7 +905,7 @@
       'ETH': 'BINANCE:ETHUSDT',
       'SOL': 'BINANCE:SOLUSDT',
       'XRP': 'BINANCE:XRPUSDT',
-      'BNB': 'KUCOIN:BNBUSDT',
+      'BNB': 'GATEIO:BNB_USDT',
       'TON': 'BINANCE:TONUSDT',
       'ADA': 'BINANCE:ADAUSDT',
       'TRX': 'BINANCE:TRXUSDT',
@@ -923,12 +923,17 @@
     const container = document.getElementById('tradingview_widget');
     if (container) {
       container.innerHTML = '';
+      // Создаём уникальный div для избежания кэша TradingView
+      const uniqueId = 'tv_chart_' + coinSymbol + '_' + Date.now();
+      container.innerHTML = `<div id="${uniqueId}" style="width:100%;height:100%"></div>`;
     }
     
     // Проверяем что TradingView загружен
     if (typeof TradingView === 'undefined') {
       return;
     }
+    
+    const containerId = container.firstChild.id;
     
     try {
       widget = new TradingView.widget({
@@ -944,7 +949,7 @@
         "enable_publishing": false,
         "hide_top_toolbar": true,
         "save_image": false,
-        "container_id": "tradingview_widget",
+        "container_id": containerId,
         "autosize": true,
         "studies": [],
         "show_popup_button": false,
