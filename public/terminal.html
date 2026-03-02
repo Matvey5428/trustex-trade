@@ -899,10 +899,8 @@
   function initChart(interval = '1') {
     const lang = localStorage.getItem('nexo_lang') || 'en';
     
-    // Монеты которые лучше работают на BYBIT (у Binance нет минутных интервалов)
-    const bybitCoins = ['WLD', 'APT', 'SUI', 'NEAR', 'PEPE'];
-    const useBybit = bybitCoins.includes(coinSymbol);
-    const symbol = useBybit ? `BYBIT:${coinSymbol}USDT.P` : `BINANCE:${coinSymbol}USDT`;
+    // Используем Binance Perpetual для всех монет (поддерживает все интервалы)
+    const symbol = `BINANCE:${coinSymbol}USDT.P`;
     
     widget = new TradingView.widget({
       "autosize": true,
