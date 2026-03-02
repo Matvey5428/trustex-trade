@@ -1065,23 +1065,31 @@
           const isLoss = item.result === 'loss';
           const isPending = item.status === 'active' || item.status === 'open';
           const dirIcon = item.direction === 'up' ? '📈' : '📉';
+          const betAmount = parseFloat(item.amount) || 0;
+          const profitAmount = parseFloat(item.profit) || 0;
           let resultBadge = '';
+          let profitText = '';
           if (isPending) {
             resultBadge = `<span style="font-size: 11px; padding: 3px 8px; border-radius: 10px; background: rgba(77,184,255,0.2); color: #4db8ff;">⏳ Открыта</span>`;
           } else if (isWin) {
             resultBadge = `<span style="font-size: 11px; padding: 3px 8px; border-radius: 10px; background: rgba(0,255,136,0.2); color: #00ff88;">✅ Выиграл</span>`;
+            profitText = `<span style="color: #00ff88; font-size: 12px;">+${profitAmount.toFixed(2)} USDT</span>`;
           } else if (isLoss) {
             resultBadge = `<span style="font-size: 11px; padding: 3px 8px; border-radius: 10px; background: rgba(255,68,68,0.2); color: #ff4444;">❌ Проиграл</span>`;
+            profitText = `<span style="color: #ff4444; font-size: 12px;">-${betAmount.toFixed(2)} USDT</span>`;
           } else {
             resultBadge = `<span style="font-size: 11px; padding: 3px 8px; border-radius: 10px; background: rgba(136,146,176,0.2); color: #8892b0;">Закрыта</span>`;
           }
           return `
             <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; margin-bottom: 8px; border-left: 3px solid #9b59b6;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-weight: 600; color: #9b59b6;">${dirIcon} ${parseFloat(item.amount).toFixed(2)} USDT</span>
+                <span style="font-weight: 600; color: #9b59b6;">${dirIcon} Ставка: ${betAmount.toFixed(2)} USDT</span>
                 ${resultBadge}
               </div>
-              <div style="font-size: 11px; color: #8892b0; margin-top: 5px;">Сделка ${item.asset || 'BTC'} • ${date}</div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                <span style="font-size: 11px; color: #8892b0;">Сделка ${item.asset || 'BTC'} • ${date}</span>
+                ${profitText}
+              </div>
             </div>
           `;
         }
