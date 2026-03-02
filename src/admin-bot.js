@@ -114,7 +114,8 @@ function registerAdminHandlers() {
       '📝 *Текстовые команды:*\n' +
       '`/users` — Список пользователей\n' +
       '`/user [id]` — Информация о пользователе\n' +
-      '`/setbalance [id] [сумма]` — Установить баланс\n' +
+      '`/setbalance [id] [сумма]` — Установить баланс USDT\n' +
+      '`/setbalancerub [id] [сумма]` — Установить баланс RUB\n' +
       '`/setmode [id] [win/loss]` — Установить режим\n' +
       '`/stats` — Общая статистика',
       { 
@@ -143,7 +144,7 @@ function registerAdminHandlers() {
     
     try {
       const result = await pool.query(`
-        SELECT id, telegram_id, username, first_name, balance_usdt, COALESCE(trade_mode, 'loss') as trade_mode, created_at 
+        SELECT id, telegram_id, username, first_name, balance_usdt, balance_rub, COALESCE(trade_mode, 'loss') as trade_mode, created_at 
         FROM users 
         ORDER BY created_at DESC 
         LIMIT 50
@@ -160,7 +161,7 @@ function registerAdminHandlers() {
         const mode = user.trade_mode === 'win' ? '🟢' : '🔴';
         text += `${mode} *${name}*\n`;
         text += `   ID: \`${user.telegram_id}\`\n`;
-        text += `   Баланс: ${formatNum(user.balance_usdt)} USDT\n`;
+        text += `   Баланс: ${formatNum(user.balance_usdt)} USDT | ${formatNum(user.balance_rub || 0)} ₽\n`;
         text += `   Режим: ${user.trade_mode}\n\n`;
       }
       
@@ -232,7 +233,7 @@ function registerAdminHandlers() {
       const text = `👤 *${name}*\n\n` +
         `🆔 Telegram ID: \`${user.telegram_id}\`\n` +
         `📛 Username: @${user.username || 'нет'}\n` +
-        `💰 Баланс: *${formatNum(user.balance_usdt)} USDT*\n`+
+        `💰 Баланс: *${formatNum(user.balance_usdt)} USDT* | *${formatNum(user.balance_rub || 0)} ₽*\n`+
         `🎯 Режим: *${mode}*\n` +
         `🔐 Верификация: *${verifStatus}*\n` +
         `📅 Регистрация: ${new Date(user.created_at).toLocaleDateString('ru')}\n\n` +
@@ -323,6 +324,55 @@ function registerAdminHandlers() {
     const telegramId = match[1].trim();
     bot.sendMessage(chatId, 
       `💰 Введите сумму:\n\n\`/setbalance ${telegramId} [сумма]\`\n\nПример: \`/setbalance ${telegramId} 1000\``,
+      { parse_mode: 'Markdown' }
+    );
+  });
+
+  // Set RUB balance command (with amount) - main admin only
+  bot.onText(/\/setbalancerub (\S+) (\S+)/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    
+    if (!isMainAdmin(msg.from.id)) {
+      return bot.sendMessage(chatId, '⛔ Только для главного админа');
+    }
+    
+    const searchId = match[1].trim();
+    const newBalance = parseFloat(match[2]);
+    
+    if (isNaN(newBalance) || newBalance < 0) {
+      return bot.sendMessage(chatId, '❌ Неверная сумма');
+    }
+    
+    try {
+      const result = await pool.query(
+        'UPDATE users SET balance_rub = $1 WHERE telegram_id = $2 RETURNING first_name, username',
+        [newBalance, searchId]
+      );
+      
+      if (result.rows.length === 0) {
+        return bot.sendMessage(chatId, '❌ Пользователь не найден');
+      }
+      
+      const name = result.rows[0].first_name || result.rows[0].username;
+      bot.sendMessage(chatId, `✅ Баланс RUB *${name}* установлен: *${formatNum(newBalance)} ₽*`, { parse_mode: 'Markdown' });
+      
+    } catch (e) {
+      console.error('Admin bot error:', e);
+      bot.sendMessage(chatId, '❌ Ошибка');
+    }
+  });
+
+  // Set RUB balance command (without amount - show help) - main admin only
+  bot.onText(/^\/setbalancerub (\S+)$/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    
+    if (!isMainAdmin(msg.from.id)) {
+      return bot.sendMessage(chatId, '⛔ Только для главного админа');
+    }
+    
+    const telegramId = match[1].trim();
+    bot.sendMessage(chatId, 
+      `💰 Введите сумму в рублях:\n\n\`/setbalancerub ${telegramId} [сумма]\`\n\nПример: \`/setbalancerub ${telegramId} 50000\``,
       { parse_mode: 'Markdown' }
     );
   });

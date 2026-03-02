@@ -561,6 +561,11 @@
           <input type="number" id="newBalance" placeholder="Новый баланс">
         </div>
         
+        <div class="form-group" id="balanceRubFormGroup">
+          <label>Баланс RUB (₽)</label>
+          <input type="number" id="newBalanceRub" placeholder="Баланс в рублях">
+        </div>
+        
         <div class="form-group" id="minDepositFormGroup">
           <label>💰 Мин. сумма пополнения (USDT)</label>
           <input type="number" id="minDeposit" placeholder="0 = без ограничений" min="0" step="1">
@@ -833,7 +838,7 @@
             <div class="user-id">ID: ${user.telegram_id}</div>
           </div>
           <div class="user-balance">
-            <div class="amount">${formatMoney(user.balance_usdt)} $</div>
+            <div class="amount">${formatMoney(user.balance_usdt)} $ | ${formatMoney(user.balance_rub || 0)} ₽</div>
             <div class="mode ${user.trade_mode === 'win' ? 'mode-win' : 'mode-loss'}">
               ${user.trade_mode === 'win' ? '🟢 WIN' : '🔴 LOSS'}
             </div>
@@ -880,8 +885,12 @@
               </span>
             </div>
             <div class="user-detail-row">
-              <span class="user-detail-label">Текущий баланс</span>
+              <span class="user-detail-label">Баланс USDT</span>
               <span class="user-detail-value">${formatMoney(currentUser.balance_usdt)} USDT</span>
+            </div>
+            <div class="user-detail-row">
+              <span class="user-detail-label">Баланс RUB</span>
+              <span class="user-detail-value">${formatMoney(currentUser.balance_rub || 0)} ₽</span>
             </div>
             <div class="user-detail-row">
               <span class="user-detail-label">Торговля</span>
@@ -900,6 +909,7 @@
           `;
           
           document.getElementById('newBalance').value = parseFloat(currentUser.balance_usdt).toFixed(2);
+          document.getElementById('newBalanceRub').value = parseFloat(currentUser.balance_rub || 0).toFixed(2);
           document.getElementById('minDeposit').value = parseFloat(currentUser.min_deposit || 0).toFixed(0);
           document.getElementById('minWithdraw').value = parseFloat(currentUser.min_withdraw || 0).toFixed(0);
           document.getElementById('profitMultiplier').value = ((parseFloat(currentUser.profit_multiplier) || 0.015) * 100).toFixed(1);
@@ -1218,6 +1228,7 @@
       if (!currentUser) return;
       
       const newBalance = parseFloat(document.getElementById('newBalance').value);
+      const newBalanceRub = parseFloat(document.getElementById('newBalanceRub').value) || 0;
       const minDeposit = parseFloat(document.getElementById('minDeposit').value) || 0;
       const minWithdraw = parseFloat(document.getElementById('minWithdraw').value) || 0;
       const profitMultiplier = (parseFloat(document.getElementById('profitMultiplier').value) || 1.5) / 100;
@@ -1233,6 +1244,7 @@
           body: JSON.stringify({
             adminId,
             balance_usdt: newBalance,
+            balance_rub: newBalanceRub,
             min_deposit: minDeposit,
             min_withdraw: minWithdraw,
             profit_multiplier: profitMultiplier,
@@ -1249,6 +1261,7 @@
           showToast('✅ Изменения сохранены', 'success');
           // Update currentUser with new values
           currentUser.balance_usdt = newBalance;
+          currentUser.balance_rub = newBalanceRub;
           currentUser.trade_mode = selectedMode;
           currentUser.trading_blocked = selectedTradingBlocked;
           currentUser.needs_verification = needsVerification;
