@@ -850,7 +850,7 @@
   const tg = window.Telegram?.WebApp;
   let userId = null;
   const params = new URLSearchParams(window.location.search);
-  const coinSymbol = params.get('symbol') || 'BTC';
+  const coinSymbol = (params.get('symbol') || 'BTC').toUpperCase().trim();
   let currentTradeType = 'buy';
   let widget = null;
 
@@ -899,9 +899,27 @@
   function initChart(interval = '1') {
     const lang = localStorage.getItem('nexo_lang') || 'ru';
     
-    // DOT и AVAX пока показывают BTC график
-    const symbolToUse = (coinSymbol === 'DOT' || coinSymbol === 'AVAX') ? 'BTC' : coinSymbol;
-    const symbol = `BINANCE:${symbolToUse}USDT`;
+    // Точные символы для каждой монеты
+    const symbolMap = {
+      'BTC': 'BINANCE:BTCUSDT',
+      'ETH': 'BINANCE:ETHUSDT',
+      'SOL': 'BINANCE:SOLUSDT',
+      'XRP': 'BINANCE:XRPUSDT',
+      'BNB': 'BINANCE:BNBUSDT',
+      'TON': 'BINANCE:TONUSDT',
+      'AVAX': 'BINANCE:AVAXUSDT',
+      'ADA': 'BINANCE:ADAUSDT',
+      'TRX': 'BINANCE:TRXUSDT',
+      'PEPE': 'BINANCE:PEPEUSDT',
+      'LINK': 'BINANCE:LINKUSDT',
+      'SUI': 'BINANCE:SUIUSDT',
+      'NEAR': 'BINANCE:NEARUSDT',
+      'APT': 'BINANCE:APTUSDT',
+      'DOT': 'BINANCE:DOTUSDT'
+    };
+    
+    // Использовать точный символ из карты, или BTC как fallback
+    const symbol = symbolMap[coinSymbol] || 'BINANCE:BTCUSDT';
     
     // Очистить контейнер перед созданием нового виджета
     const container = document.getElementById('tradingview_widget');
@@ -915,7 +933,7 @@
       return;
     }
     
-    console.log('initChart called:', { coinSymbol, symbolToUse, symbol, interval });
+    console.log('initChart called:', { coinSymbol, symbol, interval });
     
     try {
       widget = new TradingView.widget({
