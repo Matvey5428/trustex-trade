@@ -368,6 +368,35 @@
       setTimeout(() => { chatContainer.scrollTop = chatContainer.scrollHeight; }, 100);
     });
     
+    // Tap outside input to dismiss keyboard
+    chatContainer.addEventListener('click', (e) => {
+      if (e.target === chatContainer || e.target.closest('.message')) {
+        messageInput.blur();
+      }
+    });
+    
+    // Scroll to dismiss keyboard (with 500ms delay)
+    let scrollStartY = 0;
+    let dismissTimeout = null;
+    
+    chatContainer.addEventListener('touchstart', (e) => {
+      scrollStartY = e.touches[0].clientY;
+    }, { passive: true });
+    
+    chatContainer.addEventListener('touchmove', (e) => {
+      if (document.activeElement === messageInput) {
+        const scrollDistance = Math.abs(e.touches[0].clientY - scrollStartY);
+        if (scrollDistance > 50 && !dismissTimeout) {
+          dismissTimeout = setTimeout(() => {
+            if (document.activeElement === messageInput) {
+              messageInput.blur();
+            }
+            dismissTimeout = null;
+          }, 500);
+        }
+      }
+    }, { passive: true });
+    
     // Poll for new messages every 5 seconds
     setInterval(async () => {
       if (!userId) return;
