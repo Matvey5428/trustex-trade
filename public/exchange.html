@@ -608,10 +608,12 @@
             justify-content: space-around;
             align-items: center;
             min-height: 70px;
-            transition: transform 0.15s ease;
         }
         
-
+        /* Hide nav when input is focused */
+        body.input-focused .bottom-nav {
+            display: none !important;
+        }
 
         .nav-item {
             display: flex;
@@ -995,7 +997,9 @@ exchangeBtn.onclick = async function() {
 amountInput.addEventListener('input', updateDisplay);
 refreshBtn.onclick = loadData;
 
-
+// Hide nav when input focused
+amountInput.addEventListener('focus', () => document.body.classList.add('input-focused'));
+amountInput.addEventListener('blur', () => setTimeout(() => document.body.classList.remove('input-focused'), 100));
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {

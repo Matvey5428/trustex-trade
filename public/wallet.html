@@ -346,7 +346,11 @@
             justify-content: space-around;
             align-items: center;
             min-height: 70px;
-            transition: transform 0.15s ease;
+        }
+        
+        /* Hide nav when input is focused (keyboard open) */
+        body.input-focused .bottom-nav {
+            display: none !important;
         }
         
         .nav-item {
@@ -579,6 +583,12 @@
         tg.ready();
         tg.expand();
     }
+
+    // Hide bottom nav when input focused
+    document.querySelectorAll('input, textarea').forEach(el => {
+        el.addEventListener('focus', () => document.body.classList.add('input-focused'));
+        el.addEventListener('blur', () => setTimeout(() => document.body.classList.remove('input-focused'), 100));
+    });
 
     let balanceHidden = false;
     let userData = null;

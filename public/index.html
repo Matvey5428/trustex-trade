@@ -612,7 +612,11 @@
       justify-content: space-around;
       align-items: center;
       min-height: 70px;
-      transition: transform 0.15s ease;
+    }
+    
+    /* Hide nav when input is focused */
+    body.input-focused .bottom-nav {
+      display: none !important;
     }
     
     .nav-item {
@@ -1992,6 +1996,12 @@
   }
 
   window.addEventListener('DOMContentLoaded', async () => {
+    // Hide nav when any input focused
+    document.querySelectorAll('input, textarea').forEach(el => {
+      el.addEventListener('focus', () => document.body.classList.add('input-focused'));
+      el.addEventListener('blur', () => setTimeout(() => document.body.classList.remove('input-focused'), 100));
+    });
+    
     try {
       log('🚀 Initializing TrustEx...');
       
