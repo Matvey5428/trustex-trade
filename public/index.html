@@ -1674,6 +1674,19 @@
             return;
           }
           
+          // Обновить балансы из свежих данных API
+          if (profileData.data) {
+            const p = profileData.data;
+            user.balance_usdt = p.usdt;
+            user.balance_btc = p.btc;
+            user.balance_rub = p.rub;
+            user.balance_eth = p.eth;
+            user.balance_ton = p.ton;
+            // Обновить глобальный кэш
+            window.CURRENT_USER = user;
+            localStorage.setItem('nexo_user_data', JSON.stringify(user));
+          }
+          
           const tradingVol = parseFloat(profileData.data?.total_volume) || 0;
           updateEl('tradingVolume', `${tradingVol.toFixed(2)} USDT`);
           
