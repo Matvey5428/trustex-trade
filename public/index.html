@@ -2102,22 +2102,30 @@
     try {
       log('🚀 Initializing TrustEx...');
       
+      // Сразу показать кэшированные данные из localStorage
+      const cachedUser = TelegramAuth.getCurrentUser();
+      if (cachedUser) {
+        window.CURRENT_USER = cachedUser;
+        window.AUTH_TOKEN = TelegramAuth.getToken();
+        // Показать кэшированный баланс мгновенно
+        loadUserData();
+      }
+      
       // Проверить авторизацию
       if (!TelegramAuth.isAuthenticated()) {
         log('🔄 Not authenticated, logging in...');
         await TelegramAuth.login();
       } else {
         log('✅ Already authenticated');
-        window.CURRENT_USER = TelegramAuth.getCurrentUser();
-        window.AUTH_TOKEN = TelegramAuth.getToken();
       }
 
-      // Загрузить данные пользователя параллельно
-      await TelegramAuth.refreshUser();
+      // Обновить данные с сервера (не блокируя)
+      TelegramAuth.refreshUser().then(() => {
+        loadUserData(); // Обновить с актуальными данными
+      });
       
       // Запустить всё параллельно
       Promise.all([
-        loadUserData(),
         loadAnalyticsData('all'),
         loadPeriodStats(),
         loadPnlChart(),
