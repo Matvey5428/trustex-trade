@@ -368,19 +368,29 @@
       setTimeout(() => { chatContainer.scrollTop = chatContainer.scrollHeight; }, 100);
     });
     
-    // Tap outside input to dismiss keyboard (distinguish tap from scroll)
+    // Tap or scroll UP dismisses keyboard, scroll DOWN keeps it
     let touchStartY = 0;
     let isTap = true;
+    let hasDismissed = false;
     
     chatContainer.addEventListener('touchstart', (e) => {
       touchStartY = e.touches[0].clientY;
       isTap = true;
+      hasDismissed = false;
     }, { passive: true });
     
     chatContainer.addEventListener('touchmove', (e) => {
-      const moveDistance = Math.abs(e.touches[0].clientY - touchStartY);
-      if (moveDistance > 10) {
+      const currentY = e.touches[0].clientY;
+      const moveDistance = currentY - touchStartY;
+      
+      if (Math.abs(moveDistance) > 10) {
         isTap = false; // It's a scroll, not a tap
+        
+        // Scroll UP (finger moves DOWN, moveDistance > 0) = dismiss keyboard
+        if (moveDistance > 30 && !hasDismissed && document.activeElement === messageInput) {
+          hasDismissed = true;
+          messageInput.blur();
+        }
       }
     }, { passive: true });
     
