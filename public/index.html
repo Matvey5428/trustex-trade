@@ -1575,13 +1575,10 @@
         const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbols=${JSON.stringify(symbols)}`);
         const prices = await res.json();
         
-        const rubRes = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-        const rubData = await rubRes.json();
-        RUB_RATE = rubData.rates.RUB;
-
         const priceMap = {};
         prices.forEach(p => priceMap[p.symbol] = parseFloat(p.price));
 
+        // Используем фиксированный курс 79.10 (тот же что в exchange.html)
         updateEl('rubPrice', `${RUB_RATE.toFixed(2)} ₽`);
         updateEl('btcPrice', `${priceMap['BTCUSDT'].toLocaleString()} $`);
         updateEl('ethPrice', `${priceMap['ETHUSDT'].toLocaleString()} $`);
