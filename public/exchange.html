@@ -611,11 +611,7 @@
             transition: transform 0.15s ease;
         }
         
-        /* Hide nav when keyboard is open */
-        body.keyboard-open .bottom-nav {
-            transform: translateY(100%);
-            pointer-events: none;
-        }
+
 
         .nav-item {
             display: flex;
@@ -999,22 +995,7 @@ exchangeBtn.onclick = async function() {
 amountInput.addEventListener('input', updateDisplay);
 refreshBtn.onclick = loadData;
 
-// Keyboard handling using visualViewport API
-function handleKeyboard() {
-    if (window.visualViewport) {
-        const keyboardOpen = window.innerHeight - window.visualViewport.height > 100;
-        if (keyboardOpen) {
-            document.body.classList.add('keyboard-open');
-        } else {
-            document.body.classList.remove('keyboard-open');
-        }
-    }
-}
-if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', handleKeyboard);
-}
-amountInput.addEventListener('focus', () => { document.body.classList.add('keyboard-open'); });
-amountInput.addEventListener('blur', () => { setTimeout(() => { document.body.classList.remove('keyboard-open'); }, 150); });
+
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {

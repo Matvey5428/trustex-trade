@@ -227,12 +227,6 @@
             transition: transform 0.15s ease;
         }
         
-        /* Hide nav when keyboard is open */
-        body.keyboard-open .bottom-nav {
-            transform: translateY(100%);
-            pointer-events: none;
-        }
-
         .nav-item {
             display: flex;
             flex-direction: column;
@@ -620,22 +614,6 @@
     
     // Search filter
     document.getElementById('searchInput').addEventListener('input', applyFilter);
-    
-    // Keyboard handling using visualViewport API
-    const searchInput = document.getElementById('searchInput');
-    function handleKeyboard() {
-        if (window.visualViewport) {
-            const keyboardOpen = window.innerHeight - window.visualViewport.height > 100;
-            document.body.classList.toggle('keyboard-open', keyboardOpen);
-        }
-    }
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', handleKeyboard);
-    }
-    if (searchInput) {
-        searchInput.addEventListener('focus', () => { document.body.classList.add('keyboard-open'); });
-        searchInput.addEventListener('blur', () => { setTimeout(() => { document.body.classList.remove('keyboard-open'); }, 150); });
-    }
     
     // Double-click to add/remove favorite (with click delay to prevent navigation)
     document.querySelectorAll('.trade-card').forEach(card => {
