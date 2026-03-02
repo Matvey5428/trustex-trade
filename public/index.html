@@ -1566,6 +1566,9 @@
     langSelect.addEventListener('change', (e) => {
       localStorage.setItem('nexo_lang', e.target.value);
       applyLanguage(e.target.value);
+      // Перегенерировать отзывы на новом языке
+      currentIdx = 0;
+      initReviews();
     });
   }
 
