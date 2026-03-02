@@ -313,7 +313,7 @@
       rows="1"
       onkeydown="handleKeyDown(event)"
     ></textarea>
-    <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+    <button class="send-btn" id="sendBtn">➤</button>
   </div>
   
   <script>
@@ -416,6 +416,7 @@
         
         if (data.success) {
           input.value = '';
+          input.focus(); // Keep keyboard open
           messages.push(data.data);
           renderMessages();
         } else {
@@ -439,6 +440,24 @@
     const messageInput = document.getElementById('messageInput');
     const inputContainer = document.querySelector('.input-container');
     const chatContainer = document.getElementById('chatContainer');
+    const sendBtn = document.getElementById('sendBtn');
+    
+    // Prevent keyboard from closing when tapping send button
+    let touchedSendBtn = false;
+    
+    sendBtn.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      touchedSendBtn = true;
+      sendMessage();
+    }, { passive: false });
+    
+    sendBtn.addEventListener('click', () => {
+      if (touchedSendBtn) {
+        touchedSendBtn = false;
+        return; // Already handled by touchstart
+      }
+      sendMessage();
+    });
     
     messageInput.addEventListener('input', function() {
       this.style.height = 'auto';
@@ -492,27 +511,42 @@
       }
     });
     
-    // Scroll to dismiss keyboard (with delay to avoid triggering on auto-scroll)
+    // Scroll to dismiss keyboard (with delay)
     let userScrolling = false;
     let scrollStartY = 0;
+    let dismissTimeout = null;
     
     chatContainer.addEventListener('touchstart', (e) => {
       scrollStartY = e.touches[0].clientY;
       userScrolling = true;
+      if (dismissTimeout) {
+        clearTimeout(dismissTimeout);
+        dismissTimeout = null;
+      }
     }, { passive: true });
     
     chatContainer.addEventListener('touchmove', (e) => {
       if (userScrolling && document.activeElement === messageInput) {
         const deltaY = Math.abs(e.touches[0].clientY - scrollStartY);
-        if (deltaY > 30) {
-          messageInput.blur();
-          userScrolling = false;
+        if (deltaY > 50 && !dismissTimeout) {
+          // Start timer to dismiss keyboard after 500ms of scrolling
+          dismissTimeout = setTimeout(() => {
+            if (document.activeElement === messageInput) {
+              messageInput.blur();
+            }
+            dismissTimeout = null;
+          }, 500);
         }
       }
     }, { passive: true });
     
     chatContainer.addEventListener('touchend', () => {
       userScrolling = false;
+      // Cancel dismiss if user stopped scrolling quickly
+      if (dismissTimeout) {
+        clearTimeout(dismissTimeout);
+        dismissTimeout = null;
+      }
     }, { passive: true });
     
     // Poll for new messages every 5 seconds
