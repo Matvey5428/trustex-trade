@@ -899,18 +899,26 @@
   function initChart(interval = '1') {
     const lang = localStorage.getItem('nexo_lang') || 'en';
     
-    // Разные биржи для разных монет
-    const okxCoins = ['WLD', 'APT', 'SUI'];
-    const bybitCoins = ['NEAR', 'PEPE'];
+    // Символы для разных монет (проверенные)
+    const symbolMap = {
+      'BTC': 'BINANCE:BTCUSDT',
+      'ETH': 'BINANCE:ETHUSDT',
+      'SOL': 'BINANCE:SOLUSDT',
+      'XRP': 'BINANCE:XRPUSDT',
+      'BNB': 'BINANCE:BNBUSDT',
+      'TON': 'OKX:TONUSDT',
+      'DOGE': 'BINANCE:DOGEUSDT',
+      'ADA': 'BINANCE:ADAUSDT',
+      'TRX': 'BINANCE:TRXUSDT',
+      'PEPE': 'BINANCE:PEPEUSDT',
+      'LINK': 'BINANCE:LINKUSDT',
+      'SUI': 'BINANCE:SUIUSDT',
+      'NEAR': 'BINANCE:NEARUSDT',
+      'APT': 'BINANCE:APTUSDT',
+      'WLD': 'BINANCE:WLDUSDT'
+    };
     
-    let symbol;
-    if (okxCoins.includes(coinSymbol)) {
-      symbol = `OKX:${coinSymbol}USDT.P`;
-    } else if (bybitCoins.includes(coinSymbol)) {
-      symbol = `BYBIT:${coinSymbol}USDT.P`;
-    } else {
-      symbol = `BINANCE:${coinSymbol}USDT`;
-    }
+    const symbol = symbolMap[coinSymbol] || `BINANCE:${coinSymbol}USDT`;
     
     widget = new TradingView.widget({
       "autosize": true,
