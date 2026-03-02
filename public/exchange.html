@@ -711,7 +711,7 @@
                 <div class="currency-main">
                     <div class="currency-icon icon-rub" id="fromIcon">₽</div>
                     <div class="currency-input-wrap">
-                        <div class="currency-name" id="fromName">Российский рубль</div>
+                        <div class="currency-name" id="fromName" data-i18n="rub">Российский рубль</div>
                         <input type="number" class="amount-input" id="amountInput" placeholder="0.00" inputmode="decimal">
                     </div>
                 </div>
@@ -876,7 +876,7 @@ function updateDisplay() {
         
         toIcon.className = 'currency-icon icon-rub';
         toIcon.innerText = '₽';
-        toName.innerText = 'Российский рубль';
+        toName.innerText = typeof t === 'function' ? t('rub') : 'Российский рубль';
         toBalanceValue.innerText = rubBalance.toFixed(2);
         
         swapBtn.classList.add('rotated');
@@ -892,7 +892,7 @@ function updateDisplay() {
         // Update icons
         fromIcon.className = 'currency-icon icon-rub';
         fromIcon.innerText = '₽';
-        fromName.innerText = 'Российский рубль';
+        fromName.innerText = typeof t === 'function' ? t('rub') : 'Российский рубль';
         fromBalanceValue.innerText = rubBalance.toFixed(2);
         
         toIcon.className = 'currency-icon icon-usdt';
