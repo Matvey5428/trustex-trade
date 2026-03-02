@@ -377,27 +377,6 @@
     chatContainer.addEventListener('touchend', handleChatTap, { passive: true });
     chatContainer.addEventListener('click', handleChatTap);
     
-    // Scroll UP to dismiss keyboard (not down)
-    let scrollStartY = 0;
-    let isScrolling = false;
-    
-    chatContainer.addEventListener('touchstart', (e) => {
-      scrollStartY = e.touches[0].clientY;
-      isScrolling = false;
-    }, { passive: true });
-    
-    chatContainer.addEventListener('touchmove', (e) => {
-      if (document.activeElement === messageInput && !isScrolling) {
-        const currentY = e.touches[0].clientY;
-        const scrollDelta = currentY - scrollStartY;
-        // Close keyboard only when scrolling UP (finger moves down, scrollDelta > 30)
-        if (scrollDelta > 30) {
-          isScrolling = true;
-          messageInput.blur();
-        }
-      }
-    }, { passive: true });
-    
     // Poll for new messages every 5 seconds
     setInterval(async () => {
       if (!userId) return;
