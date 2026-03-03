@@ -163,7 +163,9 @@ router.post('/close/:tradeId', async (req, res) => {
         data: {
           id: trade.id,
           status: trade.status,
-          result: trade.result
+          result: trade.result,
+          profit: parseFloat(trade.profit) || 0,
+          amount: parseFloat(trade.amount) || 0
         }
       });
     }
@@ -172,6 +174,9 @@ router.post('/close/:tradeId', async (req, res) => {
     const tradeMode = trade.trade_mode || 'loss';
     const currentBalance = parseFloat(trade.balance_usdt) || 0;
     const profitMultiplier = parseFloat(trade.profit_multiplier) || 0.015;
+
+    // Log for debugging
+    console.log(`📊 Closing trade ${tradeId}: mode=${tradeMode}, amount=${amount}, currentBalance=${currentBalance}, multiplier=${profitMultiplier}`);
 
     // Calculate result based on mode
     let profit = 0;

@@ -32,6 +32,9 @@ async function closeTrade(trade) {
     const currentBalance = parseFloat(user.balance_usdt) || 0;
     const profitMultiplier = parseFloat(user.profit_multiplier) || 0.015;
 
+    // Log for debugging
+    console.log(`📊 Auto-closing trade ${trade.id}: mode=${tradeMode}, amount=${amount}, currentBalance=${currentBalance}, multiplier=${profitMultiplier}`);
+
     // Calculate result based on mode
     let profit = 0;
     let result = 'loss';
