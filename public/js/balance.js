@@ -151,8 +151,12 @@ const BalanceManager = {
 
 // Автоматическая инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
-  // Небольшая задержка чтобы Telegram SDK успел загрузиться
-  setTimeout(() => {
-    BalanceManager.init();
-  }, 100);
+  // Сначала мгновенно показать закэшированные данные
+  const cachedUser = TelegramAuth.getCurrentUser();
+  if (cachedUser) {
+    BalanceManager.updateBalanceElements(cachedUser);
+  }
+  
+  // Потом обновить с сервера в фоне
+  BalanceManager.init();
 });
