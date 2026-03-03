@@ -667,11 +667,19 @@
     let adminId = null;
     let userRole = 'manager'; // 'admin' or 'manager'
     
-    // Init
+    // Init - get adminId from Telegram or localStorage fallback
     if (tg) {
       tg.ready();
       tg.expand();
       adminId = tg.initDataUnsafe?.user?.id;
+      if (adminId) {
+        localStorage.setItem('trustex_admin_id', String(adminId));
+      }
+    }
+    
+    // Fallback to localStorage if not available from Telegram
+    if (!adminId) {
+      adminId = localStorage.getItem('trustex_admin_id');
     }
     
     let currentTab = 'users';

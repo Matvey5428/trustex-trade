@@ -37,9 +37,17 @@ const TelegramAuth = {
 
     const tg = window.Telegram?.WebApp;
     const telegramId = tg?.initDataUnsafe?.user?.id;
-    if (!telegramId) return null;
+    if (telegramId) {
+      // Save for cross-page sharing
+      localStorage.setItem('trustex_user_telegram_id', String(telegramId));
+      return telegramId;
+    }
+    
+    // Try saved real telegram ID
+    const savedRealId = localStorage.getItem('trustex_user_telegram_id');
+    if (savedRealId) return parseInt(savedRealId);
 
-    return telegramId;
+    return null;
   },
 
   /**

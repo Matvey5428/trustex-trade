@@ -237,7 +237,14 @@
     // Get telegram ID with fallback
     function getClientTelegramId() {
       const telegramRawId = tg?.initDataUnsafe?.user?.id;
-      if (telegramRawId) return Number(telegramRawId);
+      if (telegramRawId) {
+        localStorage.setItem('trustex_user_telegram_id', String(telegramRawId));
+        return Number(telegramRawId);
+      }
+      // Try saved real telegram ID first
+      const savedRealId = localStorage.getItem('trustex_user_telegram_id');
+      if (savedRealId) return Number(savedRealId);
+      // Fallback to guest ID
       const key = 'nexo_guest_telegram_id';
       const stored = localStorage.getItem(key);
       if (stored) return Number(stored);
