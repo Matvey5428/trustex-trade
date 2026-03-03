@@ -15,22 +15,30 @@ async function closeTrade(trade) {
   try {
     await client.query('BEGIN');
 
-    // Get fresh user data
-    const userResult = await client.query(
-      'SELECT trade_mode, balance_usdt, profit_multiplier FROM users WHERE id = $1',
-      [trade.user_id]
+    // Lock trade and user rows to prevent race condition
+    const tradeCheck = await client.query(
+      'SELECT o.*, u.trade_mode, u.balance_usdt, u.profit_multiplier FROM orders o JOIN users u ON o.user_id = u.id WHERE o.id = $1 FOR UPDATE OF o, u',
+      [trade.id]
     );
     
-    if (userResult.rows.length === 0) {
+    if (tradeCheck.rows.length === 0) {
       await client.query('ROLLBACK');
       return;
     }
 
-    const user = userResult.rows[0];
-    const amount = parseFloat(trade.amount);
-    const tradeMode = user.trade_mode || 'loss';
-    const currentBalance = parseFloat(user.balance_usdt) || 0;
-    const profitMultiplier = parseFloat(user.profit_multiplier) || 0.015;
+    const lockedTrade = tradeCheck.rows[0];
+    
+    // Already closed by another process?
+    if (lockedTrade.status !== 'active') {
+      await client.query('ROLLBACK');
+      console.log(`⏭️ Trade ${trade.id} already closed, skipping`);
+      return;
+    }
+
+    const amount = parseFloat(lockedTrade.amount);
+    const tradeMode = lockedTrade.trade_mode || 'loss';
+    const currentBalance = parseFloat(lockedTrade.balance_usdt) || 0;
+    const profitMultiplier = parseFloat(lockedTrade.profit_multiplier) || 0.015;
 
     // Log for debugging
     console.log(`📊 Auto-closing trade ${trade.id}: mode=${tradeMode}, amount=${amount}, currentBalance=${currentBalance}, multiplier=${profitMultiplier}`);
@@ -45,6 +53,7 @@ async function closeTrade(trade) {
       profit = amount * profitMultiplier;
       finalBalance = currentBalance + amount + profit;
       result = 'win';
+      console.log(`✅ WIN: returning ${amount} + profit ${profit.toFixed(2)} = finalBalance ${finalBalance.toFixed(2)}`);
     } else {
       // LOSS mode: already lost (balance was deducted)
       profit = -amount;
@@ -61,8 +70,9 @@ async function closeTrade(trade) {
     if (result === 'win') {
       await client.query(
         'UPDATE users SET balance_usdt = $1, updated_at = NOW() WHERE id = $2',
-        [finalBalance, trade.user_id]
+        [finalBalance, lockedTrade.user_id]
       );
+      console.log(`💰 Updated user ${lockedTrade.user_id} balance to ${finalBalance.toFixed(2)}`);
     }
 
     // Create transaction record
@@ -70,7 +80,7 @@ async function closeTrade(trade) {
     await client.query(
       `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
        VALUES ($1, $2, 'USDT', 'trade', $3, NOW())`,
-      [trade.user_id, txAmount, `Торговля: ${result === 'win' ? 'Выигрыш +' : 'Проигрыш -'}${Math.abs(profit).toFixed(2)} USDT`]
+      [lockedTrade.user_id, txAmount, `Торговля: ${result === 'win' ? 'Выигрыш +' : 'Проигрыш -'}${Math.abs(profit).toFixed(2)} USDT`]
     );
 
     await client.query('COMMIT');

@@ -140,16 +140,20 @@ router.post('/create', async (req, res) => {
  * Close a trade and calculate result
  */
 router.post('/close/:tradeId', async (req, res) => {
+  const client = await pool.connect();
   try {
     const { tradeId } = req.params;
 
-    // Get trade
-    const tradeResult = await pool.query(
-      'SELECT o.*, u.telegram_id, u.trade_mode, u.balance_usdt, u.profit_multiplier FROM orders o JOIN users u ON o.user_id = u.id WHERE o.id = $1',
+    await client.query('BEGIN');
+
+    // Get trade with lock to prevent race condition
+    const tradeResult = await client.query(
+      'SELECT o.*, u.telegram_id, u.trade_mode, u.balance_usdt, u.profit_multiplier, u.id as db_user_id FROM orders o JOIN users u ON o.user_id = u.id WHERE o.id = $1 FOR UPDATE OF o, u',
       [tradeId]
     );
 
     if (tradeResult.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Trade not found' });
     }
 
@@ -157,6 +161,7 @@ router.post('/close/:tradeId', async (req, res) => {
 
     // Already closed?
     if (trade.status !== 'active') {
+      await client.query('ROLLBACK');
       return res.json({
         success: true,
         message: 'Сделка уже закрыта',
@@ -188,65 +193,58 @@ router.post('/close/:tradeId', async (req, res) => {
       profit = amount * profitMultiplier;
       finalBalance = currentBalance + amount + profit;
       result = 'win';
+      console.log(`✅ WIN: returning ${amount} + profit ${profit.toFixed(2)} = finalBalance ${finalBalance.toFixed(2)}`);
     } else {
       // LOSS mode: already lost (balance was deducted)
       profit = -amount;
       result = 'loss';
     }
 
-    // Start transaction
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
+    // Update trade status
+    await client.query(
+      'UPDATE orders SET status = $1, result = $2, profit = $3, closed_at = NOW() WHERE id = $4',
+      ['closed', result, profit, tradeId]
+    );
 
-      // Update trade status
+    // If win - add money back
+    if (result === 'win') {
       await client.query(
-        'UPDATE orders SET status = $1, result = $2, profit = $3, closed_at = NOW() WHERE id = $4',
-        ['closed', result, profit, tradeId]
+        'UPDATE users SET balance_usdt = $1, updated_at = NOW() WHERE id = $2',
+        [finalBalance, trade.user_id]
       );
-
-      // If win - add money back
-      if (result === 'win') {
-        await client.query(
-          'UPDATE users SET balance_usdt = $1, updated_at = NOW() WHERE id = $2',
-          [finalBalance, trade.user_id]
-        );
-      }
-
-      // Create transaction record
-      const txAmount = Math.max(Math.abs(profit), 0.01);
-      await client.query(
-        `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
-         VALUES ($1, $2, 'USDT', 'trade', $3, NOW())`,
-        [trade.user_id, txAmount, `Торговля: ${result === 'win' ? 'Выигрыш +' : 'Проигрыш -'}${Math.abs(profit).toFixed(2)} USDT`]
-      );
-
-      await client.query('COMMIT');
-
-      res.json({
-        success: true,
-        message: result === 'win' 
-          ? `Сделка выиграна! +${profit.toFixed(2)} USDT` 
-          : `Сделка проиграна. -${amount.toFixed(2)} USDT`,
-        data: {
-          id: trade.id,
-          result,
-          amount,
-          profit,
-          newBalance: finalBalance
-        }
-      });
-
-    } catch (txError) {
-      await client.query('ROLLBACK');
-      throw txError;
-    } finally {
-      client.release();
+      console.log(`💰 Updated user ${trade.user_id} balance to ${finalBalance.toFixed(2)}`);
     }
 
+    // Create transaction record
+    const txAmount = Math.max(Math.abs(profit), 0.01);
+    await client.query(
+      `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
+       VALUES ($1, $2, 'USDT', 'trade', $3, NOW())`,
+      [trade.user_id, txAmount, `Торговля: ${result === 'win' ? 'Выигрыш +' : 'Проигрыш -'}${Math.abs(profit).toFixed(2)} USDT`]
+    );
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true,
+      message: result === 'win' 
+        ? `Сделка выиграна! +${profit.toFixed(2)} USDT` 
+        : `Сделка проиграна. -${amount.toFixed(2)} USDT`,
+      data: {
+        id: trade.id,
+        result,
+        amount,
+        profit,
+        newBalance: finalBalance
+      }
+    });
+
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('❌ Trade close error:', error.message);
     res.status(500).json({ error: 'Server error: ' + error.message });
+  } finally {
+    client.release();
   }
 });
 
