@@ -192,6 +192,22 @@ router.post('/close/:tradeId', async (req, res) => {
     const currentBalance = parseFloat(trade.balance_usdt) || 0;
     const profitMultiplier = parseFloat(trade.profit_multiplier) || 0.015;
 
+    // Check for invalid amounts that would cause overflow
+    const MAX_SAFE_AMOUNT = 1000000000; // 1 billion max
+    if (amount > MAX_SAFE_AMOUNT || isNaN(amount)) {
+      console.error(`⚠️ Invalid trade amount ${amount}, closing as invalid`);
+      await client.query(
+        'UPDATE orders SET status = $1, result = $2, profit = $3, closed_at = NOW() WHERE id = $4',
+        ['closed', 'invalid', 0, tradeId]
+      );
+      await client.query('COMMIT');
+      return res.json({
+        success: true,
+        message: 'Сделка закрыта (невалидная сумма)',
+        data: { id: trade.id, result: 'invalid', amount: 0, profit: 0 }
+      });
+    }
+
     // Log for debugging
     console.log(`📊 Closing trade ${tradeId}: mode=${tradeMode}, amount=${amount}, currentBalance=${currentBalance}, multiplier=${profitMultiplier}`);
 

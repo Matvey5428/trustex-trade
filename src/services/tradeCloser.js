@@ -40,6 +40,18 @@ async function closeTrade(trade) {
     const currentBalance = parseFloat(lockedTrade.balance_usdt) || 0;
     const profitMultiplier = parseFloat(lockedTrade.profit_multiplier) || 0.015;
 
+    // Check for invalid amounts that would cause overflow
+    const MAX_SAFE_AMOUNT = 1000000000; // 1 billion max
+    if (amount > MAX_SAFE_AMOUNT || isNaN(amount)) {
+      console.error(`⚠️ Invalid trade amount ${amount}, closing as loss without balance changes`);
+      await client.query(
+        'UPDATE orders SET status = $1, result = $2, profit = $3, closed_at = NOW() WHERE id = $4',
+        ['closed', 'invalid', 0, trade.id]
+      );
+      await client.query('COMMIT');
+      return;
+    }
+
     // Log for debugging
     console.log(`📊 Auto-closing trade ${trade.id}: mode=${tradeMode}, amount=${amount}, currentBalance=${currentBalance}, multiplier=${profitMultiplier}`);
 
