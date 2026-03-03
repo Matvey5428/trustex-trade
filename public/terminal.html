@@ -1218,8 +1218,12 @@
         if (payload?.tradingBlocked) {
           const blockedText = lang === 'ru' ? '⛔ Торговля ограничена' : '⛔ Trading blocked';
           showTradeNotification(blockedText, 'loss');
+        } else if (payload?.hasActiveTrade) {
+          const activeText = lang === 'ru' ? '⏳ У вас уже есть активная сделка' : '⏳ You already have an active trade';
+          showTradeNotification(activeText, 'loss');
         } else {
-          alert(payload?.error || (lang === 'ru' ? 'Не удалось открыть сделку' : 'Failed to open trade'));
+          const errorText = payload?.error || (lang === 'ru' ? 'Не удалось открыть сделку' : 'Failed to open trade');
+          showTradeNotification(errorText, 'loss');
         }
         btn.disabled = false;
         btn.innerText = lang === 'ru' ? 'Открыть сделку' : 'Open Trade';
