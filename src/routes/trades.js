@@ -61,6 +61,20 @@ router.post('/create', async (req, res) => {
       });
     }
 
+    // Check if user already has an active trade
+    const activeTradeResult = await pool.query(
+      `SELECT id FROM orders WHERE user_id = $1 AND status = 'active' LIMIT 1`,
+      [user.id]
+    );
+    
+    if (activeTradeResult.rows.length > 0) {
+      return res.status(400).json({ 
+        error: '⏳ У вас уже есть активная сделка',
+        message: 'Дождитесь завершения текущей сделки перед открытием новой.',
+        hasActiveTrade: true
+      });
+    }
+
     // Check balance
     if (amount > currentBalance) {
       return res.status(400).json({ 
