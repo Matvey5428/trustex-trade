@@ -208,11 +208,16 @@ router.post('/close/:tradeId', async (req, res) => {
 
     // If win - add money back
     if (result === 'win') {
-      await client.query(
-        'UPDATE users SET balance_usdt = $1, updated_at = NOW() WHERE id = $2',
+      const updateResult = await client.query(
+        'UPDATE users SET balance_usdt = $1, updated_at = NOW() WHERE id = $2 RETURNING balance_usdt',
         [finalBalance, trade.user_id]
       );
-      console.log(`💰 Updated user ${trade.user_id} balance to ${finalBalance.toFixed(2)}`);
+      if (updateResult.rows.length === 0) {
+        console.error(`❌ CRITICAL: Failed to update balance for user ${trade.user_id}!`);
+      } else {
+        const confirmedBalance = parseFloat(updateResult.rows[0].balance_usdt);
+        console.log(`💰 Updated user ${trade.user_id} balance to ${confirmedBalance.toFixed(2)} (expected: ${finalBalance.toFixed(2)})`);
+      }
     }
 
     // Create transaction record
