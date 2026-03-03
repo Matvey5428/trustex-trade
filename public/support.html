@@ -232,7 +232,37 @@
     if (tg) {
       tg.ready();
       tg.expand();
-      userId = tg.initDataUnsafe?.user?.id;
+    }
+    
+    // Get telegram ID with fallback
+    function getClientTelegramId() {
+      const telegramRawId = tg?.initDataUnsafe?.user?.id;
+      if (telegramRawId) return Number(telegramRawId);
+      const key = 'nexo_guest_telegram_id';
+      const stored = localStorage.getItem(key);
+      if (stored) return Number(stored);
+      return null; // Don't generate for support - need real user
+    }
+    
+    // Resolve user ID through API
+    async function resolveUserId() {
+      const telegramId = getClientTelegramId();
+      if (!telegramId) return null;
+      
+      try {
+        const res = await fetch('/api/user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ telegramId })
+        });
+        const payload = await res.json();
+        if (res.ok && payload?.data?.telegram_id) {
+          return payload.data.telegram_id;
+        }
+      } catch (e) {
+        console.error('Failed to resolve user:', e);
+      }
+      return telegramId;
     }
     
     function goBack() {
@@ -444,8 +474,11 @@
       }
     }, 5000);
     
-    // Initial load
-    loadMessages();
+    // Initial load - resolve userId first
+    (async () => {
+      userId = await resolveUserId();
+      loadMessages();
+    })();
   </script>
 
 
