@@ -34,6 +34,18 @@ router.post('/create', async (req, res) => {
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: 'Invalid amount' });
     }
+    
+    // Min and Max limits
+    const MIN_TRADE_AMOUNT = 1;
+    const MAX_TRADE_AMOUNT = 100000;
+    
+    if (amount < MIN_TRADE_AMOUNT) {
+      return res.status(400).json({ error: `Minimum trade amount: ${MIN_TRADE_AMOUNT} USDT` });
+    }
+    
+    if (amount > MAX_TRADE_AMOUNT) {
+      return res.status(400).json({ error: `Maximum trade amount: ${MAX_TRADE_AMOUNT} USDT` });
+    }
 
     // Symbol can come as 'symbol' or 'toCurrency'
     const tradeSymbol = symbol || toCurrency || 'BTC';
