@@ -822,7 +822,7 @@
   <div class="input-group-custom">
     <div class="input-label" data-i18n="investmentAmount">Investment Amount (USDT)</div>
     <div class="input-row">
-      <input type="number" class="input-field" id="tradeAmount" placeholder="10.00">
+      <input type="number" class="input-field" id="tradeAmount" placeholder="10.00" min="0" step="0.01">
       <span class="input-currency">USDT</span>
     </div>
   </div>
@@ -1193,7 +1193,10 @@
     const balance = parseFloat(balanceNum) || 0;
     
     const minAmountText = lang === 'ru' ? 'Минимальная сумма: 1 USDT' : 'Minimum amount: 1 USDT';
-    if (isNaN(amount) || amount < 1) { alert(minAmountText); return; }
+    if (isNaN(amount) || amount < 1) { 
+      showTradeNotification(minAmountText, 'loss'); 
+      return; 
+    }
     
     if (amount > balance) {
       const alertBox = document.getElementById('balanceAlert');
@@ -1289,6 +1292,16 @@
 
   window.addEventListener('DOMContentLoaded', () => {
     if (tg?.expand) tg.expand();
+    
+    // Prevent negative values in trade amount
+    const tradeAmountInput = document.getElementById('tradeAmount');
+    if (tradeAmountInput) {
+      tradeAmountInput.addEventListener('input', (e) => {
+        if (parseFloat(e.target.value) < 0) {
+          e.target.value = '';
+        }
+      });
+    }
     
     // Hide nav when any input focused
     document.querySelectorAll('input, textarea').forEach(el => {
