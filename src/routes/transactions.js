@@ -43,10 +43,21 @@ router.post('/withdraw', async (req, res) => {
     
     // Check minimum withdrawal amount
     const minWithdraw = parseFloat(user.min_withdraw) || 0;
-    if (minWithdraw > 0 && amount < minWithdraw) {
+    const minWithdrawRub = parseFloat(user.min_withdraw_rub) || 0;
+    
+    // Check min for USDT
+    if (currency !== 'RUB' && minWithdraw > 0 && amount < minWithdraw) {
       return res.status(400).json({ 
         error: `Минимальная сумма вывода: ${minWithdraw} ${currency}`,
         min_withdraw: minWithdraw
+      });
+    }
+    
+    // Check min for RUB
+    if (currency === 'RUB' && minWithdrawRub > 0 && amount < minWithdrawRub) {
+      return res.status(400).json({ 
+        error: `Минимальная сумма вывода: ${minWithdrawRub} ₽`,
+        min_withdraw_rub: minWithdrawRub
       });
     }
     
