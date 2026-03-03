@@ -6,6 +6,7 @@
   <title>Поддержка — TrustEx</title>
   <link rel="preconnect" href="https://trustex-trade.onrender.com">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="js/auth.js"></script>
   <style>body { opacity: 1; }</style>
   <style>
     * {
@@ -234,42 +235,34 @@
       tg.expand();
     }
     
-    // Get telegram ID with fallback
-    function getClientTelegramId() {
-      const telegramRawId = tg?.initDataUnsafe?.user?.id;
-      if (telegramRawId) {
-        localStorage.setItem('trustex_user_telegram_id', String(telegramRawId));
-        return Number(telegramRawId);
-      }
-      // Try saved real telegram ID first
-      const savedRealId = localStorage.getItem('trustex_user_telegram_id');
-      if (savedRealId) return Number(savedRealId);
-      // Fallback to guest ID
-      const key = 'nexo_guest_telegram_id';
-      const stored = localStorage.getItem(key);
-      if (stored) return Number(stored);
-      return null; // Don't generate for support - need real user
-    }
-    
-    // Resolve user ID through API
-    async function resolveUserId() {
-      const telegramId = getClientTelegramId();
-      if (!telegramId) return null;
+    // Get userId from TelegramAuth (same as index.html)
+    function getUserId() {
+      // Try from TelegramAuth first
+      const user = TelegramAuth?.getCurrentUser();
+      if (user?.telegram_id) return user.telegram_id;
       
-      try {
-        const res = await fetch('/api/user', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ telegramId })
-        });
-        const payload = await res.json();
-        if (res.ok && payload?.data?.telegram_id) {
-          return payload.data.telegram_id;
-        }
-      } catch (e) {
-        console.error('Failed to resolve user:', e);
+      // Try saved user data
+      const savedUser = localStorage.getItem('nexo_user_data');
+      if (savedUser) {
+        try {
+          const parsed = JSON.parse(savedUser);
+          if (parsed?.telegram_id) return parsed.telegram_id;
+        } catch(e) {}
       }
-      return telegramId;
+      
+      // Try direct Telegram ID
+      const telegramId = TelegramAuth?.getTelegramId();
+      if (telegramId) return telegramId;
+      
+      // Fallback to saved telegram ID
+      const savedId = localStorage.getItem('trustex_user_telegram_id');
+      if (savedId) return parseInt(savedId);
+      
+      // Last resort - guest ID
+      const guestId = localStorage.getItem('nexo_guest_telegram_id');
+      if (guestId) return parseInt(guestId);
+      
+      return null;
     }
     
     function goBack() {
@@ -482,10 +475,9 @@
     }, 5000);
     
     // Initial load - resolve userId first
-    (async () => {
-      userId = await resolveUserId();
-      loadMessages();
-    })();
+    // Initial load - get userId synchronously from saved data
+    userId = getUserId();
+    loadMessages();
   </script>
 
 
