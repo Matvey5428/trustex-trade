@@ -49,6 +49,19 @@ function initBot() {
     // Успешный запуск
     bot.getMe().then((info) => {
       console.log(`✅ Bot started: @${info.username} (${info.id})`);
+      
+      // Устанавливаем кнопку меню (открытие биржи)
+      bot.setChatMenuButton({
+        menu_button: {
+          type: 'web_app',
+          text: 'Открыть биржу',
+          web_app: { url: WEB_APP_URL }
+        }
+      }).then(() => {
+        console.log('✅ Menu button set');
+      }).catch(err => {
+        console.log('⚠️ Menu button not set:', err.message);
+      });
     }).catch((err) => {
       console.error('❌ Failed to get bot info:', err.message);
     });
