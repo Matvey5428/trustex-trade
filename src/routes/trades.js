@@ -253,7 +253,7 @@ router.post('/close/:tradeId', async (req, res) => {
     await client.query(
       `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
        VALUES ($1, $2, 'USDT', 'trade', $3, NOW())`,
-      [trade.user_id, txAmount, `Торговля: ${result === 'win' ? 'Выигрыш +' : 'Проигрыш -'}${Math.abs(profit).toFixed(2)} USDT`]
+      [trade.user_id, txAmount, `Торговля: ${result === 'win' ? 'Прибыль +' : 'Убыток -'}${Math.abs(profit).toFixed(2)} USDT`]
     );
 
     await client.query('COMMIT');
@@ -261,8 +261,8 @@ router.post('/close/:tradeId', async (req, res) => {
     res.json({
       success: true,
       message: result === 'win' 
-        ? `Сделка выиграна! +${profit.toFixed(2)} USDT` 
-        : `Сделка проиграна. -${amount.toFixed(2)} USDT`,
+        ? `Прибыль! +${profit.toFixed(2)} USDT` 
+        : `Убыток. -${amount.toFixed(2)} USDT`,
       data: {
         id: trade.id,
         result,

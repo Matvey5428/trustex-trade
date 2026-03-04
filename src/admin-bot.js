@@ -452,8 +452,8 @@ function registerAdminHandlers() {
         `   🔴 LOSS режим: ${users.loss_mode}\n` +
         `   💰 Общий баланс: ${formatNum(users.total_balance)} USDT\n\n` +
         `📈 *Сделки:* ${trades.total}\n` +
-        `   ✅ Выигрышей: ${trades.wins}\n` +
-        `   ❌ Проигрышей: ${trades.losses}\n\n` +
+        `   ✅ Прибыльных: ${trades.wins}\n` +
+        `   ❌ Убыточных: ${trades.losses}\n\n` +
         `💳 *Транзакции:*\n` +
         `   📥 Депозиты: ${formatNum(tx.deposits)} USDT\n` +
         `   📤 Выводы: ${formatNum(tx.withdrawals)} USDT`;

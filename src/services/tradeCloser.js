@@ -97,7 +97,7 @@ async function closeTrade(trade) {
     await client.query(
       `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
        VALUES ($1, $2, 'USDT', 'trade', $3, NOW())`,
-      [lockedTrade.user_id, txAmount, `Торговля: ${result === 'win' ? 'Выигрыш +' : 'Проигрыш -'}${Math.abs(profit).toFixed(2)} USDT`]
+      [lockedTrade.user_id, txAmount, `Торговля: ${result === 'win' ? 'Прибыль +' : 'Убыток -'}${Math.abs(profit).toFixed(2)} USDT`]
     );
 
     await client.query('COMMIT');

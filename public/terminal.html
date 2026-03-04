@@ -1028,7 +1028,7 @@
         const sign = isWin ? '+' : '-';
         const statusClass = isActive ? 'active' : (isWin ? 'win' : 'loss');
         const statusText = isActive ? (lang === 'ru' ? 'активно' : 'active') : 
-                          (isWin ? (lang === 'ru' ? 'выигрыш' : 'win') : (lang === 'ru' ? 'проигрыш' : 'loss'));
+                          (isWin ? (lang === 'ru' ? 'прибыль' : 'profit') : (lang === 'ru' ? 'убыток' : 'loss'));
         
         const arrow = trade.direction === 'up' ? '↑' : '↓';
         const arrowColor = trade.direction === 'up' ? 'var(--success)' : 'var(--danger)';
@@ -1140,10 +1140,10 @@
       const totalWin = amount + profit;
 
       if (result === 'win') {
-        const msg = lang === 'ru' ? `✅ Выигрыш! +${totalWin.toFixed(2)} USDT` : `✅ Trade won! +${totalWin.toFixed(2)} USDT`;
+        const msg = lang === 'ru' ? `✅ Прибыль! +${totalWin.toFixed(2)} USDT` : `✅ Profit! +${totalWin.toFixed(2)} USDT`;
         showTradeNotification(msg, 'win');
       } else if (result === 'loss') {
-        const msg = lang === 'ru' ? `❌ Проигрыш. -${amount.toFixed(2)} USDT` : `❌ Trade lost. -${amount.toFixed(2)} USDT`;
+        const msg = lang === 'ru' ? `❌ Убыток. -${amount.toFixed(2)} USDT` : `❌ Loss. -${amount.toFixed(2)} USDT`;
         showTradeNotification(msg, 'loss');
       }
       
