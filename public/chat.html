@@ -448,6 +448,7 @@
     let adminId = null;
     let targetUserId = null;
     let refreshInterval = null;
+    let chatMessages = [];
     
     // Get adminId from Telegram or localStorage fallback
     if (tg) {
@@ -490,7 +491,8 @@
         if (data.success) {
           document.getElementById('userName').textContent = data.data.user.name;
           document.getElementById('userStatus').textContent = `ID: ${data.data.user.telegram_id}`;
-          renderMessages(data.data.messages);
+          chatMessages = data.data.messages;
+          renderMessages(chatMessages);
         } else {
           document.getElementById('messagesContainer').innerHTML = 
             `<div class="empty-state">${data.error}</div>`;
@@ -547,10 +549,22 @@
       
       if (!message) return;
       
-      const sendBtn = document.getElementById('sendBtn');
-      sendBtn.disabled = true;
-      input.disabled = true;
+      // Очищаем поле сразу
+      input.value = '';
+      input.focus();
       
+      // Оптимистичное обновление - сразу показываем сообщение
+      const tempId = 'temp_' + Date.now();
+      const tempMessage = {
+        id: tempId,
+        message: message,
+        sender: 'admin',
+        created_at: new Date().toISOString()
+      };
+      chatMessages.push(tempMessage);
+      renderMessages(chatMessages);
+      
+      // Отправляем в фоне
       try {
         const res = await fetch(`${API_BASE}/chat/${targetUserId}`, {
           method: 'POST',
@@ -560,19 +574,24 @@
         
         const data = await res.json();
         
-        if (data.success) {
-          input.value = '';
-          loadChat();
-        } else {
-          alert('Ошибка: ' + data.error);
+        if (!data.success) {
+          chatMessages = chatMessages.filter(m => m.id !== tempId);
+          renderMessages(chatMessages);
+          showNotification('Ошибка отправки', 'error');
         }
       } catch (e) {
-        alert('Ошибка отправки');
-      } finally {
-        sendBtn.disabled = false;
-        input.disabled = false;
-        input.focus();
+        chatMessages = chatMessages.filter(m => m.id !== tempId);
+        renderMessages(chatMessages);
+        showNotification('Ошибка сети', 'error');
       }
+    }
+    
+    function showNotification(text, type = 'info') {
+      const n = document.createElement('div');
+      n.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;color:#fff;font-size:14px;z-index:9999;background:${type === 'error' ? '#ff4444' : '#4CAF50'};`;
+      n.textContent = text;
+      document.body.appendChild(n);
+      setTimeout(() => n.remove(), 3000);
     }
     
     function goBack() {

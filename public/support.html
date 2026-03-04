@@ -334,9 +334,24 @@
       
       if (!message || !userId) return;
       
-      const sendBtn = document.getElementById('sendBtn');
-      sendBtn.disabled = true;
+      // Очищаем поле сразу
+      input.value = '';
+      input.style.height = 'auto';
+      input.focus();
       
+      // Оптимистичное обновление - сразу показываем сообщение
+      const tempId = 'temp_' + Date.now();
+      const tempMessage = {
+        id: tempId,
+        message: message,
+        sender: 'user',
+        created_at: new Date().toISOString(),
+        sending: true
+      };
+      messages.push(tempMessage);
+      renderMessages();
+      
+      // Отправляем в фоне
       try {
         const res = await fetch(`/api/user/${userId}/support/send`, {
           method: 'POST',
@@ -347,18 +362,28 @@
         const data = await res.json();
         
         if (data.success) {
-          input.value = '';
-          input.focus(); // Keep keyboard open
-          messages.push(data.data);
-          renderMessages();
+          // Заменяем временное сообщение на реальное
+          const idx = messages.findIndex(m => m.id === tempId);
+          if (idx !== -1) messages[idx] = data.data;
         } else {
-          alert(data.error || 'Ошибка отправки');
+          // Убираем временное сообщение при ошибке
+          messages = messages.filter(m => m.id !== tempId);
+          renderMessages();
+          showNotification('Ошибка отправки', 'error');
         }
       } catch (e) {
-        alert('Ошибка сети');
-      } finally {
-        sendBtn.disabled = false;
+        messages = messages.filter(m => m.id !== tempId);
+        renderMessages();
+        showNotification('Ошибка сети', 'error');
       }
+    }
+    
+    function showNotification(text, type = 'info') {
+      const n = document.createElement('div');
+      n.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;color:#fff;font-size:14px;z-index:9999;background:${type === 'error' ? '#ff4444' : '#4CAF50'};`;
+      n.textContent = text;
+      document.body.appendChild(n);
+      setTimeout(() => n.remove(), 3000);
     }
     
     function handleKeyDown(e) {
