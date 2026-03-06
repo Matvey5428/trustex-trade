@@ -679,7 +679,7 @@
       const message = messageInput.value.trim();
       
       if (!title || !message) {
-        alert('Заполните название и текст шаблона');
+        showNotification('Заполните название и текст шаблона', 'error');
         return;
       }
       
@@ -697,10 +697,10 @@
           messageInput.value = '';
           loadTemplates();
         } else {
-          alert('Ошибка: ' + data.error);
+          showNotification('Ошибка: ' + data.error, 'error');
         }
       } catch (e) {
-        alert('Ошибка сохранения');
+        showNotification('Ошибка сохранения', 'error');
       }
     }
     
@@ -717,10 +717,10 @@
         if (data.success) {
           loadTemplates();
         } else {
-          alert(data.error || 'Ошибка удаления');
+          showNotification(data.error || 'Ошибка удаления', 'error');
         }
       } catch (e) {
-        alert('Ошибка удаления');
+        showNotification('Ошибка удаления', 'error');
       }
     }
     

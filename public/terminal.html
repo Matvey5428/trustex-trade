@@ -1275,7 +1275,7 @@
       await loadActiveTrades();
 
     } catch (err) {
-      alert(lang === 'ru' ? 'Ошибка сети' : 'Network error');
+      showTradeNotification(lang === 'ru' ? 'Ошибка сети' : 'Network error', 'loss');
     } finally {
       btn.disabled = false;
       const openText = lang === 'ru' ? 'Открыть сделку' : 'Open Trade';

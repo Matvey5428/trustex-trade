@@ -1282,6 +1282,15 @@
   const isDev = window.location.hostname === 'localhost';
   const log = isDev ? console.log.bind(console) : () => {};
   
+  function showNotification(text, type = 'info') {
+    const n = document.createElement('div');
+    const bg = type === 'error' ? '#ff4444' : type === 'success' ? '#4CAF50' : '#2196F3';
+    n.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;color:#fff;font-size:14px;z-index:9999;background:${bg};box-shadow:0 4px 12px rgba(0,0,0,0.3);`;
+    n.textContent = text;
+    document.body.appendChild(n);
+    setTimeout(() => n.remove(), 4000);
+  }
+  
   if (tg) {
     tg.ready();
     tg.expand();
@@ -1788,10 +1797,10 @@
         // Redirect to support chat
         window.location.href = 'support.html';
       } else {
-        alert(data.error || 'Error');
+        showNotification(data.error || 'Error', 'error');
       }
     } catch (e) {
-      alert('Error submitting request');
+      showNotification('Error submitting request', 'error');
     }
   }
 
@@ -2189,7 +2198,7 @@
       
       log('✅ Init complete');
     } catch (e) {
-      alert('Ошибка авторизации: ' + e.message);
+      showNotification('Ошибка авторизации: ' + e.message, 'error');
     }
   });
 
