@@ -545,6 +545,7 @@
       align-items: center;
       gap: 14px;
       transition: transform 0.15s, opacity 0.15s;
+      touch-action: none;
     }
     
     .notification-icon {
@@ -1187,15 +1188,17 @@
     
     // Swipe up to dismiss
     let startY = 0, currentY = 0, isDragging = false;
-    notif.addEventListener('touchstart', e => { startY = e.touches[0].clientY; isDragging = true; notif.style.transition = 'none'; }, {passive: true});
+    notif.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); startY = e.touches[0].clientY; isDragging = true; notif.style.transition = 'none'; }, {passive: false});
     notif.addEventListener('touchmove', e => {
+      e.preventDefault();
+      e.stopPropagation();
       if (!isDragging) return;
       currentY = e.touches[0].clientY - startY;
       if (currentY < 0) {
         notif.style.transform = `translateX(-50%) translateY(${currentY}px)`;
         notif.style.opacity = Math.max(0, 1 - Math.abs(currentY) / 100);
       }
-    }, {passive: true});
+    }, {passive: false});
     notif.addEventListener('touchend', () => {
       isDragging = false;
       notif.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';

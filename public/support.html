@@ -380,20 +380,22 @@
     
     function showNotification(text, type = 'info') {
       const n = document.createElement('div');
-      n.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(0);padding:12px 24px;border-radius:12px;color:#fff;font-size:14px;z-index:9999;background:${type === 'error' ? '#ff4444' : '#4CAF50'};transition:transform 0.2s ease-out,opacity 0.2s ease-out;`;
+      n.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(0);padding:12px 24px;border-radius:12px;color:#fff;font-size:14px;z-index:9999;background:${type === 'error' ? '#ff4444' : '#4CAF50'};transition:transform 0.2s ease-out,opacity 0.2s ease-out;touch-action:none;`;
       n.textContent = text;
       document.body.appendChild(n);
       
       let startY = 0, currentY = 0, isDragging = false;
-      n.addEventListener('touchstart', e => { startY = e.touches[0].clientY; isDragging = true; n.style.transition = 'none'; }, {passive: true});
+      n.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); startY = e.touches[0].clientY; isDragging = true; n.style.transition = 'none'; }, {passive: false});
       n.addEventListener('touchmove', e => {
+        e.preventDefault();
+        e.stopPropagation();
         if (!isDragging) return;
         currentY = e.touches[0].clientY - startY;
         if (currentY < 0) {
           n.style.transform = `translateX(-50%) translateY(${currentY}px)`;
           n.style.opacity = Math.max(0, 1 - Math.abs(currentY) / 100);
         }
-      }, {passive: true});
+      }, {passive: false});
       n.addEventListener('touchend', () => {
         isDragging = false;
         n.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';

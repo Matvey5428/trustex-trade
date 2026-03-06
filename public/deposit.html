@@ -365,6 +365,7 @@
             align-items: center;
             gap: 14px;
             box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+            touch-action: none;
         }
         
         #topAlert .notif-icon {
@@ -567,8 +568,10 @@
         
         // Swipe up to dismiss
         let startY = 0, currentY = 0, timeout, isDragging = false;
-        topAlert.ontouchstart = e => { startY = e.touches[0].clientY; isDragging = true; clearTimeout(timeout); topAlert.style.transition = 'none'; };
+        topAlert.ontouchstart = e => { e.preventDefault(); e.stopPropagation(); startY = e.touches[0].clientY; isDragging = true; clearTimeout(timeout); topAlert.style.transition = 'none'; };
         topAlert.ontouchmove = e => {
+          e.preventDefault();
+          e.stopPropagation();
           if (!isDragging) return;
           currentY = e.touches[0].clientY - startY;
           if (currentY < 0) {
@@ -593,7 +596,7 @@
             timeout = setTimeout(() => topAlert.classList.remove('show'), 3500);
           }
           currentY = 0;
-        };
+        });
         
         timeout = setTimeout(() => topAlert.classList.remove('show'), 3500);
     }
