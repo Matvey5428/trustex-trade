@@ -1185,17 +1185,29 @@
     
     document.body.appendChild(notif);
     
-    // Swipe to dismiss
-    let startX = 0, currentX = 0;
-    notif.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, {passive: true});
+    // Swipe up to dismiss
+    let startY = 0, currentY = 0, isDragging = false;
+    notif.addEventListener('touchstart', e => { startY = e.touches[0].clientY; isDragging = true; notif.style.transition = 'none'; }, {passive: true});
     notif.addEventListener('touchmove', e => {
-      currentX = e.touches[0].clientX - startX;
-      notif.style.transform = `translateX(calc(-50% + ${currentX}px))`;
-      notif.style.opacity = Math.max(0, 1 - Math.abs(currentX) / 150);
+      if (!isDragging) return;
+      currentY = e.touches[0].clientY - startY;
+      if (currentY < 0) {
+        notif.style.transform = `translateX(-50%) translateY(${currentY}px)`;
+        notif.style.opacity = Math.max(0, 1 - Math.abs(currentY) / 100);
+      }
     }, {passive: true});
     notif.addEventListener('touchend', () => {
-      if (Math.abs(currentX) > 80) { notif.remove(); }
-      else { notif.style.transform = 'translateX(-50%)'; notif.style.opacity = 1; }
+      isDragging = false;
+      notif.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
+      if (currentY < -50) {
+        notif.style.transform = 'translateX(-50%) translateY(-100px)';
+        notif.style.opacity = '0';
+        setTimeout(() => notif.remove(), 200);
+      } else {
+        notif.style.transform = 'translateX(-50%) translateY(0)';
+        notif.style.opacity = '1';
+      }
+      currentY = 0;
     });
     
     const timeout = setTimeout(() => {
