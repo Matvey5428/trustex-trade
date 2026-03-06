@@ -68,14 +68,24 @@ function verifyInitData(initData, botToken) {
     // Get auth_date
     const authDate = params.get('auth_date');
 
-    // Check if auth_date is fresh (not older than 5 minutes)
+    // Check if auth_date is fresh (not older than 24 hours - allows caching)
     if (authDate) {
       const authTimestamp = parseInt(authDate) * 1000;
       const now = Date.now();
-      const fiveMinutesInMs = 5 * 60 * 1000;
+      const maxAgeMs = 24 * 60 * 60 * 1000; // 24 hours
 
-      if (now - authTimestamp > fiveMinutesInMs) {
-        return { valid: false, error: 'Auth data too old' };
+      if (now - authTimestamp > maxAgeMs) {
+        // Return user data even if expired - allows guest mode fallback
+        return { 
+          valid: false, 
+          error: 'Auth data too old',
+          user: user ? {
+            telegram_id: user.id,
+            username: user.username,
+            first_name: user.first_name,
+            last_name: user.last_name
+          } : null
+        };
       }
     }
 

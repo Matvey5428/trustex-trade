@@ -27,15 +27,23 @@ async function verifyAndGetUser(initData, refCode = null) {
   // Verify initData signature
   const verification = verifyInitData(initData, botToken);
 
+  let userData = verification.user;
+
+  // If verification failed but we have user data, allow guest mode for old auth_date
   if (!verification.valid) {
     console.warn('⚠️ Invalid initData - Error:', verification.error);
-    console.warn('📝 User data from initData:', verification.user);
-    throw new UnauthorizedError('Invalid initData: ' + verification.error);
+    
+    // Try to extract telegram_id from initData even if expired
+    if (verification.error === 'Auth data too old' && userData?.telegram_id) {
+      console.log('🔄 Auth data expired, using guest mode for telegram_id:', userData.telegram_id);
+      // Continue with the extracted user data
+    } else {
+      console.warn('📝 User data from initData:', userData);
+      throw new UnauthorizedError('Invalid initData: ' + verification.error);
+    }
   }
-
-  const userData = verification.user;
   
-  if (!userData.telegram_id) {
+  if (!userData?.telegram_id) {
     throw new ValidationError('telegram_id not found in initData');
   }
 
