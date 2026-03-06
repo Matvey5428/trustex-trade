@@ -2206,18 +2206,10 @@
         showCachedBalance(cachedUser);
       }
       
-      // Проверить авторизацию
-      if (!TelegramAuth.isAuthenticated()) {
-        log('🔄 Not authenticated, logging in...');
-        await TelegramAuth.login();
-      } else {
-        log('✅ Already authenticated');
-      }
-
-      // Обновить данные с сервера в фоне
-      TelegramAuth.refreshUser().then(() => {
-        loadUserData();
-      });
+      // Всегда делать login в Telegram Mini App для актуального токена
+      log('🔄 Authenticating...');
+      await TelegramAuth.login();
+      log('✅ Authenticated');
       
       // Запустить всё параллельно
       Promise.all([
