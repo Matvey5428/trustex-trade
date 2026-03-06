@@ -580,9 +580,13 @@
           isDragging = false;
           topAlert.style.transition = 'all 0.25s ease-out';
           if (currentY < -50) {
-            topAlert.classList.remove('show');
-            topAlert.style.transform = '';
-            topAlert.style.opacity = '';
+            topAlert.style.transform = 'translateX(-50%) translateY(-120px)';
+            topAlert.style.opacity = '0';
+            setTimeout(() => {
+              topAlert.classList.remove('show');
+              topAlert.style.transform = '';
+              topAlert.style.opacity = '';
+            }, 250);
           } else {
             topAlert.style.transform = '';
             topAlert.style.opacity = '';

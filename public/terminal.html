@@ -1200,9 +1200,9 @@
       isDragging = false;
       notif.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
       if (currentY < -50) {
-        notif.style.transform = 'translateX(-50%) translateY(-100px)';
+        notif.style.transform = 'translateX(-50%) translateY(-120px)';
         notif.style.opacity = '0';
-        setTimeout(() => notif.remove(), 200);
+        setTimeout(() => notif.remove(), 250);
       } else {
         notif.style.transform = 'translateX(-50%) translateY(0)';
         notif.style.opacity = '1';

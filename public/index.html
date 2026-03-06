@@ -1303,9 +1303,9 @@
       isDragging = false;
       n.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
       if (currentY < -50) {
-        n.style.transform = 'translateX(-50%) translateY(-100px)';
+        n.style.transform = 'translateX(-50%) translateY(-120px)';
         n.style.opacity = '0';
-        setTimeout(() => n.remove(), 200);
+        setTimeout(() => n.remove(), 250);
       } else {
         n.style.transform = 'translateX(-50%) translateY(0)';
         n.style.opacity = '1';
@@ -1314,9 +1314,9 @@
     });
     
     const timeout = setTimeout(() => {
-      n.style.transform = 'translateX(-50%) translateY(-100px)';
+      n.style.transform = 'translateX(-50%) translateY(-120px)';
       n.style.opacity = '0';
-      setTimeout(() => n.remove(), 200);
+      setTimeout(() => n.remove(), 250);
     }, 4000);
     n.addEventListener('touchstart', () => clearTimeout(timeout), {once: true});
   }
