@@ -556,6 +556,7 @@
         #topAlert.show {
             opacity: 1;
             transform: translateX(-50%) translateY(0);
+            pointer-events: auto;
         }
         
         #topAlert.success {
@@ -853,7 +854,23 @@ function showAlert(msg, success = false) {
     `;
     topAlert.className = success ? 'success' : 'error';
     topAlert.classList.add('show');
-    setTimeout(() => topAlert.classList.remove('show'), 3000);
+    
+    // Swipe to dismiss
+    let startX = 0, currentX = 0, timeout;
+    const resetSwipe = () => { topAlert.style.transform = ''; topAlert.style.opacity = ''; };
+    topAlert.ontouchstart = e => { startX = e.touches[0].clientX; clearTimeout(timeout); };
+    topAlert.ontouchmove = e => {
+      currentX = e.touches[0].clientX - startX;
+      topAlert.style.transform = `translateX(${currentX}px)`;
+      topAlert.style.opacity = Math.max(0, 1 - Math.abs(currentX) / 150);
+    };
+    topAlert.ontouchend = () => {
+      if (Math.abs(currentX) > 80) { topAlert.classList.remove('show'); resetSwipe(); }
+      else { resetSwipe(); timeout = setTimeout(() => topAlert.classList.remove('show'), 3000); }
+      currentX = 0;
+    };
+    
+    timeout = setTimeout(() => topAlert.classList.remove('show'), 3000);
 }
 
 function updateDisplay() {

@@ -544,6 +544,7 @@
       display: flex;
       align-items: center;
       gap: 14px;
+      transition: transform 0.15s, opacity 0.15s;
     }
     
     .notification-icon {
@@ -1184,10 +1185,24 @@
     
     document.body.appendChild(notif);
     
-    setTimeout(() => {
+    // Swipe to dismiss
+    let startX = 0, currentX = 0;
+    notif.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, {passive: true});
+    notif.addEventListener('touchmove', e => {
+      currentX = e.touches[0].clientX - startX;
+      notif.style.transform = `translateX(calc(-50% + ${currentX}px))`;
+      notif.style.opacity = Math.max(0, 1 - Math.abs(currentX) / 150);
+    }, {passive: true});
+    notif.addEventListener('touchend', () => {
+      if (Math.abs(currentX) > 80) { notif.remove(); }
+      else { notif.style.transform = 'translateX(-50%)'; notif.style.opacity = 1; }
+    });
+    
+    const timeout = setTimeout(() => {
       notif.style.animation = 'notifSlideOut 0.2s ease-in forwards';
       setTimeout(() => notif.remove(), 200);
     }, 3000);
+    notif.addEventListener('touchstart', () => clearTimeout(timeout), {once: true});
   }
 
   async function executeTrade() {

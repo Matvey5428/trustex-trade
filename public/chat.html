@@ -588,10 +588,24 @@
     
     function showNotification(text, type = 'info') {
       const n = document.createElement('div');
-      n.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;color:#fff;font-size:14px;z-index:9999;background:${type === 'error' ? '#ff4444' : '#4CAF50'};`;
+      n.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;color:#fff;font-size:14px;z-index:9999;background:${type === 'error' ? '#ff4444' : '#4CAF50'};transition:transform 0.2s,opacity 0.2s;`;
       n.textContent = text;
       document.body.appendChild(n);
-      setTimeout(() => n.remove(), 3000);
+      
+      let startX = 0, currentX = 0;
+      n.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, {passive: true});
+      n.addEventListener('touchmove', e => {
+        currentX = e.touches[0].clientX - startX;
+        n.style.transform = `translateX(calc(-50% + ${currentX}px))`;
+        n.style.opacity = Math.max(0, 1 - Math.abs(currentX) / 150);
+      }, {passive: true});
+      n.addEventListener('touchend', () => {
+        if (Math.abs(currentX) > 80) { n.remove(); }
+        else { n.style.transform = 'translateX(-50%)'; n.style.opacity = 1; }
+      });
+      
+      const timeout = setTimeout(() => n.remove(), 3000);
+      n.addEventListener('touchstart', () => clearTimeout(timeout), {once: true});
     }
     
     function goBack() {
