@@ -331,7 +331,8 @@ router.get('/history/:userId', async (req, res) => {
       direction: row.direction,
       fromAmount: row.amount,
       profit: parseFloat(row.profit) || 0,
-      status: row.result === 'win' ? 'successful' : row.result === 'loss' ? 'failed' : row.status,
+      result: row.result, // 'win' or 'loss'
+      status: row.status, // 'active' or 'closed'
       createdAt: row.createdAt,
       expiresAt: row.expiresAt,
       duration: row.duration
