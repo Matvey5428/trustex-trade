@@ -51,61 +51,65 @@ router.post('/create', async (req, res) => {
     const tradeSymbol = symbol || toCurrency || 'BTC';
     const durationSeconds = parseDuration(duration);
 
-    // Get user by telegram_id
-    const userResult = await pool.query(
-      'SELECT * FROM users WHERE telegram_id = $1',
-      [userId.toString()]
-    );
-
-    if (userResult.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const user = userResult.rows[0];
-    const currentBalance = parseFloat(user.balance_usdt) || 0;
-
-    // Check if trading is blocked for this user
-    if (user.trading_blocked) {
-      return res.status(403).json({ 
-        error: '⛔ Торговля ограничена',
-        message: 'Ваш аккаунт ограничен в торговле. Пожалуйста, обратитесь в поддержку.',
-        tradingBlocked: true
-      });
-    }
-
-    // Check if user already has an active trade
-    const activeTradeResult = await pool.query(
-      `SELECT id FROM orders WHERE user_id = $1 AND status = 'active' LIMIT 1`,
-      [user.id]
-    );
-    
-    if (activeTradeResult.rows.length > 0) {
-      return res.status(400).json({ 
-        error: '⏳ У вас уже есть активная сделка',
-        message: 'Дождитесь завершения текущей сделки перед открытием новой.',
-        hasActiveTrade: true
-      });
-    }
-
-    // Check balance
-    if (amount > currentBalance) {
-      return res.status(400).json({ 
-        error: 'Insufficient balance',
-        available: currentBalance,
-        requested: amount
-      });
-    }
-
-    // Start transaction
+    // Start transaction with proper locking to prevent race conditions
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
 
+      // Get user with FOR UPDATE lock to prevent race conditions
+      const userResult = await client.query(
+        'SELECT * FROM users WHERE telegram_id = $1 FOR UPDATE',
+        [userId.toString()]
+      );
+
+      if (userResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      const user = userResult.rows[0];
+      const currentBalance = parseFloat(user.balance_usdt) || 0;
+
+      // Check if trading is blocked for this user
+      if (user.trading_blocked) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ 
+          error: '⛔ Торговля ограничена',
+          message: 'Ваш аккаунт ограничен в торговле. Пожалуйста, обратитесь в поддержку.',
+          tradingBlocked: true
+        });
+      }
+
+      // Check if user already has an active trade (inside transaction for atomicity)
+      const activeTradeResult = await client.query(
+        `SELECT id FROM orders WHERE user_id = $1 AND status = 'active' LIMIT 1`,
+        [user.id]
+      );
+      
+      if (activeTradeResult.rows.length > 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ 
+          error: '⏳ У вас уже есть активная сделка',
+          message: 'Дождитесь завершения текущей сделки перед открытием новой.',
+          hasActiveTrade: true
+        });
+      }
+
+      // Check balance
+      if (amount > currentBalance) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ 
+          error: 'Insufficient balance',
+          available: currentBalance,
+          requested: amount
+        });
+      }
+
       // Deduct balance immediately (stake is locked)
       const newBalance = currentBalance - amount;
       await client.query(
-        'UPDATE users SET balance_usdt = $1, updated_at = NOW() WHERE telegram_id = $2',
-        [newBalance, userId.toString()]
+        'UPDATE users SET balance_usdt = $1, updated_at = NOW() WHERE id = $2',
+        [newBalance, user.id]
       );
 
       // Create trade record with status "active"
