@@ -6,6 +6,35 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
+const { getAdminBot } = require('../admin-bot');
+
+/**
+ * Notify manager about withdrawal request from their user
+ */
+async function notifyManagerAboutWithdraw(user, amount, currency, wallet) {
+  const adminBot = getAdminBot();
+  if (!adminBot || !user.manager_id) return;
+
+  const managerResult = await pool.query(
+    'SELECT telegram_id FROM managers WHERE id = $1',
+    [user.manager_id]
+  );
+  
+  if (managerResult.rows.length === 0) return;
+  
+  const managerTelegramId = managerResult.rows[0].telegram_id;
+  if (!managerTelegramId) return;
+
+  const currencySymbol = currency === 'RUB' ? '₽' : currency === 'BTC' ? '₿' : '$';
+  
+  const message = `💸 <b>Заявка на вывод</b>\n\n` +
+    `👤 Пользователь: ${user.first_name || ''} ${user.last_name || ''} (@${user.username || 'нет'})\n` +
+    `💰 Сумма: <b>${currencySymbol}${amount}</b> ${currency}\n` +
+    `📋 Реквизиты: <code>${wallet}</code>\n` +
+    `📅 Статус: ожидает обработки`;
+
+  await adminBot.telegram.sendMessage(managerTelegramId, message, { parse_mode: 'HTML' });
+}
 
 /**
  * POST /api/transactions/withdraw
@@ -113,6 +142,11 @@ router.post('/withdraw', async (req, res) => {
     );
 
     await client.query('COMMIT');
+
+    // Notify manager (async, don't wait)
+    notifyManagerAboutWithdraw(user, amount, currency, wallet).catch(e => {
+      console.log('Could not notify manager about withdraw:', e.message);
+    });
 
     // Return success
     res.json({
