@@ -921,7 +921,7 @@
       'DOGE': 'BINANCE:DOGEUSDT',
       'AVAX': 'BINANCE:AVAXUSDT',
       'DOT': 'BINANCE:DOTUSDT',
-      'MATIC': 'BINANCE:MATICUSDT',
+      'MATIC': 'BINANCE:POLUSDT',
       'SHIB': 'BINANCE:SHIBUSDT'
     };
     
@@ -986,7 +986,11 @@
 
   async function updateLivePrice() {
     try {
-      const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${coinSymbol}USDT`);
+      // Map symbol for Binance API (MATIC was renamed to POL)
+      const apiSymbolMap = { 'MATIC': 'POL' };
+      const apiSymbol = apiSymbolMap[coinSymbol] || coinSymbol;
+      
+      const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${apiSymbol}USDT`);
       const data = await res.json();
       const price = parseFloat(data.lastPrice).toFixed(coinSymbol === 'PEPE' ? 8 : 4);
       const change = parseFloat(data.priceChangePercent).toFixed(2);
