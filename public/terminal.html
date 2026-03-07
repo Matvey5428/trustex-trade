@@ -1025,7 +1025,7 @@
 
       container.innerHTML = trades.slice(0, 10).map((trade) => {
         const isActive = trade.status === 'active';
-        const isWin = trade.status === 'successful';
+        const isWin = trade.result === 'win';
         
         const sign = isWin ? '+' : '-';
         const statusClass = isActive ? 'active' : (isWin ? 'win' : 'loss');
