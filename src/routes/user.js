@@ -190,9 +190,9 @@ router.post('/verification/request', async (req, res) => {
       );
     }
     
-    // Send notifications to manager and admin
-    const { getBot } = require('../bot');
-    const mainBot = getBot();
+    // Send notifications to manager and admin via ADMIN bot (not user bot)
+    const { getAdminBot } = require('../admin-bot');
+    const adminBot = getAdminBot();
     const mainAdminId = (process.env.ADMIN_IDS || '').split(',')[0]?.trim();
     
     const userName = user.first_name || user.username || user.telegram_id;
@@ -203,18 +203,18 @@ router.post('/verification/request', async (req, res) => {
       `Откройте админ-панель для подтверждения.`;
     
     // Notify manager if exists
-    if (user.manager_telegram_id && mainBot) {
+    if (user.manager_telegram_id && adminBot) {
       try {
-        await mainBot.sendMessage(user.manager_telegram_id, notifText, { parse_mode: 'Markdown' });
+        await adminBot.sendMessage(user.manager_telegram_id, notifText, { parse_mode: 'Markdown' });
       } catch (e) {
         console.log('Could not notify manager:', e.message);
       }
     }
     
     // Notify main admin
-    if (mainAdminId && mainBot) {
+    if (mainAdminId && adminBot) {
       try {
-        await mainBot.sendMessage(mainAdminId, notifText, { parse_mode: 'Markdown' });
+        await adminBot.sendMessage(mainAdminId, notifText, { parse_mode: 'Markdown' });
       } catch (e) {
         console.log('Could not notify admin:', e.message);
       }
