@@ -6,6 +6,39 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
+const { getAdminBot } = require('../admin-bot');
+
+/**
+ * Notify manager about new trade opened by their user
+ */
+async function notifyManagerAboutTrade(user, trade, symbol, direction, amount, durationSeconds) {
+  const adminBot = getAdminBot();
+  if (!adminBot) return;
+
+  // Get manager telegram_id
+  const managerResult = await pool.query(
+    'SELECT telegram_id FROM managers WHERE id = $1',
+    [user.manager_id]
+  );
+  
+  if (managerResult.rows.length === 0) return;
+  
+  const managerTelegramId = managerResult.rows[0].telegram_id;
+  if (!managerTelegramId) return;
+
+  const directionText = direction === 'up' ? '📈 LONG' : '📉 SHORT';
+  const durationText = durationSeconds >= 60 ? `${Math.round(durationSeconds / 60)} мин` : `${durationSeconds} сек`;
+  
+  const message = `🔔 <b>Новая сделка</b>\n\n` +
+    `👤 Пользователь: ${user.first_name || ''} ${user.last_name || ''} (@${user.username || 'нет'})\n` +
+    `📊 Пара: <b>${symbol}</b>\n` +
+    `${directionText}\n` +
+    `💰 Сумма: <b>$${amount}</b>\n` +
+    `⏱ Длительность: ${durationText}\n` +
+    `🆔 ID сделки: ${trade.id}`;
+
+  await adminBot.telegram.sendMessage(managerTelegramId, message, { parse_mode: 'HTML' });
+}
 
 /**
  * Parse duration string to seconds
@@ -123,6 +156,13 @@ router.post('/create', async (req, res) => {
       await client.query('COMMIT');
 
       const trade = tradeResult.rows[0];
+
+      // Notify manager about new trade (async, don't wait)
+      if (user.manager_id) {
+        notifyManagerAboutTrade(user, trade, tradeSymbol, direction || 'up', amount, durationSeconds).catch(e => {
+          console.log('Could not notify manager:', e.message);
+        });
+      }
 
       res.json({
         success: true,
