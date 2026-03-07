@@ -357,49 +357,56 @@ router.get('/user/:telegramId/history', adminCheck, async (req, res) => {
  * Return withdrawal to user (refund balance)
  */
 router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
     
-    // Get withdrawal with user info
+    await client.query('BEGIN');
+    
+    // Get withdrawal with user info - lock both rows
     let withdrawalResult;
     if (req.isMainAdmin) {
-      withdrawalResult = await pool.query(
+      withdrawalResult = await client.query(
         `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.first_name
          FROM withdraw_requests wr 
          JOIN users u ON wr.user_id = u.id 
-         WHERE wr.id = $1`,
+         WHERE wr.id = $1
+         FOR UPDATE OF wr, u`,
         [id]
       );
     } else {
-      withdrawalResult = await pool.query(
+      withdrawalResult = await client.query(
         `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.first_name
          FROM withdraw_requests wr 
          JOIN users u ON wr.user_id = u.id 
-         WHERE wr.id = $1 AND u.manager_id = $2`,
+         WHERE wr.id = $1 AND u.manager_id = $2
+         FOR UPDATE OF wr, u`,
         [id, req.managerId]
       );
     }
     
     if (withdrawalResult.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ success: false, error: 'Withdrawal not found' });
     }
     
     const withdrawal = withdrawalResult.rows[0];
     
     if (withdrawal.status !== 'pending') {
+      await client.query('ROLLBACK');
       return res.status(400).json({ success: false, error: 'Withdrawal already processed' });
     }
     
     // Return balance to user
     const newBalance = parseFloat(withdrawal.balance_usdt) + parseFloat(withdrawal.amount);
     
-    await pool.query(
+    await client.query(
       'UPDATE users SET balance_usdt = $1, updated_at = NOW() WHERE id = $2',
       [newBalance, withdrawal.user_internal_id]
     );
     
     // Update withdrawal status to rejected
-    await pool.query(
+    await client.query(
       'UPDATE withdraw_requests SET status = $1 WHERE id = $2',
       ['rejected', id]
     );
@@ -407,11 +414,13 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
     // Send message to user's support chat
     const returnMessage = `❌ Ваша заявка на вывод ${parseFloat(withdrawal.amount).toFixed(2)} USDT была отклонена.\n\nСредства возвращены на ваш баланс.\n\nЕсли у вас есть вопросы, напишите нам.`;
     
-    await pool.query(
+    await client.query(
       `INSERT INTO support_messages (user_id, sender, message, is_read, created_at) 
        VALUES ($1, 'support', $2, FALSE, NOW())`,
       [withdrawal.user_internal_id, returnMessage]
     );
+    
+    await client.query('COMMIT');
     
     res.json({
       success: true,
@@ -419,8 +428,11 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
       newBalance
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Return withdrawal error:', error);
     res.status(500).json({ success: false, error: 'Server error' });
+  } finally {
+    client.release();
   }
 });
 
@@ -720,18 +732,19 @@ router.post('/deposits/:id/approve', adminCheck, async (req, res) => {
     
     await client.query('BEGIN');
     
-    // Get deposit request with manager check
+    // Get deposit request with manager check - lock the row to prevent double approval
     let depositResult;
     if (req.isMainAdmin) {
       depositResult = await client.query(
-        'SELECT d.* FROM deposit_requests d WHERE d.id = $1 AND d.status = $2',
+        'SELECT d.* FROM deposit_requests d WHERE d.id = $1 AND d.status = $2 FOR UPDATE',
         [id, 'pending']
       );
     } else {
       depositResult = await client.query(
         `SELECT d.* FROM deposit_requests d 
          JOIN users u ON d.user_id = u.id
-         WHERE d.id = $1 AND d.status = $2 AND u.manager_id = $3`,
+         WHERE d.id = $1 AND d.status = $2 AND u.manager_id = $3
+         FOR UPDATE OF d`,
         [id, 'pending', req.managerId]
       );
     }
@@ -1033,56 +1046,63 @@ router.get('/invoices', adminCheck, async (req, res) => {
  * Confirm invoice payment manually
  */
 router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
+  const client = await pool.connect();
   try {
     const { invoiceId } = req.params;
     
-    // Get invoice with manager check
+    await client.query('BEGIN');
+    
+    // Get invoice with manager check - lock to prevent double credit
     let invoiceResult;
     if (req.isMainAdmin) {
-      invoiceResult = await pool.query(
-        'SELECT ci.*, u.telegram_id, u.first_name FROM crypto_invoices ci JOIN users u ON ci.user_id = u.id WHERE ci.invoice_id = $1',
+      invoiceResult = await client.query(
+        'SELECT ci.*, u.telegram_id, u.first_name FROM crypto_invoices ci JOIN users u ON ci.user_id = u.id WHERE ci.invoice_id = $1 FOR UPDATE OF ci',
         [invoiceId]
       );
     } else {
       // Manager can only confirm invoices of their users
-      invoiceResult = await pool.query(
-        'SELECT ci.*, u.telegram_id, u.first_name FROM crypto_invoices ci JOIN users u ON ci.user_id = u.id WHERE ci.invoice_id = $1 AND u.manager_id = $2',
+      invoiceResult = await client.query(
+        'SELECT ci.*, u.telegram_id, u.first_name FROM crypto_invoices ci JOIN users u ON ci.user_id = u.id WHERE ci.invoice_id = $1 AND u.manager_id = $2 FOR UPDATE OF ci',
         [invoiceId, req.managerId]
       );
     }
     
     if (invoiceResult.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ success: false, error: 'Инвойс не найден' });
     }
     
     const invoice = invoiceResult.rows[0];
     
     if (invoice.status === 'paid') {
+      await client.query('ROLLBACK');
       return res.status(400).json({ success: false, error: 'Уже оплачен' });
     }
     
     const paidAmount = parseFloat(invoice.amount);
     
     // Update invoice status
-    await pool.query(
+    await client.query(
       'UPDATE crypto_invoices SET status = $1, paid_at = NOW() WHERE invoice_id = $2',
       ['paid', invoiceId]
     );
     
     // Credit user balance
-    await pool.query(
+    await client.query(
       'UPDATE users SET balance_usdt = balance_usdt + $1, updated_at = NOW() WHERE id = $2',
       [paidAmount, invoice.user_id]
     );
     
     // Create transaction record
-    await pool.query(
+    await client.query(
       `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
        VALUES ($1, $2, 'USDT', 'deposit', $3, NOW())`,
       [invoice.user_id, paidAmount, `Пополнение (подтверждено админом): ${paidAmount} USDT`]
     );
     
-    // Notify user via main bot
+    await client.query('COMMIT');
+    
+    // Notify user via main bot (outside transaction)
     try {
       const { getBot } = require('../bot');
       const bot = getBot();
@@ -1102,8 +1122,11 @@ router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
       message: 'Оплата подтверждена'
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Confirm invoice error:', error);
     res.status(500).json({ success: false, error: 'Server error' });
+  } finally {
+    client.release();
   }
 });
 

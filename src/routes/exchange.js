@@ -15,6 +15,7 @@ const RUB_TO_USDT_RATE = 0.012642; // 1 RUB = 0.012642 USDT
  * Exchange between RUB and USDT
  */
 router.post('/', async (req, res) => {
+  const client = await pool.connect();
   try {
     const { user_id, amount, side } = req.body;
 
@@ -29,9 +30,12 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Invalid side (rub_to_usdt or usdt_to_rub)' });
     }
 
-    // Get user by telegram_id
-    const userResult = await pool.query('SELECT * FROM users WHERE telegram_id = $1', [user_id.toString()]);
+    await client.query('BEGIN');
+
+    // Get user by telegram_id WITH LOCK to prevent race condition
+    const userResult = await client.query('SELECT * FROM users WHERE telegram_id = $1 FOR UPDATE', [user_id.toString()]);
     if (userResult.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'User not found' });
     }
 
@@ -44,6 +48,7 @@ router.post('/', async (req, res) => {
     if (side === 'rub_to_usdt') {
       // RUB -> USDT
       if (amount > rubBalance) {
+        await client.query('ROLLBACK');
         return res.status(400).json({ error: 'Insufficient RUB balance' });
       }
       exchangedAmount = amount * RUB_TO_USDT_RATE;
@@ -52,6 +57,7 @@ router.post('/', async (req, res) => {
     } else {
       // USDT -> RUB
       if (amount > usdtBalance) {
+        await client.query('ROLLBACK');
         return res.status(400).json({ error: 'Insufficient USDT balance' });
       }
       exchangedAmount = amount / RUB_TO_USDT_RATE;
@@ -59,54 +65,45 @@ router.post('/', async (req, res) => {
       newRubBalance = rubBalance + exchangedAmount;
     }
 
-    // Begin transaction
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
+    // Update balances
+    await client.query(
+      `UPDATE users SET balance_rub = $1, balance_usdt = $2, updated_at = NOW() WHERE id = $3`,
+      [newRubBalance, newUsdtBalance, user.id]
+    );
 
-      // Update balances
-      await client.query(
-        `UPDATE users SET balance_rub = $1, balance_usdt = $2, updated_at = NOW() WHERE telegram_id = $3`,
-        [newRubBalance, newUsdtBalance, user_id.toString()]
-      );
+    // Create transaction record
+    const description = side === 'rub_to_usdt' 
+      ? `Обмен ${amount.toFixed(2)} RUB → ${exchangedAmount.toFixed(2)} USDT`
+      : `Обмен ${amount.toFixed(2)} USDT → ${exchangedAmount.toFixed(2)} RUB`;
 
-      // Create transaction record
-      const description = side === 'rub_to_usdt' 
-        ? `Обмен ${amount.toFixed(2)} RUB → ${exchangedAmount.toFixed(2)} USDT`
-        : `Обмен ${amount.toFixed(2)} USDT → ${exchangedAmount.toFixed(2)} RUB`;
+    await client.query(
+      `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
+       VALUES ($1, $2, $3, 'exchange', $4, NOW())`,
+      [user.id, amount, side === 'rub_to_usdt' ? 'RUB' : 'USDT', description]
+    );
 
-      await client.query(
-        `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
-         VALUES ($1, $2, $3, 'exchange', $4, NOW())`,
-        [user.id, amount, side === 'rub_to_usdt' ? 'RUB' : 'USDT', description]
-      );
+    await client.query('COMMIT');
 
-      await client.query('COMMIT');
-
-      res.json({
-        success: true,
-        message: 'Обмен выполнен успешно!',
-        data: {
-          side,
-          fromAmount: amount,
-          toAmount: exchangedAmount,
-          newBalances: {
-            rub: newRubBalance,
-            usdt: newUsdtBalance
-          }
+    res.json({
+      success: true,
+      message: 'Обмен выполнен успешно!',
+      data: {
+        side,
+        fromAmount: amount,
+        toAmount: exchangedAmount,
+        newBalances: {
+          rub: newRubBalance,
+          usdt: newUsdtBalance
         }
-      });
-
-    } catch (txError) {
-      await client.query('ROLLBACK');
-      throw txError;
-    } finally {
-      client.release();
-    }
+      }
+    });
 
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('❌ Exchange error:', error.message);
     res.status(500).json({ error: 'Server error: ' + error.message });
+  } finally {
+    client.release();
   }
 });
 

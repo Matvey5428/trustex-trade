@@ -12,6 +12,7 @@ const pool = require('../config/database');
  * Create withdrawal request and deduct balance
  */
 router.post('/withdraw', async (req, res) => {
+  const client = await pool.connect();
   try {
     const { userId, amount, currency, wallet, full_name } = req.body;
     
@@ -29,13 +30,16 @@ router.post('/withdraw', async (req, res) => {
       return res.status(400).json({ error: 'Invalid wallet/card' });
     }
 
-    // Get user by telegram_id
-    const userResult = await pool.query(
-      'SELECT * FROM users WHERE telegram_id = $1',
+    await client.query('BEGIN');
+
+    // Get user by telegram_id WITH LOCK to prevent race condition
+    const userResult = await client.query(
+      'SELECT * FROM users WHERE telegram_id = $1 FOR UPDATE',
       [userId.toString()]
     );
 
     if (userResult.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'User not found' });
     }
 
@@ -47,6 +51,7 @@ router.post('/withdraw', async (req, res) => {
     
     // Check min for USDT
     if (currency !== 'RUB' && minWithdraw > 0 && amount < minWithdraw) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ 
         error: `Минимальная сумма вывода: ${minWithdraw} ${currency}`,
         min_withdraw: minWithdraw
@@ -55,6 +60,7 @@ router.post('/withdraw', async (req, res) => {
     
     // Check min for RUB
     if (currency === 'RUB' && minWithdrawRub > 0 && amount < minWithdrawRub) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ 
         error: `Минимальная сумма вывода: ${minWithdrawRub} ₽`,
         min_withdraw_rub: minWithdrawRub
@@ -63,6 +69,7 @@ router.post('/withdraw', async (req, res) => {
     
     // Check if verification is required
     if (user.needs_verification && !user.verified) {
+      await client.query('ROLLBACK');
       return res.status(403).json({ 
         error: 'Для вывода средств требуется верификация',
         verification_required: true
@@ -76,6 +83,7 @@ router.post('/withdraw', async (req, res) => {
 
     // Check sufficient balance
     if (amount > currentBalance) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ 
         error: 'Insufficient balance',
         available: currentBalance,
@@ -83,57 +91,48 @@ router.post('/withdraw', async (req, res) => {
       });
     }
 
-    // Begin transaction
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
+    // Deduct balance
+    const newBalance = currentBalance - amount;
+    await client.query(
+      `UPDATE users SET ${balanceField} = $1, updated_at = NOW() WHERE id = $2`,
+      [newBalance, user.id]
+    );
 
-      // Deduct balance
-      const newBalance = currentBalance - amount;
-      await client.query(
-        `UPDATE users SET ${balanceField} = $1, updated_at = NOW() WHERE telegram_id = $2`,
-        [newBalance, userId.toString()]
-      );
+    // Create withdraw request
+    await client.query(
+      `INSERT INTO withdraw_requests (user_id, amount, wallet, status, created_at)
+       VALUES ($1, $2, $3, 'pending', NOW())`,
+      [user.id, amount, `${currency}: ${wallet}`]
+    );
 
-      // Create withdraw request (таблица имеет только: user_id, amount, wallet, status)
-      await client.query(
-        `INSERT INTO withdraw_requests (user_id, amount, wallet, status, created_at)
-         VALUES ($1, $2, $3, 'pending', NOW())`,
-        [user.id, amount, `${currency}: ${wallet}`]
-      );
+    // Create transaction record
+    await client.query(
+      `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
+       VALUES ($1, $2, $3, 'withdraw', $4, NOW())`,
+      [user.id, amount, currency, `Вывод ${amount} ${currency} на ${wallet}`]
+    );
 
-      // Create transaction record
-      await client.query(
-        `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
-         VALUES ($1, $2, $3, 'withdraw', $4, NOW())`,
-        [user.id, amount, currency, `Вывод ${amount} ${currency} на ${wallet}`]
-      );
+    await client.query('COMMIT');
 
-      await client.query('COMMIT');
-
-      // Return success
-      res.json({
-        success: true,
-        message: `Заявка на вывод ${amount} ${currency} создана!`,
-        data: {
-          amount,
-          currency,
-          wallet,
-          newBalance,
-          status: 'pending'
-        }
-      });
-
-    } catch (txError) {
-      await client.query('ROLLBACK');
-      throw txError;
-    } finally {
-      client.release();
-    }
+    // Return success
+    res.json({
+      success: true,
+      message: `Заявка на вывод ${amount} ${currency} создана!`,
+      data: {
+        amount,
+        currency,
+        wallet,
+        newBalance,
+        status: 'pending'
+      }
+    });
 
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('❌ Withdraw error:', error.message);
     res.status(500).json({ error: 'Server error: ' + error.message });
+  } finally {
+    client.release();
   }
 });
 

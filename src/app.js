@@ -111,13 +111,16 @@ if (adminWebhookPath) {
 app.post('/api/cryptobot-webhook', async (req, res) => {
   console.log('📩 CryptoBot webhook received:', JSON.stringify(req.body).substring(0, 200));
   
+  const pool = require('./config/database');
+  const client = await pool.connect();
+  
   try {
-    const pool = require('./config/database');
     const crypto = require('crypto');
     const CRYPTOBOT_TOKEN = process.env.CRYPTOBOT_API_TOKEN;
     
     if (!CRYPTOBOT_TOKEN) {
       console.warn('⚠️ CRYPTOBOT_API_TOKEN not set');
+      client.release();
       return res.sendStatus(200);
     }
     
@@ -132,14 +135,18 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
       
       console.log(`💰 CryptoBot payment received: Invoice ${invoiceId}, ${paidAmount} ${invoice.asset}`);
       
-      // Get invoice from database
-      const invoiceResult = await pool.query(
-        'SELECT * FROM crypto_invoices WHERE invoice_id = $1',
+      await client.query('BEGIN');
+      
+      // Get invoice from database with lock to prevent double credit
+      const invoiceResult = await client.query(
+        'SELECT * FROM crypto_invoices WHERE invoice_id = $1 FOR UPDATE',
         [invoiceId]
       );
       
       if (invoiceResult.rows.length === 0) {
         console.warn(`Invoice ${invoiceId} not found in database`);
+        await client.query('ROLLBACK');
+        client.release();
         return res.sendStatus(200);
       }
       
@@ -147,29 +154,34 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
       
       if (dbInvoice.status === 'paid') {
         console.log(`Invoice ${invoiceId} already processed`);
+        await client.query('ROLLBACK');
+        client.release();
         return res.sendStatus(200);
       }
       
       // Update invoice status
-      await pool.query(
+      await client.query(
         'UPDATE crypto_invoices SET status = $1, paid_at = NOW() WHERE invoice_id = $2',
         ['paid', invoiceId]
       );
       
       // Credit user balance
-      await pool.query(
+      await client.query(
         'UPDATE users SET balance_usdt = balance_usdt + $1, updated_at = NOW() WHERE id = $2',
         [paidAmount, dbInvoice.user_id]
       );
       
       // Create transaction record
-      await pool.query(
+      await client.query(
         `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
          VALUES ($1, $2, 'USDT', 'deposit', $3, NOW())`,
         [dbInvoice.user_id, paidAmount, `Пополнение через CryptoBot: ${paidAmount} USDT`]
       );
       
-      // Notify user via Telegram
+      await client.query('COMMIT');
+      client.release();
+      
+      // Notify user via Telegram (outside transaction for better response time)
       try {
         const userResult = await pool.query('SELECT telegram_id, first_name FROM users WHERE id = $1', [dbInvoice.user_id]);
         if (userResult.rows.length > 0) {
@@ -206,10 +218,14 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
       }
       
       console.log(`✅ Balance credited: ${paidAmount} USDT to user ${dbInvoice.user_id}`);
+    } else {
+      client.release();
     }
     
     res.sendStatus(200);
   } catch (error) {
+    await client.query('ROLLBACK');
+    client.release();
     console.error('❌ CryptoBot webhook error:', error.message);
     res.sendStatus(200);
   }

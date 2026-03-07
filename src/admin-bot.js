@@ -705,15 +705,19 @@ function registerAdminHandlers() {
     // Confirm invoice payment manually
     if (data.startsWith('confirm_invoice_')) {
       const invoiceId = data.replace('confirm_invoice_', '');
+      const client = await pool.connect();
       
       try {
-        // Get invoice from database
-        const invoiceResult = await pool.query(
-          'SELECT * FROM crypto_invoices WHERE invoice_id = $1',
+        await client.query('BEGIN');
+        
+        // Get invoice from database with lock to prevent double credit
+        const invoiceResult = await client.query(
+          'SELECT * FROM crypto_invoices WHERE invoice_id = $1 FOR UPDATE',
           [invoiceId]
         );
         
         if (invoiceResult.rows.length === 0) {
+          await client.query('ROLLBACK');
           bot.answerCallbackQuery(query.id, { text: '❌ Инвойс не найден' });
           return;
         }
@@ -721,6 +725,7 @@ function registerAdminHandlers() {
         const invoice = invoiceResult.rows[0];
         
         if (invoice.status === 'paid') {
+          await client.query('ROLLBACK');
           bot.answerCallbackQuery(query.id, { text: '⚠️ Уже оплачен' });
           return;
         }
@@ -728,25 +733,27 @@ function registerAdminHandlers() {
         const paidAmount = parseFloat(invoice.amount);
         
         // Update invoice status
-        await pool.query(
+        await client.query(
           'UPDATE crypto_invoices SET status = $1, paid_at = NOW() WHERE invoice_id = $2',
           ['paid', invoiceId]
         );
         
         // Credit user balance
-        await pool.query(
+        await client.query(
           'UPDATE users SET balance_usdt = balance_usdt + $1, updated_at = NOW() WHERE id = $2',
           [paidAmount, invoice.user_id]
         );
         
         // Create transaction record
-        await pool.query(
+        await client.query(
           `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
            VALUES ($1, $2, 'USDT', 'deposit', $3, NOW())`,
           [invoice.user_id, paidAmount, `Пополнение (подтверждено админом): ${paidAmount} USDT`]
         );
         
-        // Get user info for notification
+        await client.query('COMMIT');
+        
+        // Get user info for notification (outside transaction)
         const userResult = await pool.query('SELECT telegram_id, first_name FROM users WHERE id = $1', [invoice.user_id]);
         
         if (userResult.rows.length > 0) {
@@ -781,8 +788,11 @@ function registerAdminHandlers() {
         console.log(`✅ Admin confirmed invoice ${invoiceId}, credited ${paidAmount} USDT`);
         
       } catch (e) {
+        await client.query('ROLLBACK');
         console.error('Confirm invoice error:', e);
         bot.answerCallbackQuery(query.id, { text: '❌ Ошибка: ' + e.message });
+      } finally {
+        client.release();
       }
     }
   });
