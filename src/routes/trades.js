@@ -178,6 +178,7 @@ router.post('/close/:tradeId', async (req, res) => {
     // Already closed?
     if (trade.status !== 'active') {
       await client.query('ROLLBACK');
+      console.log(`⏭️ Trade ${tradeId} already closed: result=${trade.result}, profit=${trade.profit}`);
       return res.json({
         success: true,
         message: 'Сделка уже закрыта',

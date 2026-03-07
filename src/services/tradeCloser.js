@@ -40,6 +40,17 @@ async function closeTrade(trade) {
     const currentBalance = parseFloat(lockedTrade.balance_usdt) || 0;
     const profitMultiplier = parseFloat(lockedTrade.profit_multiplier) || 0.015;
 
+    // Detailed logging for debugging
+    console.log(`📊 Trade ${trade.id} details:`, {
+      symbol: trade.symbol,
+      amount,
+      tradeMode,
+      rawTradeMode: lockedTrade.trade_mode,
+      currentBalance,
+      profitMultiplier,
+      userId: lockedTrade.user_id
+    });
+
     // Check for invalid amounts that would cause overflow
     const MAX_SAFE_AMOUNT = 1000000000; // 1 billion max
     if (amount > MAX_SAFE_AMOUNT || isNaN(amount)) {

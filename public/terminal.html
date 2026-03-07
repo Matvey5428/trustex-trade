@@ -1134,6 +1134,8 @@
     if (tradeEl?.dataset.closing === 'true') return;
     if (tradeEl) tradeEl.dataset.closing = 'true';
     
+    console.log(`🔄 Closing trade ${tradeId}, amount=${amount}, retry=${retryCount}`);
+    
     try {
       const response = await fetch(`/api/trades/close/${tradeId}`, {
         method: 'POST',
@@ -1141,15 +1143,21 @@
       });
 
       const payload = await response.json();
+      console.log(`📊 Close trade response:`, payload);
+      
       const result = payload.data?.result;
       const profit = payload.data?.profit || 0;
-      const totalWin = amount + profit;
+      const serverAmount = payload.data?.amount || amount;
+      const newBalance = payload.data?.newBalance;
+      
+      console.log(`📊 Trade result: result=${result}, profit=${profit}, serverAmount=${serverAmount}, newBalance=${newBalance}`);
 
       if (result === 'win') {
+        const totalWin = serverAmount + profit;
         const msg = lang === 'ru' ? `✅ Прибыль! +${totalWin.toFixed(2)} USDT` : `✅ Profit! +${totalWin.toFixed(2)} USDT`;
         showTradeNotification(msg, 'win');
       } else if (result === 'loss') {
-        const msg = lang === 'ru' ? `❌ Убыток. -${amount.toFixed(2)} USDT` : `❌ Loss. -${amount.toFixed(2)} USDT`;
+        const msg = lang === 'ru' ? `❌ Убыток. -${serverAmount.toFixed(2)} USDT` : `❌ Loss. -${serverAmount.toFixed(2)} USDT`;
         showTradeNotification(msg, 'loss');
       }
       
