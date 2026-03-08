@@ -1206,6 +1206,11 @@
     // Clear previous chart
     container.innerHTML = '';
     
+    // Set price precision based on coin
+    const pricePrecision = ['PEPE', 'SHIB'].includes(coinSymbol) ? 8 :
+                           ['BTC', 'ETH'].includes(coinSymbol) ? 2 :
+                           ['TRX', 'DOGE', 'XRP', 'ADA', 'MATIC', 'POL'].includes(coinSymbol) ? 5 : 4;
+    
     // Create chart - TradingView style
     chart = LightweightCharts.createChart(container, {
       width: container.clientWidth,
@@ -1235,7 +1240,9 @@
       },
       rightPriceScale: {
         borderColor: '#2a2e39',
-        scaleMargins: { top: 0.1, bottom: 0.1 }
+        scaleMargins: { top: 0.2, bottom: 0.2 },
+        autoScale: true,
+        mode: 0 // Normal mode
       },
       timeScale: {
         borderColor: '#2a2e39',
@@ -1246,15 +1253,13 @@
         rightOffset: 5
       },
       handleScroll: { vertTouchDrag: false },
-      handleScale: { axisPressedMouseMove: false }
+      handleScale: { axisPressedMouseMove: false },
+      localization: {
+        priceFormatter: price => price.toFixed(pricePrecision)
+      }
     });
     
     // Create candlestick series - TradingView colors
-    // Set precision based on coin price range
-    const pricePrecision = ['PEPE', 'SHIB'].includes(coinSymbol) ? 8 :
-                           ['BTC', 'ETH'].includes(coinSymbol) ? 2 :
-                           ['TRX', 'DOGE', 'XRP', 'ADA', 'MATIC', 'POL'].includes(coinSymbol) ? 5 : 4;
-    
     candleSeries = chart.addCandlestickSeries({
       upColor: '#26a69a',
       downColor: '#ef5350',
