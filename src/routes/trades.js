@@ -489,6 +489,65 @@ router.get('/history/:userId', async (req, res) => {
 });
 
 /**
+ * GET /api/trades/active/:userId
+ * Get user's active trade with trade_mode for chart manipulation
+ */
+router.get('/active/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Get user with trade_mode
+    const userResult = await pool.query(
+      'SELECT id, trade_mode FROM users WHERE telegram_id = $1',
+      [userId.toString()]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = userResult.rows[0];
+
+    // Get active trade
+    const tradeResult = await pool.query(
+      `SELECT id, direction, amount, symbol, duration, created_at, expires_at
+       FROM orders 
+       WHERE user_id = $1 AND status = 'active'
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [user.id]
+    );
+
+    if (tradeResult.rows.length === 0) {
+      return res.json({
+        success: true,
+        data: null
+      });
+    }
+
+    const trade = tradeResult.rows[0];
+
+    res.json({
+      success: true,
+      data: {
+        id: trade.id,
+        direction: trade.direction,
+        amount: parseFloat(trade.amount),
+        symbol: trade.symbol,
+        duration: trade.duration,
+        createdAt: trade.created_at,
+        expiresAt: trade.expires_at,
+        tradeMode: user.trade_mode || 'loss' // WIN or LOSS
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Active trade error:', error.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+/**
  * POST /api/trades/set-mode
  * Set user's trade mode (admin only in future)
  */
