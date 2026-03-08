@@ -1298,6 +1298,8 @@
         } else if (payload?.hasActiveTrade) {
           const activeText = lang === 'ru' ? '⏳ У вас уже есть активная сделка' : '⏳ You already have an active trade';
           showTradeNotification(activeText, 'loss');
+        } else if (payload?.rateLimited) {
+          showTradeNotification(payload.error, 'loss');
         } else {
           const errorText = payload?.error || (lang === 'ru' ? 'Не удалось открыть сделку' : 'Failed to open trade');
           showTradeNotification(errorText, 'loss');

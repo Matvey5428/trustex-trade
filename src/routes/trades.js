@@ -82,15 +82,55 @@ async function notifyManagerAboutTrade(user, trade, symbol, direction, amount, d
   console.log('✅ Manager notification sent');
 }
 
+// Simple rate limiter for trade creation (user -> last trade timestamp)
+const tradeRateLimiter = new Map();
+const RATE_LIMIT_MS = 2000; // 2 seconds between trades
+
+// Clean up old rate limit entries every 5 minutes to prevent memory leak
+setInterval(() => {
+  const now = Date.now();
+  const expireTime = 60000; // Remove entries older than 1 minute
+  for (const [key, timestamp] of tradeRateLimiter.entries()) {
+    if (now - timestamp > expireTime) {
+      tradeRateLimiter.delete(key);
+    }
+  }
+}, 5 * 60 * 1000);
+
 /**
  * Parse duration string to seconds
+ * Supports: "30s", "5m", "1m30s", "90", etc.
  */
 function parseDuration(duration) {
   if (!duration) return 30;
-  const str = String(duration).toLowerCase();
-  if (str.includes('s')) return parseInt(str) || 30;
-  if (str.includes('m')) return (parseInt(str) || 1) * 60;
-  return parseInt(duration) || 30;
+  const str = String(duration).toLowerCase().trim();
+  
+  // Pure number - treat as seconds
+  if (/^\d+$/.test(str)) {
+    return Math.max(5, Math.min(3600, parseInt(str)));
+  }
+  
+  let totalSeconds = 0;
+  
+  // Parse minutes
+  const minMatch = str.match(/(\d+)\s*m/);
+  if (minMatch) {
+    totalSeconds += parseInt(minMatch[1]) * 60;
+  }
+  
+  // Parse seconds
+  const secMatch = str.match(/(\d+)\s*s/);
+  if (secMatch) {
+    totalSeconds += parseInt(secMatch[1]);
+  }
+  
+  // Fallback
+  if (totalSeconds === 0) {
+    totalSeconds = parseInt(str) || 30;
+  }
+  
+  // Clamp to valid range: 5 seconds to 1 hour
+  return Math.max(5, Math.min(3600, totalSeconds));
 }
 
 /**
@@ -105,6 +145,20 @@ router.post('/create', async (req, res) => {
     if (!userId) {
       return res.status(400).json({ error: 'userId is required' });
     }
+    
+    // Rate limiting check
+    const userKey = userId.toString();
+    const lastTradeTime = tradeRateLimiter.get(userKey);
+    const now = Date.now();
+    
+    if (lastTradeTime && (now - lastTradeTime) < RATE_LIMIT_MS) {
+      const waitTime = Math.ceil((RATE_LIMIT_MS - (now - lastTradeTime)) / 1000);
+      return res.status(429).json({ 
+        error: `Подождите ${waitTime} сек перед следующей сделкой`,
+        rateLimited: true
+      });
+    }
+    
     const amount = parseFloat(fromAmount);
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: 'Invalid amount' });
@@ -198,6 +252,9 @@ router.post('/create', async (req, res) => {
       await client.query('COMMIT');
 
       const trade = tradeResult.rows[0];
+      
+      // Update rate limiter
+      tradeRateLimiter.set(userKey, Date.now());
 
       // Notify admin and manager about new trade (async, don't wait)
       console.log('🔍 Triggering trade notification, user.manager_id:', user.manager_id);
