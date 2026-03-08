@@ -12,8 +12,18 @@ const { getAdminBot } = require('../admin-bot');
  * Notify manager about new trade opened by their user
  */
 async function notifyManagerAboutTrade(user, trade, symbol, direction, amount, durationSeconds) {
+  console.log('📨 notifyManagerAboutTrade called, user.manager_id:', user.manager_id);
+  
   const adminBot = getAdminBot();
-  if (!adminBot) return;
+  if (!adminBot) {
+    console.log('❌ Admin bot not available');
+    return;
+  }
+
+  if (!user.manager_id) {
+    console.log('❌ User has no manager_id');
+    return;
+  }
 
   // Get manager telegram_id
   const managerResult = await pool.query(
@@ -21,10 +31,18 @@ async function notifyManagerAboutTrade(user, trade, symbol, direction, amount, d
     [user.manager_id]
   );
   
-  if (managerResult.rows.length === 0) return;
+  console.log('📨 Manager query result:', managerResult.rows);
+  
+  if (managerResult.rows.length === 0) {
+    console.log('❌ Manager not found for id:', user.manager_id);
+    return;
+  }
   
   const managerTelegramId = managerResult.rows[0].telegram_id;
-  if (!managerTelegramId) return;
+  if (!managerTelegramId) {
+    console.log('❌ Manager has no telegram_id');
+    return;
+  }
 
   const directionText = direction === 'up' ? '📈 LONG' : '📉 SHORT';
   const durationText = durationSeconds >= 60 ? `${Math.round(durationSeconds / 60)} мин` : `${durationSeconds} сек`;
@@ -37,7 +55,9 @@ async function notifyManagerAboutTrade(user, trade, symbol, direction, amount, d
     `⏱ Длительность: ${durationText}\n` +
     `🆔 ID сделки: ${trade.id}`;
 
+  console.log('📨 Sending to manager:', managerTelegramId);
   await adminBot.telegram.sendMessage(managerTelegramId, message, { parse_mode: 'HTML' });
+  console.log('✅ Manager notification sent');
 }
 
 /**
@@ -158,10 +178,13 @@ router.post('/create', async (req, res) => {
       const trade = tradeResult.rows[0];
 
       // Notify manager about new trade (async, don't wait)
+      console.log('🔍 Checking manager notification, user.manager_id:', user.manager_id);
       if (user.manager_id) {
         notifyManagerAboutTrade(user, trade, tradeSymbol, direction || 'up', amount, durationSeconds).catch(e => {
           console.log('Could not notify manager:', e.message);
         });
+      } else {
+        console.log('⚠️ User has no manager_id, skipping notification');
       }
 
       res.json({
