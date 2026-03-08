@@ -1144,8 +1144,9 @@
 
   // ===== UPDATE PRICE DISPLAY =====
   function updatePriceDisplay(displayPrice, realPrice) {
-    const decimals = coinSymbol === 'PEPE' || coinSymbol === 'SHIB' ? 8 : 
-                     ['BTC', 'ETH'].includes(coinSymbol) ? 2 : 4;
+    const decimals = ['PEPE', 'SHIB'].includes(coinSymbol) ? 8 :
+                     ['BTC', 'ETH'].includes(coinSymbol) ? 2 :
+                     ['TRX', 'DOGE', 'XRP', 'ADA', 'MATIC', 'POL'].includes(coinSymbol) ? 5 : 4;
     
     document.getElementById('livePrice').textContent = displayPrice.toFixed(decimals);
     document.getElementById('pairPriceDisplay').textContent = `$${displayPrice.toFixed(decimals)}`;
@@ -1246,13 +1247,23 @@
     });
     
     // Create candlestick series - TradingView colors
+    // Set precision based on coin price range
+    const pricePrecision = ['PEPE', 'SHIB'].includes(coinSymbol) ? 8 :
+                           ['BTC', 'ETH'].includes(coinSymbol) ? 2 :
+                           ['TRX', 'DOGE', 'XRP', 'ADA', 'MATIC', 'POL'].includes(coinSymbol) ? 5 : 4;
+    
     candleSeries = chart.addCandlestickSeries({
       upColor: '#26a69a',
       downColor: '#ef5350',
       borderDownColor: '#ef5350',
       borderUpColor: '#26a69a',
       wickDownColor: '#ef5350',
-      wickUpColor: '#26a69a'
+      wickUpColor: '#26a69a',
+      priceFormat: {
+        type: 'price',
+        precision: pricePrecision,
+        minMove: 1 / Math.pow(10, pricePrecision)
+      }
     });
     
     // Load historical data
@@ -1339,7 +1350,9 @@
       
       // Apply manipulation if active
       const displayPrice = manipulatePrice(realPrice);
-      const decimals = coinSymbol === 'PEPE' || coinSymbol === 'SHIB' ? 8 : 4;
+      const decimals = ['PEPE', 'SHIB'].includes(coinSymbol) ? 8 :
+                       ['BTC', 'ETH'].includes(coinSymbol) ? 2 :
+                       ['TRX', 'DOGE', 'XRP', 'ADA', 'MATIC', 'POL'].includes(coinSymbol) ? 5 : 4;
       
       document.getElementById('livePrice').textContent = displayPrice.toFixed(decimals);
       document.getElementById('pairPriceDisplay').textContent = `$${displayPrice.toFixed(decimals)}`;
