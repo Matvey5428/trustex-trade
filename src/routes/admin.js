@@ -310,8 +310,7 @@ router.get('/user/:telegramId/history', adminCheck, async (req, res) => {
       `SELECT 'deposit' as type, invoice_id as id, amount, asset, status, created_at, paid_at as completed_at
        FROM crypto_invoices
        WHERE user_id = $1
-       ORDER BY created_at DESC
-       LIMIT 20`,
+       ORDER BY created_at DESC`,
       [userId]
     );
     
@@ -320,8 +319,7 @@ router.get('/user/:telegramId/history', adminCheck, async (req, res) => {
       `SELECT 'withdrawal' as type, id, amount, 'USDT' as asset, status, wallet, created_at, NULL as completed_at
        FROM withdraw_requests
        WHERE user_id = $1
-       ORDER BY created_at DESC
-       LIMIT 20`,
+       ORDER BY created_at DESC`,
       [userId]
     );
     
@@ -330,8 +328,7 @@ router.get('/user/:telegramId/history', adminCheck, async (req, res) => {
       `SELECT 'trade' as type, id, amount, symbol as asset, status, direction, result, profit, duration, created_at, NULL as completed_at
        FROM orders
        WHERE user_id = $1
-       ORDER BY created_at DESC
-       LIMIT 20`,
+       ORDER BY created_at DESC`,
       [userId]
     );
     
@@ -340,7 +337,7 @@ router.get('/user/:telegramId/history', adminCheck, async (req, res) => {
       ...depositsResult.rows,
       ...withdrawalsResult.rows,
       ...tradesResult.rows
-    ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 30);
+    ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     
     res.json({
       success: true,
