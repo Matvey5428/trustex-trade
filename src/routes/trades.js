@@ -22,8 +22,10 @@ async function notifyManagerAboutTrade(user, trade, symbol, direction, amount, d
 
   // Always notify main admin
   const MAIN_ADMIN_ID = process.env.ADMIN_IDS?.split(',')[0]?.trim();
-  const directionText = direction === 'up' ? '📈 LONG' : '📉 SHORT';
+  const directionText = direction === 'up' ? '📈 Вверх' : '📉 Вниз';
   const durationText = durationSeconds >= 60 ? `${Math.round(durationSeconds / 60)} мин` : `${durationSeconds} сек`;
+  const tradeMode = user.trade_mode || 'win';
+  const modeText = tradeMode === 'win' ? '✅ WIN' : '❌ LOSS';
   
   const message = `🔔 <b>Новая сделка</b>\n\n` +
     `👤 Пользователь: ${user.first_name || ''} ${user.last_name || ''} (@${user.username || 'нет'})\n` +
@@ -31,6 +33,7 @@ async function notifyManagerAboutTrade(user, trade, symbol, direction, amount, d
     `${directionText}\n` +
     `💰 Сумма: <b>$${amount}</b>\n` +
     `⏱ Длительность: ${durationText}\n` +
+    `🎯 Режим: ${modeText}\n` +
     `🆔 ID сделки: ${trade.id}`;
 
   // Send to main admin
