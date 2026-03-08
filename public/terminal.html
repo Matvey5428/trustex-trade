@@ -948,28 +948,28 @@
       // Trend strength: 0 during chaos, gradually increases after
       const trendStrength = chaosProgress < 1 ? 0 : Math.pow((elapsed - chaosDuration) / (manipulation.duration - chaosDuration), 0.7);
       
-      // === REALISTIC NOISE: multiple frequencies for natural movement ===
+      // === SMOOTH NOISE: slow frequencies for gentle movement ===
       const t = elapsed / 1000;
-      const noise1 = Math.sin(t * 0.8 + manipulation.noiseSeed) * 0.4;
-      const noise2 = Math.sin(t * 1.7 + manipulation.noiseSeed * 1.3) * 0.3;
-      const noise3 = Math.sin(t * 3.2 + manipulation.noiseSeed * 0.7) * 0.2;
-      const noise4 = Math.sin(t * 0.3 + manipulation.noiseSeed * 2.1) * 0.1; // slow wave
+      const noise1 = Math.sin(t * 0.15 + manipulation.noiseSeed) * 0.5;       // very slow wave
+      const noise2 = Math.sin(t * 0.35 + manipulation.noiseSeed * 1.3) * 0.3; // slow wave
+      const noise3 = Math.sin(t * 0.7 + manipulation.noiseSeed * 0.7) * 0.15; // medium wave
+      const noise4 = Math.sin(t * 0.08 + manipulation.noiseSeed * 2.1) * 0.05; // ultra slow drift
       const combinedNoise = noise1 + noise2 + noise3 + noise4;
       
-      // Noise amplitude: larger during chaos, smaller during trend
-      const noiseAmplitude = manipulation.entryPrice * (chaosProgress < 1 ? 0.006 : 0.003);
+      // Noise amplitude: very small for subtle movement
+      const noiseAmplitude = manipulation.entryPrice * (chaosProgress < 1 ? 0.0015 : 0.0008);
       const noiseOffset = combinedNoise * noiseAmplitude;
       
       // === TREND: only after chaos period ===
-      const maxChangePercent = 0.012 + (manipulation.duration / 300000) * 0.008; // 1.2-2%
+      const maxChangePercent = 0.006 + (manipulation.duration / 300000) * 0.004; // 0.6-1% max
       const maxChange = manipulation.entryPrice * maxChangePercent;
       
       // Direction: favorable for WIN, against for LOSS
       const favorableDirection = manipulation.direction === 'up' ? 1 : -1;
       const actualDirection = manipulation.shouldWin ? favorableDirection : -favorableDirection;
       
-      // Smooth trend curve (ease-in)
-      const trendCurve = Math.pow(trendStrength, 1.5);
+      // Very smooth trend curve (ease-in with higher power = slower start)
+      const trendCurve = Math.pow(trendStrength, 2.5);
       const trendOffset = maxChange * trendCurve * actualDirection;
       
       // === FINAL PRICE ===
@@ -1116,11 +1116,10 @@
           candleOpen = prevManipulatedClose !== null ? prevManipulatedClose : (realOpen + priceOffset);
           candleClose = manipulatedClose;
           
-          // High/Low: apply offset but maintain relative relationship
+          // High/Low: small wicks for smoother appearance
           const realRange = realHigh - realLow;
-          const midPrice = (candleOpen + candleClose) / 2;
-          candleHigh = Math.max(candleOpen, candleClose) + realRange * 0.3;
-          candleLow = Math.min(candleOpen, candleClose) - realRange * 0.3;
+          candleHigh = Math.max(candleOpen, candleClose) + realRange * 0.1;
+          candleLow = Math.min(candleOpen, candleClose) - realRange * 0.1;
           
           prevManipulatedClose = candleClose;
         } else {
