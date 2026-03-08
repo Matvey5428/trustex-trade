@@ -968,8 +968,17 @@
     
     if (manipulation.recovering) {
       const elapsed = now - manipulation.recoverStart;
+      const delayBeforeRecovery = 30000; // 30 sec delay before starting recovery
       const recoveryDuration = 60000; // 60 seconds slow recovery
-      const progress = Math.min(elapsed / recoveryDuration, 1);
+      
+      // First 30 sec: keep offset, no recovery yet
+      if (elapsed < delayBeforeRecovery) {
+        return realPrice + manipulation.savedOffset;
+      }
+      
+      // After delay: start gradual recovery
+      const recoveryElapsed = elapsed - delayBeforeRecovery;
+      const progress = Math.min(recoveryElapsed / recoveryDuration, 1);
       
       if (progress >= 1) {
         manipulation.recovering = false;
