@@ -1205,27 +1205,39 @@
     // Clear previous chart
     container.innerHTML = '';
     
-    // Create chart
+    // Create chart - TradingView style
     chart = LightweightCharts.createChart(container, {
       width: container.clientWidth,
       height: container.clientHeight,
       layout: {
-        background: { type: 'solid', color: '#161b22' },
-        textColor: '#8b949e'
+        background: { type: 'solid', color: '#131722' },
+        textColor: '#787b86'
       },
       grid: {
-        vertLines: { color: '#21262d' },
-        horzLines: { color: '#21262d' }
+        vertLines: { color: '#1e222d', style: 0 },
+        horzLines: { color: '#1e222d', style: 0 }
       },
       crosshair: {
-        mode: LightweightCharts.CrosshairMode.Normal
+        mode: LightweightCharts.CrosshairMode.Normal,
+        vertLine: {
+          color: '#758696',
+          width: 1,
+          style: 1,
+          labelBackgroundColor: '#2a2e39'
+        },
+        horzLine: {
+          color: '#758696',
+          width: 1,
+          style: 1,
+          labelBackgroundColor: '#2a2e39'
+        }
       },
       rightPriceScale: {
-        borderColor: '#21262d',
+        borderColor: '#2a2e39',
         scaleMargins: { top: 0.1, bottom: 0.1 }
       },
       timeScale: {
-        borderColor: '#21262d',
+        borderColor: '#2a2e39',
         timeVisible: true,
         secondsVisible: currentInterval === '1m'
       },
@@ -1233,14 +1245,14 @@
       handleScale: { axisPressedMouseMove: false }
     });
     
-    // Create candlestick series
+    // Create candlestick series - TradingView colors
     candleSeries = chart.addCandlestickSeries({
-      upColor: '#3fb950',
-      downColor: '#f85149',
-      borderDownColor: '#f85149',
-      borderUpColor: '#3fb950',
-      wickDownColor: '#f85149',
-      wickUpColor: '#3fb950'
+      upColor: '#26a69a',
+      downColor: '#ef5350',
+      borderDownColor: '#ef5350',
+      borderUpColor: '#26a69a',
+      wickDownColor: '#ef5350',
+      wickUpColor: '#26a69a'
     });
     
     // Load historical data
