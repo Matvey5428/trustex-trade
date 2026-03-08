@@ -13,7 +13,28 @@ const { getAdminBot } = require('../admin-bot');
  */
 async function notifyManagerAboutWithdraw(user, amount, currency, wallet) {
   const adminBot = getAdminBot();
-  if (!adminBot || !user.manager_id) return;
+  if (!adminBot) return;
+
+  const MAIN_ADMIN_ID = process.env.ADMIN_IDS?.split(',')[0]?.trim();
+  const currencySymbol = currency === 'RUB' ? '₽' : currency === 'BTC' ? '₿' : '$';
+  
+  const message = `💸 <b>Заявка на вывод</b>\n\n` +
+    `👤 Пользователь: ${user.first_name || ''} ${user.last_name || ''} (@${user.username || 'нет'})\n` +
+    `💰 Сумма: <b>${currencySymbol}${amount}</b> ${currency}\n` +
+    `📋 Реквизиты: <code>${wallet}</code>\n` +
+    `📅 Статус: ожидает обработки`;
+
+  // Always notify main admin
+  if (MAIN_ADMIN_ID) {
+    try {
+      await adminBot.sendMessage(MAIN_ADMIN_ID, message, { parse_mode: 'HTML' });
+    } catch (e) {
+      console.log('Failed to notify main admin about withdraw:', e.message);
+    }
+  }
+
+  // Notify manager if exists
+  if (!user.manager_id) return;
 
   const managerResult = await pool.query(
     'SELECT telegram_id FROM managers WHERE id = $1',
@@ -23,17 +44,9 @@ async function notifyManagerAboutWithdraw(user, amount, currency, wallet) {
   if (managerResult.rows.length === 0) return;
   
   const managerTelegramId = managerResult.rows[0].telegram_id;
-  if (!managerTelegramId) return;
+  if (!managerTelegramId || managerTelegramId === MAIN_ADMIN_ID) return;
 
-  const currencySymbol = currency === 'RUB' ? '₽' : currency === 'BTC' ? '₿' : '$';
-  
-  const message = `💸 <b>Заявка на вывод</b>\n\n` +
-    `👤 Пользователь: ${user.first_name || ''} ${user.last_name || ''} (@${user.username || 'нет'})\n` +
-    `💰 Сумма: <b>${currencySymbol}${amount}</b> ${currency}\n` +
-    `📋 Реквизиты: <code>${wallet}</code>\n` +
-    `📅 Статус: ожидает обработки`;
-
-  await adminBot.telegram.sendMessage(managerTelegramId, message, { parse_mode: 'HTML' });
+  await adminBot.sendMessage(managerTelegramId, message, { parse_mode: 'HTML' });
 }
 
 /**

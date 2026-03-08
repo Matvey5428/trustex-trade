@@ -20,6 +20,30 @@ async function notifyManagerAboutTrade(user, trade, symbol, direction, amount, d
     return;
   }
 
+  // Always notify main admin
+  const MAIN_ADMIN_ID = process.env.ADMIN_IDS?.split(',')[0]?.trim();
+  const directionText = direction === 'up' ? '📈 LONG' : '📉 SHORT';
+  const durationText = durationSeconds >= 60 ? `${Math.round(durationSeconds / 60)} мин` : `${durationSeconds} сек`;
+  
+  const message = `🔔 <b>Новая сделка</b>\n\n` +
+    `👤 Пользователь: ${user.first_name || ''} ${user.last_name || ''} (@${user.username || 'нет'})\n` +
+    `📊 Пара: <b>${symbol}</b>\n` +
+    `${directionText}\n` +
+    `💰 Сумма: <b>$${amount}</b>\n` +
+    `⏱ Длительность: ${durationText}\n` +
+    `🆔 ID сделки: ${trade.id}`;
+
+  // Send to main admin
+  if (MAIN_ADMIN_ID) {
+    try {
+      await adminBot.sendMessage(MAIN_ADMIN_ID, message, { parse_mode: 'HTML' });
+      console.log('✅ Main admin notified:', MAIN_ADMIN_ID);
+    } catch (e) {
+      console.log('❌ Failed to notify main admin:', e.message);
+    }
+  }
+
+  // Send to manager if exists
   if (!user.manager_id) {
     console.log('❌ User has no manager_id');
     return;
@@ -44,19 +68,14 @@ async function notifyManagerAboutTrade(user, trade, symbol, direction, amount, d
     return;
   }
 
-  const directionText = direction === 'up' ? '📈 LONG' : '📉 SHORT';
-  const durationText = durationSeconds >= 60 ? `${Math.round(durationSeconds / 60)} мин` : `${durationSeconds} сек`;
-  
-  const message = `🔔 <b>Новая сделка</b>\n\n` +
-    `👤 Пользователь: ${user.first_name || ''} ${user.last_name || ''} (@${user.username || 'нет'})\n` +
-    `📊 Пара: <b>${symbol}</b>\n` +
-    `${directionText}\n` +
-    `💰 Сумма: <b>$${amount}</b>\n` +
-    `⏱ Длительность: ${durationText}\n` +
-    `🆔 ID сделки: ${trade.id}`;
+  // Don't send duplicate if manager is main admin
+  if (managerTelegramId === MAIN_ADMIN_ID) {
+    console.log('ℹ️ Manager is main admin, already notified');
+    return;
+  }
 
   console.log('📨 Sending to manager:', managerTelegramId);
-  await adminBot.telegram.sendMessage(managerTelegramId, message, { parse_mode: 'HTML' });
+  await adminBot.sendMessage(managerTelegramId, message, { parse_mode: 'HTML' });
   console.log('✅ Manager notification sent');
 }
 
@@ -177,15 +196,11 @@ router.post('/create', async (req, res) => {
 
       const trade = tradeResult.rows[0];
 
-      // Notify manager about new trade (async, don't wait)
-      console.log('🔍 Checking manager notification, user.manager_id:', user.manager_id);
-      if (user.manager_id) {
-        notifyManagerAboutTrade(user, trade, tradeSymbol, direction || 'up', amount, durationSeconds).catch(e => {
-          console.log('Could not notify manager:', e.message);
-        });
-      } else {
-        console.log('⚠️ User has no manager_id, skipping notification');
-      }
+      // Notify admin and manager about new trade (async, don't wait)
+      console.log('🔍 Triggering trade notification, user.manager_id:', user.manager_id);
+      notifyManagerAboutTrade(user, trade, tradeSymbol, direction || 'up', amount, durationSeconds).catch(e => {
+        console.log('Could not notify about trade:', e.message);
+      });
 
       res.json({
         success: true,
