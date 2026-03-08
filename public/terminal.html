@@ -1177,7 +1177,7 @@
     const apiSymbol = apiSymbolMap[coinSymbol] || coinSymbol;
     
     try {
-      const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${apiSymbol}USDT&interval=${interval}&limit=200`);
+      const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${apiSymbol}USDT&interval=${interval}&limit=500`);
       const data = await res.json();
       
       return data.map(k => ({
@@ -1240,7 +1240,10 @@
       timeScale: {
         borderColor: '#2a2e39',
         timeVisible: true,
-        secondsVisible: currentInterval === '1m'
+        secondsVisible: currentInterval === '1m',
+        barSpacing: 8,
+        minBarSpacing: 4,
+        rightOffset: 5
       },
       handleScroll: { vertTouchDrag: false },
       handleScale: { axisPressedMouseMove: false }
@@ -1271,7 +1274,8 @@
     if (historicalData.length > 0) {
       candleSeries.setData(historicalData);
       lastRealPrice = historicalData[historicalData.length - 1].close;
-      chart.timeScale().fitContent();
+      // Show last 100 candles, not all 500
+      chart.timeScale().scrollToPosition(-5, false);
     }
     
     // Connect WebSocket for real-time data
