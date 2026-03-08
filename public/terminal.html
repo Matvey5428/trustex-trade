@@ -1087,17 +1087,17 @@
         
         // Calculate manipulation offset for this moment
         const manipulatedClose = manipulatePrice(realClose);
-        const priceOffset = manipulatedClose - realClose;
         
-        // Apply same offset to all OHLC - preserves real candle shape
+        // ONLY modify close - keep real open/high/low for seamless candles
         let candleOpen, candleHigh, candleLow, candleClose;
         
         if (manipulation.active || manipulation.recovering) {
-          // Just shift real candle data by offset - looks natural
-          candleOpen = realOpen + priceOffset;
-          candleHigh = realHigh + priceOffset;
-          candleLow = realLow + priceOffset;
+          // Keep real OHLC structure - only adjust close slightly
+          candleOpen = realOpen;
           candleClose = manipulatedClose;
+          // Adjust high/low only if close goes beyond them
+          candleHigh = Math.max(realHigh, manipulatedClose);
+          candleLow = Math.min(realLow, manipulatedClose);
         } else {
           candleOpen = realOpen;
           candleHigh = realHigh;
