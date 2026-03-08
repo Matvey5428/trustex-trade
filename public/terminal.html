@@ -1280,7 +1280,7 @@
     });
     
     // Apply better bar spacing - wider for 1m timeframe
-    const spacing = currentInterval === '1m' ? 16 : 12;
+    const spacing = currentInterval === '1m' ? 20 : 12;
     chart.applyOptions({
       timeScale: {
         barSpacing: spacing
@@ -1293,8 +1293,20 @@
       candleSeries.setData(historicalData);
       lastRealPrice = historicalData[historicalData.length - 1].close;
       
-      // Fit content and let chart auto-scale properly
-      chart.timeScale().fitContent();
+      // For 1m show only last 30 candles for zoomed-in view
+      const visibleBars = currentInterval === '1m' ? 30 : 80;
+      const lastTime = historicalData[historicalData.length - 1].time;
+      const firstVisibleTime = historicalData[Math.max(0, historicalData.length - visibleBars)].time;
+      chart.timeScale().setVisibleRange({
+        from: firstVisibleTime,
+        to: lastTime + 60
+      });
+      
+      // Force tight price scale for better candle visibility
+      chart.priceScale('right').applyOptions({
+        scaleMargins: { top: 0.01, bottom: 0.01 },
+        entireTextOnly: true
+      });
     }
     
     // Connect WebSocket for real-time data
