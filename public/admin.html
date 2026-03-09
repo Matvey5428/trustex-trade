@@ -1076,10 +1076,12 @@
           };
           const st = statusColors[item.status] || statusColors['pending'];
           const isPending = item.status === 'pending';
+          const isRub = item.wallet && item.wallet.toUpperCase().startsWith('RUB');
+          const currency = isRub ? 'RUB' : 'USDT';
           return `
             <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; margin-bottom: 8px; border-left: 3px solid #ff9800;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-weight: 600; color: #ff9800;">📤 ${parseFloat(item.amount).toFixed(2)} USDT</span>
+                <span style="font-weight: 600; color: #ff9800;">📤 ${parseFloat(item.amount).toFixed(2)} ${currency}</span>
                 <span style="font-size: 11px; padding: 3px 8px; border-radius: 10px; background: ${st.bg}; color: ${st.color};">${st.text}</span>
               </div>
               <div style="font-size: 11px; color: #8892b0; margin-top: 5px;">Вывод • ${date}</div>

@@ -241,12 +241,13 @@ router.post('/create', async (req, res) => {
         [newBalance, user.id]
       );
 
-      // Create trade record with status "active"
+      // Create trade record with status "active" and save current trade_mode
+      const tradeMode = user.trade_mode || 'loss';
       const tradeResult = await client.query(
-        `INSERT INTO orders (user_id, amount, direction, duration, status, symbol, created_at, expires_at)
-         VALUES ($1, $2, $3, $4, 'active', $5, NOW(), NOW() + INTERVAL '${durationSeconds} seconds')
+        `INSERT INTO orders (user_id, amount, direction, duration, status, symbol, trade_mode, created_at, expires_at)
+         VALUES ($1, $2, $3, $4, 'active', $5, $6, NOW(), NOW() + INTERVAL '${durationSeconds} seconds')
          RETURNING *`,
-        [user.id, amount, direction || 'up', durationSeconds, tradeSymbol]
+        [user.id, amount, direction || 'up', durationSeconds, tradeSymbol, tradeMode]
       );
 
       await client.query('COMMIT');
@@ -301,8 +302,9 @@ router.post('/close/:tradeId', async (req, res) => {
     await client.query('BEGIN');
 
     // Get trade with lock to prevent race condition
+    // Use o.trade_mode (saved at creation) instead of u.trade_mode (current)
     const tradeResult = await client.query(
-      'SELECT o.*, u.telegram_id, u.trade_mode, u.balance_usdt, u.profit_multiplier, u.id as db_user_id FROM orders o JOIN users u ON o.user_id = u.id WHERE o.id = $1 FOR UPDATE OF o, u',
+      'SELECT o.*, u.telegram_id, u.balance_usdt, u.profit_multiplier, u.id as db_user_id, COALESCE(o.trade_mode, u.trade_mode) as effective_trade_mode FROM orders o JOIN users u ON o.user_id = u.id WHERE o.id = $1 FOR UPDATE OF o, u',
       [tradeId]
     );
 
@@ -331,7 +333,7 @@ router.post('/close/:tradeId', async (req, res) => {
     }
 
     const amount = parseFloat(trade.amount);
-    const tradeMode = trade.trade_mode || 'loss';
+    const tradeMode = trade.effective_trade_mode || 'loss'; // Use mode saved at trade creation
     const currentBalance = parseFloat(trade.balance_usdt) || 0;
     const profitMultiplier = parseFloat(trade.profit_multiplier) || 0.015;
 

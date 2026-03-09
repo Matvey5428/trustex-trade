@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS orders (
   amount NUMERIC(18,8) NOT NULL,
   direction VARCHAR(10) NOT NULL, -- up | down
   duration INTEGER NOT NULL, -- seconds
+  trade_mode VARCHAR(10) DEFAULT 'loss', -- win | loss - saved at trade creation
   
   status VARCHAR(20) DEFAULT 'active', -- active | resolving | closed
   result VARCHAR(20), -- win | lose | null (when active)
