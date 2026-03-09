@@ -68,11 +68,11 @@ function verifyInitData(initData, botToken) {
     // Get auth_date
     const authDate = params.get('auth_date');
 
-    // Check if auth_date is fresh (not older than 24 hours - allows caching)
+    // Check if auth_date is fresh (not older than 7 days - allows long sessions)
     if (authDate) {
       const authTimestamp = parseInt(authDate) * 1000;
       const now = Date.now();
-      const maxAgeMs = 24 * 60 * 60 * 1000; // 24 hours
+      const maxAgeMs = 7 * 24 * 60 * 60 * 1000; // 7 days
 
       if (now - authTimestamp > maxAgeMs) {
         // Return user data even if expired - allows guest mode fallback
