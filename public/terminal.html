@@ -1464,7 +1464,8 @@
             </div>
           `;
         } else {
-          const displayAmount = isWin ? (Number(trade.fromAmount || 0) + Number(trade.profit || 0)) : Number(trade.fromAmount || 0);
+          // Show only actual profit for wins, not stake + profit
+          const displayAmount = isWin ? Number(trade.profit || 0) : Number(trade.fromAmount || 0);
           return `
             <div class="trade-item">
               <div>
@@ -1554,8 +1555,8 @@
       console.log(`📊 Trade result: result=${result}, profit=${profit}, serverAmount=${serverAmount}, newBalance=${newBalance}`);
 
       if (result === 'win') {
-        const totalWin = serverAmount + profit;
-        const msg = lang === 'ru' ? `✅ Прибыль! +${totalWin.toFixed(2)} USDT` : `✅ Profit! +${totalWin.toFixed(2)} USDT`;
+        // Show only the actual profit earned, not stake + profit
+        const msg = lang === 'ru' ? `✅ Прибыль! +${profit.toFixed(2)} USDT` : `✅ Profit! +${profit.toFixed(2)} USDT`;
         showTradeNotification(msg, 'win');
       } else if (result === 'loss') {
         const msg = lang === 'ru' ? `❌ Убыток. -${serverAmount.toFixed(2)} USDT` : `❌ Loss. -${serverAmount.toFixed(2)} USDT`;
