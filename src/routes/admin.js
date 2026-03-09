@@ -364,7 +364,7 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
     let withdrawalResult;
     if (req.isMainAdmin) {
       withdrawalResult = await client.query(
-        `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.first_name
+        `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.balance_rub, u.first_name
          FROM withdraw_requests wr 
          JOIN users u ON wr.user_id = u.id 
          WHERE wr.id = $1
@@ -373,7 +373,7 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
       );
     } else {
       withdrawalResult = await client.query(
-        `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.first_name
+        `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.balance_rub, u.first_name
          FROM withdraw_requests wr 
          JOIN users u ON wr.user_id = u.id 
          WHERE wr.id = $1 AND u.manager_id = $2
@@ -394,11 +394,17 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Withdrawal already processed' });
     }
     
+    // Determine currency from wallet field (format: "RUB: card" or "USDT: address")
+    const isRub = withdrawal.wallet && withdrawal.wallet.toUpperCase().startsWith('RUB');
+    const currency = isRub ? 'RUB' : 'USDT';
+    const balanceField = isRub ? 'balance_rub' : 'balance_usdt';
+    const currentBalance = parseFloat(isRub ? withdrawal.balance_rub : withdrawal.balance_usdt) || 0;
+    
     // Return balance to user
-    const newBalance = parseFloat(withdrawal.balance_usdt) + parseFloat(withdrawal.amount);
+    const newBalance = currentBalance + parseFloat(withdrawal.amount);
     
     await client.query(
-      'UPDATE users SET balance_usdt = $1, updated_at = NOW() WHERE id = $2',
+      `UPDATE users SET ${balanceField} = $1, updated_at = NOW() WHERE id = $2`,
       [newBalance, withdrawal.user_internal_id]
     );
     
@@ -409,7 +415,7 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
     );
     
     // Send message to user's support chat
-    const returnMessage = `❌ Ваша заявка на вывод ${parseFloat(withdrawal.amount).toFixed(2)} USDT была отклонена.\n\nСредства возвращены на ваш баланс.\n\nЕсли у вас есть вопросы, напишите нам.`;
+    const returnMessage = `❌ Ваша заявка на вывод ${parseFloat(withdrawal.amount).toFixed(2)} ${currency} была отклонена.\n\nСредства возвращены на ваш баланс.\n\nЕсли у вас есть вопросы, напишите нам.`;
     
     await client.query(
       `INSERT INTO support_messages (user_id, sender, message, is_read, created_at) 
@@ -422,7 +428,8 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
     res.json({
       success: true,
       message: 'Withdrawal returned',
-      newBalance
+      newBalance,
+      currency
     });
   } catch (error) {
     await client.query('ROLLBACK');
