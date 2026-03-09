@@ -1680,10 +1680,11 @@
       const telegramId = user.telegram_id;
       updateEl('userIdDisplay', telegramId);
       
-      // Запустить ВСЕ запросы параллельно
+      // Запустить ВСЕ запросы параллельно (добавляем cache-bust для profile)
+      const cacheBust = Date.now();
       const [statsRes, profileRes, market] = await Promise.all([
         fetch(`/api/trades/stats/${telegramId}`).catch(() => null),
-        fetch(`/api/profile/${telegramId}`).catch(() => null),
+        fetch(`/api/profile/${telegramId}?_=${cacheBust}`).catch(() => null),
         updateMarketPrices()
       ]);
       

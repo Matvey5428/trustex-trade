@@ -1345,7 +1345,7 @@
     
     if (!userId) return;
     try {
-      const res = await fetch(`/api/profile/${userId}`);
+      const res = await fetch(`/api/profile/${userId}?_=${Date.now()}`);
       if (!res.ok) throw new Error("Server error");
       const payload = await res.json();
       const data = payload?.data || {};

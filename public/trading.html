@@ -761,7 +761,7 @@
       const telegramId = tg?.initDataUnsafe?.user?.id || localStorage.getItem('nexo_guest_telegram_id');
       if (!telegramId) return;
       try {
-        const res = await fetch(`/api/profile/${telegramId}`);
+        const res = await fetch(`/api/profile/${telegramId}?_=${Date.now()}`);
         if (res.ok) {
           const payload = await res.json();
           if (payload?.data?.is_blocked) {
