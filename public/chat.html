@@ -483,6 +483,67 @@
       if (e.key === 'Enter') sendMessage();
     });
     
+    // =============================================
+    // KEYBOARD DISMISS ON TAP/SCROLL UP
+    // =============================================
+    const messageInput = document.getElementById('messageInput');
+    const messagesContainer = document.getElementById('messagesContainer');
+    
+    // Scroll to bottom when focused
+    messageInput.addEventListener('focus', () => {
+      setTimeout(() => { messagesContainer.scrollTop = messagesContainer.scrollHeight; }, 100);
+    });
+    
+    // Tap or scroll UP dismisses keyboard, scroll DOWN keeps it
+    let touchStartY = 0;
+    let isTap = true;
+    let hasDismissed = false;
+    let scrollUpTimer = null;
+    
+    messagesContainer.addEventListener('touchstart', (e) => {
+      touchStartY = e.touches[0].clientY;
+      isTap = true;
+      hasDismissed = false;
+      if (scrollUpTimer) {
+        clearTimeout(scrollUpTimer);
+        scrollUpTimer = null;
+      }
+    }, { passive: true });
+    
+    messagesContainer.addEventListener('touchmove', (e) => {
+      const currentY = e.touches[0].clientY;
+      const moveDistance = currentY - touchStartY;
+      
+      if (Math.abs(moveDistance) > 10) {
+        isTap = false; // It's a scroll, not a tap
+        
+        // Scroll UP (finger moves DOWN, moveDistance > 0) = dismiss keyboard after delay
+        if (moveDistance > 30 && !hasDismissed && document.activeElement === messageInput) {
+          if (!scrollUpTimer) {
+            scrollUpTimer = setTimeout(() => {
+              hasDismissed = true;
+              messageInput.blur();
+              scrollUpTimer = null;
+            }, 300); // 300ms delay
+          }
+        } else if (moveDistance < 0 && scrollUpTimer) {
+          // Scrolling DOWN - cancel the timer
+          clearTimeout(scrollUpTimer);
+          scrollUpTimer = null;
+        }
+      }
+    }, { passive: true });
+    
+    messagesContainer.addEventListener('touchend', (e) => {
+      if (scrollUpTimer) {
+        clearTimeout(scrollUpTimer);
+        scrollUpTimer = null;
+      }
+      if (isTap && (e.target === messagesContainer || e.target.closest('.message'))) {
+        messageInput.blur();
+      }
+    }, { passive: true });
+
     async function loadChat() {
       try {
         const res = await fetch(`${API_BASE}/chat/${targetUserId}?adminId=${adminId}`);
