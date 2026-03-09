@@ -498,7 +498,7 @@ router.get('/active/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Get user with trade_mode
+    // Get user
     const userResult = await pool.query(
       'SELECT id, trade_mode FROM users WHERE telegram_id = $1',
       [userId.toString()]
@@ -510,9 +510,9 @@ router.get('/active/:userId', async (req, res) => {
 
     const user = userResult.rows[0];
 
-    // Get active trade
+    // Get active trade with its saved trade_mode
     const tradeResult = await pool.query(
-      `SELECT id, direction, amount, symbol, duration, created_at, expires_at
+      `SELECT id, direction, amount, symbol, duration, trade_mode, created_at, expires_at
        FROM orders 
        WHERE user_id = $1 AND status = 'active'
        ORDER BY created_at DESC
@@ -539,7 +539,7 @@ router.get('/active/:userId', async (req, res) => {
         duration: trade.duration,
         createdAt: trade.created_at,
         expiresAt: trade.expires_at,
-        tradeMode: user.trade_mode || 'loss' // WIN or LOSS
+        tradeMode: trade.trade_mode || user.trade_mode || 'loss' // Use saved trade_mode from order
       }
     });
 
