@@ -164,6 +164,12 @@ async function initDatabase() {
       ADD COLUMN IF NOT EXISTS profit NUMERIC(18,8) DEFAULT 0
     `);
 
+    // Run migration: add trade_mode column to orders (save mode at trade creation)
+    await pool.query(`
+      ALTER TABLE orders 
+      ADD COLUMN IF NOT EXISTS trade_mode VARCHAR(10) DEFAULT 'loss'
+    `);
+
     // One-time cleanup: delete old verification messages without proper line breaks
     await pool.query(`
       DELETE FROM support_messages 
