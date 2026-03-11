@@ -403,10 +403,18 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
     // Return balance to user
     const newBalance = currentBalance + parseFloat(withdrawal.amount);
     
-    await client.query(
-      `UPDATE users SET ${balanceField} = $1, updated_at = NOW() WHERE id = $2`,
+    const updateResult = await client.query(
+      `UPDATE users SET ${balanceField} = $1, updated_at = NOW() WHERE id = $2 RETURNING ${balanceField}`,
       [newBalance, withdrawal.user_internal_id]
     );
+    
+    console.log('💰 Balance updated:', {
+      userId: withdrawal.user_internal_id,
+      telegramId: withdrawal.telegram_id,
+      balanceField,
+      newBalance,
+      updateResult: updateResult.rows[0]
+    });
     
     // Update withdrawal status to rejected
     await client.query(
