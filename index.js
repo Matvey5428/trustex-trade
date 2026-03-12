@@ -196,6 +196,45 @@ async function initDatabase() {
       ADD COLUMN IF NOT EXISTS owner_id VARCHAR(50)
     `);
 
+    // Run migration: create sub_admins table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS sub_admins (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        telegram_id VARCHAR(50) UNIQUE NOT NULL,
+        name VARCHAR(100),
+        ref_code VARCHAR(20) UNIQUE,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // Run migration: add sub_admin_id to managers (managers can belong to sub_admin)
+    await pool.query(`
+      ALTER TABLE managers 
+      ADD COLUMN IF NOT EXISTS sub_admin_id UUID REFERENCES sub_admins(id) ON DELETE SET NULL
+    `);
+
+    // Run migration: add sub_admin_id to users (users attracted directly by sub_admin)
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS sub_admin_id UUID REFERENCES sub_admins(id) ON DELETE SET NULL
+    `);
+
+    // Run migration: add sub_admin_telegram_id to users (for faster lookups)
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS sub_admin_telegram_id BIGINT DEFAULT NULL
+    `);
+
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_managers_sub_admin_id ON managers(sub_admin_id)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_users_sub_admin_id ON users(sub_admin_id)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_sub_admins_ref_code ON sub_admins(ref_code)
+    `);
+
     // Performance indexes
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)`);

@@ -149,8 +149,10 @@ async function createUser(userData, refCode = null) {
 
   const id = uuidv4();
   
-  // Find manager by ref_code - check multiple sources
+  // Find manager or sub-admin by ref_code
   let managerId = null;
+  let subAdminId = null;
+  let subAdminTelegramId = null;
   let usedRefCode = refCode;
   
   // 1. First check passed refCode
@@ -166,7 +168,7 @@ async function createUser(userData, refCode = null) {
   }
   
   // 2. If no refCode passed, check pending_refs table
-  if (!managerId) {
+  if (!managerId && !subAdminId) {
     const pendingRef = await pool.query(
       'SELECT ref_code FROM pending_refs WHERE telegram_id = $1',
       [telegram_id]
@@ -175,13 +177,28 @@ async function createUser(userData, refCode = null) {
       usedRefCode = pendingRef.rows[0].ref_code;
       console.log(`📋 Found pending ref for ${telegram_id}: ${usedRefCode}`);
       
-      const managerResult = await pool.query(
-        'SELECT id FROM managers WHERE ref_code = $1',
-        [usedRefCode]
-      );
-      if (managerResult.rows.length > 0) {
-        managerId = managerResult.rows[0].id;
-        console.log(`🔗 New user will be linked to manager via pending ref: ${usedRefCode}`);
+      // Check if it's a sub-admin ref (prefixed with 'sa_')
+      if (usedRefCode.startsWith('sa_')) {
+        const actualRefCode = usedRefCode.replace('sa_', '');
+        const subAdminResult = await pool.query(
+          'SELECT id, telegram_id FROM sub_admins WHERE ref_code = $1',
+          [actualRefCode]
+        );
+        if (subAdminResult.rows.length > 0) {
+          subAdminId = subAdminResult.rows[0].id;
+          subAdminTelegramId = subAdminResult.rows[0].telegram_id;
+          console.log(`🔗 New user will be linked to sub-admin via pending ref: ${actualRefCode}`);
+        }
+      } else {
+        // Regular manager ref
+        const managerResult = await pool.query(
+          'SELECT id FROM managers WHERE ref_code = $1',
+          [usedRefCode]
+        );
+        if (managerResult.rows.length > 0) {
+          managerId = managerResult.rows[0].id;
+          console.log(`🔗 New user will be linked to manager via pending ref: ${usedRefCode}`);
+        }
       }
       
       // Clean up pending ref
@@ -191,24 +208,26 @@ async function createUser(userData, refCode = null) {
 
   const result = await pool.query(
     `INSERT INTO users 
-      (id, telegram_id, username, first_name, last_name, photo_url, manager_id, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+      (id, telegram_id, username, first_name, last_name, photo_url, manager_id, sub_admin_id, sub_admin_telegram_id, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
      ON CONFLICT (telegram_id) DO UPDATE SET
        username = EXCLUDED.username,
        first_name = EXCLUDED.first_name,
        last_name = EXCLUDED.last_name,
        manager_id = COALESCE(users.manager_id, EXCLUDED.manager_id),
+       sub_admin_id = COALESCE(users.sub_admin_id, EXCLUDED.sub_admin_id),
+       sub_admin_telegram_id = COALESCE(users.sub_admin_telegram_id, EXCLUDED.sub_admin_telegram_id),
        updated_at = NOW()
      RETURNING 
       id, telegram_id, username, first_name, last_name, photo_url,
       balance_usdt, balance_btc, balance_rub,
-      verified, status, is_admin, manager_id,
+      verified, status, is_admin, manager_id, sub_admin_id,
       created_at, updated_at`,
-    [id, telegram_id, username || null, first_name || null, last_name || null, photo_url || null, managerId]
+    [id, telegram_id, username || null, first_name || null, last_name || null, photo_url || null, managerId, subAdminId, subAdminTelegramId]
   );
 
   const user = result.rows[0];
-  console.log('✅ User created:', user.id, managerId ? `(manager: ${managerId})` : '');
+  console.log('✅ User created:', user.id, managerId ? `(manager: ${managerId})` : '', subAdminId ? `(sub-admin: ${subAdminId})` : '');
 
   return user;
 }

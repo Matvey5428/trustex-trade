@@ -143,9 +143,9 @@ function registerHandlers() {
     if (startParam && startParam.startsWith('ref_')) {
       const refCode = startParam.replace('ref_', '');
       try {
-        // Find manager by ref_code
+        // First try to find manager by ref_code
         const managerResult = await pool.query(
-          'SELECT id, name FROM managers WHERE ref_code = $1',
+          'SELECT id, name, sub_admin_id FROM managers WHERE ref_code = $1',
           [refCode]
         );
         
@@ -195,6 +195,60 @@ function registerHandlers() {
               [manager.id, user.id.toString()]
             );
             console.log(`✅ Linked existing user ${user.id} to manager ${manager.name}`);
+          }
+        } else {
+          // Try to find sub-admin by ref_code
+          const subAdminResult = await pool.query(
+            'SELECT id, name, telegram_id FROM sub_admins WHERE ref_code = $1',
+            [refCode]
+          );
+          
+          if (subAdminResult.rows.length > 0) {
+            const subAdmin = subAdminResult.rows[0];
+            
+            // Check if user already exists
+            const existingUser = await pool.query(
+              'SELECT id, sub_admin_id FROM users WHERE telegram_id = $1',
+              [user.id.toString()]
+            );
+            
+            if (existingUser.rows.length === 0) {
+              // New user from sub-admin ref - save to pending_refs with 'sa_' prefix
+              console.log(`👤 New user ${user.id} came via sub-admin ref ${refCode} (sub-admin: ${subAdmin.name})`);
+              
+              await pool.query(`
+                INSERT INTO pending_refs (telegram_id, ref_code, created_at)
+                VALUES ($1, $2, NOW())
+                ON CONFLICT (telegram_id) DO UPDATE SET ref_code = $2, created_at = NOW()
+              `, [user.id.toString(), `sa_${refCode}`]);
+              console.log(`💾 Saved pending sub-admin ref for ${user.id}: sa_${refCode}`);
+              
+              const welcomeMessage = `
+👋 Привет, <b>${firstName}</b>!
+
+Ты перешёл по приглашению <b>${subAdmin.name}</b>!
+
+Добро пожаловать в <b>TrustEx</b> — современную торговую платформу!
+
+🚀 Нажми кнопку ниже, чтобы начать торговать! 👇
+              `.trim();
+
+              return bot.sendMessage(chatId, welcomeMessage, {
+                parse_mode: 'HTML',
+                reply_markup: {
+                  inline_keyboard: [
+                    [{ text: '🚀 Открыть TrustEx', web_app: { url: WEB_APP_URL } }]
+                  ]
+                }
+              });
+            } else if (!existingUser.rows[0].sub_admin_id) {
+              // Existing user without sub-admin - link them
+              await pool.query(
+                'UPDATE users SET sub_admin_id = $1, sub_admin_telegram_id = $2 WHERE telegram_id = $3',
+                [subAdmin.id, subAdmin.telegram_id, user.id.toString()]
+              );
+              console.log(`✅ Linked existing user ${user.id} to sub-admin ${subAdmin.name}`);
+            }
           }
         }
       } catch (e) {

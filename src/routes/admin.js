@@ -18,22 +18,38 @@ function isMainAdmin(telegramId) {
 }
 
 /**
- * Check if user is manager (async)
+ * Check if user is sub-admin (async)
  */
-async function getManagerId(telegramId) {
+async function getSubAdminInfo(telegramId) {
   try {
     const result = await pool.query(
-      'SELECT id FROM managers WHERE telegram_id = $1',
+      'SELECT id, ref_code FROM sub_admins WHERE telegram_id = $1',
       [String(telegramId)]
     );
-    return result.rows[0]?.id || null;
+    return result.rows[0] || null;
   } catch (e) {
     return null;
   }
 }
 
 /**
- * Admin middleware - allows main admin or managers
+ * Check if user is manager (async)
+ * Returns manager info including sub_admin_id if exists
+ */
+async function getManagerInfo(telegramId) {
+  try {
+    const result = await pool.query(
+      'SELECT id, sub_admin_id FROM managers WHERE telegram_id = $1',
+      [String(telegramId)]
+    );
+    return result.rows[0] || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Admin middleware - allows main admin, sub-admins, or managers
  */
 async function adminCheck(req, res, next) {
   const adminId = req.query.adminId || req.body.adminId;
@@ -46,16 +62,32 @@ async function adminCheck(req, res, next) {
   if (isMainAdmin(adminId)) {
     req.adminId = adminId;
     req.isMainAdmin = true;
+    req.isSubAdmin = false;
+    req.subAdminId = null;
+    req.managerId = null;
+    return next();
+  }
+  
+  // Check if sub-admin
+  const subAdminInfo = await getSubAdminInfo(adminId);
+  if (subAdminInfo) {
+    req.adminId = adminId;
+    req.isMainAdmin = false;
+    req.isSubAdmin = true;
+    req.subAdminId = subAdminInfo.id;
+    req.subAdminRefCode = subAdminInfo.ref_code;
     req.managerId = null;
     return next();
   }
   
   // Check if manager
-  const managerId = await getManagerId(adminId);
-  if (managerId) {
+  const managerInfo = await getManagerInfo(adminId);
+  if (managerInfo) {
     req.adminId = adminId;
     req.isMainAdmin = false;
-    req.managerId = managerId;
+    req.isSubAdmin = false;
+    req.subAdminId = managerInfo.sub_admin_id; // Manager's parent sub_admin
+    req.managerId = managerInfo.id;
     return next();
   }
   
@@ -77,11 +109,17 @@ function mainAdminOnly(req, res, next) {
  * Get current user role
  */
 router.get('/role', adminCheck, (req, res) => {
+  let role = 'manager';
+  if (req.isMainAdmin) role = 'admin';
+  else if (req.isSubAdmin) role = 'subadmin';
+  
   res.json({
     success: true,
     data: {
-      role: req.isMainAdmin ? 'admin' : 'manager',
-      managerId: req.managerId
+      role,
+      managerId: req.managerId,
+      subAdminId: req.subAdminId,
+      isSubAdmin: req.isSubAdmin || false
     }
   });
 });
@@ -105,6 +143,19 @@ router.get('/stats', adminCheck, async (req, res) => {
           COUNT(*) FILTER (WHERE COALESCE(trade_mode, 'loss') = 'loss') as loss_mode_count
         FROM users
       `;
+    } else if (req.isSubAdmin) {
+      // Sub-admin sees users of their managers + users attracted directly
+      query = `
+        SELECT 
+          COUNT(*) as total_users,
+          COALESCE(SUM(balance_usdt), 0) as total_balance,
+          COUNT(*) FILTER (WHERE trade_mode = 'win') as win_mode_count,
+          COUNT(*) FILTER (WHERE COALESCE(trade_mode, 'loss') = 'loss') as loss_mode_count
+        FROM users u
+        WHERE u.sub_admin_id = $1
+           OR u.manager_id IN (SELECT id FROM managers WHERE sub_admin_id = $1)
+      `;
+      params = [req.subAdminId];
     } else {
       // Manager sees only their users
       query = `
@@ -154,12 +205,31 @@ router.get('/users', adminCheck, async (req, res) => {
           u.balance_usdt, u.balance_btc, u.balance_rub,
           COALESCE(u.trade_mode, 'loss') as trade_mode,
           u.created_at,
-          m.name as manager_name
+          m.name as manager_name,
+          sa.name as sub_admin_name
         FROM users u
         LEFT JOIN managers m ON u.manager_id = m.id
+        LEFT JOIN sub_admins sa ON u.sub_admin_id = sa.id
         ORDER BY u.created_at DESC 
         LIMIT 100
       `;
+    } else if (req.isSubAdmin) {
+      // Sub-admin sees users of their managers + users attracted directly
+      query = `
+        SELECT 
+          u.id, u.telegram_id, u.username, u.first_name, u.last_name,
+          u.balance_usdt, u.balance_btc, u.balance_rub,
+          COALESCE(u.trade_mode, 'loss') as trade_mode,
+          u.created_at,
+          m.name as manager_name
+        FROM users u
+        LEFT JOIN managers m ON u.manager_id = m.id
+        WHERE u.sub_admin_id = $1
+           OR u.manager_id IN (SELECT id FROM managers WHERE sub_admin_id = $1)
+        ORDER BY u.created_at DESC 
+        LIMIT 100
+      `;
+      params = [req.subAdminId];
     } else {
       // Manager sees only their users
       query = `
@@ -205,6 +275,14 @@ router.get('/user/:telegramId', adminCheck, async (req, res) => {
       userResult = await pool.query(
         'SELECT * FROM users WHERE telegram_id = $1',
         [telegramId]
+      );
+    } else if (req.isSubAdmin) {
+      // Sub-admin can view users of their managers or directly attracted users
+      userResult = await pool.query(
+        `SELECT * FROM users 
+         WHERE telegram_id = $1 
+           AND (sub_admin_id = $2 OR manager_id IN (SELECT id FROM managers WHERE sub_admin_id = $2))`,
+        [telegramId, req.subAdminId]
       );
     } else {
       // Manager can only view their users
@@ -371,6 +449,16 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
          FOR UPDATE OF wr, u`,
         [id]
       );
+    } else if (req.isSubAdmin) {
+      withdrawalResult = await client.query(
+        `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.balance_rub, u.first_name
+         FROM withdraw_requests wr 
+         JOIN users u ON wr.user_id = u.id 
+         WHERE wr.id = $1 
+           AND (u.sub_admin_id = $2 OR u.manager_id IN (SELECT id FROM managers WHERE sub_admin_id = $2))
+         FOR UPDATE OF wr, u`,
+        [id, req.subAdminId]
+      );
     } else {
       withdrawalResult = await client.query(
         `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.balance_rub, u.first_name
@@ -457,12 +545,21 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
     const { telegramId } = req.params;
     const { balance_usdt, balance_rub, trade_mode, trading_blocked, needs_verification, verified, min_deposit, min_withdraw, min_withdraw_rub, profit_multiplier } = req.body;
     
-    // If manager, check that user belongs to them
+    // Check user belongs to admin/sub-admin/manager
     if (!req.isMainAdmin) {
-      const userCheck = await pool.query(
-        'SELECT id FROM users WHERE telegram_id = $1 AND manager_id = $2',
-        [telegramId, req.managerId]
-      );
+      let userCheck;
+      if (req.isSubAdmin) {
+        userCheck = await pool.query(
+          `SELECT id FROM users WHERE telegram_id = $1 
+             AND (sub_admin_id = $2 OR manager_id IN (SELECT id FROM managers WHERE sub_admin_id = $2))`,
+          [telegramId, req.subAdminId]
+        );
+      } else {
+        userCheck = await pool.query(
+          'SELECT id FROM users WHERE telegram_id = $1 AND manager_id = $2',
+          [telegramId, req.managerId]
+        );
+      }
       if (userCheck.rows.length === 0) {
         return res.status(403).json({ success: false, error: 'Доступ запрещён. Пользователь не принадлежит вам.' });
       }
@@ -578,18 +675,33 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
 
 /**
  * POST /api/admin/user/:telegramId/block
- * Block or unblock user (main admin only)
+ * Block or unblock user
  */
 router.post('/user/:telegramId/block', adminCheck, async (req, res) => {
   try {
     const { telegramId } = req.params;
     const { blocked } = req.body; // true = block, false = unblock
     
-    // Get user info
-    const userResult = await pool.query(
-      'SELECT id, first_name, username, is_blocked FROM users WHERE telegram_id = $1',
-      [telegramId]
-    );
+    // Get user info with permission check
+    let userResult;
+    if (req.isMainAdmin) {
+      userResult = await pool.query(
+        'SELECT id, first_name, username, is_blocked FROM users WHERE telegram_id = $1',
+        [telegramId]
+      );
+    } else if (req.isSubAdmin) {
+      userResult = await pool.query(
+        `SELECT id, first_name, username, is_blocked FROM users 
+         WHERE telegram_id = $1 
+           AND (sub_admin_id = $2 OR manager_id IN (SELECT id FROM managers WHERE sub_admin_id = $2))`,
+        [telegramId, req.subAdminId]
+      );
+    } else {
+      userResult = await pool.query(
+        'SELECT id, first_name, username, is_blocked FROM users WHERE telegram_id = $1 AND manager_id = $2',
+        [telegramId, req.managerId]
+      );
+    }
     
     if (userResult.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'User not found' });
@@ -709,6 +821,16 @@ router.get('/deposits', adminCheck, async (req, res) => {
         WHERE d.status = 'pending'
         ORDER BY d.created_at DESC
       `;
+    } else if (req.isSubAdmin) {
+      query = `
+        SELECT d.*, u.telegram_id, u.first_name, u.username
+        FROM deposit_requests d
+        JOIN users u ON d.user_id = u.id
+        WHERE d.status = 'pending' 
+          AND (u.sub_admin_id = $1 OR u.manager_id IN (SELECT id FROM managers WHERE sub_admin_id = $1))
+        ORDER BY d.created_at DESC
+      `;
+      params = [req.subAdminId];
     } else {
       query = `
         SELECT d.*, u.telegram_id, u.first_name, u.username
@@ -744,12 +866,21 @@ router.post('/deposits/:id/approve', adminCheck, async (req, res) => {
     
     await client.query('BEGIN');
     
-    // Get deposit request with manager check - lock the row to prevent double approval
+    // Get deposit request with role check - lock the row to prevent double approval
     let depositResult;
     if (req.isMainAdmin) {
       depositResult = await client.query(
         'SELECT d.* FROM deposit_requests d WHERE d.id = $1 AND d.status = $2 FOR UPDATE',
         [id, 'pending']
+      );
+    } else if (req.isSubAdmin) {
+      depositResult = await client.query(
+        `SELECT d.* FROM deposit_requests d 
+         JOIN users u ON d.user_id = u.id
+         WHERE d.id = $1 AND d.status = $2 
+           AND (u.sub_admin_id = $3 OR u.manager_id IN (SELECT id FROM managers WHERE sub_admin_id = $3))
+         FOR UPDATE OF d`,
+        [id, 'pending', req.subAdminId]
       );
     } else {
       depositResult = await client.query(
@@ -816,6 +947,18 @@ router.post('/deposits/:id/reject', adminCheck, async (req, res) => {
         'UPDATE deposit_requests SET status = $1 WHERE id = $2 AND status = $3 RETURNING *',
         ['rejected', id, 'pending']
       );
+    } else if (req.isSubAdmin) {
+      // Sub-admin can reject deposits from their users
+      result = await pool.query(
+        `UPDATE deposit_requests SET status = $1 
+         WHERE id = $2 AND status = $3 
+         AND user_id IN (
+           SELECT id FROM users WHERE sub_admin_id = $4 
+           OR manager_id IN (SELECT id FROM managers WHERE sub_admin_id = $4)
+         )
+         RETURNING *`,
+        ['rejected', id, 'pending', req.subAdminId]
+      );
     } else {
       // Manager can only reject their users' deposits
       result = await pool.query(
@@ -851,12 +994,19 @@ router.get('/chat/:telegramId', adminCheck, async (req, res) => {
   try {
     const { telegramId } = req.params;
     
-    // Get user with manager check
+    // Get user with role check
     let userResult;
     if (req.isMainAdmin) {
       userResult = await pool.query(
         'SELECT id, telegram_id, first_name, username FROM users WHERE telegram_id = $1',
         [telegramId]
+      );
+    } else if (req.isSubAdmin) {
+      userResult = await pool.query(
+        `SELECT id, telegram_id, first_name, username FROM users 
+         WHERE telegram_id = $1 
+           AND (sub_admin_id = $2 OR manager_id IN (SELECT id FROM managers WHERE sub_admin_id = $2))`,
+        [telegramId, req.subAdminId]
       );
     } else {
       userResult = await pool.query(
@@ -917,12 +1067,19 @@ router.post('/chat/:telegramId', adminCheck, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Message is required' });
     }
     
-    // Get user with manager check
+    // Get user with role check
     let userResult;
     if (req.isMainAdmin) {
       userResult = await pool.query(
         'SELECT id, telegram_id FROM users WHERE telegram_id = $1',
         [telegramId]
+      );
+    } else if (req.isSubAdmin) {
+      userResult = await pool.query(
+        `SELECT id, telegram_id FROM users 
+         WHERE telegram_id = $1 
+           AND (sub_admin_id = $2 OR manager_id IN (SELECT id FROM managers WHERE sub_admin_id = $2))`,
+        [telegramId, req.subAdminId]
       );
     } else {
       userResult = await pool.query(
@@ -977,6 +1134,23 @@ router.get('/chats', adminCheck, async (req, res) => {
         HAVING COUNT(sm.id) > 0
         ORDER BY MAX(sm.created_at) DESC NULLS LAST
       `;
+    } else if (req.isSubAdmin) {
+      // Sub-admin sees chats of their users and their managers' users
+      query = `
+        SELECT 
+          u.id, u.telegram_id, u.first_name, u.username,
+          COUNT(sm.id) FILTER (WHERE sm.sender = 'user' AND sm.is_read = FALSE) as unread_count,
+          MAX(sm.created_at) as last_message_at,
+          (SELECT message FROM support_messages WHERE user_id = u.id ORDER BY created_at DESC LIMIT 1) as last_message
+        FROM users u
+        LEFT JOIN support_messages sm ON u.id = sm.user_id
+        WHERE u.sub_admin_id = $1
+           OR u.manager_id IN (SELECT id FROM managers WHERE sub_admin_id = $1)
+        GROUP BY u.id, u.telegram_id, u.first_name, u.username
+        HAVING COUNT(sm.id) > 0
+        ORDER BY MAX(sm.created_at) DESC NULLS LAST
+      `;
+      params = [req.subAdminId];
     } else {
       query = `
         SELECT 
@@ -1026,6 +1200,20 @@ router.get('/invoices', adminCheck, async (req, res) => {
         ORDER BY ci.created_at DESC
         LIMIT 50
       `;
+    } else if (req.isSubAdmin) {
+      // Sub-admin sees invoices of their users and their managers' users
+      query = `
+        SELECT 
+          ci.id, ci.invoice_id, ci.amount, ci.asset, ci.status, ci.pay_url, ci.created_at, ci.paid_at,
+          u.telegram_id, u.first_name, u.username
+        FROM crypto_invoices ci
+        JOIN users u ON ci.user_id = u.id
+        WHERE u.sub_admin_id = $1
+           OR u.manager_id IN (SELECT id FROM managers WHERE sub_admin_id = $1)
+        ORDER BY ci.created_at DESC
+        LIMIT 50
+      `;
+      params = [req.subAdminId];
     } else {
       // Manager sees only their users' invoices
       query = `
@@ -1064,12 +1252,22 @@ router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
     
     await client.query('BEGIN');
     
-    // Get invoice with manager check - lock to prevent double credit
+    // Get invoice with role check - lock to prevent double credit
     let invoiceResult;
     if (req.isMainAdmin) {
       invoiceResult = await client.query(
         'SELECT ci.*, u.telegram_id, u.first_name FROM crypto_invoices ci JOIN users u ON ci.user_id = u.id WHERE ci.invoice_id = $1 FOR UPDATE OF ci',
         [invoiceId]
+      );
+    } else if (req.isSubAdmin) {
+      // Sub-admin can confirm invoices of their users or their managers' users
+      invoiceResult = await client.query(
+        `SELECT ci.*, u.telegram_id, u.first_name FROM crypto_invoices ci 
+         JOIN users u ON ci.user_id = u.id 
+         WHERE ci.invoice_id = $1 
+           AND (u.sub_admin_id = $2 OR u.manager_id IN (SELECT id FROM managers WHERE sub_admin_id = $2))
+         FOR UPDATE OF ci`,
+        [invoiceId, req.subAdminId]
       );
     } else {
       // Manager can only confirm invoices of their users
@@ -1146,19 +1344,47 @@ router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
 
 /**
  * GET /api/admin/managers
- * Get all managers (main admin only)
+ * Get all managers (main admin sees all, sub-admin sees their own)
  */
-router.get('/managers', adminCheck, mainAdminOnly, async (req, res) => {
+router.get('/managers', adminCheck, async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT 
-        m.id, m.telegram_id, m.name, m.ref_code, m.created_at,
-        COUNT(u.id) as users_count
-      FROM managers m
-      LEFT JOIN users u ON u.manager_id = m.id
-      GROUP BY m.id
-      ORDER BY m.created_at DESC
-    `);
+    // Only main admin and sub-admin can access managers
+    if (!req.isMainAdmin && !req.isSubAdmin) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён' });
+    }
+    
+    let query;
+    let params = [];
+    
+    if (req.isMainAdmin) {
+      // Main admin sees all managers with sub_admin info
+      query = `
+        SELECT 
+          m.id, m.telegram_id, m.name, m.ref_code, m.created_at, m.sub_admin_id,
+          COUNT(u.id) as users_count,
+          sa.name as sub_admin_name
+        FROM managers m
+        LEFT JOIN users u ON u.manager_id = m.id
+        LEFT JOIN sub_admins sa ON m.sub_admin_id = sa.id
+        GROUP BY m.id, sa.name
+        ORDER BY m.created_at DESC
+      `;
+    } else {
+      // Sub-admin sees only their managers
+      query = `
+        SELECT 
+          m.id, m.telegram_id, m.name, m.ref_code, m.created_at,
+          COUNT(u.id) as users_count
+        FROM managers m
+        LEFT JOIN users u ON u.manager_id = m.id
+        WHERE m.sub_admin_id = $1
+        GROUP BY m.id
+        ORDER BY m.created_at DESC
+      `;
+      params = [req.subAdminId];
+    }
+    
+    const result = await pool.query(query, params);
     
     // Add ref_link to each manager
     const managers = result.rows.map(m => ({
@@ -1178,17 +1404,31 @@ router.get('/managers', adminCheck, mainAdminOnly, async (req, res) => {
 
 /**
  * GET /api/admin/managers/:managerId/users
- * Get users of a specific manager (main admin only)
+ * Get users of a specific manager (main admin or sub-admin for their managers)
  */
-router.get('/managers/:managerId/users', adminCheck, mainAdminOnly, async (req, res) => {
+router.get('/managers/:managerId/users', adminCheck, async (req, res) => {
   try {
+    // Only main admin and sub-admin can access
+    if (!req.isMainAdmin && !req.isSubAdmin) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён' });
+    }
+    
     const { managerId } = req.params;
     
-    // Get manager info first
-    const managerResult = await pool.query(
-      'SELECT id, telegram_id, name FROM managers WHERE id = $1',
-      [managerId]
-    );
+    // Get manager info first with permission check
+    let managerResult;
+    if (req.isMainAdmin) {
+      managerResult = await pool.query(
+        'SELECT id, telegram_id, name FROM managers WHERE id = $1',
+        [managerId]
+      );
+    } else {
+      // Sub-admin can only see their managers
+      managerResult = await pool.query(
+        'SELECT id, telegram_id, name FROM managers WHERE id = $1 AND sub_admin_id = $2',
+        [managerId, req.subAdminId]
+      );
+    }
     
     if (managerResult.rows.length === 0) {
       return res.status(404).json({ success: false, error: 'Менеджер не найден' });
@@ -1231,10 +1471,15 @@ function generateRefCode() {
 
 /**
  * POST /api/admin/managers
- * Add new manager (main admin only)
+ * Add new manager (main admin or sub-admin adds their own)
  */
-router.post('/managers', adminCheck, mainAdminOnly, async (req, res) => {
+router.post('/managers', adminCheck, async (req, res) => {
   try {
+    // Only main admin and sub-admin can add managers
+    if (!req.isMainAdmin && !req.isSubAdmin) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён' });
+    }
+    
     const { telegram_id, name } = req.body;
     
     if (!telegram_id) {
@@ -1261,12 +1506,15 @@ router.post('/managers', adminCheck, mainAdminOnly, async (req, res) => {
       attempts++;
     }
     
+    // Sub-admin's managers get sub_admin_id set
+    const subAdminId = req.isSubAdmin ? req.subAdminId : null;
+    
     const result = await pool.query(
-      'INSERT INTO managers (telegram_id, name, ref_code) VALUES ($1, $2, $3) RETURNING *',
-      [String(telegram_id), name || `Менеджер ${telegram_id}`, refCode]
+      'INSERT INTO managers (telegram_id, name, ref_code, sub_admin_id) VALUES ($1, $2, $3, $4) RETURNING *',
+      [String(telegram_id), name || `Менеджер ${telegram_id}`, refCode, subAdminId]
     );
     
-    console.log(`✅ Manager added: ${telegram_id} with ref_code: ${refCode}`);
+    console.log(`✅ Manager added: ${telegram_id} with ref_code: ${refCode}${subAdminId ? ' (sub-admin: ' + subAdminId + ')' : ''}`);
     
     res.json({
       success: true,
@@ -1280,11 +1528,27 @@ router.post('/managers', adminCheck, mainAdminOnly, async (req, res) => {
 
 /**
  * DELETE /api/admin/managers/:managerId
- * Remove manager (main admin only)
+ * Remove manager (main admin or sub-admin for their managers)
  */
-router.delete('/managers/:managerId', adminCheck, mainAdminOnly, async (req, res) => {
+router.delete('/managers/:managerId', adminCheck, async (req, res) => {
   try {
+    // Only main admin and sub-admin can delete managers
+    if (!req.isMainAdmin && !req.isSubAdmin) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён' });
+    }
+    
     const { managerId } = req.params;
+    
+    // Check permission for sub-admin
+    if (req.isSubAdmin) {
+      const check = await pool.query(
+        'SELECT id FROM managers WHERE id = $1 AND sub_admin_id = $2',
+        [managerId, req.subAdminId]
+      );
+      if (check.rows.length === 0) {
+        return res.status(403).json({ success: false, error: 'Нет доступа к этому менеджеру' });
+      }
+    }
     
     // Unlink users from this manager
     await pool.query(
@@ -1434,6 +1698,176 @@ router.delete('/templates/:id', adminCheck, async (req, res) => {
     });
   } catch (error) {
     console.error('Delete template error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+// ==================== SUB-ADMIN MANAGEMENT (Main Admin Only) ====================
+
+/**
+ * GET /api/admin/subadmins
+ * Get all sub-admins (main admin only)
+ */
+router.get('/subadmins', adminCheck, mainAdminOnly, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        sa.id, sa.telegram_id, sa.name, sa.ref_code, sa.created_at,
+        (SELECT COUNT(*) FROM managers m WHERE m.sub_admin_id = sa.id) as managers_count,
+        (SELECT COUNT(*) FROM users u WHERE u.sub_admin_id = sa.id 
+           OR u.manager_id IN (SELECT id FROM managers WHERE sub_admin_id = sa.id)) as users_count
+      FROM sub_admins sa
+      ORDER BY sa.created_at DESC
+    `);
+    
+    // Add ref_link to each sub-admin
+    const subAdmins = result.rows.map(sa => ({
+      ...sa,
+      ref_link: sa.ref_code ? `https://t.me/trustEx_ru_bot?start=ref_${sa.ref_code}` : null
+    }));
+    
+    res.json({
+      success: true,
+      data: subAdmins
+    });
+  } catch (error) {
+    console.error('Get sub-admins error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * POST /api/admin/subadmins
+ * Add new sub-admin (main admin only)
+ */
+router.post('/subadmins', adminCheck, mainAdminOnly, async (req, res) => {
+  try {
+    const { telegram_id, name } = req.body;
+    
+    if (!telegram_id) {
+      return res.status(400).json({ success: false, error: 'Telegram ID обязателен' });
+    }
+    
+    // Check if already exists as sub-admin
+    const existingSubAdmin = await pool.query(
+      'SELECT id FROM sub_admins WHERE telegram_id = $1',
+      [String(telegram_id)]
+    );
+    
+    if (existingSubAdmin.rows.length > 0) {
+      return res.status(400).json({ success: false, error: 'Суб-админ уже существует' });
+    }
+    
+    // Check if already exists as manager
+    const existingManager = await pool.query(
+      'SELECT id FROM managers WHERE telegram_id = $1',
+      [String(telegram_id)]
+    );
+    
+    if (existingManager.rows.length > 0) {
+      return res.status(400).json({ success: false, error: 'Этот пользователь уже является менеджером' });
+    }
+    
+    // Generate unique ref code
+    let refCode = generateRefCode();
+    let attempts = 0;
+    while (attempts < 10) {
+      // Check both managers and sub_admins tables
+      const codeExistsM = await pool.query('SELECT id FROM managers WHERE ref_code = $1', [refCode]);
+      const codeExistsSA = await pool.query('SELECT id FROM sub_admins WHERE ref_code = $1', [refCode]);
+      if (codeExistsM.rows.length === 0 && codeExistsSA.rows.length === 0) break;
+      refCode = generateRefCode();
+      attempts++;
+    }
+    
+    const result = await pool.query(
+      'INSERT INTO sub_admins (telegram_id, name, ref_code) VALUES ($1, $2, $3) RETURNING *',
+      [String(telegram_id), name || `Суб-админ ${telegram_id}`, refCode]
+    );
+    
+    console.log(`✅ Sub-admin added: ${telegram_id} with ref_code: ${refCode}`);
+    
+    res.json({
+      success: true,
+      data: {
+        ...result.rows[0],
+        ref_link: `https://t.me/trustEx_ru_bot?start=ref_${refCode}`
+      }
+    });
+  } catch (error) {
+    console.error('Add sub-admin error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * DELETE /api/admin/subadmins/:subAdminId
+ * Remove sub-admin (main admin only)
+ */
+router.delete('/subadmins/:subAdminId', adminCheck, mainAdminOnly, async (req, res) => {
+  try {
+    const { subAdminId } = req.params;
+    
+    // Unlink managers from this sub-admin (they become main admin's managers)
+    await pool.query(
+      'UPDATE managers SET sub_admin_id = NULL WHERE sub_admin_id = $1',
+      [subAdminId]
+    );
+    
+    // Unlink users attracted directly by sub-admin
+    await pool.query(
+      'UPDATE users SET sub_admin_id = NULL, sub_admin_telegram_id = NULL WHERE sub_admin_id = $1',
+      [subAdminId]
+    );
+    
+    // Delete sub-admin
+    await pool.query(
+      'DELETE FROM sub_admins WHERE id = $1',
+      [subAdminId]
+    );
+    
+    console.log(`🗑️ Sub-admin ${subAdminId} removed`);
+    
+    res.json({
+      success: true,
+      message: 'Суб-админ удалён'
+    });
+  } catch (error) {
+    console.error('Delete sub-admin error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * GET /api/admin/subadmin/reflink
+ * Get sub-admin's own ref link (for sub-admins)
+ */
+router.get('/subadmin/reflink', adminCheck, async (req, res) => {
+  try {
+    if (!req.isSubAdmin) {
+      return res.status(403).json({ success: false, error: 'Только для суб-админов' });
+    }
+    
+    const result = await pool.query(
+      'SELECT ref_code FROM sub_admins WHERE id = $1',
+      [req.subAdminId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Суб-админ не найден' });
+    }
+    
+    const refCode = result.rows[0].ref_code;
+    
+    res.json({
+      success: true,
+      data: {
+        ref_code: refCode,
+        ref_link: `https://t.me/trustEx_ru_bot?start=ref_${refCode}`
+      }
+    });
+  } catch (error) {
+    console.error('Get sub-admin reflink error:', error);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });

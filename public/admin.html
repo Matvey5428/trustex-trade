@@ -513,6 +513,7 @@
       <button class="tab active" id="tabUsers" onclick="switchTab('users')">👥 Пользователи</button>
       <button class="tab" id="tabInvoices" onclick="switchTab('invoices')">💳 Оплаты</button>
       <button class="tab" id="tabManagers" onclick="switchTab('managers')" style="display: none;">👤 Менеджеры</button>
+      <button class="tab" id="tabSubAdmins" onclick="switchTab('subadmins')" style="display: none;">👑 Суб-админы</button>
     </div>
     
     <!-- Users Section -->
@@ -541,6 +542,19 @@
         <button class="btn-primary" onclick="addManager()" style="width: 100%;">+ Добавить менеджера</button>
       </div>
       <div class="user-list" id="managerList">
+        <div class="loading">Загрузка...</div>
+      </div>
+    </div>
+    
+    <!-- Sub-Admins Section (Main Admin only) -->
+    <div class="section" id="sectionSubAdmins" style="display: none;">
+      <div class="section-title">👑 Суб-админы</div>
+      <div style="margin-bottom: 15px;">
+        <input type="text" class="search-box" id="subAdminTelegramId" placeholder="Telegram ID суб-админа..." style="margin-bottom: 10px;">
+        <input type="text" class="search-box" id="subAdminName" placeholder="Имя суб-админа..." style="margin-bottom: 10px;">
+        <button class="btn-primary" onclick="addSubAdmin()" style="width: 100%;">+ Добавить суб-админа</button>
+      </div>
+      <div class="user-list" id="subAdminList">
         <div class="loading">Загрузка...</div>
       </div>
     </div>
@@ -690,6 +704,7 @@
     let currentTab = 'users';
     let allInvoices = [];
     let allManagers = [];
+    let allSubAdmins = [];
     
     // Load data on start
     document.addEventListener('DOMContentLoaded', async () => {
@@ -698,6 +713,9 @@
       loadUsers();
       loadInvoices();
       if (userRole === 'admin') {
+        loadManagers();
+        loadSubAdmins();
+      } else if (userRole === 'subadmin') {
         loadManagers();
       }
       
@@ -716,9 +734,17 @@
           if (userRole === 'admin') {
             document.getElementById('roleLabel').textContent = '👑 Главный админ';
             document.getElementById('tabManagers').style.display = 'block';
+            document.getElementById('tabSubAdmins').style.display = 'block';
+          } else if (userRole === 'subadmin') {
+            document.getElementById('roleLabel').textContent = '⭐ Суб-админ';
+            document.getElementById('tabManagers').style.display = 'block';
+            document.getElementById('tabSubAdmins').style.display = 'none';
+            // Show sub-admin ref link
+            showSubAdminRefLink();
           } else {
             document.getElementById('roleLabel').textContent = '👤 Менеджер';
             document.getElementById('tabManagers').style.display = 'none';
+            document.getElementById('tabSubAdmins').style.display = 'none';
           }
         }
       } catch (e) {
@@ -731,15 +757,20 @@
       document.getElementById('tabUsers').classList.toggle('active', tab === 'users');
       document.getElementById('tabInvoices').classList.toggle('active', tab === 'invoices');
       document.getElementById('tabManagers').classList.toggle('active', tab === 'managers');
+      document.getElementById('tabSubAdmins').classList.toggle('active', tab === 'subadmins');
       document.getElementById('sectionUsers').style.display = tab === 'users' ? 'block' : 'none';
       document.getElementById('sectionInvoices').style.display = tab === 'invoices' ? 'block' : 'none';
       document.getElementById('sectionManagers').style.display = tab === 'managers' ? 'block' : 'none';
+      document.getElementById('sectionSubAdmins').style.display = tab === 'subadmins' ? 'block' : 'none';
       
       if (tab === 'invoices') {
         loadInvoices();
       }
       if (tab === 'managers') {
         loadManagers();
+      }
+      if (tab === 'subadmins') {
+        loadSubAdmins();
       }
     }
     
@@ -1551,6 +1582,133 @@
         }
       } catch (e) {
         showToast('❌ Ошибка удаления', 'error');
+      }
+    }
+    
+    // ==================== SUB-ADMINS ====================
+    
+    async function loadSubAdmins() {
+      if (userRole !== 'admin') return;
+      
+      try {
+        const res = await fetch(`${API_BASE}/subadmins?adminId=${adminId}`);
+        const data = await res.json();
+        
+        if (data.success) {
+          allSubAdmins = data.data;
+          renderSubAdmins(allSubAdmins);
+        } else {
+          document.getElementById('subAdminList').innerHTML = `<div class="error-msg">${data.error}</div>`;
+        }
+      } catch (e) {
+        console.error('SubAdmins error:', e);
+        document.getElementById('subAdminList').innerHTML = '<div class="error-msg">Ошибка загрузки</div>';
+      }
+    }
+    
+    function renderSubAdmins(subadmins) {
+      const list = document.getElementById('subAdminList');
+      
+      if (subadmins.length === 0) {
+        list.innerHTML = '<div class="loading">Нет суб-админов</div>';
+        return;
+      }
+      
+      list.innerHTML = subadmins.map(s => `
+        <div class="user-card" style="cursor: default; flex-direction: column; align-items: stretch;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div class="user-info">
+              <div class="user-name">⭐ ${s.name || 'Суб-админ'}</div>
+              <div class="user-id">ID: ${s.telegram_id}</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="background: rgba(77,184,255,0.1); color: #4db8ff; padding: 8px 12px; border-radius: 8px; font-size: 12px;">👥 ${s.users_count || 0} | 👤 ${s.managers_count || 0}</span>
+              <button onclick="deleteSubAdmin('${s.id}')" style="background: rgba(255,68,68,0.2); border: none; color: #ff4444; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px;">🗑️</button>
+            </div>
+          </div>
+          ${s.ref_link ? `
+            <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 8px; margin-top: 5px;">
+              <span style="font-size: 13px; color: #ffd700; flex: 1;">🔗 Реф-ссылка</span>
+              <button onclick="copyRefLink('${s.ref_link}')" style="background: rgba(255,215,0,0.2); border: none; color: #ffd700; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px;">📋 Копировать</button>
+            </div>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+    
+    async function addSubAdmin() {
+      const telegramId = document.getElementById('subAdminTelegramId').value.trim();
+      const name = document.getElementById('subAdminName').value.trim();
+      
+      if (!telegramId) {
+        showToast('❌ Введите Telegram ID', 'error');
+        return;
+      }
+      
+      try {
+        const res = await fetch(`${API_BASE}/subadmins`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminId, telegram_id: telegramId, name })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast('✅ Суб-админ добавлен', 'success');
+          document.getElementById('subAdminTelegramId').value = '';
+          document.getElementById('subAdminName').value = '';
+          loadSubAdmins();
+        } else {
+          showToast('❌ ' + data.error, 'error');
+        }
+      } catch (e) {
+        showToast('❌ Ошибка добавления', 'error');
+      }
+    }
+    
+    async function deleteSubAdmin(subAdminId) {
+      if (!confirm('Удалить суб-админа? Все его менеджеры и пользователи будут отвязаны.')) return;
+      
+      try {
+        const res = await fetch(`${API_BASE}/subadmins/${subAdminId}?adminId=${adminId}`, {
+          method: 'DELETE'
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast('✅ Суб-админ удалён', 'success');
+          loadSubAdmins();
+        } else {
+          showToast('❌ ' + data.error, 'error');
+        }
+      } catch (e) {
+        showToast('❌ Ошибка удаления', 'error');
+      }
+    }
+    
+    async function showSubAdminRefLink() {
+      try {
+        const res = await fetch(`${API_BASE}/subadmin/reflink?adminId=${adminId}`);
+        const data = await res.json();
+        
+        if (data.success && data.data.ref_link) {
+          // Add ref link card after stats
+          const statsGrid = document.getElementById('statsGrid');
+          const refCard = document.createElement('div');
+          refCard.className = 'section';
+          refCard.innerHTML = `
+            <div class="section-title">🔗 Моя реф-ссылка</div>
+            <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px;">
+              <span style="font-size: 13px; color: #ffd700; flex: 1; word-break: break-all;">${data.data.ref_link}</span>
+              <button onclick="copyRefLink('${data.data.ref_link}')" style="background: rgba(255,215,0,0.2); border: none; color: #ffd700; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; white-space: nowrap;">📋 Копировать</button>
+            </div>
+          `;
+          statsGrid.after(refCard);
+        }
+      } catch (e) {
+        console.error('RefLink error:', e);
       }
     }
   </script>
