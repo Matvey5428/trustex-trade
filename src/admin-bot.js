@@ -18,6 +18,19 @@ function isMainAdmin(userId) {
   return String(userId) === MAIN_ADMIN_ID;
 }
 
+// Check if user is sub-admin (async)
+async function isSubAdmin(userId) {
+  try {
+    const result = await pool.query(
+      'SELECT id FROM sub_admins WHERE telegram_id = $1',
+      [String(userId)]
+    );
+    return result.rows.length > 0;
+  } catch (e) {
+    return false;
+  }
+}
+
 // Check if user is manager (async)
 async function isManager(userId) {
   try {
@@ -31,9 +44,10 @@ async function isManager(userId) {
   }
 }
 
-// Check if user has admin access (main admin or manager)
+// Check if user has admin access (main admin, sub-admin, or manager)
 async function hasAdminAccess(userId) {
   if (isMainAdmin(userId)) return true;
+  if (await isSubAdmin(userId)) return true;
   return await isManager(userId);
 }
 
