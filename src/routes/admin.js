@@ -1381,6 +1381,12 @@ router.get('/managers', adminCheck, async (req, res) => {
       `;
     } else {
       // Sub-admin sees only their managers
+      console.log(`📋 Querying managers for sub_admin_id: ${req.subAdminId} (type: ${typeof req.subAdminId})`);
+      
+      // Debug: check all managers
+      const allManagers = await pool.query('SELECT id, telegram_id, sub_admin_id FROM managers');
+      console.log(`📋 All managers in DB:`, allManagers.rows);
+      
       query = `
         SELECT 
           m.id, m.telegram_id, m.name, m.ref_code, m.created_at,
