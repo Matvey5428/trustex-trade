@@ -1500,11 +1500,40 @@ router.post('/managers', adminCheck, async (req, res) => {
     
     // Check if already exists
     const existing = await pool.query(
-      'SELECT id FROM managers WHERE telegram_id = $1',
+      'SELECT id, sub_admin_id FROM managers WHERE telegram_id = $1',
       [String(telegram_id)]
     );
     
     if (existing.rows.length > 0) {
+      const existingManager = existing.rows[0];
+      const existingSubAdminId = existingManager.sub_admin_id;
+      
+      console.log(`🔍 Existing manager check: sub_admin_id=${existingSubAdminId}, req.subAdminId=${req.subAdminId}, isSubAdmin=${req.isSubAdmin}`);
+      
+      // If sub-admin trying to add and manager has no owner - assign to this sub-admin
+      if (req.isSubAdmin && existingSubAdminId === null) {
+        const updated = await pool.query(
+          'UPDATE managers SET sub_admin_id = $1, name = COALESCE($2, name) WHERE id = $3 RETURNING *',
+          [req.subAdminId, name, existingManager.id]
+        );
+        console.log(`✅ Manager ${telegram_id} assigned to sub-admin ${req.subAdminId}`);
+        return res.json({
+          success: true,
+          data: updated.rows[0],
+          message: 'Менеджер привязан к вам'
+        });
+      }
+      
+      // If manager already belongs to this sub-admin (compare as numbers)
+      if (req.isSubAdmin && parseInt(existingSubAdminId) === parseInt(req.subAdminId)) {
+        return res.status(400).json({ success: false, error: 'Этот менеджер уже ваш' });
+      }
+      
+      // If manager belongs to another sub-admin
+      if (existingSubAdminId !== null) {
+        return res.status(400).json({ success: false, error: 'Менеджер уже принадлежит другому суб-админу' });
+      }
+      
       return res.status(400).json({ success: false, error: 'Менеджер уже существует' });
     }
     
