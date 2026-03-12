@@ -58,8 +58,11 @@ async function adminCheck(req, res, next) {
     return res.status(403).json({ success: false, error: 'Доступ запрещён' });
   }
   
+  console.log(`🔐 adminCheck for: ${adminId}`);
+  
   // Check if main admin
   if (isMainAdmin(adminId)) {
+    console.log(`✅ Main admin: ${adminId}`);
     req.adminId = adminId;
     req.isMainAdmin = true;
     req.isSubAdmin = false;
@@ -70,7 +73,9 @@ async function adminCheck(req, res, next) {
   
   // Check if sub-admin
   const subAdminInfo = await getSubAdminInfo(adminId);
+  console.log(`🔍 SubAdmin check result:`, subAdminInfo);
   if (subAdminInfo) {
+    console.log(`✅ Sub-admin: ${adminId}, id: ${subAdminInfo.id}`);
     req.adminId = adminId;
     req.isMainAdmin = false;
     req.isSubAdmin = true;
@@ -82,7 +87,9 @@ async function adminCheck(req, res, next) {
   
   // Check if manager
   const managerInfo = await getManagerInfo(adminId);
+  console.log(`🔍 Manager check result:`, managerInfo);
   if (managerInfo) {
+    console.log(`✅ Manager: ${adminId}, id: ${managerInfo.id}`);
     req.adminId = adminId;
     req.isMainAdmin = false;
     req.isSubAdmin = false;
@@ -91,6 +98,7 @@ async function adminCheck(req, res, next) {
     return next();
   }
   
+  console.log(`❌ Access denied for: ${adminId}`);
   return res.status(403).json({ success: false, error: 'Доступ запрещён' });
 }
 
