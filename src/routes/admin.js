@@ -1361,6 +1361,8 @@ router.get('/managers', adminCheck, async (req, res) => {
       return res.status(403).json({ success: false, error: 'Доступ запрещён' });
     }
     
+    console.log(`📋 GET /managers - isMainAdmin: ${req.isMainAdmin}, isSubAdmin: ${req.isSubAdmin}, subAdminId: ${req.subAdminId}`);
+    
     let query;
     let params = [];
     
@@ -1393,6 +1395,8 @@ router.get('/managers', adminCheck, async (req, res) => {
     }
     
     const result = await pool.query(query, params);
+    
+    console.log(`📋 GET /managers result: ${result.rows.length} managers found`);
     
     // Add ref_link to each manager
     const managers = result.rows.map(m => ({
@@ -1516,6 +1520,8 @@ router.post('/managers', adminCheck, async (req, res) => {
     
     // Sub-admin's managers get sub_admin_id set
     const subAdminId = req.isSubAdmin ? req.subAdminId : null;
+    
+    console.log(`📝 POST /managers - telegram_id: ${telegram_id}, isSubAdmin: ${req.isSubAdmin}, subAdminId: ${subAdminId}`);
     
     const result = await pool.query(
       'INSERT INTO managers (telegram_id, name, ref_code, sub_admin_id) VALUES ($1, $2, $3, $4) RETURNING *',
