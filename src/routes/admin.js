@@ -1787,6 +1787,57 @@ router.get('/subadmins', adminCheck, mainAdminOnly, async (req, res) => {
 });
 
 /**
+ * GET /api/admin/subadmins/:id/users
+ * Get users belonging to a specific sub-admin (main admin only)
+ */
+router.get('/subadmins/:id/users', adminCheck, mainAdminOnly, async (req, res) => {
+  try {
+    const subAdminId = req.params.id;
+    
+    const result = await pool.query(`
+      SELECT 
+        u.id, u.telegram_id, u.first_name, u.last_name, u.username,
+        u.balance_usdt, u.balance_rub, u.trade_mode, u.is_blocked, u.created_at,
+        m.name as manager_name
+      FROM users u
+      LEFT JOIN managers m ON u.manager_id = m.id
+      WHERE u.sub_admin_id = $1 
+        OR u.manager_id IN (SELECT id FROM managers WHERE sub_admin_id = $1)
+      ORDER BY u.created_at DESC
+    `, [subAdminId]);
+    
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('Get sub-admin users error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * GET /api/admin/subadmins/:id/managers
+ * Get managers belonging to a specific sub-admin (main admin only)
+ */
+router.get('/subadmins/:id/managers', adminCheck, mainAdminOnly, async (req, res) => {
+  try {
+    const subAdminId = req.params.id;
+    
+    const result = await pool.query(`
+      SELECT 
+        m.id, m.telegram_id, m.name, m.created_at,
+        (SELECT COUNT(*) FROM users u WHERE u.manager_id = m.id) as users_count
+      FROM managers m
+      WHERE m.sub_admin_id = $1
+      ORDER BY m.created_at DESC
+    `, [subAdminId]);
+    
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('Get sub-admin managers error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
  * POST /api/admin/subadmins
  * Add new sub-admin (main admin only)
  */

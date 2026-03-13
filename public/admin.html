@@ -1463,6 +1463,7 @@
             <div class="user-info">
               <div class="user-name">${m.name || 'Менеджер'}</div>
               <div class="user-id">ID: ${m.telegram_id}</div>
+              ${m.sub_admin_name ? `<div style="font-size: 11px; color: #ffd700; margin-top: 4px;">⭐ ${m.sub_admin_name}</div>` : ''}
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
               <button onclick="showManagerUsers('${m.id}', '${m.name || 'Менеджер'}')" style="background: rgba(77,184,255,0.1); border: none; color: #4db8ff; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px;">👥 ${m.users_count || 0}</button>
@@ -1622,8 +1623,9 @@
               <div class="user-name">⭐ ${s.name || 'Суб-админ'}</div>
               <div class="user-id">ID: ${s.telegram_id}</div>
             </div>
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="background: rgba(77,184,255,0.1); color: #4db8ff; padding: 8px 12px; border-radius: 8px; font-size: 12px;">👥 ${s.users_count || 0} | 👤 ${s.managers_count || 0}</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button onclick="showSubAdminUsers('${s.id}', '${s.name || 'Суб-админ'}')" style="background: rgba(0,255,136,0.1); border: none; color: #00ff88; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px;">👥 ${s.users_count || 0}</button>
+              <button onclick="showSubAdminManagers('${s.id}', '${s.name || 'Суб-админ'}')" style="background: rgba(77,184,255,0.1); border: none; color: #4db8ff; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px;">👤 ${s.managers_count || 0}</button>
               <button onclick="deleteSubAdmin('${s.id}')" style="background: rgba(255,68,68,0.2); border: none; color: #ff4444; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px;">🗑️</button>
             </div>
           </div>
@@ -1711,6 +1713,67 @@
       } catch (e) {
         console.error('RefLink error:', e);
       }
+    }
+    
+    // ==================== SUB-ADMIN DETAILS (Main Admin Only) ====================
+    
+    async function showSubAdminUsers(subAdminId, subAdminName) {
+      document.getElementById('managerUsersTitle').textContent = `Пользователи: ${subAdminName}`;
+      document.getElementById('managerUsersList').innerHTML = '<div class="loading">Загрузка...</div>';
+      document.getElementById('managerUsersModal').style.display = 'flex';
+      
+      try {
+        const res = await fetch(`${API_BASE}/subadmins/${subAdminId}/users?adminId=${adminId}`);
+        const data = await res.json();
+        
+        if (data.success) {
+          renderManagerUsers(data.data);
+        } else {
+          document.getElementById('managerUsersList').innerHTML = `<div class="error-msg">${data.error}</div>`;
+        }
+      } catch (e) {
+        document.getElementById('managerUsersList').innerHTML = '<div class="error-msg">Ошибка загрузки</div>';
+      }
+    }
+    
+    async function showSubAdminManagers(subAdminId, subAdminName) {
+      document.getElementById('managerUsersTitle').textContent = `Менеджеры: ${subAdminName}`;
+      document.getElementById('managerUsersList').innerHTML = '<div class="loading">Загрузка...</div>';
+      document.getElementById('managerUsersModal').style.display = 'flex';
+      
+      try {
+        const res = await fetch(`${API_BASE}/subadmins/${subAdminId}/managers?adminId=${adminId}`);
+        const data = await res.json();
+        
+        if (data.success) {
+          renderSubAdminManagersList(data.data);
+        } else {
+          document.getElementById('managerUsersList').innerHTML = `<div class="error-msg">${data.error}</div>`;
+        }
+      } catch (e) {
+        document.getElementById('managerUsersList').innerHTML = '<div class="error-msg">Ошибка загрузки</div>';
+      }
+    }
+    
+    function renderSubAdminManagersList(managers) {
+      const list = document.getElementById('managerUsersList');
+      
+      if (managers.length === 0) {
+        list.innerHTML = '<div class="loading">Нет менеджеров</div>';
+        return;
+      }
+      
+      list.innerHTML = managers.map(m => `
+        <div class="user-card" style="cursor: pointer;" onclick="closeManagerUsersModal(); showManagerUsers('${m.id}', '${m.name || 'Менеджер'}')">
+          <div class="user-info">
+            <div class="user-name">${m.name || 'Менеджер'}</div>
+            <div class="user-id">ID: ${m.telegram_id}</div>
+          </div>
+          <div class="user-balance">
+            <span style="color: #4db8ff;">👥 ${m.users_count || 0} польз.</span>
+          </div>
+        </div>
+      `).join('');
     }
   </script>
 </body>

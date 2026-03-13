@@ -528,19 +528,23 @@
 
     async function loadChat() {
       try {
+        console.log('Loading chat for user:', targetUserId, 'adminId:', adminId);
         const res = await fetch(`${API_BASE}/chat/${targetUserId}?adminId=${adminId}`);
         const data = await res.json();
+        console.log('Chat response:', data);
         
         if (data.success) {
           document.getElementById('userName').textContent = data.data.user.name;
           document.getElementById('userStatus').textContent = `ID: ${data.data.user.telegram_id}`;
           chatMessages = data.data.messages;
+          console.log('Messages count:', chatMessages.length);
           renderMessages(chatMessages);
         } else {
           document.getElementById('messagesContainer').innerHTML = 
             `<div class="empty-state">${data.error}</div>`;
         }
       } catch (e) {
+        console.error('Chat load error:', e);
         /* silent */
       }
     }
