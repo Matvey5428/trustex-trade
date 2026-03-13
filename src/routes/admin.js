@@ -377,11 +377,19 @@ router.get('/user/:telegramId/history', adminCheck, async (req, res) => {
   try {
     const { telegramId } = req.params;
     
-    // Get user with manager check
+    // Get user with role check
     let userResult;
     if (req.isMainAdmin) {
       userResult = await pool.query('SELECT id FROM users WHERE telegram_id = $1', [telegramId]);
+    } else if (req.isSubAdmin) {
+      // Sub-admin can view users from their direct ref or their managers
+      userResult = await pool.query(
+        `SELECT id FROM users WHERE telegram_id = $1 
+         AND (sub_admin_id = $2 OR manager_id IN (SELECT id FROM managers WHERE sub_admin_id = $2))`,
+        [telegramId, req.subAdminId]
+      );
     } else {
+      // Manager can only view their users
       userResult = await pool.query('SELECT id FROM users WHERE telegram_id = $1 AND manager_id = $2', [telegramId, req.managerId]);
     }
     
