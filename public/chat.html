@@ -621,6 +621,9 @@
           chatMessages = chatMessages.filter(m => m.id !== tempId);
           renderMessages(chatMessages);
           showNotification('Ошибка отправки', 'error');
+        } else if (!data.telegram_sent) {
+          // Сообщение сохранено, но не доставлено в Telegram
+          showNotification('⚠️ Пользователь заблокировал бота', 'warning');
         }
       } catch (e) {
         chatMessages = chatMessages.filter(m => m.id !== tempId);
@@ -630,8 +633,9 @@
     }
     
     function showNotification(text, type = 'info') {
+      const bgColor = type === 'error' ? '#ff4444' : type === 'warning' ? '#ff9800' : '#4CAF50';
       const n = document.createElement('div');
-      n.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(0);padding:12px 24px;border-radius:12px;color:#fff;font-size:14px;z-index:9999;background:${type === 'error' ? '#ff4444' : '#4CAF50'};transition:transform 0.2s ease-out,opacity 0.2s ease-out;touch-action:none;`;
+      n.style.cssText = `position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(0);padding:12px 24px;border-radius:12px;color:#fff;font-size:14px;z-index:9999;background:${bgColor};transition:transform 0.2s ease-out,opacity 0.2s ease-out;touch-action:none;`;
       n.textContent = text;
       document.body.appendChild(n);
       

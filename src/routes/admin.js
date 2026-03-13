@@ -1046,14 +1046,17 @@ router.get('/chat/:telegramId', adminCheck, async (req, res) => {
     
     const user = userResult.rows[0];
     
-    // Get messages
+    // Get messages (last 200, then reverse to show in chronological order)
     const messagesResult = await pool.query(
       `SELECT * FROM support_messages 
        WHERE user_id = $1 
-       ORDER BY created_at ASC 
-       LIMIT 100`,
+       ORDER BY created_at DESC 
+       LIMIT 200`,
       [user.id]
     );
+    
+    // Reverse to chronological order
+    const messages = messagesResult.rows.reverse();
     
     // Mark admin messages as read (for user's perspective)
     await pool.query(
@@ -1070,7 +1073,7 @@ router.get('/chat/:telegramId', adminCheck, async (req, res) => {
           telegram_id: user.telegram_id,
           name: user.first_name || user.username || 'User'
         },
-        messages: messagesResult.rows
+        messages: messages
       }
     });
   } catch (error) {
@@ -1128,6 +1131,8 @@ router.post('/chat/:telegramId', adminCheck, async (req, res) => {
     );
     
     // Send message to user via Telegram bot
+    let telegramSent = false;
+    let telegramError = null;
     try {
       const { getBot } = require('../bot');
       const userBot = getBot();
@@ -1136,15 +1141,19 @@ router.post('/chat/:telegramId', adminCheck, async (req, res) => {
         await userBot.sendMessage(user.telegram_id, `💬 *Ответ от поддержки:*\n\n${message.trim()}`, { 
           parse_mode: 'Markdown' 
         });
+        telegramSent = true;
       }
     } catch (notifyError) {
-      console.error('Failed to send message to user:', notifyError.message);
-      // Don't fail request if notification fails
+      console.error(`Failed to send message to user ${user.telegram_id}:`, notifyError.message);
+      telegramError = notifyError.message;
+      // Telegram blocked by user or chat not started
     }
     
     res.json({
       success: true,
-      data: msgResult.rows[0]
+      data: msgResult.rows[0],
+      telegram_sent: telegramSent,
+      telegram_error: telegramError
     });
   } catch (error) {
     console.error('Send message error:', error);
