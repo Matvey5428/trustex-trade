@@ -1001,10 +1001,10 @@
           document.getElementById('modeFormGroup').style.display = 'block';
           document.getElementById('btnSaveUser').style.display = 'block';
           
-          // Show block button only for main admin and update its state
+          // Show block button for admin and subadmin, update its state
           const blockContainer = document.getElementById('blockUserBtnContainer');
           const blockBtn = document.getElementById('btnBlockUser');
-          blockContainer.style.display = userRole === 'admin' ? 'block' : 'none';
+          blockContainer.style.display = (userRole === 'admin' || userRole === 'subadmin') ? 'block' : 'none';
           if (currentUser.is_blocked) {
             blockBtn.textContent = '✅ Разблокировать';
             blockBtn.style.background = 'linear-gradient(135deg, #00ff88 0%, #00cc6a 100%)';

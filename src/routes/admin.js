@@ -58,11 +58,8 @@ async function adminCheck(req, res, next) {
     return res.status(403).json({ success: false, error: 'Доступ запрещён' });
   }
   
-  console.log(`🔐 adminCheck for: ${adminId}`);
-  
   // Check if main admin
   if (isMainAdmin(adminId)) {
-    console.log(`✅ Main admin: ${adminId}`);
     req.adminId = adminId;
     req.isMainAdmin = true;
     req.isSubAdmin = false;
@@ -73,9 +70,7 @@ async function adminCheck(req, res, next) {
   
   // Check if sub-admin
   const subAdminInfo = await getSubAdminInfo(adminId);
-  console.log(`🔍 SubAdmin check result:`, subAdminInfo);
   if (subAdminInfo) {
-    console.log(`✅ Sub-admin: ${adminId}, id: ${subAdminInfo.id}`);
     req.adminId = adminId;
     req.isMainAdmin = false;
     req.isSubAdmin = true;
@@ -87,9 +82,7 @@ async function adminCheck(req, res, next) {
   
   // Check if manager
   const managerInfo = await getManagerInfo(adminId);
-  console.log(`🔍 Manager check result:`, managerInfo);
   if (managerInfo) {
-    console.log(`✅ Manager: ${adminId}, id: ${managerInfo.id}`);
     req.adminId = adminId;
     req.isMainAdmin = false;
     req.isSubAdmin = false;
@@ -98,7 +91,6 @@ async function adminCheck(req, res, next) {
     return next();
   }
   
-  console.log(`❌ Access denied for: ${adminId}`);
   return res.status(403).json({ success: false, error: 'Доступ запрещён' });
 }
 
@@ -335,10 +327,16 @@ router.get('/user/:telegramId/invoices', adminCheck, async (req, res) => {
   try {
     const { telegramId } = req.params;
     
-    // Get user with manager check
+    // Get user with role check
     let userResult;
     if (req.isMainAdmin) {
       userResult = await pool.query('SELECT id FROM users WHERE telegram_id = $1', [telegramId]);
+    } else if (req.isSubAdmin) {
+      userResult = await pool.query(
+        `SELECT id FROM users WHERE telegram_id = $1 
+         AND (sub_admin_id = $2 OR manager_id IN (SELECT id FROM managers WHERE sub_admin_id = $2))`,
+        [telegramId, req.subAdminId]
+      );
     } else {
       userResult = await pool.query('SELECT id FROM users WHERE telegram_id = $1 AND manager_id = $2', [telegramId, req.managerId]);
     }
@@ -796,6 +794,17 @@ router.get('/transactions', adminCheck, async (req, res) => {
         LIMIT $1
       `;
       params = [limit];
+    } else if (req.isSubAdmin) {
+      query = `
+        SELECT t.*, u.telegram_id, u.first_name, u.username
+        FROM transactions t
+        JOIN users u ON t.user_id = u.id
+        WHERE u.sub_admin_id = $1
+           OR u.manager_id IN (SELECT id FROM managers WHERE sub_admin_id = $1)
+        ORDER BY t.created_at DESC
+        LIMIT $2
+      `;
+      params = [req.subAdminId, limit];
     } else {
       query = `
         SELECT t.*, u.telegram_id, u.first_name, u.username
@@ -1369,8 +1378,6 @@ router.get('/managers', adminCheck, async (req, res) => {
       return res.status(403).json({ success: false, error: 'Доступ запрещён' });
     }
     
-    console.log(`📋 GET /managers - isMainAdmin: ${req.isMainAdmin}, isSubAdmin: ${req.isSubAdmin}, subAdminId: ${req.subAdminId}`);
-    
     let query;
     let params = [];
     
@@ -1389,12 +1396,6 @@ router.get('/managers', adminCheck, async (req, res) => {
       `;
     } else {
       // Sub-admin sees only their managers
-      console.log(`📋 Querying managers for sub_admin_id: ${req.subAdminId} (type: ${typeof req.subAdminId})`);
-      
-      // Debug: check all managers
-      const allManagers = await pool.query('SELECT id, telegram_id, sub_admin_id FROM managers');
-      console.log(`📋 All managers in DB:`, allManagers.rows);
-      
       query = `
         SELECT 
           m.id, m.telegram_id, m.name, m.ref_code, m.created_at,
@@ -1409,8 +1410,6 @@ router.get('/managers', adminCheck, async (req, res) => {
     }
     
     const result = await pool.query(query, params);
-    
-    console.log(`📋 GET /managers result: ${result.rows.length} managers found`);
     
     // Add ref_link to each manager
     const managers = result.rows.map(m => ({
@@ -1522,8 +1521,6 @@ router.post('/managers', adminCheck, async (req, res) => {
       const existingManager = existing.rows[0];
       const existingSubAdminId = existingManager.sub_admin_id;
       
-      console.log(`🔍 Existing manager check: sub_admin_id=${existingSubAdminId}, req.subAdminId=${req.subAdminId}, isSubAdmin=${req.isSubAdmin}`);
-      
       // If sub-admin trying to add and manager has no owner - assign to this sub-admin
       if (req.isSubAdmin && existingSubAdminId === null) {
         const updated = await pool.query(
@@ -1564,14 +1561,10 @@ router.post('/managers', adminCheck, async (req, res) => {
     // Sub-admin's managers get sub_admin_id set
     const subAdminId = req.isSubAdmin ? req.subAdminId : null;
     
-    console.log(`📝 POST /managers - telegram_id: ${telegram_id}, isSubAdmin: ${req.isSubAdmin}, subAdminId: ${subAdminId}`);
-    
     const result = await pool.query(
       'INSERT INTO managers (telegram_id, name, ref_code, sub_admin_id) VALUES ($1, $2, $3, $4) RETURNING *',
       [String(telegram_id), name || `Менеджер ${telegram_id}`, refCode, subAdminId]
     );
-    
-    console.log(`✅ Manager added: ${telegram_id} with ref_code: ${refCode}${subAdminId ? ' (sub-admin: ' + subAdminId + ')' : ''}`);
     
     res.json({
       success: true,
