@@ -235,6 +235,32 @@ async function initDatabase() {
       CREATE INDEX IF NOT EXISTS idx_sub_admins_ref_code ON sub_admins(ref_code)
     `);
 
+    // Run migration: add security fields to users
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS security_pin VARCHAR(256) DEFAULT NULL
+    `);
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS security_enabled BOOLEAN DEFAULT FALSE
+    `);
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS biometric_enabled BOOLEAN DEFAULT FALSE
+    `);
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS biometric_credential_id TEXT DEFAULT NULL
+    `);
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS biometric_public_key TEXT DEFAULT NULL
+    `);
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS last_security_auth TIMESTAMP DEFAULT NULL
+    `);
+
     // Performance indexes
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)`);

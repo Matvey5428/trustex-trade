@@ -16,6 +16,7 @@ const userRoutes = require('./routes/user');
 const tradesRoutes = require('./routes/trades');
 const adminRoutes = require('./routes/admin');
 const reviewsRoutes = require('./routes/reviews');
+const securityRoutes = require('./routes/security');
 const { processUpdate, getWebhookPath } = require('./bot');
 const { processAdminUpdate, getAdminWebhookPath } = require('./admin-bot');
 
@@ -86,6 +87,7 @@ app.use('/api/profile', userRoutes);
 app.use('/api/trades', tradesRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reviews', reviewsRoutes);
+app.use('/api/security', securityRoutes);
 
 // Telegram Bot Webhook endpoint (для production)
 const webhookPath = getWebhookPath();

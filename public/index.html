@@ -1138,6 +1138,33 @@
         <span class="version-tag">v1.5.2</span>
       </div>
     </div>
+    
+    <!-- Security Settings (only for test users) -->
+    <div class="settings-card" id="securitySettingsCard" style="display: none;">
+      <div style="padding: 12px 16px; border-bottom: 1px solid var(--border);">
+        <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">🔐 Безопасность</span>
+      </div>
+      <div class="settings-item">
+        <div class="settings-label">
+          <span class="icon">🔢</span>
+          <span>PIN-код</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="pinToggle">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="settings-item" id="biometricSettingsItem" style="display: none;">
+        <div class="settings-label">
+          <span class="icon" id="biometricIcon">👆</span>
+          <span id="biometricLabel">Биометрия</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="biometricToggle" disabled>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
 
     <!-- Fiat -->
     <div class="section-card">
@@ -1277,6 +1304,7 @@
 <script src="/js/auth.js?v=2"></script>
 <script src="/js/api.js"></script>
 <script src="/js/prefetch.js"></script>
+<script src="/js/security-lock.js"></script>
 <script>
   const tg = window.Telegram?.WebApp;
   const isDev = window.location.hostname === 'localhost';
@@ -2190,10 +2218,22 @@
     // Apply language immediately
     applyLanguage(currentLang);
     
-    // Start loading non-blocking data immediately
+    // Start loading non-blocking data immediately (these don't need auth)
     updatePriceTicker();
     initSettings();
     initReviews();
+    
+    // Function to load all user data after unlock
+    async function loadAllUserData() {
+      Promise.all([
+        loadUserData(),
+        loadAnalyticsData('all'),
+        loadPeriodStats(),
+        loadPnlChart(),
+        checkUnreadSupport()
+      ]).catch(() => {});
+      log('✅ Init complete');
+    }
     
     try {
       log('🚀 Initializing TrustEx...');
@@ -2209,19 +2249,20 @@
       
       // Всегда делать login в Telegram Mini App для актуального токена
       log('🔄 Authenticating...');
-      await TelegramAuth.login();
+      const authResult = await TelegramAuth.login();
       log('✅ Authenticated');
       
-      // Запустить всё параллельно
-      Promise.all([
-        loadUserData(),
-        loadAnalyticsData('all'),
-        loadPeriodStats(),
-        loadPnlChart(),
-        checkUnreadSupport()
-      ]).catch(() => {});
+      // Get telegram_id for security check
+      const telegramId = TelegramAuth.getTelegramId();
       
-      log('✅ Init complete');
+      // Check security lock (will show PIN screen if needed) 
+      if (telegramId && window.SecurityLock) {
+        SecurityLock.check(telegramId, loadAllUserData);
+      } else {
+        // Security not available - load data directly
+        loadAllUserData();
+      }
+      
     } catch (e) {
       showNotification('Ошибка авторизации: ' + e.message, 'error');
     }
@@ -2237,6 +2278,119 @@
       checkUnreadSupport();
     }
   }, 5000);
+
+  // ============ Security Settings ============
+  async function initSecuritySettings() {
+    const telegramId = TelegramAuth.getTelegramId();
+    if (!telegramId) return;
+    
+    try {
+      const res = await fetch(`/api/security/status/${telegramId}`);
+      const data = await res.json();
+      
+      if (!data.success || !data.data.security_available) {
+        return;
+      }
+      
+      // Show security settings card
+      const card = document.getElementById('securitySettingsCard');
+      card.style.display = 'block';
+      
+      const status = data.data;
+      const pinToggle = document.getElementById('pinToggle');
+      const biometricToggle = document.getElementById('biometricToggle');
+      const biometricItem = document.getElementById('biometricSettingsItem');
+      const biometricIcon = document.getElementById('biometricIcon');
+      const biometricLabel = document.getElementById('biometricLabel');
+      
+      // Set initial states
+      pinToggle.checked = status.security_enabled && status.has_pin;
+      
+      // Check biometric availability
+      if (window.SecurityLock && SecurityLock.isBiometricAvailable()) {
+        biometricItem.style.display = 'flex';
+        biometricToggle.checked = status.biometric_enabled;
+        biometricToggle.disabled = !status.has_pin;
+        
+        // Update label based on device
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS) {
+          biometricIcon.textContent = '🔐';
+          biometricLabel.textContent = 'Face ID / Touch ID';
+        } else {
+          biometricIcon.textContent = '👆';
+          biometricLabel.textContent = 'Отпечаток пальца';
+        }
+      }
+      
+      // PIN toggle handler
+      pinToggle.addEventListener('change', async (e) => {
+        if (e.target.checked) {
+          // Enable PIN - show setup
+          if (window.SecurityLock) {
+            SecurityLock.showSetup(telegramId);
+            setTimeout(initSecuritySettings, 1000);
+          }
+        } else {
+          // Disable PIN - confirm
+          if (confirm('Отключить PIN-код и биометрию?')) {
+            try {
+              const res = await fetch('/api/security/disable', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: telegramId })
+              });
+              const data = await res.json();
+              if (data.success) {
+                biometricToggle.checked = false;
+                biometricToggle.disabled = true;
+                showNotification('Защита отключена', 'success');
+              }
+            } catch (err) {
+              e.target.checked = true;
+              showNotification('Ошибка', 'error');
+            }
+          } else {
+            e.target.checked = true;
+          }
+        }
+      });
+      
+      // Biometric toggle handler
+      biometricToggle.addEventListener('change', async (e) => {
+        if (e.target.checked) {
+          if (window.SecurityLock) {
+            try {
+              await SecurityLock.setupBiometric();
+              showNotification('Биометрия включена', 'success');
+            } catch (err) {
+              e.target.checked = false;
+            }
+          }
+        } else {
+          try {
+            const res = await fetch('/api/security/biometric/disable', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: telegramId })
+            });
+            const data = await res.json();
+            if (data.success) {
+              showNotification('Биометрия отключена', 'success');
+            }
+          } catch (err) {
+            e.target.checked = true;
+          }
+        }
+      });
+      
+    } catch (e) {
+      console.log('Security settings error:', e);
+    }
+  }
+  
+  // Initialize security settings after load
+  setTimeout(initSecuritySettings, 1500);
 </script>
 </body>
 </html>
