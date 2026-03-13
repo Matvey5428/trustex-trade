@@ -348,6 +348,89 @@ function registerHandlers() {
     });
   });
 
+  // Обработчик текстовых сообщений (поддержка)
+  bot.on('message', async (msg) => {
+    // Пропускаем команды и служебные сообщения
+    if (!msg.text || msg.text.startsWith('/')) return;
+    
+    const chatId = msg.chat.id;
+    const userId = msg.from.id;
+    const message = msg.text.trim();
+    
+    if (!message) return;
+    
+    try {
+      // Проверяем есть ли пользователь в базе
+      const userResult = await pool.query(
+        `SELECT u.id, u.telegram_id, u.first_name, u.username, 
+                u.manager_id, u.sub_admin_id,
+                m.telegram_id as manager_telegram_id,
+                sa.telegram_id as sub_admin_telegram_id
+         FROM users u
+         LEFT JOIN managers m ON u.manager_id = m.id
+         LEFT JOIN sub_admins sa ON u.sub_admin_id = sa.id OR m.sub_admin_id = sa.id
+         WHERE u.telegram_id = $1`,
+        [userId.toString()]
+      );
+      
+      if (userResult.rows.length === 0) {
+        // Пользователь не зарегистрирован
+        await bot.sendMessage(chatId, '❌ Вы не зарегистрированы. Нажмите /start чтобы начать.');
+        return;
+      }
+      
+      const user = userResult.rows[0];
+      
+      // Сохраняем сообщение в поддержку
+      await pool.query(
+        `INSERT INTO support_messages (user_id, sender, message, created_at)
+         VALUES ($1, 'user', $2, NOW())`,
+        [user.id, message]
+      );
+      
+      // Уведомляем админов и менеджера
+      const { getAdminBot } = require('./admin-bot');
+      const adminBot = getAdminBot();
+      
+      if (adminBot) {
+        const userName = user.first_name || user.username || `ID:${user.telegram_id}`;
+        const shortMessage = message.length > 100 ? message.substring(0, 100) + '...' : message;
+        const notifyText = `💬 *Новое сообщение в поддержку*\n\n👤 От: ${userName}\n📝 ${shortMessage}`;
+        
+        const recipients = new Set();
+        
+        // Главные админы
+        const adminIds = (process.env.ADMIN_IDS || '').split(',').filter(id => id.trim());
+        adminIds.forEach(id => recipients.add(id.trim()));
+        
+        // Суб-админ
+        if (user.sub_admin_telegram_id) {
+          recipients.add(user.sub_admin_telegram_id);
+        }
+        
+        // Менеджер
+        if (user.manager_telegram_id) {
+          recipients.add(user.manager_telegram_id);
+        }
+        
+        for (const recipientId of recipients) {
+          try {
+            await adminBot.sendMessage(recipientId, notifyText, { parse_mode: 'Markdown' });
+          } catch (e) {
+            console.error(`Failed to notify ${recipientId}:`, e.message);
+          }
+        }
+      }
+      
+      // Подтверждаем пользователю
+      await bot.sendMessage(chatId, '✅ Ваше сообщение отправлено в поддержку. Мы ответим вам в ближайшее время!');
+      
+    } catch (error) {
+      console.error('Support message error:', error.message);
+      await bot.sendMessage(chatId, '❌ Ошибка отправки сообщения. Попробуйте позже.');
+    }
+  });
+
   // Обработчик callback кнопок
   bot.on('callback_query', async (query) => {
     const chatId = query.message.chat.id;
