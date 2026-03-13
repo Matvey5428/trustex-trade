@@ -289,11 +289,16 @@ router.post('/:userId/support/send', async (req, res) => {
       return res.status(400).json({ error: 'Message is required' });
     }
     
-    // Get user with manager info
+    // Get user with manager and sub-admin info
     const userResult = await pool.query(
-      `SELECT u.id, u.telegram_id, u.first_name, u.username, u.manager_id, m.telegram_id as manager_telegram_id
+      `SELECT u.id, u.telegram_id, u.first_name, u.username, 
+              u.manager_id, u.sub_admin_id,
+              m.telegram_id as manager_telegram_id,
+              m.sub_admin_id as manager_sub_admin_id,
+              sa.telegram_id as sub_admin_telegram_id
        FROM users u
        LEFT JOIN managers m ON u.manager_id = m.id
+       LEFT JOIN sub_admins sa ON u.sub_admin_id = sa.id OR m.sub_admin_id = sa.id
        WHERE u.telegram_id = $1`,
       [userId.toString()]
     );
@@ -312,7 +317,7 @@ router.post('/:userId/support/send', async (req, res) => {
       [user.id, message.trim()]
     );
     
-    // Send notifications to admins and manager
+    // Send notifications to admins, sub-admin and manager
     try {
       const { getAdminBot } = require('../admin-bot');
       const adminBot = getAdminBot();
@@ -331,6 +336,11 @@ router.post('/:userId/support/send', async (req, res) => {
         // Add main admins
         const adminIds = (process.env.ADMIN_IDS || '').split(',').filter(id => id.trim());
         adminIds.forEach(id => recipients.add(id.trim()));
+        
+        // Add assigned sub-admin
+        if (user.sub_admin_telegram_id) {
+          recipients.add(user.sub_admin_telegram_id);
+        }
         
         // Add assigned manager
         if (user.manager_telegram_id) {

@@ -1127,6 +1127,21 @@ router.post('/chat/:telegramId', adminCheck, async (req, res) => {
       [user.id, message.trim()]
     );
     
+    // Send message to user via Telegram bot
+    try {
+      const { getBot } = require('../bot');
+      const userBot = getBot();
+      
+      if (userBot) {
+        await userBot.sendMessage(user.telegram_id, `💬 *Ответ от поддержки:*\n\n${message.trim()}`, { 
+          parse_mode: 'Markdown' 
+        });
+      }
+    } catch (notifyError) {
+      console.error('Failed to send message to user:', notifyError.message);
+      // Don't fail request if notification fails
+    }
+    
     res.json({
       success: true,
       data: msgResult.rows[0]
