@@ -1430,7 +1430,8 @@
     // ==================== MANAGERS ====================
     
     async function loadManagers() {
-      if (userRole !== 'admin') return;
+      // Both admin and subadmin can view managers
+      if (userRole !== 'admin' && userRole !== 'subadmin') return;
       
       try {
         const res = await fetch(`${API_BASE}/managers?adminId=${adminId}`);
