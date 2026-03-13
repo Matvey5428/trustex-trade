@@ -653,19 +653,19 @@
     if (onUnlockCallback) onUnlockCallback();
   }
 
-  // Save session to localStorage
+  // Save session to sessionStorage (clears on app close)
   function saveSession() {
     const session = {
       userId: currentUserId,
       timestamp: Date.now()
     };
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
   }
 
   // Check if session is valid
   function isSessionValid(timeoutMinutes) {
     try {
-      const session = JSON.parse(localStorage.getItem(SESSION_KEY));
+      const session = JSON.parse(sessionStorage.getItem(SESSION_KEY));
       if (!session || session.userId !== currentUserId) return false;
       
       const elapsed = (Date.now() - session.timestamp) / (1000 * 60);
