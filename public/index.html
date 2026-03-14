@@ -2335,17 +2335,20 @@
       // Set initial state
       pinToggle.checked = status.security_enabled && status.has_pin;
       
-      // PIN toggle handler
-      pinToggle.addEventListener('change', async (e) => {
-        if (e.target.checked) {
-          // Enable PIN - show setup (biometric will be auto-enabled)
-          if (window.SecurityLock) {
-            SecurityLock.showSetup(telegramId);
-            // Сразу включаем переключатель, чтобы UI обновился мгновенно
-            pinToggle.checked = true;
-            setTimeout(initSecuritySettings, 1000);
-          }
-        } else {
+      // Only attach listener once
+      if (!pinToggle._listenerAttached) {
+        pinToggle._listenerAttached = true;
+        // PIN toggle handler
+        pinToggle.addEventListener('change', async (e) => {
+          if (e.target.checked) {
+            // Enable PIN - show setup (biometric will be auto-enabled)
+            if (window.SecurityLock) {
+              SecurityLock.showSetup(telegramId, () => {
+                // Called after PIN successfully saved
+                pinToggle.checked = true;
+              });
+            }
+          } else {
           // Disable PIN - confirm
           if (confirm('Отключить защиту PIN-кодом?')) {
             try {
@@ -2372,6 +2375,7 @@
           }
         }
       });
+      } // end if !_listenerAttached
       
     } catch (e) {
       console.log('Security settings error:', e);

@@ -18,6 +18,7 @@
   let confirmPin = '';
   let biometricAvailable = false;
   let onUnlockCallback = null;
+  let onSetupCompleteCallback = null;
 
   // Create lock screen HTML
   function createLockScreenHTML() {
@@ -492,6 +493,10 @@
       if (data.success) {
         showSuccess();
         saveSession();
+        localStorage.setItem('trustex_needs_security', 'true');
+        
+        // Notify setup complete
+        if (onSetupCompleteCallback) onSetupCompleteCallback();
         
         setTimeout(() => {
           hideLockScreen();
@@ -1026,8 +1031,9 @@
     /**
      * Force show setup screen
      */
-    showSetup(userId) {
+    showSetup(userId, onComplete) {
       currentUserId = String(userId);
+      onSetupCompleteCallback = onComplete || null;
       if (!document.getElementById('securityLockScreen')) {
         init();
       }
