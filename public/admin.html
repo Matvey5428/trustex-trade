@@ -952,7 +952,9 @@
         document.getElementById('userModal').classList.add('active');
         
         const res = await fetch(`${API_BASE}/user/${telegramId}?adminId=${adminId}`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
+        console.log('openUser response:', data);
         
         if (data.success) {
           currentUser = data.data;
@@ -1054,16 +1056,17 @@
           // Load user payment history
           loadUserInvoices(telegramId);
         } else {
-          document.getElementById('userModalLoading').style.display = 'none';
           document.getElementById('userModal').classList.remove('active');
           showToast('Пользователь не найден', 'error');
         }
       } catch (e) {
-        // Hide loading, show content on error
+        console.error('openUser error:', e);
+        document.getElementById('userModal').classList.remove('active');
+        showToast('Ошибка загрузки: ' + e.message, 'error');
+      } finally {
+        // Always hide spinner
         document.getElementById('userModalBody').style.display = '';
         document.getElementById('userModalLoading').style.display = 'none';
-        document.getElementById('userModal').classList.remove('active');
-        showToast('Ошибка загрузки', 'error');
       }
     }
     
