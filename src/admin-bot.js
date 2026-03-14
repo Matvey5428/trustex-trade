@@ -84,17 +84,23 @@ function initAdminBot() {
 
   // Устанавливаем кнопку меню (открытие админки)
   const ADMIN_APP_URL = `${WEB_APP_URL}/admin.html`;
-  bot.setChatMenuButton({
-    menu_button: {
-      type: 'web_app',
-      text: 'Админ-панель',
-      web_app: { url: ADMIN_APP_URL }
-    }
-  }).then(() => {
-    console.log('✅ Admin menu button set');
-  }).catch(err => {
-    console.log('⚠️ Admin menu button not set:', err.message);
-  });
+  const menuBtn = {
+    type: 'web_app',
+    text: 'Админ-панель',
+    web_app: { url: ADMIN_APP_URL }
+  };
+  
+  // Set global default
+  bot.setChatMenuButton({ menu_button: menuBtn })
+    .then(() => console.log('✅ Admin menu button set (global)'))
+    .catch(err => console.log('⚠️ Admin menu button not set:', err.message));
+  
+  // Also fix per-chat override for main admin (was broken by previous deploy)
+  if (MAIN_ADMIN_ID) {
+    bot.setChatMenuButton({ chat_id: MAIN_ADMIN_ID, menu_button: menuBtn })
+      .then(() => console.log('✅ Admin menu button set (per-chat)'))
+      .catch(() => {});
+  }
 }
 
 async function setupAdminWebhook() {
