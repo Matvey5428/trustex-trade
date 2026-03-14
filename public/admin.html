@@ -760,6 +760,9 @@
       adminId = localStorage.getItem('trustex_admin_id');
     }
     
+    // Debug: log adminId
+    console.log('[Admin] adminId:', adminId, 'tg:', !!tg, 'initDataUnsafe:', tg?.initDataUnsafe);
+    
     let currentTab = 'users';
     let allInvoices = [];
     let allManagers = [];
@@ -767,6 +770,18 @@
     
     // Load data on start
     document.addEventListener('DOMContentLoaded', async () => {
+      // Check if adminId is available
+      if (!adminId) {
+        console.error('[Admin] No adminId available!');
+        document.getElementById('userList').innerHTML = '<div class="error-msg">❌ Ошибка авторизации. Перезайдите в бота.</div>';
+        document.getElementById('invoiceList').innerHTML = '<div class="error-msg">❌ Ошибка авторизации</div>';
+        document.getElementById('totalUsers').textContent = '0';
+        document.getElementById('totalBalance').textContent = '0';
+        document.getElementById('winModeCount').textContent = '0';
+        document.getElementById('lossModeCount').textContent = '0';
+        return;
+      }
+      
       // Check for ?user= param BEFORE loading anything
       const urlUser = new URLSearchParams(window.location.search).get('user');
       if (urlUser) {
@@ -795,7 +810,14 @@
     
     async function loadRole() {
       try {
-        const res = await fetch(`${API_BASE}/role?adminId=${adminId}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        
+        const res = await fetch(`${API_BASE}/role?adminId=${adminId}`, {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
         const data = await res.json();
         
         if (data.success) {
@@ -856,18 +878,29 @@
     
     async function loadInvoices() {
       try {
-        const res = await fetch(`${API_BASE}/invoices?adminId=${adminId}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        
+        const res = await fetch(`${API_BASE}/invoices?adminId=${adminId}`, {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
         const data = await res.json();
         
         if (data.success) {
           allInvoices = data.data;
           renderInvoices(allInvoices);
         } else {
-          document.getElementById('invoiceList').innerHTML = `<div class="error-msg">${data.error}</div>`;
+          document.getElementById('invoiceList').innerHTML = `<div class="error-msg">❌ ${data.error || 'Ошибка загрузки'}</div>`;
         }
       } catch (e) {
         console.error('Invoices error:', e);
-        document.getElementById('invoiceList').innerHTML = '<div class="error-msg">Ошибка загрузки</div>';
+        if (e.name === 'AbortError') {
+          document.getElementById('invoiceList').innerHTML = '<div class="error-msg">⏳ Сервер не отвечает</div>';
+        } else {
+          document.getElementById('invoiceList').innerHTML = '<div class="error-msg">❌ Ошибка загрузки</div>';
+        }
       }
     }
     
@@ -932,7 +965,14 @@
     
     async function loadStats() {
       try {
-        const res = await fetch(`${API_BASE}/stats?adminId=${adminId}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        
+        const res = await fetch(`${API_BASE}/stats?adminId=${adminId}`, {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
         const data = await res.json();
         
         if (data.success) {
@@ -940,26 +980,50 @@
           document.getElementById('totalBalance').textContent = formatMoney(data.data.totalBalance);
           document.getElementById('winModeCount').textContent = data.data.winModeCount;
           document.getElementById('lossModeCount').textContent = data.data.lossModeCount;
+        } else {
+          // Show zeros on error
+          document.getElementById('totalUsers').textContent = '0';
+          document.getElementById('totalBalance').textContent = '0';
+          document.getElementById('winModeCount').textContent = '0';
+          document.getElementById('lossModeCount').textContent = '0';
         }
       } catch (e) {
         console.error('Stats error:', e);
+        // Show zeros on error
+        document.getElementById('totalUsers').textContent = '0';
+        document.getElementById('totalBalance').textContent = '0';
+        document.getElementById('winModeCount').textContent = '0';
+        document.getElementById('lossModeCount').textContent = '0';
       }
     }
     
     async function loadUsers() {
       try {
-        const res = await fetch(`${API_BASE}/users?adminId=${adminId}`);
+        console.log('[Admin] Loading users with adminId:', adminId);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+        
+        const res = await fetch(`${API_BASE}/users?adminId=${adminId}`, {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
         const data = await res.json();
+        console.log('[Admin] Users response:', data);
         
         if (data.success) {
           allUsers = data.data;
           renderUsers(allUsers);
         } else {
-          document.getElementById('userList').innerHTML = `<div class="error-msg">${data.error}</div>`;
+          document.getElementById('userList').innerHTML = `<div class="error-msg">❌ ${data.error || 'Ошибка загрузки'}</div>`;
         }
       } catch (e) {
         console.error('Users error:', e);
-        document.getElementById('userList').innerHTML = '<div class="error-msg">Ошибка загрузки</div>';
+        if (e.name === 'AbortError') {
+          document.getElementById('userList').innerHTML = '<div class="error-msg">⏳ Сервер не отвечает. Попробуйте позже.</div>';
+        } else {
+          document.getElementById('userList').innerHTML = '<div class="error-msg">❌ Ошибка загрузки</div>';
+        }
       }
     }
     
