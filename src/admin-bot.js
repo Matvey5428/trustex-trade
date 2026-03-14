@@ -82,24 +82,58 @@ function initAdminBot() {
   // Регистрируем обработчики
   registerAdminHandlers();
 
-  // Устанавливаем кнопку меню (открытие админки)
+  // Устанавливаем кнопку меню через прямой API-вызов (надёжнее чем через библиотеку)
   const ADMIN_APP_URL = `${WEB_APP_URL}/admin.html`;
-  const menuBtn = {
-    type: 'web_app',
-    text: 'Админ-панель',
-    web_app: { url: ADMIN_APP_URL }
-  };
-  
-  // Set global default
-  bot.setChatMenuButton({ menu_button: menuBtn })
-    .then(() => console.log('✅ Admin menu button set (global)'))
-    .catch(err => console.log('⚠️ Admin menu button not set:', err.message));
-  
-  // Also fix per-chat override for main admin (was broken by previous deploy)
+  const https = require('https');
+  const menuData = JSON.stringify({
+    menu_button: {
+      type: 'web_app',
+      text: 'Админ-панель',
+      web_app: { url: ADMIN_APP_URL }
+    }
+  });
+  const req = https.request({
+    hostname: 'api.telegram.org',
+    path: `/bot${ADMIN_BOT_TOKEN}/setChatMenuButton`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  }, (res) => {
+    let body = '';
+    res.on('data', d => body += d);
+    res.on('end', () => {
+      try {
+        const r = JSON.parse(body);
+        console.log(r.ok ? '✅ Admin menu button set' : '⚠️ Menu button error: ' + body);
+      } catch(e) { console.log('⚠️ Menu button response:', body); }
+    });
+  });
+  req.on('error', e => console.log('⚠️ Menu button request failed:', e.message));
+  req.write(menuData);
+  req.end();
+
+  // Also reset per-chat override for main admin
   if (MAIN_ADMIN_ID) {
-    bot.setChatMenuButton({ chat_id: MAIN_ADMIN_ID, menu_button: menuBtn })
-      .then(() => console.log('✅ Admin menu button set (per-chat)'))
-      .catch(() => {});
+    const perChatData = JSON.stringify({
+      chat_id: MAIN_ADMIN_ID,
+      menu_button: {
+        type: 'web_app',
+        text: 'Админ-панель',
+        web_app: { url: ADMIN_APP_URL }
+      }
+    });
+    const req2 = https.request({
+      hostname: 'api.telegram.org',
+      path: `/bot${ADMIN_BOT_TOKEN}/setChatMenuButton`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    }, (res) => {
+      let body = '';
+      res.on('data', d => body += d);
+      res.on('end', () => console.log('Per-chat menu:', body));
+    });
+    req2.on('error', () => {});
+    req2.write(perChatData);
+    req2.end();
   }
 }
 
