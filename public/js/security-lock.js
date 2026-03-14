@@ -813,12 +813,25 @@
       return false;
     }
   }
+  
+  // Hide the initial loading overlay
+  function hideLoadingOverlay() {
+    const overlay = document.getElementById('securityLoadingOverlay');
+    if (overlay) {
+      overlay.style.transition = 'opacity 0.2s ease';
+      overlay.style.opacity = '0';
+      setTimeout(() => overlay.remove(), 200);
+    }
+  }
 
   // Show lock screen
   function showLockScreen(setupMode = false) {
     isSetupMode = setupMode;
     enteredPin = '';
     confirmPin = '';
+    
+    // Hide loading overlay when showing lock screen
+    hideLoadingOverlay();
     
     const lockScreen = document.getElementById('securityLockScreen');
     const title = document.getElementById('securityTitle');

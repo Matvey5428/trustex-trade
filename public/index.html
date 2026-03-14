@@ -961,6 +961,17 @@
 </head>
 <body>
 
+<!-- Security Loading Overlay (hides content until security check completes) -->
+<div id="securityLoadingOverlay" style="position:fixed; top:0; left:0; right:0; bottom:0; background:linear-gradient(135deg, #0a0e17 0%, #1a1f35 50%, #0d1117 100%); z-index:99998; display:flex; align-items:center; justify-content:center;">
+  <div style="text-align:center;">
+    <div style="font-size:48px; margin-bottom:16px; animation: pulse 1.5s infinite;">🔐</div>
+    <div style="color:#fff; font-size:18px; font-weight:600;">TrustEx</div>
+  </div>
+</div>
+<style>
+  @keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.05);opacity:0.8} }
+</style>
+
 <!-- Floating Support Button -->
 <button class="support-fab" onclick="window.location.href='support.html'">
   💬
@@ -2223,8 +2234,19 @@
     initSettings();
     initReviews();
     
+    // Hide security loading overlay
+    function hideSecurityOverlay() {
+      const overlay = document.getElementById('securityLoadingOverlay');
+      if (overlay) {
+        overlay.style.transition = 'opacity 0.3s ease';
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.remove(), 300);
+      }
+    }
+    
     // Function to load all user data after unlock
     async function loadAllUserData() {
+      hideSecurityOverlay();
       Promise.all([
         loadUserData(),
         loadAnalyticsData('all'),
@@ -2257,13 +2279,17 @@
       
       // Check security lock (will show PIN screen if needed) 
       if (telegramId && window.SecurityLock) {
+        // Hide overlay when lock screen appears (lock screen has its own backdrop)
         SecurityLock.check(telegramId, loadAllUserData);
+        // Hide loading overlay as soon as security screen is ready
+        setTimeout(hideSecurityOverlay, 100);
       } else {
         // Security not available - load data directly
         loadAllUserData();
       }
       
     } catch (e) {
+      hideSecurityOverlay();
       showNotification('Ошибка авторизации: ' + e.message, 'error');
     }
   });
