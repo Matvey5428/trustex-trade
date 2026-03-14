@@ -6,9 +6,9 @@
   <title>TrustEx Admin</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
-    // If returning from chat with ?user= param, force modal visible from first paint
+    // If returning from chat with ?user= param, cover page with opaque overlay instantly
     if (new URLSearchParams(window.location.search).get('user')) {
-      document.write('<style id="chatReturnStyle">#userModal{display:flex!important}#userModalBody{display:none}#userModalLoading{display:flex!important}</style>');
+      document.write('<div id="chatReturnOverlay" style="position:fixed;inset:0;background:#0a0e1a;z-index:9999;display:flex;align-items:center;justify-content:center"><div style="width:40px;height:40px;border:3px solid rgba(252,213,53,0.3);border-top-color:#fcd535;border-radius:50%;animation:spin 0.8s linear infinite"></div></div>');
     }
   </script>
   <style>
@@ -592,13 +592,7 @@
           <button class="modal-close" onclick="closeModal()">&times;</button>
         </div>
       </div>
-      <div id="userModalLoading" style="display:none;align-items:center;justify-content:center;padding:60px 20px;">
-        <div style="text-align:center;">
-          <div style="width:40px;height:40px;border:3px solid rgba(252,213,53,0.3);border-top-color:#fcd535;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px;"></div>
-          <div style="color:#848e9c;font-size:14px;">Загрузка...</div>
-        </div>
-      </div>
-      <div class="modal-body" id="userModalBody">
+      <div class="modal-body">
         <div id="userDetails"></div>
         
         <div class="form-group" id="balanceFormGroup">
@@ -946,9 +940,6 @@
     
     async function openUser(telegramId) {
       try {
-        // Show modal with loading state
-        document.getElementById('userModalBody').style.display = 'none';
-        document.getElementById('userModalLoading').style.display = 'flex';
         document.getElementById('userModal').classList.add('active');
         
         const res = await fetch(`${API_BASE}/user/${telegramId}?adminId=${adminId}`);
@@ -1049,10 +1040,6 @@
           
           document.getElementById('userModal').classList.add('active');
           
-          // Show content, hide loading spinner
-          document.getElementById('userModalBody').style.display = '';
-          document.getElementById('userModalLoading').style.display = 'none';
-          
           // Load user payment history
           loadUserInvoices(telegramId);
         } else {
@@ -1064,12 +1051,9 @@
         document.getElementById('userModal').classList.remove('active');
         showToast('Ошибка загрузки: ' + e.message, 'error');
       } finally {
-        // Remove injected !important CSS that blocks style changes
-        const chatReturnStyle = document.getElementById('chatReturnStyle');
-        if (chatReturnStyle) chatReturnStyle.remove();
-        // Always hide spinner
-        document.getElementById('userModalBody').style.display = '';
-        document.getElementById('userModalLoading').style.display = 'none';
+        // Remove chat-return overlay if present
+        const overlay = document.getElementById('chatReturnOverlay');
+        if (overlay) overlay.remove();
       }
     }
     
