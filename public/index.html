@@ -968,6 +968,17 @@
     <div style="color:#fff; font-size:18px; font-weight:600;">TrustEx</div>
   </div>
 </div>
+<script>
+// Instantly hide overlay if security session is already valid (avoids flash on navigation)
+(function() {
+  try {
+    var s = JSON.parse(sessionStorage.getItem('trustex_security_session'));
+    if (s && s.timestamp && (Date.now() - s.timestamp) < 15 * 60 * 1000) {
+      document.getElementById('securityLoadingOverlay').style.display = 'none';
+    }
+  } catch(e) {}
+})();
+</script>
 <style>
   @keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.05);opacity:0.8} }
 </style>
@@ -2323,6 +2334,8 @@
           // Enable PIN - show setup (biometric will be auto-enabled)
           if (window.SecurityLock) {
             SecurityLock.showSetup(telegramId);
+            // Сразу включаем переключатель, чтобы UI обновился мгновенно
+            pinToggle.checked = true;
             setTimeout(initSecuritySettings, 1000);
           }
         } else {
