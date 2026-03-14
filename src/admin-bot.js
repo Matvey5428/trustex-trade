@@ -81,20 +81,6 @@ function initAdminBot() {
 
   // Регистрируем обработчики
   registerAdminHandlers();
-
-  // Устанавливаем кнопку меню (открытие админки)
-  const ADMIN_APP_URL = `${WEB_APP_URL}/admin.html`;
-  bot.setChatMenuButton({
-    menu_button: {
-      type: 'web_app',
-      text: 'Админ-панель',
-      web_app: { url: ADMIN_APP_URL }
-    }
-  }).then(() => {
-    console.log('✅ Admin menu button set');
-  }).catch(err => {
-    console.log('⚠️ Admin menu button not set:', err.message);
-  });
 }
 
 async function setupAdminWebhook() {
@@ -135,16 +121,6 @@ function registerAdminHandlers() {
     if (!(await hasAdminAccess(msg.from.id))) {
       return bot.sendMessage(chatId, '⛔ Доступ запрещён');
     }
-    
-    // Set menu button for this specific chat
-    bot.setChatMenuButton({
-      chat_id: chatId,
-      menu_button: {
-        type: 'web_app',
-        text: 'Админ-панель',
-        web_app: { url: ADMIN_APP_URL }
-      }
-    }).catch(() => {});
     
     bot.sendMessage(chatId, 
       '👑 *Админ-панель TrustEx*\n\n' +
