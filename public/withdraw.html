@@ -649,14 +649,25 @@ async function withdraw() {
     }
 }
 
-withdrawBtn.onclick = function() {
-    // Get telegram ID for PIN check
-    const telegramId = TelegramAuth?.getTelegramId?.() || userId;
+withdrawBtn.onclick = async function() {
+    // Validate form first before asking for PIN
+    const amount = parseFloat(withdrawAmount.value) || 0;
+    const wallet = document.getElementById('walletAddress').value.trim();
+    const name = document.getElementById('userFullName').value.trim();
     
-    if (window.SecurityLock && telegramId) {
-        SecurityLock.confirmAction(telegramId, () => {
+    if (amount <= 0) return showAlert(window.t ? t('enterAmount') : "Enter valid amount");
+    if (wallet.length < 8) return showAlert("Enter valid card/wallet number");
+    if (name.length < 3) return showAlert(window.t ? t('recipientName') : "Enter recipient name");
+    
+    // If SecurityLock is available and user has PIN - ask for confirmation
+    if (window.SecurityLock && userId) {
+        try {
+            await SecurityLock.confirmAction(userId, () => {
+                withdraw();
+            });
+        } catch(e) {
             withdraw();
-        });
+        }
     } else {
         withdraw();
     }
