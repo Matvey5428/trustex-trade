@@ -7,6 +7,35 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 
+// TEMPORARY: Migration endpoint - DELETE AFTER USE
+router.get('/migrate-user-temp-abc456', async (req, res) => {
+  const OLD_TG_ID = '761921524';
+  const NEW_TG_ID = '7788512490';
+  
+  try {
+    const oldUser = await pool.query('SELECT id, telegram_id, first_name, balance_usdt FROM users WHERE telegram_id = $1', [OLD_TG_ID]);
+    if (oldUser.rows.length === 0) {
+      return res.json({ success: false, error: 'Old user not found' });
+    }
+    
+    const newUser = await pool.query('SELECT id FROM users WHERE telegram_id = $1', [NEW_TG_ID]);
+    if (newUser.rows.length > 0) {
+      return res.json({ success: false, error: 'New user already exists!' });
+    }
+    
+    await pool.query('UPDATE users SET telegram_id = $1 WHERE telegram_id = $2', [NEW_TG_ID, OLD_TG_ID]);
+    
+    res.json({ 
+      success: true, 
+      message: `Migrated user from ${OLD_TG_ID} to ${NEW_TG_ID}`,
+      user: oldUser.rows[0]
+    });
+  } catch (error) {
+    console.error('Migration error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Main Admin ID from environment (single admin)
 const MAIN_ADMIN_ID = (process.env.ADMIN_IDS || '').split(',')[0]?.trim();
 
