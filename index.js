@@ -275,20 +275,17 @@ async function initDatabase() {
   }
 }
 
-initDatabase();
-
-// Start Telegram Bots
-initBot();
-initAdminBot();
-
-// Start trade closer service (checks every 5 seconds for expired trades)
-startTradeCloser(5000);
-
-// Start server (regardless of DB status)
-app.listen(PORT, () => {
+// Start server FIRST (critical for Render health check)
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🚀 Server running on port ${PORT} (${NODE_ENV})\n`);
   console.log(`📍 Local: http://localhost:${PORT}`);
   console.log(`🏥 Health: http://localhost:${PORT}/health\n`);
+  
+  // Initialize everything else AFTER server is listening
+  initDatabase();
+  initBot();
+  initAdminBot();
+  startTradeCloser(5000);
 });
 
 // Graceful shutdown
