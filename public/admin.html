@@ -8,7 +8,7 @@
   <script>
     // If returning from chat with ?user= param, force modal visible from first paint
     if (new URLSearchParams(window.location.search).get('user')) {
-      document.write('<style>#userModal{display:flex!important}#userModalBody{display:none}#userModalLoading{display:flex!important}</style>');
+      document.write('<style id="chatReturnStyle">#userModal{display:flex!important}#userModalBody{display:none}#userModalLoading{display:flex!important}</style>');
     }
   </script>
   <style>
@@ -1064,6 +1064,9 @@
         document.getElementById('userModal').classList.remove('active');
         showToast('Ошибка загрузки: ' + e.message, 'error');
       } finally {
+        // Remove injected !important CSS that blocks style changes
+        const chatReturnStyle = document.getElementById('chatReturnStyle');
+        if (chatReturnStyle) chatReturnStyle.remove();
         // Always hide spinner
         document.getElementById('userModalBody').style.display = '';
         document.getElementById('userModalLoading').style.display = 'none';
