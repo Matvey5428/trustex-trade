@@ -357,35 +357,17 @@ router.get('/biometric/challenge/:userId', async (req, res) => {
 
 /**
  * POST /api/security/disable
- * Disable security (requires PIN verification)
+ * Disable security (user already authenticated)
  */
 router.post('/disable', async (req, res) => {
   try {
-    const { userId, pin } = req.body;
+    const { userId } = req.body;
     
-    if (!userId || !pin) {
-      return res.status(400).json({ success: false, error: 'userId and pin required' });
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'userId required' });
     }
     
-    const result = await pool.query(
-      'SELECT security_pin FROM users WHERE telegram_id = $1',
-      [userId]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, error: 'User not found' });
-    }
-    
-    if (!result.rows[0].security_pin) {
-      return res.status(400).json({ success: false, error: 'Security not enabled' });
-    }
-    
-    // Verify PIN
-    if (!verifyPin(pin, result.rows[0].security_pin)) {
-      return res.status(403).json({ success: false, error: 'Incorrect PIN' });
-    }
-    
-    // Disable security
+    // Disable security completely
     await pool.query(
       `UPDATE users 
        SET security_enabled = FALSE,
@@ -415,24 +397,10 @@ router.post('/disable', async (req, res) => {
  */
 router.post('/biometric/disable', async (req, res) => {
   try {
-    const { userId, pin } = req.body;
+    const { userId } = req.body;
     
-    if (!userId || !pin) {
-      return res.status(400).json({ success: false, error: 'userId and pin required' });
-    }
-    
-    const result = await pool.query(
-      'SELECT security_pin FROM users WHERE telegram_id = $1',
-      [userId]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, error: 'User not found' });
-    }
-    
-    // Verify PIN
-    if (!verifyPin(pin, result.rows[0].security_pin)) {
-      return res.status(403).json({ success: false, error: 'Incorrect PIN' });
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'userId required' });
     }
     
     // Disable biometric only

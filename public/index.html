@@ -2369,7 +2369,12 @@
               if (data.success) {
                 biometricToggle.checked = false;
                 biometricToggle.disabled = true;
+                // Clear security session
+                sessionStorage.removeItem('trustex_security_session');
                 showNotification('Защита отключена', 'success');
+              } else {
+                e.target.checked = true;
+                showNotification('Ошибка: ' + (data.error || 'Не удалось'), 'error');
               }
             } catch (err) {
               e.target.checked = true;
