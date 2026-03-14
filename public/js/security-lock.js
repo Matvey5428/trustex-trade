@@ -494,6 +494,8 @@
         showSuccess();
         saveSession();
         localStorage.setItem('trustex_needs_security', 'true');
+        // Clear skipped flag since user now has PIN
+        localStorage.removeItem(`trustex_setup_skipped_${currentUserId}`);
         
         // Notify setup complete
         if (onSetupCompleteCallback) onSetupCompleteCallback();
@@ -864,6 +866,8 @@
 
   // Handle skip button
   function handleSkip() {
+    // Remember that user skipped setup (don't ask again until they clear storage)
+    localStorage.setItem(`trustex_setup_skipped_${currentUserId}`, 'true');
     hideLockScreen();
     if (onUnlockCallback) onUnlockCallback();
   }
@@ -992,9 +996,24 @@
           return;
         }
         
-        // Security not enabled or no PIN - skip (user disabled it or never set up)
-        if (!status.security_enabled || !status.has_pin) {
-          console.log('[Security] Security disabled or no PIN, skipping');
+        // No PIN yet - offer to create one (new user)
+        if (!status.has_pin) {
+          // Check if user already skipped setup before
+          const skipped = localStorage.getItem(`trustex_setup_skipped_${userId}`);
+          if (skipped) {
+            console.log('[Security] User skipped setup before, not asking again');
+            hideLoadingOverlay();
+            if (onUnlock) onUnlock();
+            return;
+          }
+          console.log('[Security] No PIN, showing setup screen');
+          showLockScreen(true); // setup mode with skip button
+          return;
+        }
+        
+        // Has PIN but disabled - skip (user explicitly disabled)
+        if (!status.security_enabled) {
+          console.log('[Security] Security disabled by user, skipping');
           localStorage.setItem('trustex_needs_security', 'false');
           hideLoadingOverlay();
           if (onUnlock) onUnlock();
