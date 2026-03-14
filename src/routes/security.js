@@ -8,9 +8,6 @@ const router = express.Router();
 const pool = require('../config/database');
 const crypto = require('crypto');
 
-// Test users who have access to security features
-const TEST_SECURITY_USERS = ['703924219', '7053869367'];
-
 // Session timeout in minutes (skip auth if recent)
 const SESSION_TIMEOUT_MINUTES = 15;
 
@@ -35,10 +32,10 @@ function verifyPin(pin, storedCombined) {
 }
 
 /**
- * Check if user has security features enabled (test users only for now)
+ * Check if user has security features enabled (enabled for all users)
  */
 function isSecurityUser(telegramId) {
-  return TEST_SECURITY_USERS.includes(String(telegramId));
+  return true;
 }
 
 /**
