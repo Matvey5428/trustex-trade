@@ -506,11 +506,13 @@
   // Check biometric availability using Telegram BiometricManager
   function checkBiometricAvailability() {
     const tg = window.Telegram?.WebApp;
+    console.log('[Security] Checking biometric, TG WebApp:', !!tg, 'BiometricManager:', !!tg?.BiometricManager);
     
     // Check Telegram BiometricManager first (native iOS/Android)
     if (tg?.BiometricManager) {
+      console.log('[Security] BiometricManager found, initializing...');
       tg.BiometricManager.init(() => {
-        console.log('[Security] BiometricManager init:', {
+        console.log('[Security] BiometricManager init result:', {
           isInited: tg.BiometricManager.isInited,
           isBiometricAvailable: tg.BiometricManager.isBiometricAvailable,
           biometricType: tg.BiometricManager.biometricType,
@@ -521,16 +523,27 @@
         updateBiometricButton();
       });
     } else {
+      console.log('[Security] No BiometricManager, checking WebAuthn...');
       // Fallback to WebAuthn for browsers
       if (window.PublicKeyCredential && typeof window.PublicKeyCredential === 'function') {
         PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
           .then(available => {
+            console.log('[Security] WebAuthn available:', available);
             biometricAvailable = available;
             updateBiometricButton();
           })
-          .catch(() => {
+          .catch((e) => {
+            console.log('[Security] WebAuthn error:', e);
             biometricAvailable = false;
           });
+      } else {
+        // iOS detection - assume Face ID available
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        console.log('[Security] iOS detected:', isIOS);
+        if (isIOS) {
+          biometricAvailable = true;
+          updateBiometricButton();
+        }
       }
     }
   }
@@ -538,14 +551,21 @@
   // Update biometric button visibility
   function updateBiometricButton() {
     const btn = document.getElementById('biometricBtn');
-    const icon = btn?.querySelector('.biometric-icon');
+    if (!btn) {
+      console.log('[Security] Biometric button not found!');
+      return;
+    }
     
-    if (biometricAvailable && !isSetupMode) {
+    const icon = btn.querySelector('.biometric-icon');
+    console.log('[Security] Updating biometric button, available:', biometricAvailable, 'isSetupMode:', isSetupMode);
+    
+    // Show biometric button when available (even in setup mode after PIN is set)
+    if (biometricAvailable) {
       btn.style.visibility = 'visible';
       
       // Update icon based on biometric type
       const tg = window.Telegram?.WebApp;
-      if (tg?.BiometricManager?.biometricType === 'face') {
+      if (tg?.BiometricManager?.biometricType === 'face' || /iPad|iPhone|iPod/.test(navigator.userAgent)) {
         if (icon) icon.textContent = '😊';
       } else {
         if (icon) icon.textContent = '👆';
@@ -557,25 +577,36 @@
 
   // Handle biometric authentication
   async function handleBiometric() {
-    if (!biometricAvailable) return;
+    console.log('[Security] handleBiometric called, available:', biometricAvailable);
     
     const tg = window.Telegram?.WebApp;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     
-    // Use Telegram BiometricManager
-    if (tg?.BiometricManager?.isBiometricAvailable) {
-      console.log('[Security] Starting Telegram biometric auth');
+    // Use Telegram BiometricManager on iOS/Android
+    if (tg?.BiometricManager) {
+      console.log('[Security] Using Telegram BiometricManager');
       
-      // Request access if not granted
-      if (!tg.BiometricManager.isAccessGranted) {
-        tg.BiometricManager.requestAccess({ reason: 'Для быстрого входа в приложение' }, (granted) => {
-          console.log('[Security] Access granted:', granted);
-          if (granted) {
-            authenticateWithTelegramBiometric();
+      // Initialize if not yet
+      if (!tg.BiometricManager.isInited) {
+        console.log('[Security] BiometricManager not inited, initializing...');
+        tg.BiometricManager.init(() => {
+          console.log('[Security] BiometricManager now ready:', tg.BiometricManager.isBiometricAvailable);
+          if (tg.BiometricManager.isBiometricAvailable) {
+            proceedWithTelegramBiometric();
           }
         });
-      } else {
-        authenticateWithTelegramBiometric();
+        return;
       }
+      
+      if (tg.BiometricManager.isBiometricAvailable) {
+        proceedWithTelegramBiometric();
+        return;
+      }
+    }
+    
+    // Show error if no biometric available
+    if (!biometricAvailable) {
+      console.log('[Security] No biometric available');
       return;
     }
     
@@ -618,13 +649,31 @@
     }
   }
   
+  // Proceed with Telegram biometric (request access if needed)
+  function proceedWithTelegramBiometric() {
+    const tg = window.Telegram.WebApp;
+    console.log('[Security] proceedWithTelegramBiometric, isAccessGranted:', tg.BiometricManager.isAccessGranted);
+    
+    if (!tg.BiometricManager.isAccessGranted) {
+      tg.BiometricManager.requestAccess({ reason: 'Для быстрого входа в приложение' }, (granted) => {
+        console.log('[Security] Access granted:', granted);
+        if (granted) {
+          authenticateWithTelegramBiometric();
+        }
+      });
+    } else {
+      authenticateWithTelegramBiometric();
+    }
+  }
+  
   // Authenticate using Telegram BiometricManager
   function authenticateWithTelegramBiometric() {
     const tg = window.Telegram.WebApp;
     const biometricType = tg.BiometricManager.biometricType === 'face' ? 'Face ID' : 'отпечаток пальца';
+    console.log('[Security] authenticateWithTelegramBiometric, type:', biometricType);
     
     tg.BiometricManager.authenticate({ reason: `Подтвердите ${biometricType}` }, (success, token) => {
-      console.log('[Security] Biometric auth result:', success);
+      console.log('[Security] Biometric auth result:', success, 'token:', token);
       
       if (success) {
         showSuccess();
@@ -789,11 +838,16 @@
     
     error.textContent = '';
     updatePinDots();
+    
+    // Re-check biometric availability when showing lock screen
+    checkBiometricAvailability();
     updateBiometricButton();
     
     lockScreen.style.display = 'flex';
     lockScreen.classList.remove('hide');
     lockScreen.classList.add('show');
+    
+    console.log('[Security] Lock screen shown, setupMode:', setupMode);
   }
 
   // Hide lock screen
