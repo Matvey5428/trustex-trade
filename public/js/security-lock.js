@@ -601,7 +601,7 @@
       // Update icon based on biometric type
       const tg = window.Telegram?.WebApp;
       if (tg?.BiometricManager?.biometricType === 'face' || /iPad|iPhone|iPod/.test(navigator.userAgent)) {
-        if (icon) icon.textContent = '😊';
+        if (icon) icon.textContent = '�';
       } else {
         if (icon) icon.textContent = '👆';
       }
