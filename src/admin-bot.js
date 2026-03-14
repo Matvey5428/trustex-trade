@@ -88,7 +88,7 @@ function initAdminBot() {
   const menuData = JSON.stringify({
     menu_button: {
       type: 'web_app',
-      text: 'Админ-панель',
+      text: 'Админка',
       web_app: { url: ADMIN_APP_URL }
     }
   });
@@ -117,7 +117,7 @@ function initAdminBot() {
       chat_id: MAIN_ADMIN_ID,
       menu_button: {
         type: 'web_app',
-        text: 'Админ-панель',
+        text: 'Админка',
         web_app: { url: ADMIN_APP_URL }
       }
     });
