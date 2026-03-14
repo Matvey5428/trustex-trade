@@ -467,9 +467,9 @@
         
         setTimeout(() => {
           hideLockScreen();
-          // Offer biometric setup
+          // Auto-setup biometric if available
           if (biometricAvailable) {
-            setTimeout(() => offerBiometricSetup(), 500);
+            setTimeout(() => autoSetupBiometric(), 500);
           }
         }, 500);
       } else {
@@ -687,6 +687,49 @@
         setTimeout(() => hideLockScreen(), 400);
       }
     });
+  }
+
+  // Auto setup biometric after PIN creation (no confirmation needed)
+  function autoSetupBiometric() {
+    if (!biometricAvailable) return;
+    
+    const tg = window.Telegram?.WebApp;
+    
+    // Use Telegram BiometricManager
+    if (tg?.BiometricManager?.isBiometricAvailable) {
+      if (!tg.BiometricManager.isAccessGranted) {
+        tg.BiometricManager.requestAccess({ reason: 'Для быстрого входа в приложение' }, (granted) => {
+          if (granted) {
+            tg.BiometricManager.updateBiometricToken(currentUserId, (success) => {
+              if (success) {
+                fetch(`${API_BASE}/biometric/register`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    userId: currentUserId,
+                    credentialId: 'telegram_biometric',
+                    publicKey: 'telegram'
+                  })
+                });
+                console.log('[Security] Biometric auto-setup complete');
+              }
+            });
+          }
+        });
+      } else {
+        // Already granted, just save token
+        tg.BiometricManager.updateBiometricToken(currentUserId);
+        fetch(`${API_BASE}/biometric/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: currentUserId,
+            credentialId: 'telegram_biometric',
+            publicKey: 'telegram'
+          })
+        });
+      }
+    }
   }
 
   // Offer biometric setup after PIN creation
@@ -935,8 +978,8 @@
         console.log('[Security] Showing PIN entry screen');
         showLockScreen(false);
         
-        // Try biometric first if available
-        if (status.biometric_enabled && biometricAvailable) {
+        // Auto-try biometric if available (no need to check biometric_enabled)
+        if (biometricAvailable) {
           setTimeout(() => handleBiometric(), 500);
         }
         

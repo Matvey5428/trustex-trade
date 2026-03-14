@@ -1165,16 +1165,6 @@
           <span class="toggle-slider"></span>
         </label>
       </div>
-      <div class="settings-item" id="biometricSettingsItem" style="display: none;">
-        <div class="settings-label">
-          <span class="icon" id="biometricIcon">👆</span>
-          <span id="biometricLabel">Биометрия</span>
-        </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="biometricToggle" disabled>
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
     </div>
 
     <!-- Fiat -->
@@ -2323,42 +2313,21 @@
       
       const status = data.data;
       const pinToggle = document.getElementById('pinToggle');
-      const biometricToggle = document.getElementById('biometricToggle');
-      const biometricItem = document.getElementById('biometricSettingsItem');
-      const biometricIcon = document.getElementById('biometricIcon');
-      const biometricLabel = document.getElementById('biometricLabel');
       
-      // Set initial states
+      // Set initial state
       pinToggle.checked = status.security_enabled && status.has_pin;
-      
-      // Check biometric availability
-      if (window.SecurityLock && SecurityLock.isBiometricAvailable()) {
-        biometricItem.style.display = 'flex';
-        biometricToggle.checked = status.biometric_enabled;
-        biometricToggle.disabled = !status.has_pin;
-        
-        // Update label based on device
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        if (isIOS) {
-          biometricIcon.textContent = '🔐';
-          biometricLabel.textContent = 'Face ID / Touch ID';
-        } else {
-          biometricIcon.textContent = '👆';
-          biometricLabel.textContent = 'Отпечаток пальца';
-        }
-      }
       
       // PIN toggle handler
       pinToggle.addEventListener('change', async (e) => {
         if (e.target.checked) {
-          // Enable PIN - show setup
+          // Enable PIN - show setup (biometric will be auto-enabled)
           if (window.SecurityLock) {
             SecurityLock.showSetup(telegramId);
             setTimeout(initSecuritySettings, 1000);
           }
         } else {
           // Disable PIN - confirm
-          if (confirm('Отключить PIN-код и биометрию?')) {
+          if (confirm('Отключить защиту PIN-кодом?')) {
             try {
               const res = await fetch('/api/security/disable', {
                 method: 'POST',
@@ -2367,8 +2336,6 @@
               });
               const data = await res.json();
               if (data.success) {
-                biometricToggle.checked = false;
-                biometricToggle.disabled = true;
                 // Clear security session
                 sessionStorage.removeItem('trustex_security_session');
                 showNotification('Защита отключена', 'success');
@@ -2381,34 +2348,6 @@
               showNotification('Ошибка', 'error');
             }
           } else {
-            e.target.checked = true;
-          }
-        }
-      });
-      
-      // Biometric toggle handler
-      biometricToggle.addEventListener('change', async (e) => {
-        if (e.target.checked) {
-          if (window.SecurityLock) {
-            try {
-              await SecurityLock.setupBiometric();
-              showNotification('Биометрия включена', 'success');
-            } catch (err) {
-              e.target.checked = false;
-            }
-          }
-        } else {
-          try {
-            const res = await fetch('/api/security/biometric/disable', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId: telegramId })
-            });
-            const data = await res.json();
-            if (data.success) {
-              showNotification('Биометрия отключена', 'success');
-            }
-          } catch (err) {
             e.target.checked = true;
           }
         }
