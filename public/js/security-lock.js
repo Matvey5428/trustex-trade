@@ -900,6 +900,7 @@
         
         if (!data.success) {
           console.log('[Security] API error, skipping');
+          hideLoadingOverlay();
           if (onUnlock) onUnlock();
           return;
         }
@@ -909,6 +910,7 @@
         // Security not available for this user
         if (!status.security_available) {
           console.log('[Security] Not available for this user');
+          hideLoadingOverlay();
           if (onUnlock) onUnlock();
           return;
         }
@@ -916,6 +918,7 @@
         // Check local session first
         if (isSessionValid(15)) {
           console.log('[Security] Session valid, skipping');
+          hideLoadingOverlay();
           if (onUnlock) onUnlock();
           return;
         }
@@ -938,6 +941,7 @@
         
       } catch (e) {
         console.error('[Security] Error:', e);
+        hideLoadingOverlay();
         if (onUnlock) onUnlock();
       }
     },

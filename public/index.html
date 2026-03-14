@@ -2279,10 +2279,9 @@
       
       // Check security lock (will show PIN screen if needed) 
       if (telegramId && window.SecurityLock) {
-        // Hide overlay when lock screen appears (lock screen has its own backdrop)
+        // SecurityLock will hide the overlay when PIN screen is ready
         SecurityLock.check(telegramId, loadAllUserData);
-        // Hide loading overlay as soon as security screen is ready
-        setTimeout(hideSecurityOverlay, 100);
+        // Don't hide overlay here - let SecurityLock handle it
       } else {
         // Security not available - load data directly
         loadAllUserData();
