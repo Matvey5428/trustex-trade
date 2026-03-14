@@ -1716,6 +1716,40 @@
     if (tonEl) { tonEl.textContent = `${fmt(tonInUsd)} $`; tonEl.classList.remove('skeleton'); }
     if (ethEl) { ethEl.textContent = `${fmt(ethInUsd)} $`; ethEl.classList.remove('skeleton'); }
     if (usdtEl) { usdtEl.textContent = `${fmt(usdtBalance)} $`; usdtEl.classList.remove('skeleton'); }
+    
+    // Мгновенно показать кэшированные данные профиля (статистика, объём, верификация)
+    try {
+      const cachedProfile = JSON.parse(localStorage.getItem('nexo_profile_cache') || 'null');
+      if (cachedProfile) {
+        // Статистика
+        const s = cachedProfile.stats;
+        if (s) {
+          document.getElementById('stats').innerHTML = `${s.total || 0} / <span style="color: #3fb950">${s.wins || 0}</span> / <span style="color: #f85149">${s.losses || 0}</span>`;
+        }
+        // Объём торгов
+        if (cachedProfile.tradingVolume !== undefined) {
+          updateEl('tradingVolume', `${parseFloat(cachedProfile.tradingVolume).toFixed(2)} USDT`);
+        }
+        // Верификация
+        if (cachedProfile.verification) {
+          const v = cachedProfile.verification;
+          const verificationRow = document.getElementById('verificationRow');
+          const verifStatusEl = document.getElementById('verificationStatus');
+          const verificationBtn = document.getElementById('verificationBtn');
+          if (verificationRow && verifStatusEl && verificationBtn) {
+            if (v.needsVerif) {
+              verificationRow.style.display = 'flex';
+              verifStatusEl.textContent = v.statusText;
+              verifStatusEl.style.color = v.statusColor;
+              verificationBtn.style.display = v.btnDisplay;
+            } else {
+              verificationRow.style.display = 'none';
+              verificationBtn.style.display = 'none';
+            }
+          }
+        }
+      }
+    } catch(e) {}
   }
 
   async function loadUserData() {
@@ -1742,11 +1776,13 @@
       }
       
       // Обработать статистику
+      let cachedStats = null;
       try {
         if (statsRes?.ok) {
           const statsPayload = await statsRes.json();
           const s = statsPayload.data || {};
-          document.getElementById('stats').innerHTML = `${s.total || 0} / <span style="color: #3fb950">${s.wins || 0}</span> / <span style="color: #f85149">${s.losses || 0}</span>`;
+          cachedStats = { total: s.total || 0, wins: s.wins || 0, losses: s.losses || 0 };
+          document.getElementById('stats').innerHTML = `${cachedStats.total} / <span style="color: #3fb950">${cachedStats.wins}</span> / <span style="color: #f85149">${cachedStats.losses}</span>`;
         } else {
           document.getElementById('stats').innerHTML = '0 / <span style="color: #3fb950">0</span> / <span style="color: #f85149">0</span>';
         }
@@ -1786,6 +1822,8 @@
           const verificationBtn = document.getElementById('verificationBtn');
           const verificationBtnText = document.getElementById('verificationBtnText');
           
+          let verifCache = { needsVerif: false, statusText: '', statusColor: '', btnDisplay: 'none' };
+          
           if (verificationRow && verifStatusEl && verificationBtn) {
             if (needsVerif) {
               verificationRow.style.display = 'flex';
@@ -1796,24 +1834,36 @@
                 verifStatusEl.textContent = '✅ Верифицирован';
                 verifStatusEl.style.color = '#00ff88';
                 verificationBtn.style.display = 'none';
+                verifCache = { needsVerif: true, statusText: '✅ Верифицирован', statusColor: '#00ff88', btnDisplay: 'none' };
               } else if (pendingVerif) {
                 verifStatusEl.textContent = '⏳ На рассмотрении';
                 verifStatusEl.style.color = '#ffc107';
                 verificationBtn.style.display = 'flex';
                 verificationBtn.disabled = true;
                 verificationBtnText.textContent = 'Заявка отправлена';
+                verifCache = { needsVerif: true, statusText: '⏳ На рассмотрении', statusColor: '#ffc107', btnDisplay: 'flex' };
               } else {
                 verifStatusEl.textContent = '⚠️ Требуется';
                 verifStatusEl.style.color = '#ffc107';
                 verificationBtn.style.display = 'flex';
                 verificationBtn.disabled = false;
                 verificationBtnText.textContent = 'Подать заявку на верификацию';
+                verifCache = { needsVerif: true, statusText: '⚠️ Требуется', statusColor: '#ffc107', btnDisplay: 'flex' };
               }
             } else {
               verificationRow.style.display = 'none';
               verificationBtn.style.display = 'none';
             }
           }
+          
+          // Сохранить данные профиля в кэш для мгновенного отображения
+          try {
+            localStorage.setItem('nexo_profile_cache', JSON.stringify({
+              stats: cachedStats,
+              tradingVolume: tradingVol,
+              verification: verifCache
+            }));
+          } catch(e) {}
         }
       } catch (e) {
         updateEl('tradingVolume', '0.00 USDT');
