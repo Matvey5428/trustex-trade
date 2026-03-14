@@ -49,22 +49,37 @@ function initBot() {
     // Успешный запуск
     bot.getMe().then((info) => {
       console.log(`✅ Bot started: @${info.username} (${info.id})`);
-      
-      // Устанавливаем кнопку меню (открытие биржи)
-      bot.setChatMenuButton({
-        menu_button: {
-          type: 'web_app',
-          text: 'TrustEx',
-          web_app: { url: WEB_APP_URL }
-        }
-      }).then(() => {
-        console.log('✅ Menu button set');
-      }).catch(err => {
-        console.log('⚠️ Menu button not set:', err.message);
-      });
     }).catch((err) => {
       console.error('❌ Failed to get bot info:', err.message);
     });
+
+    // Устанавливаем кнопку меню через прямой HTTPS (надёжнее чем библиотека)
+    const https = require('https');
+    const menuData = JSON.stringify({
+      menu_button: {
+        type: 'web_app',
+        text: 'TrustEx',
+        web_app: { url: WEB_APP_URL }
+      }
+    });
+    const req = https.request({
+      hostname: 'api.telegram.org',
+      path: `/bot${BOT_TOKEN}/setChatMenuButton`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    }, (res) => {
+      let body = '';
+      res.on('data', d => body += d);
+      res.on('end', () => {
+        try {
+          const r = JSON.parse(body);
+          console.log(r.ok ? '✅ Menu button set' : '⚠️ Menu button error: ' + body);
+        } catch(e) { console.log('⚠️ Menu button response:', body); }
+      });
+    });
+    req.on('error', e => console.log('⚠️ Menu button request failed:', e.message));
+    req.write(menuData);
+    req.end();
 
     return bot;
   } catch (error) {
