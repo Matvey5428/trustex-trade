@@ -503,29 +503,53 @@
     }
   }
 
-  // Check biometric availability
+  // Check biometric availability using Telegram BiometricManager
   function checkBiometricAvailability() {
-    // Check if WebAuthn is available
-    if (window.PublicKeyCredential && 
-        typeof window.PublicKeyCredential === 'function') {
-      
-      // Check if platform authenticator (Touch ID/Face ID) is available
-      PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
-        .then(available => {
-          biometricAvailable = available;
-          updateBiometricButton();
-        })
-        .catch(() => {
-          biometricAvailable = false;
+    const tg = window.Telegram?.WebApp;
+    
+    // Check Telegram BiometricManager first (native iOS/Android)
+    if (tg?.BiometricManager) {
+      tg.BiometricManager.init(() => {
+        console.log('[Security] BiometricManager init:', {
+          isInited: tg.BiometricManager.isInited,
+          isBiometricAvailable: tg.BiometricManager.isBiometricAvailable,
+          biometricType: tg.BiometricManager.biometricType,
+          isAccessGranted: tg.BiometricManager.isAccessGranted
         });
+        
+        biometricAvailable = tg.BiometricManager.isBiometricAvailable;
+        updateBiometricButton();
+      });
+    } else {
+      // Fallback to WebAuthn for browsers
+      if (window.PublicKeyCredential && typeof window.PublicKeyCredential === 'function') {
+        PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+          .then(available => {
+            biometricAvailable = available;
+            updateBiometricButton();
+          })
+          .catch(() => {
+            biometricAvailable = false;
+          });
+      }
     }
   }
 
   // Update biometric button visibility
   function updateBiometricButton() {
     const btn = document.getElementById('biometricBtn');
+    const icon = btn?.querySelector('.biometric-icon');
+    
     if (biometricAvailable && !isSetupMode) {
       btn.style.visibility = 'visible';
+      
+      // Update icon based on biometric type
+      const tg = window.Telegram?.WebApp;
+      if (tg?.BiometricManager?.biometricType === 'face') {
+        if (icon) icon.textContent = '😊';
+      } else {
+        if (icon) icon.textContent = '👆';
+      }
     } else {
       btn.style.visibility = 'hidden';
     }
@@ -535,17 +559,35 @@
   async function handleBiometric() {
     if (!biometricAvailable) return;
     
+    const tg = window.Telegram?.WebApp;
+    
+    // Use Telegram BiometricManager
+    if (tg?.BiometricManager?.isBiometricAvailable) {
+      console.log('[Security] Starting Telegram biometric auth');
+      
+      // Request access if not granted
+      if (!tg.BiometricManager.isAccessGranted) {
+        tg.BiometricManager.requestAccess({ reason: 'Для быстрого входа в приложение' }, (granted) => {
+          console.log('[Security] Access granted:', granted);
+          if (granted) {
+            authenticateWithTelegramBiometric();
+          }
+        });
+      } else {
+        authenticateWithTelegramBiometric();
+      }
+      return;
+    }
+    
+    // Fallback to WebAuthn
     try {
-      // Get challenge from server
       const challengeRes = await fetch(`${API_BASE}/biometric/challenge/${currentUserId}`);
       const challengeData = await challengeRes.json();
       
       if (!challengeData.success || !challengeData.data.credentialId) {
-        // Biometric not registered - fallback to PIN
         return;
       }
       
-      // Create credential request
       const credential = await navigator.credentials.get({
         publicKey: {
           challenge: Uint8Array.from(atob(challengeData.data.challenge), c => c.charCodeAt(0)),
@@ -559,35 +601,57 @@
         }
       });
       
-      // Verify with server
       const verifyRes = await fetch(`${API_BASE}/biometric/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: currentUserId,
-          credentialId: challengeData.data.credentialId
-        })
+        body: JSON.stringify({ userId: currentUserId, credentialId: challengeData.data.credentialId })
       });
       
       const verifyData = await verifyRes.json();
-      
       if (verifyData.success) {
         showSuccess();
         saveSession();
         setTimeout(() => hideLockScreen(), 400);
       }
     } catch (e) {
-      console.log('Biometric failed:', e.message);
-      // User cancelled or error - they can use PIN
+      console.log('[Security] WebAuthn failed:', e.message);
     }
+  }
+  
+  // Authenticate using Telegram BiometricManager
+  function authenticateWithTelegramBiometric() {
+    const tg = window.Telegram.WebApp;
+    const biometricType = tg.BiometricManager.biometricType === 'face' ? 'Face ID' : 'отпечаток пальца';
+    
+    tg.BiometricManager.authenticate({ reason: `Подтвердите ${biometricType}` }, (success, token) => {
+      console.log('[Security] Biometric auth result:', success);
+      
+      if (success) {
+        showSuccess();
+        saveSession();
+        
+        // Save biometric token if not saved
+        if (!tg.BiometricManager.isBiometricTokenSaved) {
+          tg.BiometricManager.updateBiometricToken(currentUserId);
+        }
+        
+        setTimeout(() => hideLockScreen(), 400);
+      }
+    });
   }
 
   // Offer biometric setup after PIN creation
   function offerBiometricSetup() {
     if (!biometricAvailable) return;
     
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const methodName = isIOS ? 'Face ID / Touch ID' : 'отпечаток пальца';
+    const tg = window.Telegram?.WebApp;
+    let methodName = 'биометрию';
+    
+    if (tg?.BiometricManager?.biometricType === 'face') {
+      methodName = 'Face ID';
+    } else if (tg?.BiometricManager?.biometricType === 'finger') {
+      methodName = 'Touch ID / отпечаток пальца';
+    }
     
     if (confirm(`Настроить ${methodName} для быстрого входа?`)) {
       setupBiometric();
@@ -596,23 +660,55 @@
 
   // Setup biometric authentication
   async function setupBiometric() {
+    const tg = window.Telegram?.WebApp;
+    
+    // Use Telegram BiometricManager
+    if (tg?.BiometricManager?.isBiometricAvailable) {
+      if (!tg.BiometricManager.isAccessGranted) {
+        tg.BiometricManager.requestAccess({ reason: 'Для быстрого входа в приложение' }, (granted) => {
+          if (granted) {
+            // Save token
+            tg.BiometricManager.updateBiometricToken(currentUserId, (success) => {
+              if (success) {
+                // Update server
+                fetch(`${API_BASE}/biometric/register`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    userId: currentUserId,
+                    credentialId: 'telegram_biometric',
+                    publicKey: 'telegram'
+                  })
+                });
+                
+                if (window.Telegram?.WebApp?.HapticFeedback) {
+                  tg.HapticFeedback.notificationOccurred('success');
+                }
+                alert('Биометрия успешно настроена!');
+              }
+            });
+          }
+        });
+      } else {
+        alert('Биометрия уже настроена!');
+      }
+      return;
+    }
+    
+    // Fallback to WebAuthn
     try {
-      // Create credential
       const credential = await navigator.credentials.create({
         publicKey: {
           challenge: crypto.getRandomValues(new Uint8Array(32)),
-          rp: {
-            name: 'TrustEx',
-            id: window.location.hostname
-          },
+          rp: { name: 'TrustEx', id: window.location.hostname },
           user: {
             id: Uint8Array.from(currentUserId, c => c.charCodeAt(0)),
             name: `user_${currentUserId}`,
             displayName: 'TrustEx User'
           },
           pubKeyCredParams: [
-            { type: 'public-key', alg: -7 },  // ES256
-            { type: 'public-key', alg: -257 } // RS256
+            { type: 'public-key', alg: -7 },
+            { type: 'public-key', alg: -257 }
           ],
           authenticatorSelection: {
             authenticatorAttachment: 'platform',
@@ -623,27 +719,21 @@
         }
       });
       
-      // Save to server
       const credentialId = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
       const publicKey = btoa(String.fromCharCode(...new Uint8Array(credential.response.getPublicKey())));
       
       const res = await fetch(`${API_BASE}/biometric/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: currentUserId,
-          credentialId,
-          publicKey
-        })
+        body: JSON.stringify({ userId: currentUserId, credentialId, publicKey })
       });
       
       const data = await res.json();
-      
       if (data.success) {
         alert('Биометрия успешно настроена!');
       }
     } catch (e) {
-      console.log('Biometric setup failed:', e.message);
+      console.log('[Security] Biometric setup failed:', e.message);
     }
   }
 
