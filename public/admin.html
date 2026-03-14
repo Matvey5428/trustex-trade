@@ -1053,8 +1053,16 @@
           
           // Load user payment history
           loadUserInvoices(telegramId);
+        } else {
+          document.getElementById('userModalLoading').style.display = 'none';
+          document.getElementById('userModal').classList.remove('active');
+          showToast('Пользователь не найден', 'error');
         }
       } catch (e) {
+        // Hide loading, show content on error
+        document.getElementById('userModalBody').style.display = '';
+        document.getElementById('userModalLoading').style.display = 'none';
+        document.getElementById('userModal').classList.remove('active');
         showToast('Ошибка загрузки', 'error');
       }
     }
