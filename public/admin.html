@@ -788,21 +788,25 @@
         history.replaceState(null, '', 'admin.html');
       }
       
-      await loadRole();
+      // Load all data in parallel (don't block on loadRole)
+      loadRole().then(() => {
+        // After role is loaded, load role-specific data
+        if (userRole === 'admin') {
+          loadManagers();
+          loadSubAdmins();
+        } else if (userRole === 'subadmin') {
+          loadManagers();
+        }
+      });
       
-      // If returning from chat — open user card immediately (don't wait for user list)
-      if (urlUser) {
-        openUser(urlUser);
-      }
-      
+      // Load main data immediately without waiting for role
       loadStats();
       loadUsers();
       loadInvoices();
-      if (userRole === 'admin') {
-        loadManagers();
-        loadSubAdmins();
-      } else if (userRole === 'subadmin') {
-        loadManagers();
+      
+      // If returning from chat — open user card
+      if (urlUser) {
+        openUser(urlUser);
       }
       
       document.getElementById('searchInput').addEventListener('input', filterUsers);
@@ -811,7 +815,7 @@
     async function loadRole() {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
         
         const res = await fetch(`${API_BASE}/role?adminId=${adminId}`, {
           signal: controller.signal
@@ -845,6 +849,7 @@
         }
       } catch (e) {
         console.error('Role error:', e);
+        document.getElementById('roleLabel').textContent = '⚠️ Ошибка роли';
       }
     }
     
@@ -879,7 +884,7 @@
     async function loadInvoices() {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
         
         const res = await fetch(`${API_BASE}/invoices?adminId=${adminId}`, {
           signal: controller.signal
@@ -966,7 +971,7 @@
     async function loadStats() {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
         
         const res = await fetch(`${API_BASE}/stats?adminId=${adminId}`, {
           signal: controller.signal
@@ -1001,7 +1006,7 @@
       try {
         console.log('[Admin] Loading users with adminId:', adminId);
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
         
         const res = await fetch(`${API_BASE}/users?adminId=${adminId}`, {
           signal: controller.signal
