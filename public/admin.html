@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>TrustEx Admin</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    // If returning from chat with ?user= param, force modal visible from first paint
+    if (new URLSearchParams(window.location.search).get('user')) {
+      document.write('<style>#userModal{display:flex!important}</style>');
+    }
+  </script>
   <style>
     * {
       margin: 0;
