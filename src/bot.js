@@ -54,7 +54,7 @@ function initBot() {
       bot.setChatMenuButton({
         menu_button: {
           type: 'web_app',
-          text: 'Открыть биржу',
+          text: 'TrustEx',
           web_app: { url: WEB_APP_URL }
         }
       }).then(() => {
