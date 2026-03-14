@@ -696,18 +696,18 @@ router.get('/analytics/:userId', async (req, res) => {
     }
     // 'all' - no date filter
 
-    // Get analytics
+    // Get analytics - using actual profit field from orders
     const analyticsResult = await pool.query(
       `SELECT 
         COUNT(*) FILTER (WHERE status = 'closed') as total_trades,
         COUNT(*) FILTER (WHERE result = 'win') as wins,
         COUNT(*) FILTER (WHERE result = 'loss') as losses,
-        COALESCE(SUM(CASE WHEN result = 'win' THEN amount * 0.015 ELSE 0 END), 0) as total_profit,
-        COALESCE(SUM(CASE WHEN result = 'loss' THEN amount ELSE 0 END), 0) as total_loss,
-        COALESCE(AVG(CASE WHEN result = 'win' THEN amount * 0.015 END), 0) as avg_profit,
-        COALESCE(AVG(CASE WHEN result = 'loss' THEN amount END), 0) as avg_loss,
-        COALESCE(MAX(CASE WHEN result = 'win' THEN amount * 0.015 END), 0) as max_win,
-        COALESCE(MAX(CASE WHEN result = 'loss' THEN amount END), 0) as max_loss
+        COALESCE(SUM(CASE WHEN result = 'win' THEN profit ELSE 0 END), 0) as total_profit,
+        COALESCE(SUM(CASE WHEN result = 'loss' THEN ABS(profit) ELSE 0 END), 0) as total_loss,
+        COALESCE(AVG(CASE WHEN result = 'win' THEN profit END), 0) as avg_profit,
+        COALESCE(AVG(CASE WHEN result = 'loss' THEN ABS(profit) END), 0) as avg_loss,
+        COALESCE(MAX(CASE WHEN result = 'win' THEN profit END), 0) as max_win,
+        COALESCE(MAX(CASE WHEN result = 'loss' THEN ABS(profit) END), 0) as max_loss
        FROM orders 
        WHERE user_id = $1 ${dateFilter}`,
       [internalUserId]
@@ -780,8 +780,8 @@ router.get('/pnl-history/:userId', async (req, res) => {
     const pnlResult = await pool.query(
       `SELECT 
         DATE(created_at) as date,
-        COALESCE(SUM(CASE WHEN result = 'win' THEN amount * 0.015 ELSE 0 END), 0) as profit,
-        COALESCE(SUM(CASE WHEN result = 'loss' THEN amount ELSE 0 END), 0) as loss
+        COALESCE(SUM(CASE WHEN result = 'win' THEN profit ELSE 0 END), 0) as profit,
+        COALESCE(SUM(CASE WHEN result = 'loss' THEN ABS(profit) ELSE 0 END), 0) as loss
        FROM orders 
        WHERE user_id = $1 
          AND status = 'closed'
