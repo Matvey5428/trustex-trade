@@ -136,6 +136,16 @@ function registerAdminHandlers() {
       return bot.sendMessage(chatId, '⛔ Доступ запрещён');
     }
     
+    // Set menu button for this specific chat
+    bot.setChatMenuButton({
+      chat_id: chatId,
+      menu_button: {
+        type: 'web_app',
+        text: 'Админ-панель',
+        web_app: { url: ADMIN_APP_URL }
+      }
+    }).catch(() => {});
+    
     bot.sendMessage(chatId, 
       '👑 *Админ-панель TrustEx*\n\n' +
       'Нажмите кнопку ниже, чтобы открыть панель управления.\n\n' +
