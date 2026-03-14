@@ -902,14 +902,12 @@
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
   }
 
-  // Check if session is valid
-  function isSessionValid(timeoutMinutes) {
+  // Check if session is valid (no timeout - session lasts until app is closed)
+  function isSessionValid() {
     try {
       const session = JSON.parse(sessionStorage.getItem(SESSION_KEY));
-      if (!session || session.userId !== currentUserId) return false;
-      
-      const elapsed = (Date.now() - session.timestamp) / (1000 * 60);
-      return elapsed < timeoutMinutes;
+      // Session valid if exists and matches current user (sessionStorage auto-clears on app close)
+      return session && session.userId === currentUserId;
     } catch (e) {
       return false;
     }
@@ -1044,8 +1042,8 @@
         // User needs security - remember for next page load
         localStorage.setItem('trustex_needs_security', 'true');
         
-        // Check local session first
-        if (isSessionValid(15)) {
+        // Check local session first (session lasts until app is closed)
+        if (isSessionValid()) {
           console.log('[Security] Session valid, skipping');
           hideLoadingOverlay();
           if (onUnlock) onUnlock();
