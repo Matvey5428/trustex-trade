@@ -915,18 +915,19 @@
           return;
         }
         
-        // Check local session first
-        if (isSessionValid(15)) {
-          console.log('[Security] Session valid, skipping');
+        // Security not enabled or no PIN - skip (user disabled it or never set up)
+        if (!status.security_enabled || !status.has_pin) {
+          console.log('[Security] Security disabled or no PIN, skipping');
           hideLoadingOverlay();
           if (onUnlock) onUnlock();
           return;
         }
         
-        // Security not enabled - offer setup
-        if (!status.security_enabled || !status.has_pin) {
-          console.log('[Security] Showing setup screen');
-          showLockScreen(true);
+        // Check local session first
+        if (isSessionValid(15)) {
+          console.log('[Security] Session valid, skipping');
+          hideLoadingOverlay();
+          if (onUnlock) onUnlock();
           return;
         }
         
