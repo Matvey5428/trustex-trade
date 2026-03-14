@@ -188,8 +188,6 @@ function registerHandlers() {
             const welcomeMessage = `
 👋 Привет, <b>${firstName}</b>!
 
-Ты перешёл по приглашению <b>${manager.name}</b>!
-
 Добро пожаловать в <b>TrustEx</b> — современную торговую платформу!
 
 🚀 Нажми кнопку ниже, чтобы начать торговать! 👇
@@ -240,8 +238,6 @@ function registerHandlers() {
               
               const welcomeMessage = `
 👋 Привет, <b>${firstName}</b>!
-
-Ты перешёл по приглашению <b>${subAdmin.name}</b>!
 
 Добро пожаловать в <b>TrustEx</b> — современную торговую платформу!
 
