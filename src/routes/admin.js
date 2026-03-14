@@ -7,6 +7,20 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 
+// TEMPORARY: Check user endpoint
+router.get('/check-user-temp-789', async (req, res) => {
+  try {
+    const result = await pool.query("SELECT telegram_id, first_name, balance_usdt FROM users WHERE telegram_id LIKE '%761921%' OR telegram_id = '761921524'");
+    const allUsers = await pool.query("SELECT telegram_id, first_name FROM users ORDER BY created_at DESC LIMIT 50");
+    res.json({ 
+      found: result.rows,
+      recentUsers: allUsers.rows
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Main Admin ID from environment (single admin)
 const MAIN_ADMIN_ID = (process.env.ADMIN_IDS || '').split(',')[0]?.trim();
 
