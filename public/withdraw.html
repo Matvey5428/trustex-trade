@@ -13,6 +13,7 @@
     <script src="js/balance.js" defer></script>
     <script src="js/prefetch.js" defer></script>
     <script src="js/i18n.js" defer></script>
+    <script src="js/security-lock.js?v=20260314" defer></script>
     <style>body { opacity: 1; }</style>
     <script>(function() { var lang = localStorage.getItem('nexo_lang') || 'ru'; document.documentElement.lang = lang; document.addEventListener('gesturestart', function(e) { e.preventDefault(); }); document.addEventListener('gesturechange', function(e) { e.preventDefault(); }); document.addEventListener('gestureend', function(e) { e.preventDefault(); }, { passive: false }); document.addEventListener('touchstart', function(e) { if(e.touches.length > 1) e.preventDefault(); }, { passive: false }); })();</script>
     <style>
@@ -648,7 +649,18 @@ async function withdraw() {
     }
 }
 
-withdrawBtn.onclick = withdraw;
+withdrawBtn.onclick = function() {
+    // Get telegram ID for PIN check
+    const telegramId = TelegramAuth?.getTelegramId?.() || userId;
+    
+    if (window.SecurityLock && telegramId) {
+        SecurityLock.confirmAction(telegramId, () => {
+            withdraw();
+        });
+    } else {
+        withdraw();
+    }
+};
 document.getElementById('refreshBtn').onclick = loadUserData;
 
 document.addEventListener('DOMContentLoaded', async () => {

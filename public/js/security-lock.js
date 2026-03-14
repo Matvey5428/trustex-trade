@@ -1050,6 +1050,66 @@
     /**
      * Setup biometric manually
      */
-    setupBiometric
+    setupBiometric,
+    
+    /**
+     * Confirm PIN for sensitive actions (withdrawal, etc.)
+     * Shows PIN screen, calls onSuccess after correct PIN.
+     * If security not enabled for user, calls onSuccess immediately.
+     * @param {string} userId - Telegram user ID
+     * @param {function} onSuccess - Called after successful PIN verification
+     * @param {function} [onCancel] - Called if user cancels
+     */
+    async confirmAction(userId, onSuccess, onCancel) {
+      currentUserId = String(userId);
+      
+      if (!document.getElementById('securityLockScreen')) {
+        init();
+      }
+      
+      try {
+        const res = await fetch(`${API_BASE}/status/${userId}`);
+        const data = await res.json();
+        
+        // If security not enabled, proceed immediately
+        if (!data.success || !data.data.security_available || !data.data.security_enabled || !data.data.has_pin) {
+          if (onSuccess) onSuccess();
+          return;
+        }
+        
+        // Show PIN screen for confirmation
+        onUnlockCallback = onSuccess;
+        
+        const title = document.getElementById('securityTitle');
+        const subtitle = document.getElementById('securitySubtitle');
+        const skipBtn = document.getElementById('securitySkipBtn');
+        const error = document.getElementById('securityError');
+        
+        isSetupMode = false;
+        enteredPin = '';
+        confirmPin = '';
+        
+        title.textContent = 'Подтвердите PIN-код';
+        subtitle.textContent = 'Для подтверждения операции';
+        skipBtn.style.display = 'none';
+        error.textContent = '';
+        updatePinDots();
+        checkBiometricAvailability();
+        updateBiometricButton();
+        
+        const lockScreen = document.getElementById('securityLockScreen');
+        lockScreen.style.display = 'flex';
+        lockScreen.classList.remove('hide');
+        lockScreen.classList.add('show');
+        
+        // Auto-try biometric
+        if (biometricAvailable) {
+          setTimeout(() => handleBiometric(), 500);
+        }
+      } catch (e) {
+        console.error('[Security] confirmAction error:', e);
+        if (onSuccess) onSuccess();
+      }
+    }
   };
 })();
