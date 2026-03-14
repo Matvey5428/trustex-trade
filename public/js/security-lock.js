@@ -78,12 +78,12 @@
           <button id="securitySkipBtn" class="security-skip-btn" style="display: none;">
             Пропустить
           </button>
-
-          <!-- Support Button -->
-          <button class="security-support-btn" onclick="window.location.href='support.html'">
-            💬 Поддержка
-          </button>
         </div>
+
+        <!-- Support Button (fixed at bottom) -->
+        <button class="security-support-btn" onclick="window.location.href='support.html'">
+          💬 Поддержка
+        </button>
       </div>
     `;
   }
@@ -282,7 +282,10 @@
       }
       
       .security-support-btn {
-        margin-top: 20px;
+        position: absolute;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
         background: none;
         border: 1px solid rgba(255,255,255,0.15);
         color: rgba(255,255,255,0.5);
@@ -291,6 +294,7 @@
         padding: 8px 20px;
         border-radius: 20px;
         transition: all 0.2s ease;
+        z-index: 1;
       }
       
       .security-support-btn:hover {
