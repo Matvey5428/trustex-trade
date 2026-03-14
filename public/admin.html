@@ -662,7 +662,10 @@
         
         <!-- User Activity History -->
         <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
-          <div style="font-size: 14px; font-weight: 600; color: #ffd700; margin-bottom: 10px;">📊 История активности</div>
+          <div style="font-size: 14px; font-weight: 600; color: #ffd700; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+            <span>📊 История активности</span>
+            <button onclick="refreshUser()" style="background:rgba(252,213,53,0.15);border:1px solid rgba(252,213,53,0.3);color:#fcd535;font-size:13px;cursor:pointer;padding:4px 12px;border-radius:8px;transition:background 0.2s;">🔄 Обновить</button>
+          </div>
           
           <!-- History Tabs -->
           <div style="display: flex; gap: 5px; margin-bottom: 10px;">
