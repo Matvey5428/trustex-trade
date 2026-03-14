@@ -66,7 +66,15 @@
             </div>
             <div class="numpad-row">
               <button class="numpad-btn numpad-biometric" id="biometricBtn" style="visibility: hidden;">
-                <span class="biometric-icon">👆</span>
+                <span class="biometric-icon" id="biometricIcon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 14c1.5 0 3-1 3-3s-1.5-3-3-3-3 1-3 3 1.5 3 3 3z"/>
+                    <path d="M4 8V6a2 2 0 0 1 2-2h2"/>
+                    <path d="M4 16v2a2 2 0 0 0 2 2h2"/>
+                    <path d="M16 4h2a2 2 0 0 1 2 2v2"/>
+                    <path d="M16 20h2a2 2 0 0 0 2-2v-2"/>
+                  </svg>
+                </span>
               </button>
               <button class="numpad-btn" data-num="0">0</button>
               <button class="numpad-btn numpad-delete" id="deleteBtn">
@@ -264,8 +272,19 @@
         color: #4db8ff;
       }
       
-      .delete-icon, .biometric-icon {
+      .delete-icon {
         font-size: 26px;
+      }
+      
+      .biometric-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .biometric-icon svg {
+        width: 28px;
+        height: 28px;
       }
       
       .security-skip-btn {
@@ -598,12 +617,14 @@
     if (biometricAvailable) {
       btn.style.visibility = 'visible';
       
-      // Update icon based on biometric type
+      // Update icon based on biometric type (using SVG icons)
       const tg = window.Telegram?.WebApp;
       if (tg?.BiometricManager?.biometricType === 'face' || /iPad|iPhone|iPod/.test(navigator.userAgent)) {
-        if (icon) icon.textContent = '�';
+        // Face ID icon
+        if (icon) icon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V6a2 2 0 0 1 2-2h2"/><path d="M4 16v2a2 2 0 0 0 2 2h2"/><path d="M16 4h2a2 2 0 0 1 2 2v2"/><path d="M16 20h2a2 2 0 0 0 2-2v-2"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/><path d="M9.5 15a3.5 3.5 0 0 0 5 0"/></svg>';
       } else {
-        if (icon) icon.textContent = '👆';
+        // Fingerprint icon
+        if (icon) icon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11c0 3.517-1.009 6.799-2.753 9.571"/><path d="M3.34 16.5A11.976 11.976 0 0 0 5 21"/><path d="M6.5 10c-1.363 0-2.5.937-2.5 2.5 0 2.455.447 4.803 1.26 6.973"/><path d="M12 4a8 8 0 0 0-8 8c0 .63.073 1.245.21 1.834"/><path d="M12 8a4 4 0 0 0-4 4"/><path d="M16 12a4 4 0 0 0-1.17-2.83"/></svg>';
       }
     } else {
       btn.style.visibility = 'hidden';
@@ -1132,3 +1153,4 @@
     }
   };
 })();
+
