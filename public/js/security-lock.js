@@ -80,9 +80,9 @@
           </button>
         </div>
 
-        <!-- Support Button (fixed at bottom) -->
-        <button class="security-support-btn" onclick="window.location.href='support.html'">
-          💬 Поддержка
+        <!-- Support FAB (same style as main page) -->
+        <button class="security-support-fab" onclick="window.location.href='support.html'">
+          💬
         </button>
       </div>
     `;
@@ -281,25 +281,27 @@
         color: rgba(255,255,255,0.8);
       }
       
-      .security-support-btn {
+      .security-support-fab {
         position: absolute;
         bottom: 30px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: none;
-        border: 1px solid rgba(255,255,255,0.15);
-        color: rgba(255,255,255,0.5);
-        font-size: 13px;
+        right: 20px;
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        background: #00d4aa;
+        border: none;
+        box-shadow: 0 4px 16px rgba(0, 212, 170, 0.3);
         cursor: pointer;
-        padding: 8px 20px;
-        border-radius: 20px;
-        transition: all 0.2s ease;
         z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        transition: all 0.2s;
       }
       
-      .security-support-btn:hover {
-        color: rgba(255,255,255,0.8);
-        border-color: rgba(255,255,255,0.3);
+      .security-support-fab:active {
+        transform: scale(0.95);
       }
       
       /* Animations */
