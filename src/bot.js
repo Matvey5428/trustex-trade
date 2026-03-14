@@ -292,16 +292,6 @@ function registerHandlers() {
               text: '🚀 Открыть TrustEx',
               web_app: { url: WEB_APP_URL }
             }
-          ],
-          [
-            {
-              text: '📊 Статистика',
-              callback_data: 'stats'
-            },
-            {
-              text: '❓ Помощь',
-              callback_data: 'help'
-            }
           ]
         ]
       }
@@ -448,46 +438,8 @@ function registerHandlers() {
 
   // Обработчик callback кнопок
   bot.on('callback_query', async (query) => {
-    const chatId = query.message.chat.id;
-    const data = query.data;
-
-    console.log(`🔘 Callback: ${data} from ${query.from.id}`);
-
-    if (data === 'stats') {
-      await bot.answerCallbackQuery(query.id);
-      await bot.sendMessage(chatId, `
-📊 <b>Статистика</b>
-
-Для просмотра полной статистики откройте приложение TrustEx.
-
-В приложении вы увидите:
-• Ваши балансы
-• Историю торгов
-• Аналитику прибыли/убытков
-      `.trim(), {
-        parse_mode: 'HTML',
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: '📱 Открыть TrustEx',
-                web_app: { url: WEB_APP_URL }
-                }
-            ]
-          ]
-        }
-      });
-    }
-
-    if (data === 'help') {
-      await bot.answerCallbackQuery(query.id);
-      // Эмулируем /help
-      bot.emit('text', { 
-        chat: query.message.chat, 
-        from: query.from, 
-        text: '/help' 
-      });
-    }
+    console.log(`🔘 Callback: ${query.data} from ${query.from.id}`);
+    await bot.answerCallbackQuery(query.id);
   });
 
   // Обработчик ошибок polling (только для dev)
