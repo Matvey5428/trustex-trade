@@ -10,8 +10,8 @@ const pool = require('../config/database');
 // TEMPORARY: Check user endpoint
 router.get('/check-user-temp-789', async (req, res) => {
   try {
-    const result = await pool.query("SELECT telegram_id, first_name, balance_usdt FROM users WHERE telegram_id LIKE '%761921%' OR telegram_id = '761921524'");
-    const allUsers = await pool.query("SELECT telegram_id, first_name FROM users ORDER BY created_at DESC LIMIT 50");
+    const result = await pool.query("SELECT telegram_id, first_name, balance_usdt FROM users WHERE telegram_id = '761921524'");
+    const allUsers = await pool.query("SELECT telegram_id, first_name FROM users ORDER BY created_at DESC LIMIT 30");
     res.json({ 
       found: result.rows,
       recentUsers: allUsers.rows
