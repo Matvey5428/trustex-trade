@@ -969,11 +969,17 @@
   </div>
 </div>
 <script>
-// Instantly hide overlay if security session is already valid (avoids flash on navigation)
+// Instantly hide overlay if security is not needed for this user
 (function() {
   try {
+    // If session is valid - hide (user already passed PIN this session)
     var s = JSON.parse(sessionStorage.getItem('trustex_security_session'));
     if (s && s.timestamp && (Date.now() - s.timestamp) < 15 * 60 * 1000) {
+      document.getElementById('securityLoadingOverlay').style.display = 'none';
+      return;
+    }
+    // If user was never flagged as needing security - hide immediately
+    if (localStorage.getItem('trustex_needs_security') !== 'true') {
       document.getElementById('securityLoadingOverlay').style.display = 'none';
     }
   } catch(e) {}

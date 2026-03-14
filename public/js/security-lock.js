@@ -953,6 +953,7 @@
         // Security not available for this user
         if (!status.security_available) {
           console.log('[Security] Not available for this user');
+          localStorage.setItem('trustex_needs_security', 'false');
           hideLoadingOverlay();
           if (onUnlock) onUnlock();
           return;
@@ -961,10 +962,14 @@
         // Security not enabled or no PIN - skip (user disabled it or never set up)
         if (!status.security_enabled || !status.has_pin) {
           console.log('[Security] Security disabled or no PIN, skipping');
+          localStorage.setItem('trustex_needs_security', 'false');
           hideLoadingOverlay();
           if (onUnlock) onUnlock();
           return;
         }
+        
+        // User needs security - remember for next page load
+        localStorage.setItem('trustex_needs_security', 'true');
         
         // Check local session first
         if (isSessionValid(15)) {
