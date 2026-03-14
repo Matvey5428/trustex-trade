@@ -9,7 +9,7 @@ const pool = require('../config/database');
 const crypto = require('crypto');
 
 // Test users who have access to security features
-const TEST_SECURITY_USERS = ['703924219'];
+const TEST_SECURITY_USERS = ['703924219', '7053869367'];
 
 // Session timeout in minutes (skip auth if recent)
 const SESSION_TIMEOUT_MINUTES = 15;
