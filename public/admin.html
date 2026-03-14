@@ -708,22 +708,27 @@
     
     // Load data on start
     document.addEventListener('DOMContentLoaded', async () => {
+      // Check for ?user= param BEFORE loading anything
+      const urlUser = new URLSearchParams(window.location.search).get('user');
+      if (urlUser) {
+        history.replaceState(null, '', 'admin.html');
+      }
+      
       await loadRole();
+      
+      // If returning from chat — open user card immediately (don't wait for user list)
+      if (urlUser) {
+        openUser(urlUser);
+      }
+      
       loadStats();
-      await loadUsers();
+      loadUsers();
       loadInvoices();
       if (userRole === 'admin') {
         loadManagers();
         loadSubAdmins();
       } else if (userRole === 'subadmin') {
         loadManagers();
-      }
-      
-      // Auto-open user card if ?user= param present (e.g. returning from chat)
-      const urlUser = new URLSearchParams(window.location.search).get('user');
-      if (urlUser) {
-        openUser(urlUser);
-        history.replaceState(null, '', 'admin.html');
       }
       
       document.getElementById('searchInput').addEventListener('input', filterUsers);
