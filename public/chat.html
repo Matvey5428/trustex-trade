@@ -675,7 +675,7 @@
     
     function goBack() {
       if (refreshInterval) clearInterval(refreshInterval);
-      window.location.href = 'admin.html';
+      window.location.href = targetUserId ? `admin.html?user=${targetUserId}` : 'admin.html';
     }
     
     function escapeHtml(text) {

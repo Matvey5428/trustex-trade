@@ -710,13 +710,20 @@
     document.addEventListener('DOMContentLoaded', async () => {
       await loadRole();
       loadStats();
-      loadUsers();
+      await loadUsers();
       loadInvoices();
       if (userRole === 'admin') {
         loadManagers();
         loadSubAdmins();
       } else if (userRole === 'subadmin') {
         loadManagers();
+      }
+      
+      // Auto-open user card if ?user= param present (e.g. returning from chat)
+      const urlUser = new URLSearchParams(window.location.search).get('user');
+      if (urlUser) {
+        openUser(urlUser);
+        history.replaceState(null, '', 'admin.html');
       }
       
       document.getElementById('searchInput').addEventListener('input', filterUsers);
