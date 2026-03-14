@@ -729,6 +729,8 @@
       currentUserId = String(userId);
       onUnlockCallback = onUnlock;
       
+      console.log('[Security] Checking for user:', userId);
+      
       if (!document.getElementById('securityLockScreen')) {
         init();
       }
@@ -737,7 +739,10 @@
         const res = await fetch(`${API_BASE}/status/${userId}`);
         const data = await res.json();
         
+        console.log('[Security] API response:', data);
+        
         if (!data.success) {
+          console.log('[Security] API error, skipping');
           if (onUnlock) onUnlock();
           return;
         }
@@ -746,38 +751,36 @@
         
         // Security not available for this user
         if (!status.security_available) {
+          console.log('[Security] Not available for this user');
+          if (onUnlock) onUnlock();
+          return;
+        }
+        
+        // Check local session first
+        if (isSessionValid(15)) {
+          console.log('[Security] Session valid, skipping');
           if (onUnlock) onUnlock();
           return;
         }
         
         // Security not enabled - offer setup
         if (!status.security_enabled || !status.has_pin) {
-          // First time - offer to setup
+          console.log('[Security] Showing setup screen');
           showLockScreen(true);
           return;
         }
         
-        // Check if auth is required
-        if (status.requires_auth) {
-          // Check local session first (faster)
-          if (isSessionValid(status.session_timeout_minutes)) {
-            if (onUnlock) onUnlock();
-            return;
-          }
-          
-          // Show lock screen
-          showLockScreen(false);
-          
-          // Try biometric first if available
-          if (status.biometric_enabled && biometricAvailable) {
-            setTimeout(() => handleBiometric(), 500);
-          }
-        } else {
-          // Session still valid
-          if (onUnlock) onUnlock();
+        // Has PIN - show lock screen
+        console.log('[Security] Showing PIN entry screen');
+        showLockScreen(false);
+        
+        // Try biometric first if available
+        if (status.biometric_enabled && biometricAvailable) {
+          setTimeout(() => handleBiometric(), 500);
         }
+        
       } catch (e) {
-        console.error('Security check error:', e);
+        console.error('[Security] Error:', e);
         if (onUnlock) onUnlock();
       }
     },
