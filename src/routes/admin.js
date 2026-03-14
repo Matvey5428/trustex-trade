@@ -1997,4 +1997,338 @@ router.get('/subadmin/reflink', adminCheck, async (req, res) => {
   }
 });
 
+// ============================================
+// USER BINDING MANAGEMENT (Main Admin & Sub-Admins)
+// ============================================
+
+/**
+ * GET /api/admin/bindings/options
+ * Get list of all managers and sub-admins for binding selection
+ * Main admin sees all, sub-admin sees only their managers
+ */
+router.get('/bindings/options', adminCheck, async (req, res) => {
+  try {
+    // Only main admin and sub-admins can manage bindings
+    if (req.managerId) {
+      return res.status(403).json({ success: false, error: 'Недостаточно прав' });
+    }
+
+    let managers = [];
+    let subAdmins = [];
+
+    if (req.isMainAdmin) {
+      // Main admin sees all managers and sub-admins
+      const managersResult = await pool.query(`
+        SELECT m.id, m.telegram_id, m.name, m.sub_admin_id,
+               sa.name as sub_admin_name,
+               (SELECT COUNT(*) FROM users WHERE manager_id = m.id) as users_count
+        FROM managers m
+        LEFT JOIN sub_admins sa ON m.sub_admin_id = sa.id
+        ORDER BY m.name
+      `);
+      managers = managersResult.rows;
+
+      const subAdminsResult = await pool.query(`
+        SELECT sa.id, sa.telegram_id, sa.name,
+               (SELECT COUNT(*) FROM users WHERE sub_admin_id = sa.id) as users_count,
+               (SELECT COUNT(*) FROM managers WHERE sub_admin_id = sa.id) as managers_count
+        FROM sub_admins sa
+        ORDER BY sa.name
+      `);
+      subAdmins = subAdminsResult.rows;
+    } else if (req.isSubAdmin) {
+      // Sub-admin sees only their managers
+      const managersResult = await pool.query(`
+        SELECT m.id, m.telegram_id, m.name,
+               (SELECT COUNT(*) FROM users WHERE manager_id = m.id) as users_count
+        FROM managers m
+        WHERE m.sub_admin_id = $1
+        ORDER BY m.name
+      `, [req.subAdminId]);
+      managers = managersResult.rows;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        managers,
+        subAdmins
+      }
+    });
+  } catch (error) {
+    console.error('Get binding options error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * GET /api/admin/bindings/users
+ * Get users with their bindings for management
+ */
+router.get('/bindings/users', adminCheck, async (req, res) => {
+  try {
+    // Only main admin and sub-admins can manage bindings
+    if (req.managerId) {
+      return res.status(403).json({ success: false, error: 'Недостаточно прав' });
+    }
+
+    let query;
+    let params = [];
+
+    if (req.isMainAdmin) {
+      query = `
+        SELECT u.id, u.telegram_id, u.first_name, u.username, u.balance_usdt,
+               u.manager_id, u.sub_admin_id,
+               m.name as manager_name, m.telegram_id as manager_tg_id,
+               sa.name as sub_admin_name, sa.telegram_id as sub_admin_tg_id
+        FROM users u
+        LEFT JOIN managers m ON u.manager_id = m.id
+        LEFT JOIN sub_admins sa ON u.sub_admin_id = sa.id
+        ORDER BY u.created_at DESC
+        LIMIT 200
+      `;
+    } else {
+      // Sub-admin sees users they can manage (their own or their managers')
+      query = `
+        SELECT u.id, u.telegram_id, u.first_name, u.username, u.balance_usdt,
+               u.manager_id, u.sub_admin_id,
+               m.name as manager_name, m.telegram_id as manager_tg_id,
+               sa.name as sub_admin_name, sa.telegram_id as sub_admin_tg_id
+        FROM users u
+        LEFT JOIN managers m ON u.manager_id = m.id
+        LEFT JOIN sub_admins sa ON u.sub_admin_id = sa.id
+        WHERE u.sub_admin_id = $1
+           OR u.manager_id IN (SELECT id FROM managers WHERE sub_admin_id = $1)
+        ORDER BY u.created_at DESC
+        LIMIT 200
+      `;
+      params = [req.subAdminId];
+    }
+
+    const result = await pool.query(query, params);
+
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('Get binding users error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * POST /api/admin/bindings/bind
+ * Bind user to manager or sub-admin
+ */
+router.post('/bindings/bind', adminCheck, async (req, res) => {
+  try {
+    // Only main admin and sub-admins can manage bindings
+    if (req.managerId) {
+      return res.status(403).json({ success: false, error: 'Недостаточно прав' });
+    }
+
+    const { userTelegramId, managerId, subAdminId, notify } = req.body;
+
+    if (!userTelegramId) {
+      return res.status(400).json({ success: false, error: 'Не указан пользователь' });
+    }
+
+    if (!managerId && !subAdminId) {
+      return res.status(400).json({ success: false, error: 'Укажите менеджера или суб-админа' });
+    }
+
+    // Get user
+    const userResult = await pool.query(
+      'SELECT id, first_name, manager_id, sub_admin_id FROM users WHERE telegram_id = $1',
+      [String(userTelegramId)]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+
+    const user = userResult.rows[0];
+    const oldManagerId = user.manager_id;
+    const oldSubAdminId = user.sub_admin_id;
+
+    let targetName = '';
+    let targetTelegramId = null;
+
+    if (managerId) {
+      // Verify manager exists
+      let managerQuery = 'SELECT id, name, telegram_id, sub_admin_id FROM managers WHERE id = $1';
+      let managerParams = [managerId];
+
+      // Sub-admin can only bind to their own managers
+      if (req.isSubAdmin) {
+        managerQuery += ' AND sub_admin_id = $2';
+        managerParams.push(req.subAdminId);
+      }
+
+      const managerResult = await pool.query(managerQuery, managerParams);
+      if (managerResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Менеджер не найден' });
+      }
+
+      const manager = managerResult.rows[0];
+      targetName = manager.name;
+      targetTelegramId = manager.telegram_id;
+
+      // Update user
+      await pool.query(
+        'UPDATE users SET manager_id = $1, sub_admin_id = NULL, sub_admin_telegram_id = NULL WHERE id = $2',
+        [managerId, user.id]
+      );
+
+      console.log(`🔗 User ${userTelegramId} bound to manager ${manager.name} (${managerId})`);
+    } else if (subAdminId) {
+      // Only main admin can bind to sub-admins
+      if (!req.isMainAdmin) {
+        return res.status(403).json({ success: false, error: 'Только главный админ может привязывать к суб-админам' });
+      }
+
+      // Verify sub-admin exists
+      const subAdminResult = await pool.query(
+        'SELECT id, name, telegram_id FROM sub_admins WHERE id = $1',
+        [subAdminId]
+      );
+
+      if (subAdminResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Суб-админ не найден' });
+      }
+
+      const subAdmin = subAdminResult.rows[0];
+      targetName = subAdmin.name;
+      targetTelegramId = subAdmin.telegram_id;
+
+      // Update user
+      await pool.query(
+        'UPDATE users SET sub_admin_id = $1, sub_admin_telegram_id = $2, manager_id = NULL WHERE id = $3',
+        [subAdminId, subAdmin.telegram_id, user.id]
+      );
+
+      console.log(`🔗 User ${userTelegramId} bound to sub-admin ${subAdmin.name} (${subAdminId})`);
+    }
+
+    // Send notification to new manager/sub-admin if requested
+    if (notify && targetTelegramId) {
+      try {
+        const bot = require('../bot').bot;
+        if (bot) {
+          const userName = user.first_name || 'Пользователь';
+          await bot.sendMessage(targetTelegramId,
+            `👤 К вам привязан новый пользователь:\n\n` +
+            `<b>${userName}</b>\n` +
+            `ID: <code>${userTelegramId}</code>`,
+            { parse_mode: 'HTML' }
+          );
+        }
+      } catch (e) {
+        console.log('Failed to send binding notification:', e.message);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Пользователь привязан к ${targetName}`,
+      data: { managerId, subAdminId }
+    });
+  } catch (error) {
+    console.error('Bind user error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * POST /api/admin/bindings/unbind
+ * Unbind user from manager/sub-admin
+ */
+router.post('/bindings/unbind', adminCheck, async (req, res) => {
+  try {
+    // Only main admin and sub-admins can manage bindings
+    if (req.managerId) {
+      return res.status(403).json({ success: false, error: 'Недостаточно прав' });
+    }
+
+    const { userTelegramId, notify } = req.body;
+
+    if (!userTelegramId) {
+      return res.status(400).json({ success: false, error: 'Не указан пользователь' });
+    }
+
+    // Get user with current binding
+    const userResult = await pool.query(`
+      SELECT u.id, u.first_name, u.manager_id, u.sub_admin_id,
+             m.telegram_id as manager_tg_id, m.name as manager_name,
+             sa.telegram_id as sub_admin_tg_id, sa.name as sub_admin_name
+      FROM users u
+      LEFT JOIN managers m ON u.manager_id = m.id
+      LEFT JOIN sub_admins sa ON u.sub_admin_id = sa.id
+      WHERE u.telegram_id = $1
+    `, [String(userTelegramId)]);
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+
+    const user = userResult.rows[0];
+
+    // Sub-admin can only unbind their own users
+    if (req.isSubAdmin) {
+      // Check if user belongs to sub-admin or their managers
+      const checkResult = await pool.query(`
+        SELECT 1 FROM users 
+        WHERE telegram_id = $1 
+          AND (sub_admin_id = $2 OR manager_id IN (SELECT id FROM managers WHERE sub_admin_id = $2))
+      `, [userTelegramId, req.subAdminId]);
+
+      if (checkResult.rows.length === 0) {
+        return res.status(403).json({ success: false, error: 'Нет доступа к этому пользователю' });
+      }
+    }
+
+    // Get notification targets before unbinding
+    const notifyTargets = [];
+    if (user.manager_tg_id) notifyTargets.push({ id: user.manager_tg_id, name: user.manager_name });
+    if (user.sub_admin_tg_id) notifyTargets.push({ id: user.sub_admin_tg_id, name: user.sub_admin_name });
+
+    // Unbind user
+    await pool.query(
+      'UPDATE users SET manager_id = NULL, sub_admin_id = NULL, sub_admin_telegram_id = NULL WHERE id = $1',
+      [user.id]
+    );
+
+    console.log(`🔓 User ${userTelegramId} unbound from manager/sub-admin`);
+
+    // Send notifications if requested
+    if (notify && notifyTargets.length > 0) {
+      try {
+        const bot = require('../bot').bot;
+        if (bot) {
+          const userName = user.first_name || 'Пользователь';
+          for (const target of notifyTargets) {
+            await bot.sendMessage(target.id,
+              `👤 Пользователь отвязан:\n\n` +
+              `<b>${userName}</b>\n` +
+              `ID: <code>${userTelegramId}</code>`,
+              { parse_mode: 'HTML' }
+            );
+          }
+        }
+      } catch (e) {
+        console.log('Failed to send unbind notification:', e.message);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Пользователь отвязан'
+    });
+  } catch (error) {
+    console.error('Unbind user error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
 module.exports = router;

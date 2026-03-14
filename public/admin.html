@@ -521,6 +521,7 @@
     <div class="tabs" id="mainTabs">
       <button class="tab active" id="tabUsers" onclick="switchTab('users')">👥 Пользователи</button>
       <button class="tab" id="tabInvoices" onclick="switchTab('invoices')">💳 Оплаты</button>
+      <button class="tab" id="tabBindings" onclick="switchTab('bindings')" style="display: none;">🔗 Привязки</button>
       <button class="tab" id="tabManagers" onclick="switchTab('managers')" style="display: none;">👤 Менеджеры</button>
       <button class="tab" id="tabSubAdmins" onclick="switchTab('subadmins')" style="display: none;">👑 Суб-админы</button>
     </div>
@@ -565,6 +566,52 @@
       </div>
       <div class="user-list" id="subAdminList">
         <div class="loading">Загрузка...</div>
+      </div>
+    </div>
+
+    <!-- Bindings Section (Main Admin & Sub-Admins) -->
+    <div class="section" id="sectionBindings" style="display: none;">
+      <div class="section-title">🔗 Управление привязками</div>
+      <input type="text" class="search-box" id="bindingSearchInput" placeholder="🔍 Поиск по ID или имени..." oninput="filterBindingUsers()">
+      <div class="user-list" id="bindingUserList">
+        <div class="loading">Загрузка...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Binding Modal -->
+  <div class="modal-overlay" id="bindingModal" style="display: none;">
+    <div class="modal" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3 id="bindingModalTitle">Привязка пользователя</h3>
+        <button class="modal-close" onclick="closeBindingModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="bindingUserInfo" style="margin-bottom: 15px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+          <!-- User info will be here -->
+        </div>
+        
+        <div class="form-group">
+          <label>Текущая привязка</label>
+          <div id="currentBinding" style="color: #8892b0;">—</div>
+        </div>
+        
+        <div class="form-group">
+          <label>Привязать к</label>
+          <select id="bindingTarget" class="search-box" style="width: 100%; padding: 12px; margin-bottom: 10px;">
+            <option value="">— Выберите —</option>
+          </select>
+        </div>
+        
+        <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+          <input type="checkbox" id="bindingNotify" checked style="width: 18px; height: 18px;">
+          <label for="bindingNotify" style="margin: 0; cursor: pointer;">Уведомить менеджера/суб-админа</label>
+        </div>
+        
+        <div style="display: flex; gap: 10px;">
+          <button class="btn-primary" onclick="applyBinding()" style="flex: 1;">✓ Привязать</button>
+          <button class="btn-delete" onclick="unbindUser()" style="flex: 1;" id="unbindBtn">✕ Отвязать</button>
+        </div>
       </div>
     </div>
   </div>
@@ -759,16 +806,19 @@
             document.getElementById('roleLabel').textContent = '👑 Главный админ';
             document.getElementById('tabManagers').style.display = 'block';
             document.getElementById('tabSubAdmins').style.display = 'block';
+            document.getElementById('tabBindings').style.display = 'block';
           } else if (userRole === 'subadmin') {
             document.getElementById('roleLabel').textContent = '⭐ Суб-админ';
             document.getElementById('tabManagers').style.display = 'block';
             document.getElementById('tabSubAdmins').style.display = 'none';
+            document.getElementById('tabBindings').style.display = 'block';
             // Show sub-admin ref link
             showSubAdminRefLink();
           } else {
             document.getElementById('roleLabel').textContent = '👤 Менеджер';
             document.getElementById('tabManagers').style.display = 'none';
             document.getElementById('tabSubAdmins').style.display = 'none';
+            document.getElementById('tabBindings').style.display = 'none';
           }
         }
       } catch (e) {
@@ -780,15 +830,21 @@
       currentTab = tab;
       document.getElementById('tabUsers').classList.toggle('active', tab === 'users');
       document.getElementById('tabInvoices').classList.toggle('active', tab === 'invoices');
+      document.getElementById('tabBindings').classList.toggle('active', tab === 'bindings');
       document.getElementById('tabManagers').classList.toggle('active', tab === 'managers');
       document.getElementById('tabSubAdmins').classList.toggle('active', tab === 'subadmins');
       document.getElementById('sectionUsers').style.display = tab === 'users' ? 'block' : 'none';
       document.getElementById('sectionInvoices').style.display = tab === 'invoices' ? 'block' : 'none';
+      document.getElementById('sectionBindings').style.display = tab === 'bindings' ? 'block' : 'none';
       document.getElementById('sectionManagers').style.display = tab === 'managers' ? 'block' : 'none';
       document.getElementById('sectionSubAdmins').style.display = tab === 'subadmins' ? 'block' : 'none';
       
       if (tab === 'invoices') {
         loadInvoices();
+      }
+      if (tab === 'bindings') {
+        loadBindingUsers();
+        loadBindingOptions();
       }
       if (tab === 'managers') {
         loadManagers();
@@ -1812,6 +1868,223 @@
         </div>
       `).join('');
     }
-  </script>
-</body>
-</html>
+
+    // ============================================
+    // BINDINGS MANAGEMENT
+    // ============================================
+    
+    let allBindingUsers = [];
+    let bindingOptions = { managers: [], subAdmins: [] };
+    let currentBindingUser = null;
+
+    async function loadBindingUsers() {
+      try {
+        document.getElementById('bindingUserList').innerHTML = '<div class="loading">Загрузка...</div>';
+        const res = await fetch(`${API_BASE}/bindings/users?adminId=${adminId}`);
+        const data = await res.json();
+        
+        if (data.success) {
+          allBindingUsers = data.data;
+          renderBindingUsers(allBindingUsers);
+        } else {
+          document.getElementById('bindingUserList').innerHTML = `<div class="error-msg">${data.error}</div>`;
+        }
+      } catch (e) {
+        console.error('Load binding users error:', e);
+        document.getElementById('bindingUserList').innerHTML = '<div class="error-msg">Ошибка загрузки</div>';
+      }
+    }
+
+    async function loadBindingOptions() {
+      try {
+        const res = await fetch(`${API_BASE}/bindings/options?adminId=${adminId}`);
+        const data = await res.json();
+        
+        if (data.success) {
+          bindingOptions = data.data;
+        }
+      } catch (e) {
+        console.error('Load binding options error:', e);
+      }
+    }
+
+    function filterBindingUsers() {
+      const query = document.getElementById('bindingSearchInput').value.toLowerCase();
+      const filtered = allBindingUsers.filter(u => {
+        const name = (u.first_name || '').toLowerCase();
+        const username = (u.username || '').toLowerCase();
+        const tgId = String(u.telegram_id);
+        return name.includes(query) || username.includes(query) || tgId.includes(query);
+      });
+      renderBindingUsers(filtered);
+    }
+
+    function renderBindingUsers(users) {
+      const list = document.getElementById('bindingUserList');
+      
+      if (users.length === 0) {
+        list.innerHTML = '<div class="loading">Нет пользователей</div>';
+        return;
+      }
+      
+      list.innerHTML = users.map(u => {
+        const hasBinding = u.manager_name || u.sub_admin_name;
+        const bindingText = u.manager_name 
+          ? `👤 ${u.manager_name}` 
+          : (u.sub_admin_name ? `👑 ${u.sub_admin_name}` : '—');
+        const bindingColor = hasBinding ? '#4db8ff' : '#8892b0';
+        
+        return `
+          <div class="user-card" onclick="openBindingModal('${u.telegram_id}')" style="cursor: pointer;">
+            <div class="user-info">
+              <div class="user-name">${u.first_name || u.username || 'Пользователь'}</div>
+              <div class="user-id">ID: ${u.telegram_id}</div>
+              <div style="font-size: 11px; color: ${bindingColor}; margin-top: 4px;">
+                ${bindingText}
+              </div>
+            </div>
+            <div class="user-balance">
+              <span>${parseFloat(u.balance_usdt || 0).toFixed(2)} USDT</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openBindingModal(telegramId) {
+      const user = allBindingUsers.find(u => String(u.telegram_id) === String(telegramId));
+      if (!user) return;
+      
+      currentBindingUser = user;
+      
+      // User info
+      document.getElementById('bindingUserInfo').innerHTML = `
+        <div style="font-weight: 600;">${user.first_name || user.username || 'Пользователь'}</div>
+        <div style="font-size: 12px; color: #8892b0;">ID: ${user.telegram_id}</div>
+        <div style="font-size: 12px; color: #4db8ff; margin-top: 4px;">${parseFloat(user.balance_usdt || 0).toFixed(2)} USDT</div>
+      `;
+      
+      // Current binding
+      let currentBindingText = '— Не привязан —';
+      if (user.manager_name) {
+        currentBindingText = `👤 Менеджер: ${user.manager_name}`;
+      } else if (user.sub_admin_name) {
+        currentBindingText = `👑 Суб-админ: ${user.sub_admin_name}`;
+      }
+      document.getElementById('currentBinding').textContent = currentBindingText;
+      
+      // Populate select options
+      const select = document.getElementById('bindingTarget');
+      let options = '<option value="">— Выберите —</option>';
+      
+      // Add managers
+      if (bindingOptions.managers && bindingOptions.managers.length > 0) {
+        options += '<optgroup label="👤 Менеджеры">';
+        bindingOptions.managers.forEach(m => {
+          const subAdminNote = m.sub_admin_name ? ` (${m.sub_admin_name})` : '';
+          options += `<option value="manager_${m.id}">👤 ${m.name}${subAdminNote} (${m.users_count || 0} польз.)</option>`;
+        });
+        options += '</optgroup>';
+      }
+      
+      // Add sub-admins (only for main admin)
+      if (bindingOptions.subAdmins && bindingOptions.subAdmins.length > 0) {
+        options += '<optgroup label="👑 Суб-админы">';
+        bindingOptions.subAdmins.forEach(sa => {
+          options += `<option value="subadmin_${sa.id}">👑 ${sa.name} (${sa.users_count || 0} польз.)</option>`;
+        });
+        options += '</optgroup>';
+      }
+      
+      select.innerHTML = options;
+      
+      // Show/hide unbind button
+      const hasBinding = user.manager_id || user.sub_admin_id;
+      document.getElementById('unbindBtn').style.display = hasBinding ? 'block' : 'none';
+      
+      document.getElementById('bindingModal').style.display = 'flex';
+    }
+
+    function closeBindingModal() {
+      document.getElementById('bindingModal').style.display = 'none';
+      currentBindingUser = null;
+    }
+
+    async function applyBinding() {
+      if (!currentBindingUser) return;
+      
+      const targetValue = document.getElementById('bindingTarget').value;
+      if (!targetValue) {
+        alert('Выберите менеджера или суб-админа');
+        return;
+      }
+      
+      const notify = document.getElementById('bindingNotify').checked;
+      const [type, id] = targetValue.split('_');
+      
+      const payload = {
+        adminId,
+        userTelegramId: currentBindingUser.telegram_id,
+        notify
+      };
+      
+      if (type === 'manager') {
+        payload.managerId = parseInt(id);
+      } else if (type === 'subadmin') {
+        payload.subAdminId = parseInt(id);
+      }
+      
+      try {
+        const res = await fetch(`${API_BASE}/bindings/bind`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          closeBindingModal();
+          loadBindingUsers();
+          alert(data.message || 'Пользователь привязан');
+        } else {
+          alert(data.error || 'Ошибка');
+        }
+      } catch (e) {
+        console.error('Bind error:', e);
+        alert('Ошибка сети');
+      }
+    }
+
+    async function unbindUser() {
+      if (!currentBindingUser) return;
+      
+      if (!confirm('Отвязать пользователя?')) return;
+      
+      const notify = document.getElementById('bindingNotify').checked;
+      
+      try {
+        const res = await fetch(`${API_BASE}/bindings/unbind`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            adminId,
+            userTelegramId: currentBindingUser.telegram_id,
+            notify
+          })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          closeBindingModal();
+          loadBindingUsers();
+          alert('Пользователь отвязан');
+        } else {
+          alert(data.error || 'Ошибка');
+        }
+      } catch (e) {
+        console.error('Unbind error:', e);
+        alert('Ошибка сети');
+      }
+    }
