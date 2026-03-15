@@ -1162,6 +1162,69 @@ router.post('/chat/:telegramId', adminCheck, async (req, res) => {
 });
 
 /**
+ * PUT /api/admin/chat/message/:messageId
+ * Edit admin's own message (admin only)
+ */
+router.put('/chat/message/:messageId', adminCheck, async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { message } = req.body;
+    
+    if (!message || !message.trim()) {
+      return res.status(400).json({ success: false, error: 'Message is required' });
+    }
+    
+    // Only allow editing admin messages
+    const checkResult = await pool.query(
+      `SELECT sm.*, u.telegram_id 
+       FROM support_messages sm 
+       JOIN users u ON sm.user_id = u.id 
+       WHERE sm.id = $1 AND sm.sender = 'admin'`,
+      [messageId]
+    );
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Message not found or not editable' });
+    }
+    
+    const oldMessage = checkResult.rows[0];
+    
+    // Update message
+    const updateResult = await pool.query(
+      `UPDATE support_messages 
+       SET message = $1, edited_at = NOW() 
+       WHERE id = $2 
+       RETURNING *`,
+      [message.trim(), messageId]
+    );
+    
+    // Send notification to user via Telegram about edited message
+    try {
+      const { getBot } = require('../bot');
+      const userBot = getBot();
+      
+      if (userBot) {
+        await userBot.sendMessage(
+          oldMessage.telegram_id, 
+          `✏️ *Сообщение от поддержки изменено:*\n\n${message.trim()}`, 
+          { parse_mode: 'Markdown' }
+        );
+      }
+    } catch (notifyError) {
+      console.error('Failed to notify user about edited message:', notifyError.message);
+    }
+    
+    res.json({
+      success: true,
+      data: updateResult.rows[0]
+    });
+  } catch (error) {
+    console.error('Edit message error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
  * GET /api/admin/chats
  * Get list of all chats with unread count
  */

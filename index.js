@@ -46,6 +46,12 @@ async function initDatabase() {
       CREATE INDEX IF NOT EXISTS idx_support_messages_user_id ON support_messages(user_id)
     `);
     
+    // Add edited_at column to support_messages (for message editing)
+    await pool.query(`
+      ALTER TABLE support_messages 
+      ADD COLUMN IF NOT EXISTS edited_at TIMESTAMP DEFAULT NULL
+    `);
+    
     // Run migration: create crypto_invoices table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS crypto_invoices (

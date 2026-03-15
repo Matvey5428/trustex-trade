@@ -393,6 +393,115 @@
     .date-divider::after {
       right: 0;
     }
+    
+    /* Message edit styles */
+    .message-wrapper {
+      display: flex;
+      flex-direction: column;
+      max-width: 80%;
+      position: relative;
+    }
+    
+    .message-wrapper.admin {
+      align-self: flex-end;
+    }
+    
+    .message-wrapper.user {
+      align-self: flex-start;
+    }
+    
+    .message-actions {
+      display: none;
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      gap: 4px;
+    }
+    
+    .message-wrapper.admin:hover .message-actions {
+      display: flex;
+    }
+    
+    .edit-btn {
+      background: rgba(77, 184, 255, 0.9);
+      border: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    
+    .edit-btn:hover {
+      background: #2ea3e8;
+    }
+    
+    .edited-label {
+      font-size: 10px;
+      color: rgba(255,255,255,0.4);
+      font-style: italic;
+    }
+    
+    /* Edit modal */
+    .edit-modal-content {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .edit-textarea {
+      width: 100%;
+      min-height: 100px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      padding: 12px;
+      color: #fff;
+      font-size: 15px;
+      resize: vertical;
+      outline: none;
+    }
+    
+    .edit-textarea:focus {
+      border-color: #4db8ff;
+    }
+    
+    .edit-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .cancel-edit-btn {
+      flex: 1;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: #fff;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    
+    .save-edit-btn {
+      flex: 1;
+      background: linear-gradient(135deg, #4db8ff 0%, #2ea3e8 100%);
+      border: none;
+      color: #fff;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    .save-edit-btn:disabled {
+      opacity: 0.5;
+    }
   </style>
 </head>
 <body>
@@ -436,6 +545,25 @@
             <textarea class="form-input form-textarea" id="newTemplateMessage" placeholder="Текст шаблона..."></textarea>
           </div>
           <button class="add-template-btn" onclick="addTemplate()">+ Добавить шаблон</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Edit Message Modal -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">✏️ Редактировать сообщение</div>
+        <button class="modal-close" onclick="closeEditModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="edit-modal-content">
+          <textarea class="edit-textarea" id="editMessageText" placeholder="Текст сообщения..."></textarea>
+          <div class="edit-buttons">
+            <button class="cancel-edit-btn" onclick="closeEditModal()">Отмена</button>
+            <button class="save-edit-btn" id="saveEditBtn" onclick="saveEditedMessage()">Сохранить</button>
+          </div>
         </div>
       </div>
     </div>
@@ -568,13 +696,32 @@
         
         const time = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
         const senderClass = msg.sender === 'admin' ? 'admin' : 'user';
+        const editedLabel = msg.edited_at ? '<span class="edited-label">изменено</span>' : '';
         
-        html += `
-          <div class="message ${senderClass}">
-            ${escapeHtml(msg.message)}
-            <div class="message-time">${time}</div>
-          </div>
-        `;
+        if (msg.sender === 'admin') {
+          // Admin messages with edit button
+          html += `
+            <div class="message-wrapper admin">
+              <div class="message-actions">
+                <button class="edit-btn" onclick="openEditModal('${msg.id}', \`${escapeHtml(msg.message).replace(/`/g, '\\`')}\`)" title="Редактировать">✏️</button>
+              </div>
+              <div class="message admin">
+                ${escapeHtml(msg.message)}
+                <div class="message-time">${editedLabel} ${time}</div>
+              </div>
+            </div>
+          `;
+        } else {
+          // User messages (no edit)
+          html += `
+            <div class="message-wrapper user">
+              <div class="message user">
+                ${escapeHtml(msg.message)}
+                <div class="message-time">${time}</div>
+              </div>
+            </div>
+          `;
+        }
       });
       
       const wasScrolledToBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
@@ -807,6 +954,77 @@
     document.getElementById('templatesModal').addEventListener('click', (e) => {
       if (e.target.id === 'templatesModal') {
         closeTemplates();
+      }
+    });
+    
+    // =============================================
+    // MESSAGE EDITING FUNCTIONS
+    // =============================================
+    let editingMessageId = null;
+    
+    function openEditModal(messageId, currentText) {
+      editingMessageId = messageId;
+      document.getElementById('editMessageText').value = currentText;
+      document.getElementById('editModal').classList.add('active');
+      document.getElementById('editMessageText').focus();
+    }
+    
+    function closeEditModal() {
+      editingMessageId = null;
+      document.getElementById('editModal').classList.remove('active');
+      document.getElementById('editMessageText').value = '';
+    }
+    
+    async function saveEditedMessage() {
+      const newText = document.getElementById('editMessageText').value.trim();
+      
+      if (!newText || !editingMessageId) return;
+      
+      const saveBtn = document.getElementById('saveEditBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Сохранение...';
+      
+      try {
+        const res = await fetch(`${API_BASE}/chat/message/${editingMessageId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: newText })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          // Update local message
+          const msgIndex = chatMessages.findIndex(m => m.id === editingMessageId);
+          if (msgIndex !== -1) {
+            chatMessages[msgIndex].message = newText;
+            chatMessages[msgIndex].edited_at = new Date().toISOString();
+          }
+          renderMessages(chatMessages);
+          closeEditModal();
+          showNotification('Сообщение изменено', 'success');
+        } else {
+          showNotification(data.error || 'Ошибка редактирования', 'error');
+        }
+      } catch (e) {
+        showNotification('Ошибка сети', 'error');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Сохранить';
+      }
+    }
+    
+    // Close edit modal on overlay click
+    document.getElementById('editModal').addEventListener('click', (e) => {
+      if (e.target.id === 'editModal') {
+        closeEditModal();
+      }
+    });
+    
+    // Save on Ctrl+Enter in edit modal
+    document.getElementById('editMessageText').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        saveEditedMessage();
       }
     });
     

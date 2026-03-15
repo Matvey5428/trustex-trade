@@ -106,6 +106,13 @@
       text-align: left;
     }
     
+    .edited-label {
+      font-size: 10px;
+      color: rgba(255,255,255,0.4);
+      font-style: italic;
+      margin-right: 4px;
+    }
+    
     .empty-chat {
       flex: 1;
       display: flex;
@@ -315,11 +322,12 @@
         const time = new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
         const isUser = msg.sender === 'user';
         const formattedMessage = msg.message.replace(/\n/g, '<br>');
+        const editedLabel = msg.edited_at ? '<span class="edited-label">изменено</span>' : '';
         
         return `
           <div class="message ${isUser ? 'user' : 'admin'}">
             ${formattedMessage}
-            <div class="message-time">${time}</div>
+            <div class="message-time">${editedLabel}${time}</div>
           </div>
         `;
       }).join('');
