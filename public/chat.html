@@ -696,7 +696,6 @@
         
         const time = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
         const senderClass = msg.sender === 'admin' ? 'admin' : 'user';
-        const editedLabel = msg.edited_at ? '<span class="edited-label">изменено</span>' : '';
         
         if (msg.sender === 'admin') {
           // Admin messages with edit button
@@ -707,7 +706,7 @@
               </div>
               <div class="message admin">
                 ${escapeHtml(msg.message)}
-                <div class="message-time">${editedLabel} ${time}</div>
+                <div class="message-time">${time}</div>
               </div>
             </div>
           `;
