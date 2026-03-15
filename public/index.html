@@ -323,6 +323,9 @@
       font-weight: 500;
       font-size: 15px;
       color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .asset-price {
@@ -336,6 +339,15 @@
       font-weight: 600;
       font-size: 15px;
       color: var(--text-primary);
+      flex-shrink: 0;
+      margin-left: 12px;
+      white-space: nowrap;
+    }
+
+    .asset-left {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
     }
 
     /* Profile Section */
