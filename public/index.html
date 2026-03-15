@@ -320,32 +320,56 @@
     .usdt { background: linear-gradient(135deg, #26a17b 0%, #1a8a68 100%); color: #fff; }
 
     .asset-name {
-      font-weight: 500;
+      font-weight: 600;
       font-size: 15px;
       color: var(--text-primary);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      max-width: 140px;
+      line-height: 1.3;
     }
 
     .asset-price {
       font-size: 12px;
       color: var(--text-muted);
-      margin-top: 2px;
+      margin-top: 3px;
+      line-height: 1.2;
     }
 
     .asset-right {
       text-align: right;
+      flex-shrink: 0;
+      margin-left: 16px;
+      min-width: 100px;
+    }
+
+    .asset-balance {
       font-weight: 600;
       font-size: 15px;
       color: var(--text-primary);
-      flex-shrink: 0;
-      margin-left: 12px;
       white-space: nowrap;
+      line-height: 1.3;
+    }
+
+    .asset-equiv {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 3px;
+      white-space: nowrap;
+      line-height: 1.2;
     }
 
     .asset-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
       flex: 1;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .asset-info {
       min-width: 0;
       overflow: hidden;
     }
@@ -1247,11 +1271,14 @@
     <div class="section-card">
       <h5 class="section-title"><span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg></span> <span data-i18n="fiatAccounts">Валютные счета</span></h5>
       <div class="asset-item">
-        <div class="asset-left d-flex align-items-center gap-3">
+        <div class="asset-left">
           <div class="coin gold">₽</div>
-          <div><div class="asset-name" data-i18n="rub">Российский рубль</div><div class="asset-price" id="rubPrice">... ₽</div></div>
+          <div class="asset-info"><div class="asset-name" data-i18n="rub">Российский рубль</div><div class="asset-price">RUB</div></div>
         </div>
-        <div class="asset-right skeleton" id="rubBalance">0000.00 ₽</div>
+        <div class="asset-right">
+          <div class="asset-balance skeleton" id="rubBalance">0.00</div>
+          <div class="asset-equiv" id="rubEquiv">≈ 0.00 ₽</div>
+        </div>
       </div>
     </div>
 
@@ -1259,20 +1286,32 @@
     <div class="section-card">
       <h5 class="section-title"><span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z"/></svg></span> <span data-i18n="crypto">Криптовалюты</span></h5>
       <div class="asset-item">
-        <div class="asset-left d-flex align-items-center gap-3"><div class="coin btc">₿</div><div><div class="asset-name">Bitcoin</div><div class="asset-price" id="btcPrice">... $</div></div></div>
-        <div class="asset-right skeleton" id="btcBalance">0.0000 $</div>
+        <div class="asset-left"><div class="coin btc">₿</div><div class="asset-info"><div class="asset-name">Bitcoin</div><div class="asset-price" id="btcPrice">... $</div></div></div>
+        <div class="asset-right">
+          <div class="asset-balance skeleton" id="btcBalance">0.0000</div>
+          <div class="asset-equiv" id="btcEquiv">≈ 0.00 $</div>
+        </div>
       </div>
       <div class="asset-item">
-        <div class="asset-left d-flex align-items-center gap-3"><div class="coin ton">T</div><div><div class="asset-name">Toncoin</div><div class="asset-price" id="tonPrice">... $</div></div></div>
-        <div class="asset-right skeleton" id="tonBalance">0.0000 $</div>
+        <div class="asset-left"><div class="coin ton">T</div><div class="asset-info"><div class="asset-name">Toncoin</div><div class="asset-price" id="tonPrice">... $</div></div></div>
+        <div class="asset-right">
+          <div class="asset-balance skeleton" id="tonBalance">0.0000</div>
+          <div class="asset-equiv" id="tonEquiv">≈ 0.00 $</div>
+        </div>
       </div>
       <div class="asset-item">
-        <div class="asset-left d-flex align-items-center gap-3"><div class="coin eth">◆</div><div><div class="asset-name">Ethereum</div><div class="asset-price" id="ethPrice">... $</div></div></div>
-        <div class="asset-right skeleton" id="ethBalance">0.0000 $</div>
+        <div class="asset-left"><div class="coin eth">◆</div><div class="asset-info"><div class="asset-name">Ethereum</div><div class="asset-price" id="ethPrice">... $</div></div></div>
+        <div class="asset-right">
+          <div class="asset-balance skeleton" id="ethBalance">0.0000</div>
+          <div class="asset-equiv" id="ethEquiv">≈ 0.00 $</div>
+        </div>
       </div>
       <div class="asset-item">
-        <div class="asset-left d-flex align-items-center gap-3"><div class="coin usdt">₮</div><div><div class="asset-name">Tether</div><div class="asset-price" id="usdtPrice">1.00 $</div></div></div>
-        <div class="asset-right skeleton" id="usdtBalance">0.00 $</div>
+        <div class="asset-left"><div class="coin usdt">₮</div><div class="asset-info"><div class="asset-name">Tether</div><div class="asset-price" id="usdtPrice">1.00 $</div></div></div>
+        <div class="asset-right">
+          <div class="asset-balance skeleton" id="usdtBalance">0.00</div>
+          <div class="asset-equiv" id="usdtEquiv">≈ 0.00 $</div>
+        </div>
       </div>
     </div>
 
@@ -1770,11 +1809,34 @@
     const ethEl = document.getElementById('ethBalance');
     const usdtEl = document.getElementById('usdtBalance');
     
-    if (rubEl) { rubEl.textContent = `${fmt(parseFloat(user.balance_rub) || 0)} ₽`; rubEl.classList.remove('skeleton'); }
-    if (btcEl) { btcEl.textContent = `${fmt(btcInUsd)} $`; btcEl.classList.remove('skeleton'); }
-    if (tonEl) { tonEl.textContent = `${fmt(tonInUsd)} $`; tonEl.classList.remove('skeleton'); }
-    if (ethEl) { ethEl.textContent = `${fmt(ethInUsd)} $`; ethEl.classList.remove('skeleton'); }
-    if (usdtEl) { usdtEl.textContent = `${fmt(usdtBalance)} $`; usdtEl.classList.remove('skeleton'); }
+    // Эквиваленты
+    const rubEq = document.getElementById('rubEquiv');
+    const btcEq = document.getElementById('btcEquiv');
+    const tonEq = document.getElementById('tonEquiv');
+    const ethEq = document.getElementById('ethEquiv');
+    const usdtEq = document.getElementById('usdtEquiv');
+    
+    // Количество монет
+    const rubAmount = parseFloat(user.balance_rub) || 0;
+    const btcAmount = parseFloat(user.balance_btc) || 0;
+    const tonAmount = parseFloat(user.balance_ton) || 0;
+    const ethAmount = parseFloat(user.balance_eth) || 0;
+    const usdtAmount = parseFloat(user.balance_usdt) || 0;
+    
+    if (rubEl) { rubEl.textContent = `${fmt(rubAmount)} ₽`; rubEl.classList.remove('skeleton'); }
+    if (rubEq) { rubEq.textContent = `≈ $${fmt(rbcInUsd)}`; }
+    
+    if (btcEl) { btcEl.textContent = `${btcAmount.toFixed(6)} BTC`; btcEl.classList.remove('skeleton'); }
+    if (btcEq) { btcEq.textContent = `≈ $${fmt(btcInUsd)}`; }
+    
+    if (tonEl) { tonEl.textContent = `${tonAmount.toFixed(4)} TON`; tonEl.classList.remove('skeleton'); }
+    if (tonEq) { tonEq.textContent = `≈ $${fmt(tonInUsd)}`; }
+    
+    if (ethEl) { ethEl.textContent = `${ethAmount.toFixed(6)} ETH`; ethEl.classList.remove('skeleton'); }
+    if (ethEq) { ethEq.textContent = `≈ $${fmt(ethInUsd)}`; }
+    
+    if (usdtEl) { usdtEl.textContent = `${fmt(usdtAmount)} USDT`; usdtEl.classList.remove('skeleton'); }
+    if (usdtEq) { usdtEq.textContent = `≈ $${fmt(usdtAmount)}`; }
     
     // Мгновенно показать кэшированные данные профиля (статистика, объём, верификация)
     try {
@@ -1948,11 +2010,34 @@
       const ethEl = document.getElementById('ethBalance');
       const usdtEl = document.getElementById('usdtBalance');
       
-      if (rubEl) { rubEl.textContent = `${fmt(parseFloat(user.balance_rub) || 0)} ₽`; rubEl.classList.remove('skeleton'); }
-      if (btcEl) { btcEl.textContent = `${fmt(btcInUsd)} $`; btcEl.classList.remove('skeleton'); }
-      if (tonEl) { tonEl.textContent = `${fmt(tonInUsd)} $`; tonEl.classList.remove('skeleton'); }
-      if (ethEl) { ethEl.textContent = `${fmt(ethInUsd)} $`; ethEl.classList.remove('skeleton'); }
-      if (usdtEl) { usdtEl.textContent = `${fmt(usdtBalance)} $`; usdtEl.classList.remove('skeleton'); }
+      // Эквиваленты
+      const rubEq = document.getElementById('rubEquiv');
+      const btcEq = document.getElementById('btcEquiv');
+      const tonEq = document.getElementById('tonEquiv');
+      const ethEq = document.getElementById('ethEquiv');
+      const usdtEq = document.getElementById('usdtEquiv');
+      
+      // Количество монет
+      const rubAmount = parseFloat(user.balance_rub) || 0;
+      const btcAmount = parseFloat(user.balance_btc) || 0;
+      const tonAmount = parseFloat(user.balance_ton) || 0;
+      const ethAmount = parseFloat(user.balance_eth) || 0;
+      const usdtAmount = parseFloat(user.balance_usdt) || 0;
+      
+      if (rubEl) { rubEl.textContent = `${fmt(rubAmount)} ₽`; rubEl.classList.remove('skeleton'); }
+      if (rubEq) { rubEq.textContent = `≈ $${fmt(rbcInUsd)}`; }
+      
+      if (btcEl) { btcEl.textContent = `${btcAmount.toFixed(6)} BTC`; btcEl.classList.remove('skeleton'); }
+      if (btcEq) { btcEq.textContent = `≈ $${fmt(btcInUsd)}`; }
+      
+      if (tonEl) { tonEl.textContent = `${tonAmount.toFixed(4)} TON`; tonEl.classList.remove('skeleton'); }
+      if (tonEq) { tonEq.textContent = `≈ $${fmt(tonInUsd)}`; }
+      
+      if (ethEl) { ethEl.textContent = `${ethAmount.toFixed(6)} ETH`; ethEl.classList.remove('skeleton'); }
+      if (ethEq) { ethEq.textContent = `≈ $${fmt(ethInUsd)}`; }
+      
+      if (usdtEl) { usdtEl.textContent = `${fmt(usdtAmount)} USDT`; usdtEl.classList.remove('skeleton'); }
+      if (usdtEq) { usdtEq.textContent = `≈ $${fmt(usdtAmount)}`; }
       
       // Загрузить историю в фоне (не блокируя)
       loadTransactionHistory();
