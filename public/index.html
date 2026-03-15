@@ -957,6 +957,53 @@
     .asset-right.loaded {
       animation: balance-appear 0.2s ease-out;
     }
+
+    /* SVG Icons */
+    .icon-svg {
+      width: 18px;
+      height: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+    .icon-svg svg {
+      width: 100%;
+      height: 100%;
+      fill: currentColor;
+    }
+    .icon-svg.icon-lg {
+      width: 22px;
+      height: 22px;
+    }
+    .icon-svg.icon-sm {
+      width: 16px;
+      height: 16px;
+    }
+    .settings-label .icon-svg {
+      width: 20px;
+      height: 20px;
+      color: var(--accent);
+    }
+    .section-title .icon-svg {
+      color: var(--accent);
+    }
+    .balance-label .icon-svg {
+      color: var(--accent);
+    }
+    .header-btn .icon-svg {
+      width: 20px;
+      height: 20px;
+    }
+    .action-box .icon-svg {
+      width: 22px;
+      height: 22px;
+    }
+    .verification-btn .icon-svg {
+      width: 18px;
+      height: 18px;
+    }
   </style>
 </head>
 <body>
@@ -964,7 +1011,7 @@
 <!-- Security Loading Overlay (hides content until security check completes) -->
 <div id="securityLoadingOverlay" style="position:fixed; top:0; left:0; right:0; bottom:0; background:linear-gradient(135deg, #0a0e17 0%, #1a1f35 50%, #0d1117 100%); z-index:99998; display:flex; align-items:center; justify-content:center;">
   <div style="text-align:center;">
-    <div style="font-size:48px; margin-bottom:16px; animation: pulse 1.5s infinite;">🔐</div>
+    <div style="margin-bottom:16px; animation: pulse 1.5s infinite;"><svg width="48" height="48" viewBox="0 0 24 24" fill="#00d4aa"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg></div>
     <div style="color:#fff; font-size:18px; font-weight:600;">TrustEx</div>
   </div>
 </div>
@@ -991,7 +1038,7 @@
 
 <!-- Floating Support Button -->
 <button class="support-fab" onclick="window.location.href='support.html'">
-  💬
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
   <span class="support-badge" id="supportBadge"></span>
 </button>
 
@@ -1021,7 +1068,7 @@
         <div class="logo-text">Trust<span>Ex</span></div>
       </div>
       <div class="header-actions">
-        <button class="header-btn" onclick="window.location.href='trading.html'" title="Торговля">📊</button>
+        <button class="header-btn" onclick="window.location.href='trading.html'" title="Торговля"><span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg></span></button>
       </div>
     </div>
 
@@ -1085,7 +1132,7 @@
     <!-- Balance Card -->
     <div class="balance-card">
       <div class="balance-label">
-        <span>💎</span> <span data-i18n="totalBalance">Общий баланс</span>
+        <span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M19 3H5L2 9l10 12L22 9l-3-6zM9.62 8l1.5-3h1.76l1.5 3H9.62zM11 10v6.68L5.44 10H11zm2 0h5.56L13 16.68V10zm6.26-2h-2.65l-1.5-3h2.65l1.5 3zM6.24 5h2.65l-1.5 3H4.74l1.5-3z"/></svg></span> <span data-i18n="totalBalance">Общий баланс</span>
       </div>
       <div class="balance-row">
         <div class="balance skeleton" id="totalBalance">$0000.00</div>
@@ -1095,15 +1142,15 @@
       </div>
       <div class="action-wrapper">      
         <div class="action-item">
-          <button class="action-box" onclick="window.location.href='deposit.html'">↑</button>
+          <button class="action-box" onclick="window.location.href='deposit.html'"><span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg></span></button>
           <div class="label" data-i18n="deposit">Пополнить</div>
         </div>
         <div class="action-item">
-          <button class="action-box" onclick="window.location.href='withdraw.html'">↓</button>
+          <button class="action-box" onclick="window.location.href='withdraw.html'"><span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/></svg></span></button>
           <div class="label" data-i18n="withdraw">Вывести</div>
         </div>
         <div class="action-item">
-          <button class="action-box" onclick="window.location.href='exchange.html'">⇄</button>
+          <button class="action-box" onclick="window.location.href='exchange.html'"><span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></span></button>
           <div class="label" data-i18n="exchangeAction">Обменять</div>
         </div>
       </div>
@@ -1111,7 +1158,7 @@
 
     <!-- Profile -->
     <div class="section-card">
-      <h5 class="section-title">👤 <span data-i18n="profile">Профиль</span></h5>
+      <h5 class="section-title"><span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></span> <span data-i18n="profile">Профиль</span></h5>
       <div class="profile-stat">
         <span class="profile-stat-label" data-i18n="accountId">ID аккаунта</span>
         <span class="profile-stat-value" id="userIdDisplay">0</span>
@@ -1131,7 +1178,7 @@
         </span>
       </div>
       <button class="verification-btn" id="verificationBtn" style="display: none;" onclick="requestVerification()">
-        <span>📋</span>
+        <span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg></span>
         <span id="verificationBtnText">Подать заявку на верификацию</span>
       </button>
     </div>
@@ -1140,7 +1187,7 @@
     <div class="settings-card">
       <div class="settings-item">
         <div class="settings-label">
-          <span class="icon">🔔</span>
+          <span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg></span>
           <span data-i18n="notifications">Уведомления</span>
         </div>
         <label class="toggle-switch">
@@ -1150,17 +1197,17 @@
       </div>
       <div class="settings-item">
         <div class="settings-label">
-          <span class="icon">🌐</span>
+          <span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2 0-.68.07-1.35.16-2h4.68c.09.65.16 1.32.16 2 0 .68-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg></span>
           <span data-i18n="language">Язык</span>
         </div>
         <select class="lang-select" id="languageSelect">
-          <option value="ru" selected>🇷🇺 Русский</option>
-          <option value="en">🇬🇧 English</option>
+          <option value="ru" selected>RU Русский</option>
+          <option value="en">EN English</option>
         </select>
       </div>
       <div class="settings-item">
         <div class="settings-label">
-          <span class="icon">ℹ️</span>
+          <span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></span>
           <span data-i18n="version">Версия</span>
         </div>
         <span class="version-tag">v1.5.2</span>
@@ -1170,11 +1217,11 @@
     <!-- Security Settings (only for test users) -->
     <div class="settings-card" id="securitySettingsCard" style="display: none;">
       <div style="padding: 12px 16px; border-bottom: 1px solid var(--border);">
-        <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">🔐 Безопасность</span>
+        <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);"><span class="icon-svg" style="color: var(--accent);"><svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg></span> Безопасность</span>
       </div>
       <div class="settings-item">
         <div class="settings-label">
-          <span class="icon">🔢</span>
+          <span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/></svg></span>
           <span>PIN-код</span>
         </div>
         <label class="toggle-switch">
@@ -1186,7 +1233,7 @@
 
     <!-- Fiat -->
     <div class="section-card">
-      <h5 class="section-title">💰 <span data-i18n="fiatAccounts">Валютные счета</span></h5>
+      <h5 class="section-title"><span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg></span> <span data-i18n="fiatAccounts">Валютные счета</span></h5>
       <div class="asset-item">
         <div class="asset-left d-flex align-items-center gap-3">
           <div class="coin gold">₽</div>
@@ -1198,7 +1245,7 @@
 
     <!-- Crypto -->
     <div class="section-card">
-      <h5 class="section-title">🪙 <span data-i18n="crypto">Криптовалюты</span></h5>
+      <h5 class="section-title"><span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-4h2v2h-2v-2zm1-10c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg></span> <span data-i18n="crypto">Криптовалюты</span></h5>
       <div class="asset-item">
         <div class="asset-left d-flex align-items-center gap-3"><div class="coin btc">₿</div><div><div class="asset-name">Bitcoin</div><div class="asset-price" id="btcPrice">... $</div></div></div>
         <div class="asset-right skeleton" id="btcBalance">0.0000 $</div>
@@ -1219,7 +1266,7 @@
 
     <!-- Reviews -->
     <div class="reviews-section">
-      <h5 class="section-title">⭐ <span data-i18n="reviews">Отзывы клиентов</span></h5>
+      <h5 class="section-title"><span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></span> <span data-i18n="reviews">Отзывы клиентов</span></h5>
       <div class="section-subtitle" data-i18n="reviewsSubtitle">Что говорят пользователи о платформе</div>
       <div class="d-flex gap-2 mt-3">
         <button class="nav-btn" id="prevReview">←</button>
@@ -1234,7 +1281,7 @@
 
     <!-- Analytics -->
     <div class="section-card">
-        <h5 class="section-title">📈 <span data-i18n="analytics">Аналитика торговли</span></h5>
+        <h5 class="section-title"><span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg></span> <span data-i18n="analytics">Аналитика торговли</span></h5>
         <div class="analytics-btn-group">
             <button class="btn-period active" onclick="selectPeriod(this, 'all')" data-i18n="allTime">Все</button>
             <button class="btn-period" onclick="selectPeriod(this, 'year')" data-i18n="year">Год</button>
@@ -1252,7 +1299,7 @@
 
     <!-- P&L Chart -->
     <div class="section-card">
-        <h5 class="section-title">📊 <span data-i18n="pnlChart">График доходности (P&L)</span></h5>
+        <h5 class="section-title"><span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg></span> <span data-i18n="pnlChart">График доходности (P&L)</span></h5>
         <div id="pnlChartContainer" style="height: 220px; position: relative;">
             <canvas id="pnlChart"></canvas>
             <div id="pnlChartPlaceholder" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center;">
@@ -1263,7 +1310,7 @@
 
     <!-- Period Stats -->
     <div class="section-card">
-        <h5 class="section-title">📅 <span data-i18n="periodStats">Статистика по периодам</span></h5>
+        <h5 class="section-title"><span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm-8 4H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg></span> <span data-i18n="periodStats">Статистика по периодам</span></h5>
         <div class="stat-period-box">
             <div class="period-name" data-i18n="today">Сегодня</div>
             <div class="period-row"><span class="period-label" data-i18n="profit">Прибыль</span><span class="period-value text-success-custom" id="pProfitToday">+0.00 USDT</span></div>
@@ -1283,7 +1330,7 @@
 
     <!-- Transaction History -->
     <div class="section-card">
-        <h5 class="section-title">🔄 <span data-i18n="transactionHistory">История транзакций</span></h5>
+        <h5 class="section-title"><span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg></span> <span data-i18n="transactionHistory">История транзакций</span></h5>
         <div class="history-btn-group">
             <button class="btn-filter active" onclick="filterHistory('all')" id="filterAll">Все (0)</button>
             <button class="btn-filter" onclick="filterHistory('withdraw')" id="filterWithdraw">Выводы (0)</button>

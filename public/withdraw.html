@@ -389,14 +389,14 @@
         <div class="balance-display">
             <div class="balance-label" data-i18n="availableBalance">Available for withdrawal</div>
             <div class="balance-value" id="balanceText">Loading...</div>
-            <button class="refresh-btn mt-2" id="refreshBtn">🔄 <span data-i18n="refresh">Refresh</span></button>
+            <button class="refresh-btn mt-2" id="refreshBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg> <span data-i18n="refresh">Refresh</span></button>
         </div>
 
         <div class="input-group-modern">
             <label class="input-label" data-i18n="selectWithdrawCurrency">Select currency</label>
             <select id="currencySelect" class="form-select-modern">
-                <option value="RUB">🇷🇺 Russian Ruble (₽)</option>
-                <option value="USDT">💵 Tether (USDT)</option>
+                <option value="RUB">RU Russian Ruble (₽)</option>
+                <option value="USDT">$ Tether (USDT)</option>
             </select>
         </div>
 
@@ -404,7 +404,7 @@
             <label class="input-label" data-i18n="withdrawAmount">Withdrawal Amount</label>
             <input type="number" class="form-input" id="withdrawAmount" placeholder="0.00" step="any">
             <div id="minWithdrawHint" style="display: none; margin-top: 8px; font-size: 12px; color: #ffa500;">
-                ⚠️ Мин. сумма вывода: <span id="minWithdrawValue">0</span> USDT
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Мин. сумма вывода: <span id="minWithdrawValue">0</span> USDT
             </div>
         </div>
 
