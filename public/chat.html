@@ -988,7 +988,7 @@
         const res = await fetch(`${API_BASE}/chat/message/${editingMessageId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: newText })
+          body: JSON.stringify({ message: newText, adminId })
         });
         
         const data = await res.json();
