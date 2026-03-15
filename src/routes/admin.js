@@ -1198,22 +1198,6 @@ router.put('/chat/message/:messageId', adminCheck, async (req, res) => {
       [message.trim(), messageId]
     );
     
-    // Send notification to user via Telegram about edited message
-    try {
-      const { getBot } = require('../bot');
-      const userBot = getBot();
-      
-      if (userBot) {
-        await userBot.sendMessage(
-          oldMessage.telegram_id, 
-          `✏️ *Сообщение от поддержки изменено:*\n\n${message.trim()}`, 
-          { parse_mode: 'Markdown' }
-        );
-      }
-    } catch (notifyError) {
-      console.error('Failed to notify user about edited message:', notifyError.message);
-    }
-    
     res.json({
       success: true,
       data: updateResult.rows[0]
