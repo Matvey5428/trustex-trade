@@ -776,6 +776,14 @@
     let agreementModalMode = 'required';
     let agreementTextContent = '';
 
+    // Ensure agreement modal is hidden by default
+    document.addEventListener('DOMContentLoaded', () => {
+        const agreementModal = document.getElementById('agreementModal');
+        if (agreementModal) {
+            agreementModal.style.display = 'none';
+        }
+    }, { once: true });
+
     async function loadAgreementText() {
         try {
             const res = await fetch('/agreement.txt');
@@ -1060,11 +1068,11 @@
                 const shouldShowAgreement = data.data?.show_agreement_to_user === true;
                 const hasAcceptedAgreement = agreementAcceptedLocal || data.data?.agreement_accepted === true;
                 
-                if (shouldShowAgreement && !agreementPromptOpen) {
-                    // Admin/manager enabled agreement display for this user
+                // Only show agreement if admin explicitly enabled it
+                if (shouldShowAgreement && !agreementPromptOpen && !hasAcceptedAgreement) {
                     openAgreementModal('required');
-                } else if (hasAcceptedAgreement && agreementPromptOpen && agreementModalMode === 'required') {
-                    // User already accepted agreement, close modal if open
+                } else {
+                    // Keep modal hidden in all other cases
                     agreementPromptOpen = false;
                     document.getElementById('agreementModal').style.display = 'none';
                 }
