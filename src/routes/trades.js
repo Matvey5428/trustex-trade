@@ -364,9 +364,20 @@ router.post('/close/:tradeId', async (req, res) => {
     if (tradeMode === 'win') {
       // WIN mode: profit based on user's multiplier + return stake
       profit = amount * profitMultiplier;
-      finalBalance = currentBalance + amount + profit;
       result = 'win';
-      console.log(`✅ WIN: returning ${amount} + profit ${profit.toFixed(2)} = finalBalance ${finalBalance.toFixed(2)}`);
+      const payout = amount + profit;
+
+      // IMPORTANT: atomic increment prevents lost updates from concurrent writes
+      const updateResult = await client.query(
+        'UPDATE users SET balance_usdt = balance_usdt + $1, updated_at = NOW() WHERE id = $2 RETURNING balance_usdt',
+        [payout, trade.user_id]
+      );
+      if (updateResult.rows.length === 0) {
+        console.error(`❌ CRITICAL: Failed to update balance for user ${trade.user_id}!`);
+      } else {
+        finalBalance = parseFloat(updateResult.rows[0].balance_usdt) || currentBalance;
+        console.log(`✅ WIN: returned ${amount} + profit ${profit.toFixed(2)} = balance ${finalBalance.toFixed(2)}`);
+      }
     } else {
       // LOSS mode: already lost (balance was deducted)
       profit = -amount;
@@ -378,20 +389,6 @@ router.post('/close/:tradeId', async (req, res) => {
       'UPDATE orders SET status = $1, result = $2, profit = $3, closed_at = NOW() WHERE id = $4',
       ['closed', result, profit, tradeId]
     );
-
-    // If win - add money back
-    if (result === 'win') {
-      const updateResult = await client.query(
-        'UPDATE users SET balance_usdt = $1, updated_at = NOW() WHERE id = $2 RETURNING balance_usdt',
-        [finalBalance, trade.user_id]
-      );
-      if (updateResult.rows.length === 0) {
-        console.error(`❌ CRITICAL: Failed to update balance for user ${trade.user_id}!`);
-      } else {
-        const confirmedBalance = parseFloat(updateResult.rows[0].balance_usdt);
-        console.log(`💰 Updated user ${trade.user_id} balance to ${confirmedBalance.toFixed(2)} (expected: ${finalBalance.toFixed(2)})`);
-      }
-    }
 
     // Create transaction record
     const txAmount = Math.max(Math.abs(profit), 0.01);
