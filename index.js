@@ -51,6 +51,12 @@ async function initDatabase() {
       ALTER TABLE support_messages 
       ADD COLUMN IF NOT EXISTS edited_at TIMESTAMP DEFAULT NULL
     `);
+
+    // Add agreement_accepted_at column to users (for user agreement on verification)
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS agreement_accepted_at TIMESTAMP DEFAULT NULL
+    `);
     
     // Run migration: create crypto_invoices table
     await pool.query(`

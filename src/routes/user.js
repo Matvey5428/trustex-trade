@@ -112,6 +112,7 @@ router.get('/:userId', async (req, res) => {
         verified: user.verified || false,
         needs_verification: user.needs_verification || false,
         verification_pending: user.verification_pending || false,
+        agreement_accepted: !!user.agreement_accepted_at,
         is_blocked: user.is_blocked || false,
         min_deposit: parseFloat(user.min_deposit) || 0,
         min_withdraw: parseFloat(user.min_withdraw) || 0,
@@ -123,6 +124,27 @@ router.get('/:userId', async (req, res) => {
   } catch (error) {
     console.error('❌ Profile error:', error.message);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+/**
+ * POST /api/user/agreement/accept
+ * Record that user accepted the user agreement
+ */
+router.post('/agreement/accept', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ success: false, error: 'userId required' });
+
+    await pool.query(
+      'UPDATE users SET agreement_accepted_at = NOW() WHERE telegram_id = $1',
+      [userId.toString()]
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('❌ Agreement accept error:', error.message);
+    res.status(500).json({ success: false, error: 'Server error' });
   }
 });
 
