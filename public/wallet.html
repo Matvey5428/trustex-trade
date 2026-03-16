@@ -12,6 +12,7 @@
     <script src="js/auth.js?v=2" defer></script>
     <script src="js/api.js" defer></script>
     <script src="js/prefetch.js" defer></script>
+    <script src="js/security-lock.js?v=20260314" defer></script>
     <style>body { opacity: 1; }</style>
     <script>(function() { var lang = localStorage.getItem('nexo_lang') || 'ru'; document.documentElement.lang = lang; })();</script>
     <style>
@@ -335,6 +336,108 @@
 
         .info-value.green { color: var(--green); }
 
+        /* Wallet Settings */
+        .settings-card {
+            margin: 0 16px 16px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .settings-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+
+        .settings-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .settings-label svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            color: var(--text-secondary);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            display: inline-block;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #3a404a;
+            transition: .2s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            top: 3px;
+            background: white;
+            transition: .2s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: var(--accent);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        .lang-select {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            max-width: 150px;
+        }
+
+        .version-tag {
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 600;
+            background: rgba(139, 148, 158, 0.12);
+            border: 1px solid var(--border);
+            padding: 4px 8px;
+            border-radius: 999px;
+        }
+
         /* Bottom Navigation */
         .bottom-nav {
             position: fixed;
@@ -560,6 +663,57 @@
             </div>
         </div>
     </div>
+
+    <!-- Wallet Settings -->
+    <div class="settings-card" id="walletSettingsCard">
+        <div class="settings-item" id="pinSettingsItem" style="display:none;">
+            <div class="settings-label">
+                <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
+                <span>PIN-код</span>
+            </div>
+            <label class="toggle-switch">
+                <input type="checkbox" id="pinToggle">
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+        <div class="settings-item">
+            <div class="settings-label">
+                <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg>
+                <span data-i18n="notifications">Уведомления</span>
+            </div>
+            <label class="toggle-switch">
+                <input type="checkbox" id="notificationsToggle" checked>
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+        <div class="settings-item">
+            <div class="settings-label">
+                <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2 0-.68.07-1.35.16-2h4.68c.09.65.16 1.32.16 2 0 .68-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>
+                <span data-i18n="language">Язык</span>
+            </div>
+            <select class="lang-select" id="languageSelect">
+                <option value="ru" selected>RU Русский</option>
+                <option value="en">EN English</option>
+            </select>
+        </div>
+        <div class="settings-item">
+            <div class="settings-label">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                <span data-i18n="version">Версия</span>
+            </div>
+            <span class="version-tag">v1.5.2</span>
+        </div>
+        <div class="settings-item">
+            <div class="settings-label">
+                <svg viewBox="0 0 24 24"><path d="M21 8V7l-3 2-2-2-5 5-2-2-6 6v1h18v-1H6.41L9 13.41l2 2 5-5 2 2 3-2zM5 3h14a2 2 0 0 1 2 2v1h-2V5H5v14h6v2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/></svg>
+                <span>Пользовательское соглашение</span>
+            </div>
+            <button class="lang-select" style="max-width: 170px;" onclick="openAgreementModal()">Открыть</button>
+        </div>
+        <div class="settings-item" style="justify-content:flex-end;">
+            <span class="version-tag" id="agreementStatusTag">Не принято</span>
+        </div>
+    </div>
 </div>
 
 <!-- Bottom Navigation -->
@@ -582,6 +736,24 @@
     </a>
 </nav>
 
+<!-- Agreement Modal (mandatory) -->
+<div id="agreementModal" style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.78); align-items:center; justify-content:center;">
+    <div style="background:#1a1f2e; border:1px solid #2a3050; border-radius:16px; width:92%; max-width:520px; max-height:88vh; display:flex; flex-direction:column; overflow:hidden;">
+        <div style="padding:18px 20px 12px; border-bottom:1px solid #2a3050; flex-shrink:0;">
+            <div style="font-size:17px; font-weight:700; color:#fff;">Пользовательское соглашение</div>
+            <div style="font-size:12px; color:#8892b0; margin-top:4px;">Для продолжения требуется обязательное согласие</div>
+        </div>
+        <div id="agreementText" style="flex:1; overflow-y:auto; padding:16px 20px; font-size:12.5px; line-height:1.65; color:#c0c8e0; white-space:pre-wrap;"></div>
+        <div style="padding:14px 20px; border-top:1px solid #2a3050; flex-shrink:0;">
+            <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; margin-bottom:14px;">
+                <input type="checkbox" id="agreementCheckbox" style="margin-top:3px; accent-color:#4f8ef7; width:16px; height:16px; flex-shrink:0;" onchange="updateAgreementBtn()">
+                <span style="font-size:13px; color:#c0c8e0;">Я ознакомился(-ась) с условиями пользовательского соглашения и принимаю их</span>
+            </label>
+            <button id="agreementAcceptBtn" onclick="acceptAgreementAndContinue()" disabled style="width:100%; padding:11px; background:#4f8ef7; border:none; border-radius:10px; color:#fff; font-size:14px; font-weight:600; cursor:pointer; opacity:0.4; transition:opacity 0.2s;">Принять</button>
+        </div>
+    </div>
+</div>
+
 <script>
     const tg = window.Telegram?.WebApp;
     if (tg) {
@@ -598,6 +770,141 @@
     let balanceHidden = false;
     let userData = null;
     let prices = { btc: 0, eth: 0, ton: 0 };
+    let agreementAcceptedLocal = false;
+    let agreementPromptOpen = false;
+
+    const AGREEMENT_TEXT = `Пользовательское соглашение TrustEx
+
+Используя платформу TrustEx, вы подтверждаете, что:
+1. Вам исполнилось 18 лет и вы обладаете полной дееспособностью.
+2. Вы принимаете условия обслуживания платформы и правила обработки данных.
+3. Вы осознаете риски операций с цифровыми активами.
+4. Платформа может обновлять условия, а продолжение использования означает согласие с обновлениями.
+5. Вы обязуетесь соблюдать действующее законодательство вашей юрисдикции.
+
+Для продолжения использования кошелька необходимо принять соглашение.`;
+
+    function updateAgreementStatusUI(accepted) {
+        const tag = document.getElementById('agreementStatusTag');
+        if (!tag) return;
+        tag.textContent = accepted ? 'Принято' : 'Не принято';
+        tag.style.color = accepted ? '#00d4aa' : '#ffb020';
+    }
+
+    function openAgreementModal() {
+        agreementPromptOpen = true;
+        document.getElementById('agreementText').textContent = AGREEMENT_TEXT;
+        document.getElementById('agreementCheckbox').checked = false;
+        const btn = document.getElementById('agreementAcceptBtn');
+        btn.disabled = true;
+        btn.style.opacity = '0.4';
+        document.getElementById('agreementModal').style.display = 'flex';
+    }
+
+    function closeAgreementModal() {
+        agreementPromptOpen = false;
+        document.getElementById('agreementModal').style.display = 'none';
+    }
+
+    function updateAgreementBtn() {
+        const checked = document.getElementById('agreementCheckbox').checked;
+        const btn = document.getElementById('agreementAcceptBtn');
+        btn.disabled = !checked;
+        btn.style.opacity = checked ? '1' : '0.4';
+    }
+
+    async function acceptAgreementAndContinue() {
+        const telegramId = tg?.initDataUnsafe?.user?.id || localStorage.getItem('nexo_guest_telegram_id');
+        if (!telegramId) return;
+        try {
+            const res = await fetch('/api/user/agreement/accept', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: telegramId })
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) throw new Error(data.error || 'agreement failed');
+
+            agreementAcceptedLocal = true;
+            updateAgreementStatusUI(true);
+            closeAgreementModal();
+        } catch (e) {
+            alert('Ошибка принятия соглашения');
+        }
+    }
+
+    async function initSecuritySettings() {
+        const telegramId = tg?.initDataUnsafe?.user?.id || localStorage.getItem('nexo_guest_telegram_id');
+        if (!telegramId) return;
+
+        try {
+            const res = await fetch(`/api/security/status/${telegramId}`);
+            const data = await res.json();
+            if (!data.success || !data.data.security_available) return;
+
+            const pinItem = document.getElementById('pinSettingsItem');
+            const pinToggle = document.getElementById('pinToggle');
+            if (!pinItem || !pinToggle) return;
+
+            pinItem.style.display = 'flex';
+            pinToggle.checked = data.data.security_enabled && data.data.has_pin;
+
+            if (!pinToggle._listenerAttached) {
+                pinToggle._listenerAttached = true;
+                pinToggle.addEventListener('change', async (e) => {
+                    if (e.target.checked) {
+                        if (window.SecurityLock) {
+                            SecurityLock.showSetup(telegramId, () => {
+                                pinToggle.checked = true;
+                            });
+                        }
+                    } else {
+                        if (confirm('Отключить защиту PIN-кодом?')) {
+                            try {
+                                const r = await fetch('/api/security/disable', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ userId: telegramId })
+                                });
+                                const p = await r.json();
+                                if (!p.success) {
+                                    e.target.checked = true;
+                                    alert('Ошибка отключения PIN');
+                                }
+                            } catch (err) {
+                                e.target.checked = true;
+                                alert('Ошибка отключения PIN');
+                            }
+                        } else {
+                            e.target.checked = true;
+                        }
+                    }
+                });
+            }
+        } catch (e) {
+            /* silent */
+        }
+    }
+
+    function initWalletSettings() {
+        const langSelect = document.getElementById('languageSelect');
+        const notifToggle = document.getElementById('notificationsToggle');
+
+        if (langSelect) {
+            langSelect.value = localStorage.getItem('nexo_lang') || 'ru';
+            langSelect.addEventListener('change', () => {
+                localStorage.setItem('nexo_lang', langSelect.value);
+                window.location.reload();
+            });
+        }
+
+        if (notifToggle) {
+            notifToggle.checked = localStorage.getItem('nexo_notifications_enabled') !== '0';
+            notifToggle.addEventListener('change', () => {
+                localStorage.setItem('nexo_notifications_enabled', notifToggle.checked ? '1' : '0');
+            });
+        }
+    }
 
     // Toggle balance visibility
     document.getElementById('toggleBalance').addEventListener('click', () => {
@@ -719,6 +1026,15 @@
                 const data = await userRes.json();
                 userData = data.data;
                 updateBalanceDisplay();
+
+                const hasAcceptedAgreement = agreementAcceptedLocal || data.data?.agreement_accepted === true;
+                updateAgreementStatusUI(hasAcceptedAgreement);
+                if (hasAcceptedAgreement) {
+                    agreementAcceptedLocal = true;
+                    if (agreementPromptOpen) closeAgreementModal();
+                } else if (!agreementPromptOpen) {
+                    openAgreementModal();
+                }
             }
 
             // Process active trades count
@@ -733,6 +1049,8 @@
         }
     }
 
+    initWalletSettings();
+    initSecuritySettings();
     loadData();
     // Refresh every 30 seconds
     setInterval(loadData, 30000);
