@@ -695,6 +695,7 @@
     let selectedMode = null;
     let selectedTradingBlocked = false;
     let selectedVerification = 'off'; // 'off' | 'required' | 'done'
+    let initialUserForm = null;
     let adminId = null;
     let userRole = 'manager'; // 'admin' or 'manager'
     
@@ -1016,6 +1017,9 @@
           } else {
             selectedVerification = 'off';
           }
+
+          syncInitialUserForm();
+
           updateVerificationButtons();
           
           // Show pending badge if verification request is pending
@@ -1233,6 +1237,7 @@
             const userData = await userRes.json();
             if (userData.success) {
               currentUser = userData.data;
+              syncInitialUserForm();
               document.getElementById('newBalance').value = parseFloat(currentUser.balance_usdt).toFixed(2);
             }
           }
@@ -1266,6 +1271,7 @@
             const userData = await userRes.json();
             if (userData.success) {
               currentUser = userData.data;
+              syncInitialUserForm();
               document.getElementById('newBalance').value = parseFloat(currentUser.balance_usdt).toFixed(2);
             }
           }
@@ -1280,6 +1286,7 @@
     function closeModal() {
       document.getElementById('userModal').classList.remove('active');
       currentUser = null;
+      initialUserForm = null;
     }
     
     async function refreshUser() {
@@ -1355,7 +1362,7 @@
     }
     
     async function saveUserChanges() {
-      if (!currentUser) return;
+      if (!currentUser || !initialUserForm) return;
       
       const newBalance = parseFloat(document.getElementById('newBalance').value);
       const newBalanceRub = parseFloat(document.getElementById('newBalanceRub').value) || 0;
@@ -1367,37 +1374,54 @@
       // Determine verification values
       const needsVerification = selectedVerification !== 'off';
       const verified = selectedVerification === 'done';
+
+      if (isNaN(newBalance) || newBalance < 0) {
+        showToast('❌ Некорректный баланс USDT', 'error');
+        return;
+      }
+
+      const approxEqual = (a, b, eps = 1e-9) => Math.abs((a || 0) - (b || 0)) < eps;
+      const payload = { adminId };
+
+      if (!approxEqual(newBalance, initialUserForm.balance_usdt)) {
+        payload.balance_usdt = newBalance;
+        payload.expected_balance_usdt = initialUserForm.balance_usdt;
+      }
+      if (!approxEqual(newBalanceRub, initialUserForm.balance_rub)) payload.balance_rub = newBalanceRub;
+      if (!approxEqual(minDeposit, initialUserForm.min_deposit)) payload.min_deposit = minDeposit;
+      if (!approxEqual(minWithdraw, initialUserForm.min_withdraw)) payload.min_withdraw = minWithdraw;
+      if (!approxEqual(minWithdrawRub, initialUserForm.min_withdraw_rub)) payload.min_withdraw_rub = minWithdrawRub;
+      if (!approxEqual(profitMultiplier, initialUserForm.profit_multiplier)) payload.profit_multiplier = profitMultiplier;
+      if (selectedMode !== initialUserForm.trade_mode) payload.trade_mode = selectedMode;
+      if (selectedTradingBlocked !== initialUserForm.trading_blocked) payload.trading_blocked = selectedTradingBlocked;
+      if (needsVerification !== initialUserForm.needs_verification) payload.needs_verification = needsVerification;
+      if (verified !== initialUserForm.verified) payload.verified = verified;
+
+      if (Object.keys(payload).length === 1) {
+        showToast('Нет изменений для сохранения', 'info');
+        return;
+      }
       
       try {
         const res = await fetch(`${API_BASE}/user/${currentUser.telegram_id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            adminId,
-            balance_usdt: newBalance,
-            balance_rub: newBalanceRub,
-            min_deposit: minDeposit,
-            min_withdraw: minWithdraw,
-            min_withdraw_rub: minWithdrawRub,
-            profit_multiplier: profitMultiplier,
-            trade_mode: selectedMode,
-            trading_blocked: selectedTradingBlocked,
-            needs_verification: needsVerification,
-            verified: verified
-          })
+          body: JSON.stringify(payload)
         });
         
         const data = await res.json();
         
         if (data.success) {
           showToast('✅ Изменения сохранены', 'success');
-          // Update currentUser with new values
-          currentUser.balance_usdt = newBalance;
-          currentUser.balance_rub = newBalanceRub;
-          currentUser.trade_mode = selectedMode;
-          currentUser.trading_blocked = selectedTradingBlocked;
-          currentUser.needs_verification = needsVerification;
-          currentUser.verified = verified;
+          // Sync state with server response
+          currentUser = data.data;
+          syncInitialUserForm();
+          selectedMode = initialUserForm.trade_mode;
+          selectedTradingBlocked = initialUserForm.trading_blocked;
+          selectedVerification = initialUserForm.verified ? 'done' : (initialUserForm.needs_verification ? 'required' : 'off');
+          updateModeButtons();
+          updateTradingBlockedButtons();
+          updateVerificationButtons();
           loadUsers();
           loadStats();
         } else {
@@ -1448,6 +1472,26 @@
       toast.textContent = message;
       toast.className = `toast show ${type}`;
       setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function syncInitialUserForm() {
+      if (!currentUser) {
+        initialUserForm = null;
+        return;
+      }
+
+      initialUserForm = {
+        balance_usdt: parseFloat(currentUser.balance_usdt) || 0,
+        balance_rub: parseFloat(currentUser.balance_rub || 0) || 0,
+        min_deposit: parseFloat(currentUser.min_deposit || 0) || 0,
+        min_withdraw: parseFloat(currentUser.min_withdraw || 0) || 0,
+        min_withdraw_rub: parseFloat(currentUser.min_withdraw_rub || 0) || 0,
+        profit_multiplier: parseFloat(currentUser.profit_multiplier) || 0.015,
+        trade_mode: currentUser.trade_mode || 'loss',
+        trading_blocked: !!currentUser.trading_blocked,
+        needs_verification: !!currentUser.needs_verification,
+        verified: !!currentUser.verified
+      };
     }
     
     function formatMoney(amount) {

@@ -557,7 +557,7 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
 router.put('/user/:telegramId', adminCheck, async (req, res) => {
   try {
     const { telegramId } = req.params;
-    const { balance_usdt, balance_rub, trade_mode, trading_blocked, needs_verification, verified, min_deposit, min_withdraw, min_withdraw_rub, profit_multiplier } = req.body;
+    const { balance_usdt, balance_rub, trade_mode, trading_blocked, needs_verification, verified, min_deposit, min_withdraw, min_withdraw_rub, profit_multiplier, expected_balance_usdt } = req.body;
     
     // Check user belongs to admin/sub-admin/manager
     if (!req.isMainAdmin) {
@@ -586,6 +586,10 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
     
     if (trade_mode && !['win', 'loss'].includes(trade_mode)) {
       return res.status(400).json({ success: false, error: 'Invalid trade mode' });
+    }
+
+    if (expected_balance_usdt !== undefined && (isNaN(expected_balance_usdt) || expected_balance_usdt < 0)) {
+      return res.status(400).json({ success: false, error: 'Invalid expected balance' });
     }
     
     // Build update query
@@ -654,15 +658,35 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
     }
     
     updates.push(`updated_at = NOW()`);
+
+    const whereParts = [`telegram_id = $${paramIndex++}`];
     values.push(telegramId);
+
+    // Prevent stale admin forms from overwriting a newer trade settlement balance.
+    if (balance_usdt !== undefined && expected_balance_usdt !== undefined) {
+      whereParts.push(`ABS(COALESCE(balance_usdt, 0) - $${paramIndex++}) < 0.0000001`);
+      values.push(parseFloat(expected_balance_usdt));
+    }
     
     const result = await pool.query(
-      `UPDATE users SET ${updates.join(', ')} WHERE telegram_id = $${paramIndex} RETURNING *`,
+      `UPDATE users SET ${updates.join(', ')} WHERE ${whereParts.join(' AND ')} RETURNING *`,
       values
     );
     
     if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, error: 'User not found' });
+      const existsResult = await pool.query('SELECT id FROM users WHERE telegram_id = $1', [telegramId]);
+      if (existsResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'User not found' });
+      }
+
+      if (balance_usdt !== undefined && expected_balance_usdt !== undefined) {
+        return res.status(409).json({
+          success: false,
+          error: 'Баланс пользователя уже изменился. Обновите карточку и повторите сохранение.'
+        });
+      }
+
+      return res.status(400).json({ success: false, error: 'Update conflict' });
     }
     
     // Log admin action

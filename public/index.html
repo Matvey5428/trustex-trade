@@ -1270,57 +1270,6 @@
       </div>
     </div>
 
-    <!-- Wallet Settings -->
-    <div class="settings-card" id="walletSettingsCard">
-      <div class="settings-item" id="pinSettingsItem" style="display:none;">
-        <div class="settings-label">
-          <span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg></span>
-          <span>PIN-код</span>
-        </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="pinToggle">
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-      <div class="settings-item">
-        <div class="settings-label">
-          <span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg></span>
-          <span data-i18n="notifications">Уведомления</span>
-        </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="notificationsToggle" checked>
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-      <div class="settings-item">
-        <div class="settings-label">
-          <span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2 0-.68.07-1.35.16-2h4.68c.09.65.16 1.32.16 2 0 .68-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg></span>
-          <span data-i18n="language">Язык</span>
-        </div>
-        <select class="lang-select" id="languageSelect">
-          <option value="ru" selected>RU Русский</option>
-          <option value="en">EN English</option>
-        </select>
-      </div>
-      <div class="settings-item">
-        <div class="settings-label">
-          <span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></span>
-          <span data-i18n="version">Версия</span>
-        </div>
-        <span class="version-tag">v1.5.2</span>
-      </div>
-      <div class="settings-item">
-        <div class="settings-label">
-          <span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M21 8V7l-3 2-2-2-5 5-2-2-6 6v1h18v-1H6.41L9 13.41l2 2 5-5 2 2 3-2zM5 3h14a2 2 0 0 1 2 2v1h-2V5H5v14h6v2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/></svg></span>
-          <span>Пользовательское соглашение</span>
-        </div>
-        <button class="lang-select" style="max-width: 170px;" onclick="openAgreementModal()">Открыть</button>
-      </div>
-      <div class="settings-item" style="justify-content:flex-end;">
-        <span class="version-tag" id="agreementStatusTag">Не принято</span>
-      </div>
-    </div>
-
     <!-- Reviews -->
     <div class="reviews-section">
       <h5 class="section-title"><span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></span> <span data-i18n="reviews">Отзывы клиентов</span></h5>
@@ -1484,8 +1433,6 @@
   let allTransactions = [];
   let currentHistoryFilter = 'all';
   let currentLang = localStorage.getItem('nexo_lang') || 'ru';
-  let agreementAcceptedLocal = false;
-  let agreementPromptOpen = false;
 
   // Translations
   const i18n = {
@@ -1739,34 +1686,6 @@
     }
   }
 
-  // Settings handlers
-  function initSettings() {
-    // Load notifications setting
-    const notifToggle = document.getElementById('notificationsToggle');
-    const savedNotif = localStorage.getItem('notifications');
-    if (savedNotif !== null) {
-      notifToggle.checked = savedNotif === 'true';
-    }
-    notifToggle.addEventListener('change', (e) => {
-      localStorage.setItem('notifications', e.target.checked);
-    });
-
-    // Load language setting
-    const langSelect = document.getElementById('languageSelect');
-    const savedLang = localStorage.getItem('nexo_lang') || 'ru';
-    langSelect.value = savedLang;
-    currentLang = savedLang;
-    applyLanguage(savedLang);
-    
-    langSelect.addEventListener('change', (e) => {
-      localStorage.setItem('nexo_lang', e.target.value);
-      applyLanguage(e.target.value);
-      // Перегенерировать отзывы на новом языке
-      currentIdx = 0;
-      initReviews();
-    });
-  }
-
   async function updateMarketPrices() {
     try {
         const symbols = ["BTCUSDT", "ETHUSDT", "TONUSDT"];
@@ -1945,15 +1864,6 @@
           const tradingVol = parseFloat(profileData.data?.total_volume) || 0;
           updateEl('tradingVolume', `${tradingVol.toFixed(2)} USDT`);
 
-          const hasAcceptedAgreement = agreementAcceptedLocal || profileData.data?.agreement_accepted === true;
-          updateAgreementStatusUI(hasAcceptedAgreement);
-          if (hasAcceptedAgreement) {
-            agreementAcceptedLocal = true;
-            if (agreementPromptOpen) closeAgreementModal();
-          } else if (!agreementPromptOpen) {
-            openAgreementModal();
-          }
-          
           const needsVerif = profileData.data?.needs_verification === true;
           const verificationRow = document.getElementById('verificationRow');
           const verifStatusEl = document.getElementById('verificationStatus');
@@ -2425,7 +2335,6 @@
     
     // Start loading non-blocking data immediately (these don't need auth)
     updatePriceTicker();
-    initSettings();
     initReviews();
     
     // Hide security loading overlay
@@ -2497,238 +2406,6 @@
       checkUnreadSupport();
     }
   }, 5000);
-
-  // ============ Security Settings ============
-  async function initSecuritySettings() {
-    const telegramId = TelegramAuth.getTelegramId();
-    if (!telegramId) return;
-    
-    try {
-      const res = await fetch(`/api/security/status/${telegramId}`);
-      const data = await res.json();
-      
-      if (!data.success || !data.data.security_available) {
-        return;
-      }
-      
-      // Show only PIN settings item in wallet settings
-      const pinItem = document.getElementById('pinSettingsItem');
-      if (pinItem) pinItem.style.display = 'flex';
-      
-      const status = data.data;
-      const pinToggle = document.getElementById('pinToggle');
-      if (!pinToggle) return;
-      
-      // Set initial state
-      pinToggle.checked = status.security_enabled && status.has_pin;
-      
-      // Only attach listener once
-      if (!pinToggle._listenerAttached) {
-        pinToggle._listenerAttached = true;
-        // PIN toggle handler
-        pinToggle.addEventListener('change', async (e) => {
-          if (e.target.checked) {
-            // Enable PIN - show setup (biometric will be auto-enabled)
-            if (window.SecurityLock) {
-              SecurityLock.showSetup(telegramId, () => {
-                // Called after PIN successfully saved
-                pinToggle.checked = true;
-              });
-            }
-          } else {
-          // Disable PIN - confirm
-          if (confirm('Отключить защиту PIN-кодом?')) {
-            try {
-              const res = await fetch('/api/security/disable', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: telegramId })
-              });
-              const data = await res.json();
-              if (data.success) {
-                // Clear security session
-                sessionStorage.removeItem('trustex_security_session');
-                showNotification('Защита отключена', 'success');
-              } else {
-                e.target.checked = true;
-                showNotification('Ошибка: ' + (data.error || 'Не удалось'), 'error');
-              }
-            } catch (err) {
-              e.target.checked = true;
-              showNotification('Ошибка', 'error');
-            }
-          } else {
-            e.target.checked = true;
-          }
-        }
-      });
-      } // end if !_listenerAttached
-      
-    } catch (e) {
-      console.log('Security settings error:', e);
-    }
-  }
-  
-  // Initialize security settings after load
-  setTimeout(initSecuritySettings, 1500);
-</script>
-
-<!-- ===== AGREEMENT MODAL ===== -->
-<div id="agreementModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.75); align-items:center; justify-content:center;">
-  <div style="background:#1a1f2e; border:1px solid #2a3050; border-radius:16px; width:92%; max-width:520px; max-height:88vh; display:flex; flex-direction:column; overflow:hidden;">
-    <div style="padding:18px 20px 12px; border-bottom:1px solid #2a3050; flex-shrink:0;">
-      <div style="font-size:17px; font-weight:700; color:#fff;">Пользовательское соглашение</div>
-      <div style="font-size:12px; color:#8892b0; margin-top:4px;">Ознакомьтесь и примите условия для продолжения</div>
-    </div>
-    <div id="agreementText" style="flex:1; overflow-y:auto; padding:16px 20px; font-size:12.5px; line-height:1.65; color:#c0c8e0; white-space:pre-wrap;"></div>
-    <div style="padding:14px 20px; border-top:1px solid #2a3050; flex-shrink:0;">
-      <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; margin-bottom:14px;">
-        <input type="checkbox" id="agreementCheckbox" style="margin-top:3px; accent-color:#4f8ef7; width:16px; height:16px; flex-shrink:0;" onchange="updateAgreementBtn()">
-        <span style="font-size:13px; color:#c0c8e0;">Я ознакомился(-ась) с условиями пользовательского соглашения и принимаю их</span>
-      </label>
-      <button id="agreementAcceptBtn" onclick="acceptAgreementAndContinue()" disabled style="width:100%; padding:11px; background:#4f8ef7; border:none; border-radius:10px; color:#fff; font-size:14px; font-weight:600; cursor:pointer; opacity:0.4; transition:opacity 0.2s;">Принять</button>
-    </div>
-  </div>
-</div>
-
-<script>
-  const AGREEMENT_TEXT = `Пользовательское соглашение TrustEx
-
-1. Определения
-1.1 Под TrustEx понимается экосистема, состоящая из веб-сайтов TrustEx , мобильных приложений, клиентов, апплетов и других приложений, разработанных для предоставления Услуг NEXO, и включающая независимо работающие платформы, веб-сайты и клиенты в рамках экосистемы. В случае каких-либо несоответствий между соответствующими условиями использования вышеуказанных платформ и содержанием настоящих Условий, преимущественную силу имеют соответствующие применимые условия таких платформ.
-
-1.2 Под Операторами TrustEx понимаются все стороны, управляющие TrustEx, включая, но не ограничиваясь, юридические лица, неорганизованные организации и команды, которые предоставляют Услуги TrustEx и несут ответственность за такие услуги. Для удобства, если не указано иное, ссылки на "TrustEx" и "мы" в настоящих Условиях подразумевают именно Операторов TrustEx. СОГЛАСНО НАСТОЯЩИМ УСЛОВИЯМ, ОПЕРАТОРЫ NEXO МОГУТ МЕНЯТЬСЯ ПО МЕРЕ КАДРОВЫХ ИЗМЕНЕНИЙ TrustEx, В ЭТОМ СЛУЧАЕ СМЕНИВШИЕСЯ ОПЕРАТОРЫ БУДУТ ВЫПОЛНЯТЬ СВОИ ОБЯЗАТЕЛЬСТВА ПО НАСТОЯЩИМ УСЛОВИЯМ С ВАМИ И ПРЕДОСТАВЛЯТЬ ВАМ УСЛУГИ, И ТАКОЕ ИЗМЕНЕНИЕ НЕ ВЛИЯЕТ НА ВАШИ ПРАВА И ИНТЕРЕСЫ ПО НАСТОЯЩИМ УСЛОВИЯМ. КРОМЕ ТОГО, КРУГ ОПЕРАТОРОВ NEXO МОЖЕТ БЫТЬ РАСШИРЕН В СВЯЗИ С ПРЕДОСТАВЛЕНИЕМ НОВЫХ УСЛУГ TrustEx, И В ЭТОМ СЛУЧАЕ, ЕСЛИ ВЫ ПРОДОЛЖАЕТЕ ПОЛЬЗОВАТЬСЯ УСЛУГАМИ TrustEx, СЧИТАЕТСЯ, ЧТО ВЫ СОГЛАСИЛИСЬ СОВМЕСТНО ИСПОЛНЯТЬ НАСТОЯЩИЕ УСЛОВИЯ С ВНОВЬ ДОБАВЛЕННЫМИ ОПЕРАТОРАМИ TrustEx. В СЛУЧАЕ ВОЗНИКНОВЕНИЯ СПОРА ВЫ САМИ ОПРЕДЕЛЯЕТЕ СУБЪЕКТОВ, КОТОРЫЕ ВЫПОЛНЯЮТ ДАННЫЕ УСЛОВИЯ С ВАМИ И КОНТРАГЕНТАМИ СПОРА, В ЗАВИСИМОСТИ ОТ КОНКРЕТНЫХ УСЛУГ, КОТОРЫМИ ВЫ ПОЛЬЗУЕТЕСЬ, И КОНКРЕТНЫХ ДЕЙСТВИЙ, КОТОРЫЕ ЗАТРАГИВАЮТ ВАШИ ПРАВА ИЛИ ИНТЕРЕСЫ.
-
-1.3 Сервисы TrustEx - это различные услуги, предоставляемые вам TrustEx, основанные на технологиях Интернета и/или блокчейна и предлагаемые через веб-сайты TrustEx, мобильные приложения и другие формы (включая новые, которые появятся в результате будущего развития технологий).
-
-2. Принятие условий
-2.1 Вам не менее 18 лет, и вы обладаете полной дееспособностью для принятия настоящих Условий и заключения сделки с цифровыми активами. Вы не лишены права пользоваться нашим сервисом и обладаете полной дееспособностью. Если вы не соответствуете вышеуказанным условиям, пожалуйста, не регистрируйтесь на наших Платформах, в противном случае Компания может приостановить или прекратить действие вашей учетной записи в любое время.
-
-2.2 Заключение и выполнение вами настоящих Условий не запрещено законами и правилами страны или региона, в котором вы принадлежите, проживаете, платите налоги или осуществляете предпринимательскую деятельность или другой бизнес. Если вы не соответствуете вышеуказанным условиям, вы должны немедленно прекратить регистрацию или перестать пользоваться услугами нашей Платформы.
-
-2.3 Завершая полный процесс регистрации или продолжая время от времени пользоваться соответствующими услугами наших Платформ, вы полностью понимаете и принимаете все положения настоящих Условий с изменениями и дополнениями, периодически публикуемыми на Платформах. Содержание настоящих Условий включает в себя все положения настоящих Условий и различные правила, которые были опубликованы нашими Платформами или могут быть опубликованы в будущем. Все правила, периодически публикуемые на Платформах, настоящим прямо включаются в настоящие Условия, являются их неотъемлемой частью и имеют такую же юридическую силу, как и основная часть настоящих Условий.
-
-2.4 Принятие настоящих Условий и/или доступ к услугам наших Платформ с вашей учетной записи (лично или через другое лицо) в соответствии с настоящими Условиями и соответствующими правилами и инструкциями наших Платформ влечет за собой юридическую силу настоящих Условий между вами и NEXO. Настоящие Условия не распространяются на правоотношения или правовые споры между вами и другими пользователями наших Платформ в результате сетевых услуг или транзакций, если таковые имеются.
-
-2.5 Вы также соглашаетесь с тем, что TrustEx может, направив уведомление, по своему собственному усмотрению немедленно прекратить ваш доступ к нашим Платформам и вашей учетной записи. Вы соглашаетесь и признаете наше право ограничить, приостановить или прекратить предоставление услуги и вашей учетной записи пользователя, запретить ваш доступ к нашим Платформам и их содержимому, услугам и инструментам, задержать или удалить размещенный контент, а также принять технические и юридические меры, чтобы не допустить вас к нашим Платформам, или любые другие меры для возмещения любых убытков или ущерба, если мы по своему усмотрению определим, что вы нарушаете или можете нарушить какие-либо законы, нормативные акты, права третьих лиц, любые из настоящих Условий или политики Платформы, вы не соответствуете условиям или способности принять эти условия, и/или по любым другим причинам мы прекращаем предоставлять вам Услугу TrustEx. TrustEx не несет ответственности за любые убытки или ущерб, причиненные вам или любой третьей стороне в результате осуществления наших прав в соответствии с настоящим пунктом.
-
-3. Объем услуг, ваши права и обязанности
-3.1 TrustEx предоставляет вам Услугу TrustEx, включая услугу обмена одного вида цифровых активов на другой вид цифровых активов. Мы не покупаем и не продаем цифровые активы непосредственно у пользователей или пользователям в качестве принципала. Наши услуги не предоставляют пользователям возможность обменивать одну форму фиатной валюты на другую форму фиатной валюты.
-
-3.1.1 Пользователи имеют право просматривать информацию о рынке цифровой валюты в режиме реального времени и информацию о сделках на наших Платформах, а также имеют право подавать инструкции по торговле цифровой валютой и завершать торговлю цифровой валютой через наши Платформы.
-
-3.1.2 Пользователи имеют право просматривать информацию о своих счетах на наших Платформах, а также имеют право использовать функции, предоставляемые нашими Платформами.
-
-3.1.3 Пользователи имеют право участвовать в мероприятиях сайта, организуемых нашими Платформами, в соответствии с правилами проведения мероприятий, опубликованными нашими Платформами, и другими услугами, предоставляемыми нашими Платформами.
-
-3.2 Пользователь понимает и соглашается с тем, что наши Платформы могут корректировать содержание услуг, тип услуг и форму предоставления услуг на Платформах в любое время в соответствии с фактической ситуацией по нашему собственному усмотрению. Наши Платформы не несут ответственности за любые негативные последствия или убытки, причиненные вам или любой третьей стороне в результате корректировок Платформ.
-
-3.3 В зависимости от страны вашего проживания вы можете не иметь возможности использовать все функции наших Платформ. Без ущерба для нашего права приостанавливать предоставление определенных услуг пользователям из конкретной страны, вы несете ответственность за соблюдение при доступе к нашим Платформам и услугам законов и правил страны вашего проживания и/или страны, из которой вы получаете доступ к нашим Платформам и услугам.
-
-3.4 Чтобы получить доступ к нашим услугам и пользоваться ими, вы должны создать учетную запись в TrustEx. Вы обязуетесь:
-（1） предоставлять точную, актуальную и полную информацию при создании учетной записи;
-（2） поддерживать и своевременно обновлять информацию о своем аккаунте, чтобы она оставалась точной, полной и актуальной;
-（3） обеспечивать безопасность и конфиденциальность ваших учетных данных и ограничивать доступ к вашей учетной записи и вашему компьютеру;
-（4） незамедлительно уведомлять TrustEx, если вы обнаружите или иным образом заподозрите какие-либо нарушения безопасности, связанные с нашими Платформами;
-（5） нести ответственность за все действия, совершаемые под вашей учетной записью, и принимать на себя все риски несанкционированного доступа.
-
-4. Раскрытие информации о рисках
-4.1 TrustEx запускает услугу займа, чтобы предоставить пользователям услуги по долгосрочной/короткой маржинальной торговле.
-4.1.2 Максимальное количество монет, одалживаемых пользователем, определяется наивысшим коэффициентом займа, и в настоящее время TrustEx поддерживает услуги маржинальной торговли до 5 раз.
-4.1.3 При использовании маржинальной торговли вы должны полностью осознавать риски инвестиций в цифровые активы и риски маржинальной торговли, проявлять осторожность и делать все возможное.
-4.1.4 Вы соглашаетесь с тем, что все инвестиционные операции, проводимые в TrustEx, отражают вашу истинную готовность инвестировать и безоговорочно принимаете потенциальные риски и выгоды от инвестиционных решений.
-
-5. Транзакции и сборы
-5.1 Наши Платформы будут оказывать услуги по проведению ваших транзакций и взимать необходимые комиссии за услуги или управление в соответствии с настоящими Условиями. Пожалуйста, ознакомьтесь с соответствующими документами, правилами и описаниями на соответствующих страницах наших Платформ.
-5.2 Вы соглашаетесь с тем, что наши Платформы оставляют за собой право время от времени корректировать конкретные виды и размеры вышеупомянутых услуг или платы за управление.
-
-6. Изменение/приостановление/прекращение услуг
-6.1 Настоящие Условия остаются в силе, если они не будут расторгнуты в одностороннем порядке нашей Платформой или по вашему заявлению. В случае нарушения вами настоящих Условий наши Платформы оставляют за собой право расторгнуть настоящие Условия, закрыть вашу учетную запись или ограничить ваше пользование нашими Платформами.
-6.2 Наши платформы имеют право прекратить, приостановить или прекратить все или часть услуг в соответствии с настоящими Условиями без уведомления.
-
-7. Правила использования
-7.1 При подаче заявки на получение услуг Платформы вы должны предоставить точную личную информацию в соответствии с правилами Платформы.
-7.2 Вы не должны передавать или одалживать свой номер счета или пароль другим лицам.
-7.2.1 Вы не можете совершать следующие действия во время использования наших Платформ:
-（1） Использовать услуги Платформы для осуществления любых действий, которые могут негативно повлиять на нормальную работу Интернета;
-（2） Загружать, показывать или распространять любую ложную, преследующую, клеветническую или оскорбительную информацию;
-（3） Ущемлять законные права третьих лиц.
-
-8. Политика конфиденциальности
-После регистрации, входа в систему и использования услуг нашей Платформы считается, что пользователь полностью понимает, соглашается и принимает соглашение о конфиденциальности нашей Платформы.
-
-9. Отказ от ответственности
-Наши платформы не предоставляют инвестиционных, налоговых, юридических или иных профессиональных консультаций. Услуги предоставляются строго по принципу "как есть". Компания не несет ответственности перед вами за любые убытки или ущерб, связанные с использованием TrustEx.
-
-10. Риски
-10.1 Операции с цифровыми активами могут быть сопряжены с высокими рисками. Риск потерь при торговле цифровыми активами может быть значительным.
-10.2 Вы признаете, что несете полную ответственность за определение характера, потенциальной ценности, пригодности и уместности этих рисков для вас.
-10.3 Законодательные и нормативные изменения на государственном, федеральном или международном уровне могут негативно повлиять на использование, передачу, обмен и стоимость цифровых активов.
-
-11. Возмещение ущерба
-Вы соглашаетесь защищать, возмещать и ограждать TrustEx от любых претензий, требований, действий, ущерба, потерь, затрат или расходов, возникающих или связанных с нарушением вами настоящих Условий.
-
-12. Уведомления
-Уведомления, предусмотренные настоящими Условиями, направляются путем публичного уведомления на наших Платформах или путем отправки сообщений на ваш адрес электронной почты или в личный кабинет.
-
-13. Раскрытие информации юридическим органам
-Мы можем передавать ваши персональные данные представителям правоохранительных органов по требованию закона, судебного приказа или другой юридической процедуры.
-
-14. Юрисдикция
-Настоящие Условия регулируются и толкуются в соответствии с законодательством Республики Самоа. Суды Самоа обладают исключительной юрисдикцией для разрешения любых споров.
-
-15. Разное
-Наши платформы оставляют за собой право окончательного толкования настоящих Условий в рамках, разрешенных законом. Настоящие Условия и соответствующие страницы наших Платформ могут ссылаться друг на друга.`;
-
-  function openAgreementModal() {
-    agreementPromptOpen = true;
-    document.getElementById('agreementText').textContent = AGREEMENT_TEXT;
-    document.getElementById('agreementCheckbox').checked = false;
-    document.getElementById('agreementAcceptBtn').disabled = true;
-    document.getElementById('agreementAcceptBtn').style.opacity = '0.4';
-    const modal = document.getElementById('agreementModal');
-    modal.style.display = 'flex';
-  }
-
-  function closeAgreementModal() {
-    agreementPromptOpen = false;
-    document.getElementById('agreementModal').style.display = 'none';
-  }
-
-  function updateAgreementStatusUI(accepted) {
-    const tag = document.getElementById('agreementStatusTag');
-    if (!tag) return;
-    tag.textContent = accepted ? 'Принято' : 'Не принято';
-    tag.style.color = accepted ? '#00d4aa' : '#ffb020';
-  }
-
-  function updateAgreementBtn() {
-    const checked = document.getElementById('agreementCheckbox').checked;
-    const btn = document.getElementById('agreementAcceptBtn');
-    btn.disabled = !checked;
-    btn.style.opacity = checked ? '1' : '0.4';
-  }
-
-  async function acceptAgreementAndContinue() {
-    if (!userId) return;
-    try {
-      const res = await fetch('/api/user/agreement/accept', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'agreement failed');
-      }
-
-      agreementAcceptedLocal = true;
-      updateAgreementStatusUI(true);
-      closeAgreementModal();
-    } catch (e) {
-      showNotification('Ошибка принятия соглашения', 'error');
-    }
-  }
 
   async function doVerificationRequest() {
     try {
