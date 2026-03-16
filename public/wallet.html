@@ -708,7 +708,7 @@
                 <svg viewBox="0 0 24 24"><path d="M21 8V7l-3 2-2-2-5 5-2-2-6 6v1h18v-1H6.41L9 13.41l2 2 5-5 2 2 3-2zM5 3h14a2 2 0 0 1 2 2v1h-2V5H5v14h6v2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/></svg>
                 <span>Пользовательское соглашение</span>
             </div>
-            <button class="lang-select" style="max-width: 170px;" onclick="openAgreementModal()">Открыть</button>
+            <button class="lang-select" style="max-width: 170px;" onclick="openAgreementModal('read', 'admin')">Открыть</button>
         </div>
     </div>
 </div>
@@ -774,7 +774,8 @@
     let agreementAcceptedLocal = false;
     let agreementPromptOpen = false;
     let agreementModalMode = 'required';
-    let agreementTextContent = '';
+    let agreementTextPrimary = '';
+    let agreementTextAdmin = '';
 
     // Ensure agreement modal is hidden by default
     document.addEventListener('DOMContentLoaded', () => {
@@ -784,13 +785,21 @@
         }
     }, { once: true });
 
-    async function loadAgreementText() {
+    async function loadAgreementTexts() {
         try {
             const res = await fetch('/agreement.txt');
             if (!res.ok) throw new Error('Agreement file not found');
-            agreementTextContent = await res.text();
+            agreementTextPrimary = await res.text();
         } catch (e) {
-            agreementTextContent = 'Пользовательское соглашение временно недоступно. Попробуйте позже.';
+            agreementTextPrimary = 'Пользовательское соглашение временно недоступно. Попробуйте позже.';
+        }
+
+        try {
+            const resAdmin = await fetch('/agreement%202.txt');
+            if (!resAdmin.ok) throw new Error('Agreement 2 file not found');
+            agreementTextAdmin = await resAdmin.text();
+        } catch (e) {
+            agreementTextAdmin = agreementTextPrimary || 'Пользовательское соглашение временно недоступно. Попробуйте позже.';
         }
     }
 
@@ -802,10 +811,15 @@
         tag.style.color = accepted ? '#00d4aa' : '#ffb020';
     }
 
-    function openAgreementModal(mode = 'read') {
+    function openAgreementModal(mode = 'read', source = 'user') {
         agreementPromptOpen = true;
         agreementModalMode = mode;
-        document.getElementById('agreementText').textContent = agreementTextContent || 'Загрузка соглашения...';
+
+        // Signature flow always uses primary agreement text.
+        const textForModal = mode === 'required'
+            ? agreementTextPrimary
+            : (source === 'admin' ? agreementTextAdmin : agreementTextPrimary);
+        document.getElementById('agreementText').textContent = textForModal || 'Загрузка соглашения...';
 
         const subtitle = document.getElementById('agreementModalSubtitle');
         const mandatoryControls = document.getElementById('agreementMandatoryControls');
@@ -1095,7 +1109,7 @@
 
     initWalletSettings();
     initSecuritySettings();
-    loadAgreementText();
+    loadAgreementTexts();
     loadData();
     // Refresh every 30 seconds
     setInterval(loadData, 30000);
