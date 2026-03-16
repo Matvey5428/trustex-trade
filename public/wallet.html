@@ -891,6 +891,10 @@
                                 if (!p.success) {
                                     e.target.checked = true;
                                     alert('Ошибка отключения PIN');
+                                } else {
+                                    localStorage.setItem('trustex_needs_security', 'false');
+                                    localStorage.setItem(`trustex_setup_skipped_${telegramId}`, 'true');
+                                    sessionStorage.removeItem('trustex_security_session');
                                 }
                             } catch (err) {
                                 e.target.checked = true;

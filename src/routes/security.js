@@ -364,11 +364,11 @@ router.post('/disable', async (req, res) => {
       return res.status(400).json({ success: false, error: 'userId required' });
     }
     
-    // Disable security completely
+    // Disable active protection but keep PIN hash.
+    // This lets us distinguish "user disabled PIN" from "first-time user".
     await pool.query(
       `UPDATE users 
        SET security_enabled = FALSE,
-           security_pin = NULL,
            biometric_enabled = FALSE,
            biometric_credential_id = NULL,
            biometric_public_key = NULL,
