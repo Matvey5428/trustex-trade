@@ -1056,17 +1056,20 @@
                 userData = data.data;
                 updateBalanceDisplay();
 
+                // Check if agreement should be shown to user by admin command
+                const shouldShowAgreement = data.data?.show_agreement_to_user === true;
                 const hasAcceptedAgreement = agreementAcceptedLocal || data.data?.agreement_accepted === true;
-                updateAgreementStatusUI(hasAcceptedAgreement);
-                if (hasAcceptedAgreement) {
-                    agreementAcceptedLocal = true;
-                    if (agreementPromptOpen && agreementModalMode === 'required') {
-                        agreementPromptOpen = false;
-                        document.getElementById('agreementModal').style.display = 'none';
-                    }
-                } else if (!agreementPromptOpen) {
+                
+                if (shouldShowAgreement && !agreementPromptOpen) {
+                    // Admin/manager enabled agreement display for this user
                     openAgreementModal('required');
+                } else if (hasAcceptedAgreement && agreementPromptOpen && agreementModalMode === 'required') {
+                    // User already accepted agreement, close modal if open
+                    agreementPromptOpen = false;
+                    document.getElementById('agreementModal').style.display = 'none';
                 }
+                
+                updateAgreementStatusUI(hasAcceptedAgreement);
             }
 
             // Process active trades count

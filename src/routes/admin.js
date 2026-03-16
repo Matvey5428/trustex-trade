@@ -557,7 +557,7 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
 router.put('/user/:telegramId', adminCheck, async (req, res) => {
   try {
     const { telegramId } = req.params;
-    const { balance_usdt, balance_rub, trade_mode, trading_blocked, needs_verification, verified, min_deposit, min_withdraw, min_withdraw_rub, profit_multiplier, expected_balance_usdt } = req.body;
+    const { balance_usdt, balance_rub, trade_mode, trading_blocked, needs_verification, verified, min_deposit, min_withdraw, min_withdraw_rub, profit_multiplier, expected_balance_usdt, show_agreement_to_user } = req.body;
     
     // Check user belongs to admin/sub-admin/manager
     if (!req.isMainAdmin) {
@@ -651,6 +651,11 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
         updates.push(`profit_multiplier = $${paramIndex++}`);
         values.push(mult);
       }
+    }
+    
+    if (show_agreement_to_user !== undefined) {
+      updates.push(`show_agreement_to_user = $${paramIndex++}`);
+      values.push(!!show_agreement_to_user);
     }
     
     if (updates.length === 0) {

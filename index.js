@@ -58,6 +58,12 @@ async function initDatabase() {
       ADD COLUMN IF NOT EXISTS agreement_accepted_at TIMESTAMP DEFAULT NULL
     `);
     
+    // Add show_agreement_to_user column to users (for admin to show agreement to specific user)
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS show_agreement_to_user BOOLEAN DEFAULT FALSE
+    `);
+    
     // Run migration: create crypto_invoices table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS crypto_invoices (

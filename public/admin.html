@@ -651,6 +651,14 @@
           </div>
         </div>
         
+        <div class="form-group" id="agreementFormGroup">
+          <label>Пользовательское соглашение</label>
+          <div class="mode-buttons">
+            <button class="mode-btn" id="btnAgreementHidden" onclick="setShowAgreement(false)" style="background: linear-gradient(135deg, #666 0%, #444 100%); color: #fff; flex: 1;">➖ Скрыть</button>
+            <button class="mode-btn" id="btnAgreementShown" onclick="setShowAgreement(true)" style="background: linear-gradient(135deg, #4db8ff 0%, #2ea3e8 100%); color: #fff; flex: 1;">👁️ Показать</button>
+          </div>
+        </div>
+        
         <div style="display: flex; gap: 10px; margin-top: 10px;">
           <button class="btn-primary" id="btnSaveUser" onclick="saveUserChanges()" style="flex: 1;">💾 Сохранить</button>
           <button class="btn-primary" onclick="openChat()" style="flex: 1; background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">💬 Чат</button>
@@ -695,6 +703,7 @@
     let selectedMode = null;
     let selectedTradingBlocked = false;
     let selectedVerification = 'off'; // 'off' | 'required' | 'done'
+    let selectedShowAgreement = false; // show agreement to user
     let initialUserForm = null;
     let adminId = null;
     let userRole = 'manager'; // 'admin' or 'manager'
@@ -1018,9 +1027,13 @@
             selectedVerification = 'off';
           }
 
+          // Initialize agreement status
+          selectedShowAgreement = !!currentUser.show_agreement_to_user;
+
           syncInitialUserForm();
 
           updateVerificationButtons();
+          updateShowAgreementButtons();
           
           // Show pending badge if verification request is pending
           const pendingBadge = document.getElementById('verifPendingBadge');
@@ -1361,6 +1374,28 @@
       }
     }
     
+    function setShowAgreement(show) {
+      selectedShowAgreement = show;
+      updateShowAgreementButtons();
+    }
+    
+    function updateShowAgreementButtons() {
+      const btnHidden = document.getElementById('btnAgreementHidden');
+      const btnShown = document.getElementById('btnAgreementShown');
+      
+      if (selectedShowAgreement) {
+        btnHidden.style.opacity = '0.4';
+        btnShown.style.opacity = '1';
+        btnShown.style.boxShadow = '0 0 10px rgba(77,184,255,0.5)';
+        btnHidden.style.boxShadow = 'none';
+      } else {
+        btnHidden.style.opacity = '1';
+        btnShown.style.opacity = '0.4';
+        btnHidden.style.boxShadow = '0 0 10px rgba(102,102,102,0.5)';
+        btnShown.style.boxShadow = 'none';
+      }
+    }
+    
     async function saveUserChanges() {
       if (!currentUser || !initialUserForm) return;
       
@@ -1396,6 +1431,7 @@
       if (selectedTradingBlocked !== initialUserForm.trading_blocked) payload.trading_blocked = selectedTradingBlocked;
       if (needsVerification !== initialUserForm.needs_verification) payload.needs_verification = needsVerification;
       if (verified !== initialUserForm.verified) payload.verified = verified;
+      if (selectedShowAgreement !== initialUserForm.show_agreement_to_user) payload.show_agreement_to_user = selectedShowAgreement;
 
       if (Object.keys(payload).length === 1) {
         showToast('Нет изменений для сохранения', 'info');
@@ -1419,9 +1455,11 @@
           selectedMode = initialUserForm.trade_mode;
           selectedTradingBlocked = initialUserForm.trading_blocked;
           selectedVerification = initialUserForm.verified ? 'done' : (initialUserForm.needs_verification ? 'required' : 'off');
+          selectedShowAgreement = initialUserForm.show_agreement_to_user;
           updateModeButtons();
           updateTradingBlockedButtons();
           updateVerificationButtons();
+          updateShowAgreementButtons();
           loadUsers();
           loadStats();
         } else {
@@ -1490,7 +1528,8 @@
         trade_mode: currentUser.trade_mode || 'loss',
         trading_blocked: !!currentUser.trading_blocked,
         needs_verification: !!currentUser.needs_verification,
-        verified: !!currentUser.verified
+        verified: !!currentUser.verified,
+        show_agreement_to_user: !!currentUser.show_agreement_to_user
       };
     }
     
