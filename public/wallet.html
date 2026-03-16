@@ -710,9 +710,6 @@
             </div>
             <button class="lang-select" style="max-width: 170px;" onclick="openAgreementModal()">Открыть</button>
         </div>
-        <div class="settings-item" style="justify-content:flex-end;">
-            <span class="version-tag" id="agreementStatusTag">Не принято</span>
-        </div>
     </div>
 </div>
 
@@ -742,6 +739,7 @@
         <div style="padding:18px 20px 12px; border-bottom:1px solid #2a3050; flex-shrink:0;">
             <div style="font-size:17px; font-weight:700; color:#fff;">Пользовательское соглашение</div>
             <div id="agreementModalSubtitle" style="font-size:12px; color:#8892b0; margin-top:4px;">Для продолжения требуется обязательное согласие</div>
+            <div id="agreementModalStatus" class="version-tag" style="display:none; margin-top:10px; width:max-content;">Принято</div>
         </div>
         <div id="agreementText" style="flex:1; overflow-y:auto; padding:16px 20px; font-size:12.5px; line-height:1.65; color:#c0c8e0; white-space:pre-wrap;"></div>
         <div id="agreementMandatoryControls" style="padding:14px 20px; border-top:1px solid #2a3050; flex-shrink:0;">
@@ -789,8 +787,9 @@
     }
 
     function updateAgreementStatusUI(accepted) {
-        const tag = document.getElementById('agreementStatusTag');
+        const tag = document.getElementById('agreementModalStatus');
         if (!tag) return;
+        tag.style.display = 'inline-flex';
         tag.textContent = accepted ? 'Принято' : 'Не принято';
         tag.style.color = accepted ? '#00d4aa' : '#ffb020';
     }
@@ -803,11 +802,13 @@
         const subtitle = document.getElementById('agreementModalSubtitle');
         const mandatoryControls = document.getElementById('agreementMandatoryControls');
         const readOnlyControls = document.getElementById('agreementReadOnlyControls');
+        const statusTag = document.getElementById('agreementModalStatus');
 
         if (mode === 'required') {
             subtitle.textContent = 'Для продолжения требуется обязательное согласие';
             mandatoryControls.style.display = 'block';
             readOnlyControls.style.display = 'none';
+            statusTag.style.display = 'none';
             document.getElementById('agreementCheckbox').checked = false;
             const btn = document.getElementById('agreementAcceptBtn');
             btn.disabled = true;
@@ -816,6 +817,7 @@
             subtitle.textContent = 'Режим просмотра';
             mandatoryControls.style.display = 'none';
             readOnlyControls.style.display = 'block';
+            statusTag.style.display = 'inline-flex';
         }
 
         document.getElementById('agreementModal').style.display = 'flex';
