@@ -776,17 +776,17 @@
     let agreementAcceptedLocal = false;
     let agreementPromptOpen = false;
     let agreementModalMode = 'required';
+    let agreementTextContent = '';
 
-    const AGREEMENT_TEXT = `Пользовательское соглашение TrustEx
-
-Используя платформу TrustEx, вы подтверждаете, что:
-1. Вам исполнилось 18 лет и вы обладаете полной дееспособностью.
-2. Вы принимаете условия обслуживания платформы и правила обработки данных.
-3. Вы осознаете риски операций с цифровыми активами.
-4. Платформа может обновлять условия, а продолжение использования означает согласие с обновлениями.
-5. Вы обязуетесь соблюдать действующее законодательство вашей юрисдикции.
-
-Для продолжения использования кошелька необходимо принять соглашение.`;
+    async function loadAgreementText() {
+        try {
+            const res = await fetch('/agreement.txt');
+            if (!res.ok) throw new Error('Agreement file not found');
+            agreementTextContent = await res.text();
+        } catch (e) {
+            agreementTextContent = 'Пользовательское соглашение временно недоступно. Попробуйте позже.';
+        }
+    }
 
     function updateAgreementStatusUI(accepted) {
         const tag = document.getElementById('agreementStatusTag');
@@ -798,7 +798,7 @@
     function openAgreementModal(mode = 'read') {
         agreementPromptOpen = true;
         agreementModalMode = mode;
-        document.getElementById('agreementText').textContent = AGREEMENT_TEXT;
+        document.getElementById('agreementText').textContent = agreementTextContent || 'Загрузка соглашения...';
 
         const subtitle = document.getElementById('agreementModalSubtitle');
         const mandatoryControls = document.getElementById('agreementMandatoryControls');
@@ -1075,6 +1075,7 @@
 
     initWalletSettings();
     initSecuritySettings();
+    loadAgreementText();
     loadData();
     // Refresh every 30 seconds
     setInterval(loadData, 30000);
