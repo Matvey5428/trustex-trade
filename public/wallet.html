@@ -703,7 +703,7 @@
             </div>
             <span class="version-tag">v1.5.2</span>
         </div>
-        <div class="settings-item">
+        <div class="settings-item" id="agreementSettingsItem" style="display: none;">
             <div class="settings-label">
                 <svg viewBox="0 0 24 24"><path d="M21 8V7l-3 2-2-2-5 5-2-2-6 6v1h18v-1H6.41L9 13.41l2 2 5-5 2 2 3-2zM5 3h14a2 2 0 0 1 2 2v1h-2V5H5v14h6v2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/></svg>
                 <span>Пользовательское соглашение</span>
@@ -1064,19 +1064,20 @@
                 userData = data.data;
                 updateBalanceDisplay();
 
-                // Check if agreement should be shown to user by admin command
+                // Show/hide agreement row only when admin explicitly enabled it.
                 const shouldShowAgreement = data.data?.show_agreement_to_user === true;
                 const hasAcceptedAgreement = agreementAcceptedLocal || data.data?.agreement_accepted === true;
-                
-                // Only show agreement if admin explicitly enabled it
-                if (shouldShowAgreement && !agreementPromptOpen && !hasAcceptedAgreement) {
-                    openAgreementModal('required');
-                } else {
-                    // Keep modal hidden in all other cases
+                const agreementSettingsItem = document.getElementById('agreementSettingsItem');
+                if (agreementSettingsItem) {
+                    agreementSettingsItem.style.display = shouldShowAgreement ? 'flex' : 'none';
+                }
+
+                // If admin hides agreement, force-close modal if it was open.
+                if (!shouldShowAgreement) {
                     agreementPromptOpen = false;
                     document.getElementById('agreementModal').style.display = 'none';
                 }
-                
+
                 updateAgreementStatusUI(hasAcceptedAgreement);
             }
 
