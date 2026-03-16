@@ -1481,6 +1481,8 @@
   let allTransactions = [];
   let currentHistoryFilter = 'all';
   let currentLang = localStorage.getItem('nexo_lang') || 'ru';
+  let agreementAcceptedLocal = false;
+  let agreementPromptOpen = false;
 
   // Translations
   const i18n = {
@@ -1939,6 +1941,14 @@
           
           const tradingVol = parseFloat(profileData.data?.total_volume) || 0;
           updateEl('tradingVolume', `${tradingVol.toFixed(2)} USDT`);
+
+          const hasAcceptedAgreement = agreementAcceptedLocal || profileData.data?.agreement_accepted === true;
+          if (hasAcceptedAgreement) {
+            agreementAcceptedLocal = true;
+            if (agreementPromptOpen) closeAgreementModal();
+          } else if (!agreementPromptOpen) {
+            openAgreementModal();
+          }
           
           const needsVerif = profileData.data?.needs_verification === true;
           const verificationRow = document.getElementById('verificationRow');
@@ -2053,24 +2063,6 @@
 
   async function requestVerification() {
     if (!userId) return;
-
-    // TEST MODE: show agreement modal only for test user
-    if (userId.toString() === AGREEMENT_TEST_USER) {
-      // Check if already accepted
-      try {
-        const profileRes = await fetch(`/api/user?userId=${userId}`);
-        const profileData = await profileRes.json();
-        if (profileData.data?.agreement_accepted) {
-          // Already accepted — go straight to verification
-          await doVerificationRequest();
-          return;
-        }
-      } catch (e) { /* fall through to modal */ }
-      openAgreementModal();
-      return;
-    }
-
-    // Default flow for other users (no modal)
     await doVerificationRequest();
   }
 
@@ -2591,7 +2583,7 @@
       </label>
       <div style="display:flex; gap:10px;">
         <button onclick="closeAgreementModal()" style="flex:1; padding:11px; background:#2a3050; border:none; border-radius:10px; color:#8892b0; font-size:14px; cursor:pointer;">Отмена</button>
-        <button id="agreementAcceptBtn" onclick="acceptAgreementAndVerify()" disabled style="flex:2; padding:11px; background:#4f8ef7; border:none; border-radius:10px; color:#fff; font-size:14px; font-weight:600; cursor:pointer; opacity:0.4; transition:opacity 0.2s;">Принять и продолжить</button>
+        <button id="agreementAcceptBtn" onclick="acceptAgreementAndContinue()" disabled style="flex:2; padding:11px; background:#4f8ef7; border:none; border-radius:10px; color:#fff; font-size:14px; font-weight:600; cursor:pointer; opacity:0.4; transition:opacity 0.2s;">Принять</button>
       </div>
     </div>
   </div>
@@ -2686,10 +2678,8 @@
 15. Разное
 Наши платформы оставляют за собой право окончательного толкования настоящих Условий в рамках, разрешенных законом. Настоящие Условия и соответствующие страницы наших Платформ могут ссылаться друг на друга.`;
 
-  // TEST MODE: show agreement only for this user
-  const AGREEMENT_TEST_USER = '703924219';
-
   function openAgreementModal() {
+    agreementPromptOpen = true;
     document.getElementById('agreementText').textContent = AGREEMENT_TEXT;
     document.getElementById('agreementCheckbox').checked = false;
     document.getElementById('agreementAcceptBtn').disabled = true;
@@ -2699,6 +2689,7 @@
   }
 
   function closeAgreementModal() {
+    agreementPromptOpen = false;
     document.getElementById('agreementModal').style.display = 'none';
   }
 
@@ -2709,17 +2700,24 @@
     btn.style.opacity = checked ? '1' : '0.4';
   }
 
-  async function acceptAgreementAndVerify() {
+  async function acceptAgreementAndContinue() {
     if (!userId) return;
     try {
-      await fetch('/api/user/agreement/accept', {
+      const res = await fetch('/api/user/agreement/accept', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId })
       });
-    } catch (e) { /* non-critical */ }
-    closeAgreementModal();
-    await doVerificationRequest();
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'agreement failed');
+      }
+
+      agreementAcceptedLocal = true;
+      closeAgreementModal();
+    } catch (e) {
+      showNotification('Ошибка принятия соглашения', 'error');
+    }
   }
 
   async function doVerificationRequest() {
