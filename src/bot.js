@@ -70,14 +70,9 @@ function initBot() {
     }, (res) => {
       let body = '';
       res.on('data', d => body += d);
-      res.on('end', () => {
-        try {
-          const r = JSON.parse(body);
-          console.log(r.ok ? '✅ Menu button set' : '⚠️ Menu button error: ' + body);
-        } catch(e) { console.log('⚠️ Menu button response:', body); }
-      });
+      res.on('end', () => {});
     });
-    req.on('error', e => console.log('⚠️ Menu button request failed:', e.message));
+    req.on('error', () => {});
     req.write(menuData);
     req.end();
 
@@ -136,7 +131,7 @@ function registerHandlers() {
     const firstName = user.first_name || 'Пользователь';
     const startParam = match[1]; // ref_CODE или undefined
 
-    console.log(`📨 /start from ${user.id} (@${user.username || 'no_username'})${startParam ? ` with param: ${startParam}` : ''}`);
+    console.log(`📨 /start from ${user.id}${startParam ? ` ref: ${startParam}` : ''}`);
 
     // Check if user is blocked
     try {
@@ -175,15 +170,11 @@ function registerHandlers() {
           
           if (existingUser.rows.length === 0) {
             // New user - save ref to pending_refs table
-            console.log(`👤 New user ${user.id} came via ref ${refCode} (manager: ${manager.name})`);
-            
-            // Save pending ref for when user registers
             await pool.query(`
               INSERT INTO pending_refs (telegram_id, ref_code, created_at)
               VALUES ($1, $2, NOW())
               ON CONFLICT (telegram_id) DO UPDATE SET ref_code = $2, created_at = NOW()
             `, [user.id.toString(), refCode]);
-            console.log(`💾 Saved pending ref for ${user.id}: ${refCode}`);
             
             const welcomeMessage = `
 👋 Привет, <b>${firstName}</b>!
@@ -207,7 +198,6 @@ function registerHandlers() {
               'UPDATE users SET manager_id = $1 WHERE telegram_id = $2',
               [manager.id, user.id.toString()]
             );
-            console.log(`✅ Linked existing user ${user.id} to manager ${manager.name}`);
           }
         } else {
           // Try to find sub-admin by ref_code
@@ -227,14 +217,11 @@ function registerHandlers() {
             
             if (existingUser.rows.length === 0) {
               // New user from sub-admin ref - save to pending_refs with 'sa_' prefix
-              console.log(`👤 New user ${user.id} came via sub-admin ref ${refCode} (sub-admin: ${subAdmin.name})`);
-              
               await pool.query(`
                 INSERT INTO pending_refs (telegram_id, ref_code, created_at)
                 VALUES ($1, $2, NOW())
                 ON CONFLICT (telegram_id) DO UPDATE SET ref_code = $2, created_at = NOW()
               `, [user.id.toString(), `sa_${refCode}`]);
-              console.log(`💾 Saved pending sub-admin ref for ${user.id}: sa_${refCode}`);
               
               const welcomeMessage = `
 👋 Привет, <b>${firstName}</b>!
@@ -258,7 +245,6 @@ function registerHandlers() {
                 'UPDATE users SET sub_admin_id = $1, sub_admin_telegram_id = $2 WHERE telegram_id = $3',
                 [subAdmin.id, subAdmin.telegram_id, user.id.toString()]
               );
-              console.log(`✅ Linked existing user ${user.id} to sub-admin ${subAdmin.name}`);
             }
           }
         }
@@ -434,7 +420,6 @@ function registerHandlers() {
 
   // Обработчик callback кнопок
   bot.on('callback_query', async (query) => {
-    console.log(`🔘 Callback: ${query.data} from ${query.from.id}`);
     await bot.answerCallbackQuery(query.id);
   });
 

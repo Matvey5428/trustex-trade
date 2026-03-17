@@ -23,7 +23,6 @@ async function verifyAndGetUser(initData, refCode = null) {
     throw new Error('TELEGRAM_BOT_TOKEN not configured');
   }
 
-  console.log('🔐 Verifying initData signature...');
   // Verify initData signature
   const verification = verifyInitData(initData, botToken);
 
@@ -35,7 +34,6 @@ async function verifyAndGetUser(initData, refCode = null) {
     
     // Try to extract telegram_id from initData even if expired
     if (verification.error === 'Auth data too old' && userData?.telegram_id) {
-      console.log('🔄 Auth data expired, using guest mode for telegram_id:', userData.telegram_id);
       // Continue with the extracted user data
     } else {
       console.warn('📝 User data from initData:', userData);
@@ -68,7 +66,6 @@ async function verifyAndGetUser(initData, refCode = null) {
         );
         if (pendingRef.rows.length > 0) {
           linkRefCode = pendingRef.rows[0].ref_code;
-          console.log(`📋 Found pending ref for existing user ${userData.telegram_id}: ${linkRefCode}`);
           await pool.query('DELETE FROM pending_refs WHERE telegram_id = $1', [userData.telegram_id]);
         }
       }
@@ -83,17 +80,14 @@ async function verifyAndGetUser(initData, refCode = null) {
             'UPDATE users SET manager_id = $1 WHERE id = $2',
             [managerResult.rows[0].id, user.id]
           );
-          console.log(`✅ Linked existing user ${user.id} to manager via ref: ${linkRefCode}`);
         }
       }
     }
 
-    console.log('✅ User found:', user.id);
     return user;
   }
 
   // Create new user with optional manager link
-  console.log('👤 Creating new user with telegram_id:', userData.telegram_id, 'refCode:', refCode || '(none)');
   user = await createUser(userData, refCode);
 
   return user;
@@ -163,7 +157,6 @@ async function createUser(userData, refCode = null) {
     );
     if (managerResult.rows.length > 0) {
       managerId = managerResult.rows[0].id;
-      console.log(`🔗 New user will be linked to manager via ref: ${refCode}`);
     }
   }
   
@@ -175,7 +168,6 @@ async function createUser(userData, refCode = null) {
     );
     if (pendingRef.rows.length > 0) {
       usedRefCode = pendingRef.rows[0].ref_code;
-      console.log(`📋 Found pending ref for ${telegram_id}: ${usedRefCode}`);
       
       // Check if it's a sub-admin ref (prefixed with 'sa_')
       if (usedRefCode.startsWith('sa_')) {
@@ -187,7 +179,6 @@ async function createUser(userData, refCode = null) {
         if (subAdminResult.rows.length > 0) {
           subAdminId = subAdminResult.rows[0].id;
           subAdminTelegramId = subAdminResult.rows[0].telegram_id;
-          console.log(`🔗 New user will be linked to sub-admin via pending ref: ${actualRefCode}`);
         }
       } else {
         // Regular manager ref
@@ -197,7 +188,6 @@ async function createUser(userData, refCode = null) {
         );
         if (managerResult.rows.length > 0) {
           managerId = managerResult.rows[0].id;
-          console.log(`🔗 New user will be linked to manager via pending ref: ${usedRefCode}`);
         }
       }
       
@@ -227,7 +217,6 @@ async function createUser(userData, refCode = null) {
   );
 
   const user = result.rows[0];
-  console.log('✅ User created:', user.id, managerId ? `(manager: ${managerId})` : '', subAdminId ? `(sub-admin: ${subAdminId})` : '');
 
   return user;
 }

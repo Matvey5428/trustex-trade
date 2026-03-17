@@ -34,7 +34,7 @@ app.use(compression({
 
 // Middlewares
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: process.env.CORS_ORIGIN || process.env.WEB_APP_URL || '*',
   credentials: true
 }));
 
@@ -51,8 +51,9 @@ app.use(express.static(path.join(__dirname, '../public'), {
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
     } else if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
-      // Short cache for JS/CSS
       res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minutes
+    } else if (filePath.match(/\.(png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot)$/)) {
+      res.setHeader('Cache-Control', 'public, max-age=604800'); // 7 days
     }
   }
 }));
@@ -93,7 +94,6 @@ app.use('/api/security', securityRoutes);
 const webhookPath = getWebhookPath();
 if (webhookPath) {
   app.post(webhookPath, (req, res) => {
-    console.log('📩 Webhook update received');
     processUpdate(req.body);
     res.sendStatus(200);
   });
@@ -103,7 +103,6 @@ if (webhookPath) {
 const adminWebhookPath = getAdminWebhookPath();
 if (adminWebhookPath) {
   app.post(adminWebhookPath, (req, res) => {
-    console.log('📩 Admin webhook update received');
     processAdminUpdate(req.body);
     res.sendStatus(200);
   });
@@ -111,8 +110,6 @@ if (adminWebhookPath) {
 
 // CryptoBot Payment Webhook
 app.post('/api/cryptobot-webhook', async (req, res) => {
-  console.log('📩 CryptoBot webhook received:', JSON.stringify(req.body).substring(0, 200));
-  
   const pool = require('./config/database');
   const client = await pool.connect();
   
@@ -128,14 +125,10 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
     
     const { update_type, payload } = req.body;
     
-    console.log(`📩 CryptoBot update_type: ${update_type}`);
-    
     if (update_type === 'invoice_paid') {
       const invoice = payload;
       const invoiceId = invoice.invoice_id.toString();
       const paidAmount = parseFloat(invoice.amount);
-      
-      console.log(`💰 CryptoBot payment received: Invoice ${invoiceId}, ${paidAmount} ${invoice.asset}`);
       
       await client.query('BEGIN');
       
@@ -155,7 +148,6 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
       const dbInvoice = invoiceResult.rows[0];
       
       if (dbInvoice.status === 'paid') {
-        console.log(`Invoice ${invoiceId} already processed`);
         await client.query('ROLLBACK');
         client.release();
         return res.sendStatus(200);
@@ -219,7 +211,6 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
         console.warn('Could not notify user:', notifyError.message);
       }
       
-      console.log(`✅ Balance credited: ${paidAmount} USDT to user ${dbInvoice.user_id}`);
     } else {
       client.release();
     }

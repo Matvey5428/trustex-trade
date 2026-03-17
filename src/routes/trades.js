@@ -12,15 +12,9 @@ const { getAdminBot } = require('../admin-bot');
  * Notify manager about new trade opened by their user
  */
 async function notifyManagerAboutTrade(user, trade, symbol, direction, amount, durationSeconds) {
-  console.log('📨 notifyManagerAboutTrade called, user.manager_id:', user.manager_id);
-  
   const adminBot = getAdminBot();
-  if (!adminBot) {
-    console.log('❌ Admin bot not available');
-    return;
-  }
+  if (!adminBot) return;
 
-  // Always notify main admin
   const MAIN_ADMIN_ID = process.env.ADMIN_IDS?.split(',')[0]?.trim();
   const directionText = direction === 'up' ? '📈 Вверх' : '📉 Вниз';
   const durationText = durationSeconds >= 60 ? `${Math.round(durationSeconds / 60)} мин` : `${durationSeconds} сек`;
@@ -40,46 +34,25 @@ async function notifyManagerAboutTrade(user, trade, symbol, direction, amount, d
   if (MAIN_ADMIN_ID) {
     try {
       await adminBot.sendMessage(MAIN_ADMIN_ID, message, { parse_mode: 'HTML' });
-      console.log('✅ Main admin notified:', MAIN_ADMIN_ID);
-    } catch (e) {
-      console.log('❌ Failed to notify main admin:', e.message);
-    }
+    } catch (e) { /* ignore */ }
   }
 
   // Send to manager if exists
-  if (!user.manager_id) {
-    console.log('❌ User has no manager_id');
-    return;
-  }
+  if (!user.manager_id) return;
 
-  // Get manager telegram_id
   const managerResult = await pool.query(
     'SELECT telegram_id FROM managers WHERE id = $1',
     [user.manager_id]
   );
   
-  console.log('📨 Manager query result:', managerResult.rows);
-  
-  if (managerResult.rows.length === 0) {
-    console.log('❌ Manager not found for id:', user.manager_id);
-    return;
-  }
+  if (managerResult.rows.length === 0) return;
   
   const managerTelegramId = managerResult.rows[0].telegram_id;
-  if (!managerTelegramId) {
-    console.log('❌ Manager has no telegram_id');
-    return;
-  }
+  if (!managerTelegramId || managerTelegramId === MAIN_ADMIN_ID) return;
 
-  // Don't send duplicate if manager is main admin
-  if (managerTelegramId === MAIN_ADMIN_ID) {
-    console.log('ℹ️ Manager is main admin, already notified');
-    return;
-  }
-
-  console.log('📨 Sending to manager:', managerTelegramId);
-  await adminBot.sendMessage(managerTelegramId, message, { parse_mode: 'HTML' });
-  console.log('✅ Manager notification sent');
+  try {
+    await adminBot.sendMessage(managerTelegramId, message, { parse_mode: 'HTML' });
+  } catch (e) { /* ignore */ }
 }
 
 // Simple rate limiter for trade creation (user -> last trade timestamp)
@@ -258,10 +231,7 @@ router.post('/create', async (req, res) => {
       tradeRateLimiter.set(userKey, Date.now());
 
       // Notify admin and manager about new trade (async, don't wait)
-      console.log('🔍 Triggering trade notification, user.manager_id:', user.manager_id);
-      notifyManagerAboutTrade(user, trade, tradeSymbol, direction || 'up', amount, durationSeconds).catch(e => {
-        console.log('Could not notify about trade:', e.message);
-      });
+      notifyManagerAboutTrade(user, trade, tradeSymbol, direction || 'up', amount, durationSeconds).catch(() => {});
 
       res.json({
         success: true,
@@ -320,7 +290,6 @@ router.post('/close/:tradeId', async (req, res) => {
     // Already closed?
     if (trade.status !== 'active') {
       await client.query('ROLLBACK');
-      console.log(`⏭️ Trade ${tradeId} already closed: result=${trade.result}, profit=${trade.profit}`);
       return res.json({
         success: true,
         message: 'Сделка уже закрыта',
@@ -355,9 +324,6 @@ router.post('/close/:tradeId', async (req, res) => {
       });
     }
 
-    // Log for debugging
-    console.log(`📊 Closing trade ${tradeId}: mode=${tradeMode}, amount=${amount}, currentBalance=${currentBalance}, multiplier=${profitMultiplier}`);
-
     // Calculate result based on mode
     let profit = 0;
     let result = 'loss';
@@ -374,11 +340,8 @@ router.post('/close/:tradeId', async (req, res) => {
         'UPDATE users SET balance_usdt = balance_usdt + $1, updated_at = NOW() WHERE id = $2 RETURNING balance_usdt',
         [payout, trade.user_id]
       );
-      if (updateResult.rows.length === 0) {
-        console.error(`❌ CRITICAL: Failed to update balance for user ${trade.user_id}!`);
-      } else {
+      if (updateResult.rows.length > 0) {
         finalBalance = parseFloat(updateResult.rows[0].balance_usdt) || currentBalance;
-        console.log(`✅ WIN: returned ${amount} + profit ${profit.toFixed(2)} = balance ${finalBalance.toFixed(2)}`);
       }
     } else {
       // LOSS mode: already lost (balance was deducted)
@@ -556,11 +519,31 @@ router.get('/active/:userId', async (req, res) => {
 
 /**
  * POST /api/trades/set-mode
- * Set user's trade mode (admin only in future)
+ * Set user's trade mode (admin only)
  */
 router.post('/set-mode', async (req, res) => {
   try {
-    const { userId, mode } = req.body;
+    const { userId, mode, adminId } = req.body;
+
+    // Require admin authentication
+    if (!adminId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    const ADMIN_IDS = (process.env.ADMIN_IDS || '').split(',').map(s => s.trim());
+    const isAdmin = ADMIN_IDS.includes(String(adminId));
+    let isManager = false;
+    let isSubAdmin = false;
+    if (!isAdmin) {
+      const mgrRes = await pool.query('SELECT id FROM managers WHERE telegram_id = $1', [String(adminId)]);
+      isManager = mgrRes.rows.length > 0;
+      if (!isManager) {
+        const saRes = await pool.query('SELECT id FROM sub_admins WHERE telegram_id = $1', [String(adminId)]);
+        isSubAdmin = saRes.rows.length > 0;
+      }
+    }
+    if (!isAdmin && !isManager && !isSubAdmin) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
 
     if (!userId) {
       return res.status(400).json({ error: 'userId is required' });

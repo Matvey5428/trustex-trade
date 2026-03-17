@@ -512,14 +512,6 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
       [newBalance, withdrawal.user_internal_id]
     );
     
-    console.log('💰 Balance updated:', {
-      userId: withdrawal.user_internal_id,
-      telegramId: withdrawal.telegram_id,
-      balanceField,
-      newBalance,
-      updateResult: updateResult.rows[0]
-    });
-    
     // Update withdrawal status to rejected
     await client.query(
       'UPDATE withdraw_requests SET status = $1 WHERE id = $2',
@@ -811,11 +803,6 @@ router.post('/user/:telegramId/block', adminCheck, async (req, res) => {
     const user = userResult.rows[0];
     const name = user.first_name || user.username || 'User';
     
-    // Add column if not exists
-    await pool.query(`
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE
-    `);
-    
     // Update block status
     await pool.query(
       'UPDATE users SET is_blocked = $1 WHERE telegram_id = $2',
@@ -849,7 +836,7 @@ router.post('/user/:telegramId/block', adminCheck, async (req, res) => {
       [blocked ? 'user_block' : 'user_unblock', JSON.stringify({ adminId: req.adminId, telegramId, userName: name })]
     );
     
-    console.log(`${blocked ? '⛔' : '✅'} Admin ${req.adminId} ${blocked ? 'blocked' : 'unblocked'} user ${telegramId} (${name})`);
+    console.log(`${blocked ? '⛔' : '✅'} User ${telegramId} ${blocked ? 'blocked' : 'unblocked'}`);
     
     res.json({
       success: true,
@@ -1508,8 +1495,6 @@ router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
       console.error('Failed to notify user:', botError.message);
     }
     
-    console.log(`✅ Admin confirmed invoice ${invoiceId} for user ${invoice.telegram_id}, credited ${paidAmount} USDT`);
-    
     res.json({
       success: true,
       message: 'Оплата подтверждена'
@@ -1685,7 +1670,7 @@ router.post('/managers', adminCheck, async (req, res) => {
           'UPDATE managers SET sub_admin_id = $1, name = COALESCE($2, name) WHERE id = $3 RETURNING *',
           [req.subAdminId, name, existingManager.id]
         );
-        console.log(`✅ Manager ${telegram_id} assigned to sub-admin ${req.subAdminId}`);
+        console.log(`✅ Manager ${telegram_id} assigned to sub-admin`);
         return res.json({
           success: true,
           data: updated.rows[0],
@@ -2044,8 +2029,6 @@ router.post('/subadmins', adminCheck, mainAdminOnly, async (req, res) => {
       [String(telegram_id), name || `Суб-админ ${telegram_id}`, refCode]
     );
     
-    console.log(`✅ Sub-admin added: ${telegram_id} with ref_code: ${refCode}`);
-    
     res.json({
       success: true,
       data: {
@@ -2084,8 +2067,6 @@ router.delete('/subadmins/:subAdminId', adminCheck, mainAdminOnly, async (req, r
       'DELETE FROM sub_admins WHERE id = $1',
       [subAdminId]
     );
-    
-    console.log(`🗑️ Sub-admin ${subAdminId} removed`);
     
     res.json({
       success: true,

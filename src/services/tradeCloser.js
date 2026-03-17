@@ -32,7 +32,6 @@ async function closeTrade(trade) {
     // Already closed by another process?
     if (lockedTrade.status !== 'active') {
       await client.query('ROLLBACK');
-      console.log(`⏭️ Trade ${trade.id} already closed, skipping`);
       return;
     }
 
@@ -40,17 +39,6 @@ async function closeTrade(trade) {
     const tradeMode = lockedTrade.effective_trade_mode || 'loss';
     const currentBalance = parseFloat(lockedTrade.balance_usdt) || 0;
     const profitMultiplier = parseFloat(lockedTrade.profit_multiplier) || 0.015;
-
-    // Detailed logging for debugging
-    console.log(`📊 Trade ${trade.id} details:`, {
-      symbol: trade.symbol,
-      amount,
-      tradeMode,
-      rawTradeMode: lockedTrade.trade_mode,
-      currentBalance,
-      profitMultiplier,
-      userId: lockedTrade.user_id
-    });
 
     // Check for invalid amounts that would cause overflow
     const MAX_SAFE_AMOUNT = 1000000000; // 1 billion max
@@ -63,9 +51,6 @@ async function closeTrade(trade) {
       await client.query('COMMIT');
       return;
     }
-
-    // Log for debugging
-    console.log(`📊 Auto-closing trade ${trade.id}: mode=${tradeMode}, amount=${amount}, currentBalance=${currentBalance}, multiplier=${profitMultiplier}`);
 
     // Calculate result based on mode
     let profit = 0;
@@ -83,11 +68,8 @@ async function closeTrade(trade) {
         'UPDATE users SET balance_usdt = balance_usdt + $1, updated_at = NOW() WHERE id = $2 RETURNING balance_usdt',
         [payout, lockedTrade.user_id]
       );
-      if (updateResult.rows.length === 0) {
-        console.error(`❌ CRITICAL: Failed to update balance for user ${lockedTrade.user_id}!`);
-      } else {
+      if (updateResult.rows.length > 0) {
         finalBalance = parseFloat(updateResult.rows[0].balance_usdt) || currentBalance;
-        console.log(`✅ WIN: returned ${amount} + profit ${profit.toFixed(2)} = balance ${finalBalance.toFixed(2)}`);
       }
     } else {
       // LOSS mode: already lost (balance was deducted)
@@ -110,7 +92,6 @@ async function closeTrade(trade) {
     );
 
     await client.query('COMMIT');
-    console.log(`✅ Auto-closed trade ${trade.id}: ${result} (${profit.toFixed(2)} USDT)`);
 
   } catch (error) {
     await client.query('ROLLBACK');
@@ -135,8 +116,6 @@ async function closeExpiredTrades() {
     const expiredTrades = result.rows;
     
     if (expiredTrades.length > 0) {
-      console.log(`🔄 Found ${expiredTrades.length} expired trades to close`);
-      
       for (const trade of expiredTrades) {
         await closeTrade(trade);
       }

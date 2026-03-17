@@ -32,33 +32,12 @@ function verifyPin(pin, storedCombined) {
 }
 
 /**
- * Check if user has security features enabled (enabled for all users)
- */
-function isSecurityUser(telegramId) {
-  return true;
-}
-
-/**
  * GET /api/security/status/:userId
  * Get security status for user
  */
 router.get('/status/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    
-    // Check if user is in test group
-    if (!isSecurityUser(userId)) {
-      return res.json({
-        success: true,
-        data: {
-          security_available: false,
-          security_enabled: false,
-          has_pin: false,
-          biometric_enabled: false,
-          requires_auth: false
-        }
-      });
-    }
     
     const result = await pool.query(
       `SELECT security_enabled, security_pin, biometric_enabled, 
@@ -115,10 +94,6 @@ router.post('/pin/setup', async (req, res) => {
     
     if (!userId || !pin) {
       return res.status(400).json({ success: false, error: 'userId and pin required' });
-    }
-    
-    if (!isSecurityUser(userId)) {
-      return res.status(403).json({ success: false, error: 'Security not available' });
     }
     
     // Validate PIN format (4-6 digits)
@@ -228,10 +203,6 @@ router.post('/biometric/register', async (req, res) => {
     
     if (!userId || !credentialId || !publicKey) {
       return res.status(400).json({ success: false, error: 'Missing required fields' });
-    }
-    
-    if (!isSecurityUser(userId)) {
-      return res.status(403).json({ success: false, error: 'Security not available' });
     }
     
     // Check user has PIN first

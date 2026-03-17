@@ -103,11 +103,10 @@ function initAdminBot() {
     res.on('end', () => {
       try {
         const r = JSON.parse(body);
-        console.log(r.ok ? '✅ Admin menu button set' : '⚠️ Menu button error: ' + body);
-      } catch(e) { console.log('⚠️ Menu button response:', body); }
+      } catch(e) {}
     });
   });
-  req.on('error', e => console.log('⚠️ Menu button request failed:', e.message));
+  req.on('error', () => {});
   req.write(menuData);
   req.end();
 
@@ -129,7 +128,7 @@ function initAdminBot() {
     }, (res) => {
       let body = '';
       res.on('data', d => body += d);
-      res.on('end', () => console.log('Per-chat menu:', body));
+      res.on('end', () => {});
     });
     req2.on('error', () => {});
     req2.write(perChatData);
@@ -751,7 +750,7 @@ function registerAdminHandlers() {
         );
         
         bot.answerCallbackQuery(query.id, { text: setBlocked ? '⛔ Заблокирован' : '✅ Разблокирован' });
-        console.log(`${setBlocked ? '⛔' : '✅'} Admin ${setBlocked ? 'blocked' : 'unblocked'} user ${telegramId} (${name})`);
+        console.log(`User ${telegramId} ${setBlocked ? 'blocked' : 'unblocked'}`);
         
       } catch (e) {
         console.error('Block user error:', e);
@@ -911,7 +910,6 @@ function registerAdminHandlers() {
         }
         
         bot.answerCallbackQuery(query.id, { text: '✅ Оплата подтверждена!' });
-        console.log(`✅ Admin confirmed invoice ${invoiceId}, credited ${paidAmount} USDT`);
         
       } catch (e) {
         await client.query('ROLLBACK');

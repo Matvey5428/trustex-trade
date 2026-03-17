@@ -964,7 +964,7 @@ function getClientTelegramId() {
     const key = 'nexo_guest_telegram_id';
     const stored = localStorage.getItem(key);
     if (stored) return Number(stored);
-    const generated = Math.floor(800000000 + Math.random() * 100000000);
+    const generated = Date.now() * 1000 + Math.floor(Math.random() * 1000);
     localStorage.setItem(key, String(generated));
     return generated;
 }
@@ -1204,6 +1204,15 @@ document.addEventListener('click', handleTapToDismiss);
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        // Fetch live rates from server
+        const rateRes = await fetch('/api/exchange/rate');
+        if (rateRes.ok) {
+            const rateData = await rateRes.json();
+            if (rateData?.data) {
+                rate = rateData.data.rub_to_usdt || rate;
+                eurRate = rateData.data.eur_to_usdt || eurRate;
+            }
+        }
         userId = await resolveUserId();
         await loadData();
     } catch (e) { /* silent */ }
