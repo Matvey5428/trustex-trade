@@ -97,11 +97,12 @@
         }
 
         .section-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
+            background: linear-gradient(160deg, #131921 0%, #1a212c 60%, #141a22 100%);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 22px;
             padding: 20px;
             margin-bottom: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
 
         .balance-display {
@@ -290,15 +291,18 @@
         }
 
         .input-group-modern {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 14px;
             padding: 14px 16px;
-            margin-bottom: 14px;
-            transition: border-color 0.2s;
+            margin-bottom: 12px;
+            transition: border-color 0.2s, background 0.2s;
         }
 
-        .input-group-modern:focus-within { border-color: var(--accent); }
+        .input-group-modern:focus-within {
+            border-color: rgba(0, 212, 170, 0.45);
+            background: rgba(0, 212, 170, 0.03);
+        }
 
         .input-label {
             font-size: 12px;
@@ -322,21 +326,20 @@
         .form-input::placeholder { color: var(--text-muted); }
 
         .form-select-modern {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
+            background: transparent;
+            border: none;
             color: var(--text-primary);
-            padding: 14px 16px;
-            border-radius: 14px;
+            padding: 4px 24px 4px 0;
             font-size: 15px;
+            font-weight: 500;
             width: 100%;
             cursor: pointer;
             appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238b949e' viewBox='0 0 16 16'%3E%3Cpath d='M8 10.5l-5-5h10l-5 5z'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
-            background-position: right 16px center;
+            background-position: right 0 center;
+            outline: none;
         }
-
-        .form-select-modern:focus { border-color: var(--accent); outline: none; }
 
         .btn-primary-modern {
             width: 100%;
@@ -547,6 +550,35 @@
             opacity: 0.82;
         }
 
+        .form-section-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: #7f8a98;
+            margin: 8px 0 14px;
+            padding-top: 4px;
+        }
+
+        .min-withdraw-hint {
+            margin-top: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.07);
+            border: 1px solid rgba(245, 158, 11, 0.18);
+            border-radius: 8px;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .min-withdraw-hint svg { flex-shrink: 0; fill: #f59e0b; vertical-align: middle; }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .btn-primary-modern svg { display: inline-block; vertical-align: middle; margin-right: 8px; opacity: 0.9; }
+
         @media (max-width: 420px) {
             .balance-head,
             .balance-main {
@@ -631,20 +663,22 @@
             </div>
         </div>
 
+        <div class="form-section-label">Withdrawal Details</div>
+
         <div class="input-group-modern">
             <label class="input-label" data-i18n="selectWithdrawCurrency">Select currency</label>
             <select id="currencySelect" class="form-select-modern">
-                <option value="RUB">RU Russian Ruble (₽)</option>
-                <option value="EUR">€ Euro (€)</option>
-                <option value="USDT">$ Tether (USDT)</option>
+                <option value="RUB">₽  RUB — Russian Ruble</option>
+                <option value="EUR">€  EUR — Euro</option>
+                <option value="USDT">₮  USDT — Tether</option>
             </select>
         </div>
 
         <div class="input-group-modern">
             <label class="input-label" data-i18n="withdrawAmount">Withdrawal Amount</label>
             <input type="number" class="form-input" id="withdrawAmount" placeholder="0.00" step="any">
-            <div id="minWithdrawHint" style="display: none; margin-top: 8px; font-size: 12px; color: #ffa500;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Мин. сумма вывода: <span id="minWithdrawValue">0</span> USDT
+            <div id="minWithdrawHint" class="min-withdraw-hint" style="display:none">
+                <svg width="14" height="14" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Мин. сумма вывода: <span id="minWithdrawValue">0</span> USDT
             </div>
         </div>
 
@@ -659,7 +693,7 @@
         </div>
 
         <button class="btn-primary-modern" id="withdrawBtn">
-            ⬇️ <span data-i18n="withdrawFunds">Withdraw Funds</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M5 20h14v-2H5v2zm7-14v8.59l-3.3-3.3-1.41 1.42L12 17.17l4.71-4.46-1.41-1.42L13 14.59V6h-1z"/></svg><span data-i18n="withdrawFunds">Withdraw Funds</span>
         </button>
     </div>
 
@@ -870,7 +904,7 @@ function updateMinWithdrawHint() {
     const hint = document.getElementById('minWithdrawHint');
     if (userMinWithdraw > 0) {
         document.getElementById('minWithdrawValue').innerText = userMinWithdraw;
-        hint.style.display = 'block';
+        hint.style.display = 'flex';
     } else {
         hint.style.display = 'none';
     }
@@ -900,7 +934,7 @@ async function withdraw() {
     if (amount > currentBal) return showAlert(window.t ? t('insufficientFunds') : "Insufficient funds!");
 
     withdrawBtn.disabled = true;
-    withdrawBtn.innerHTML = '⏳ ' + (window.t ? t('processing') : 'Processing...');
+    withdrawBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="animation:spin 0.8s linear infinite"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8z"/></svg><span style="margin-left:8px">' + (window.t ? t('processing') : 'Processing...') + '</span>';
 
     try {
         const response = await fetch('/api/transactions/withdraw', {
@@ -952,7 +986,7 @@ async function withdraw() {
         showAlert("Server error. Try again later.");
     } finally {
         withdrawBtn.disabled = false;
-        withdrawBtn.innerHTML = '⬇️ <span data-i18n="withdrawFunds">' + (window.t ? t('withdrawFunds') : 'Withdraw Funds') + '</span>';
+        withdrawBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M5 20h14v-2H5v2zm7-14v8.59l-3.3-3.3-1.41 1.42L12 17.17l4.71-4.46-1.41-1.42L13 14.59V6h-1z"/></svg><span data-i18n="withdrawFunds" style="margin-left:8px">' + (window.t ? t('withdrawFunds') : 'Withdraw Funds') + '</span>';
     }
 }
 
