@@ -1086,8 +1086,13 @@
                     agreementSettingsItem.style.display = shouldShowAgreement ? 'flex' : 'none';
                 }
 
-                // If admin hides agreement, force-close modal if it was open.
-                if (!shouldShowAgreement) {
+                // Mandatory agreement for first-time users is always based on agreement.txt.
+                if (!hasAcceptedAgreement && !agreementPromptOpen) {
+                    openAgreementModal('required', 'user');
+                }
+
+                // If admin row is disabled, close only read-mode modal (not mandatory flow).
+                if (!shouldShowAgreement && agreementPromptOpen && agreementModalMode !== 'required') {
                     agreementPromptOpen = false;
                     document.getElementById('agreementModal').style.display = 'none';
                 }
