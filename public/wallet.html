@@ -874,7 +874,8 @@
 
             agreementAcceptedLocal = true;
             updateAgreementStatusUI(true);
-            closeAgreementModal();
+            agreementPromptOpen = false;
+            document.getElementById('agreementModal').style.display = 'none';
         } catch (e) {
             alert('Ошибка принятия соглашения');
         }

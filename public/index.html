@@ -2359,6 +2359,32 @@
       ]).catch(() => {});
       log('✅ Init complete');
     }
+
+    // After PIN unlock, force first-time agreement flow immediately.
+    async function handlePostUnlock() {
+      hideSecurityOverlay();
+
+      const telegramId = TelegramAuth.getTelegramId();
+      if (!telegramId) {
+        loadAllUserData();
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/profile/${telegramId}`);
+        const profile = await res.json();
+        const accepted = !!profile?.data?.agreement_accepted;
+
+        if (!accepted) {
+          window.location.href = 'wallet.html?agreement=required';
+          return;
+        }
+      } catch (e) {
+        // If profile check fails, do not block app loading.
+      }
+
+      loadAllUserData();
+    }
     
     try {
       log('🚀 Initializing TrustEx...');
@@ -2383,7 +2409,7 @@
       // Check security lock (will show PIN screen if needed) 
       if (telegramId && window.SecurityLock) {
         // SecurityLock will hide the overlay when PIN screen is ready
-        SecurityLock.check(telegramId, loadAllUserData);
+        SecurityLock.check(telegramId, handlePostUnlock);
         // Don't hide overlay here - let SecurityLock handle it
       } else {
         // Security not available - load data directly
