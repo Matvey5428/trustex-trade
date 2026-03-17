@@ -1385,6 +1385,7 @@
 <script src="/js/auth.js?v=2"></script>
 <script src="/js/api.js"></script>
 <script src="/js/prefetch.js"></script>
+<script src="/js/keyboard-nav.js"></script>
 <script src="/js/security-lock.js?v=20260314"></script>
 <script>
   const tg = window.Telegram?.WebApp;
@@ -2349,12 +2350,6 @@
   }
 
   window.addEventListener('DOMContentLoaded', async () => {
-    // Hide nav when any input focused
-    document.querySelectorAll('input, textarea').forEach(el => {
-      el.addEventListener('focus', () => document.body.classList.add('input-focused'));
-      el.addEventListener('blur', () => setTimeout(() => document.body.classList.remove('input-focused'), 100));
-    });
-    
     // Apply language immediately
     applyLanguage(currentLang);
     

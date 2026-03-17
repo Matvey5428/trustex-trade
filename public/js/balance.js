@@ -99,8 +99,6 @@ const BalanceManager = {
       // Для exchange.html
       'rubBalanceText': `${fmt(balanceRub)} ₽`,
       'usdtBalanceText': `${fmt(balanceUsdt)} $`,
-      
-      // Для withdraw.html
     };
     
     for (const [id, value] of Object.entries(updates)) {

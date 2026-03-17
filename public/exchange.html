@@ -12,6 +12,7 @@
     <script src="js/balance.js" defer></script>
     <script src="js/prefetch.js" defer></script>
     <script src="js/i18n.js" defer></script>
+    <script src="js/keyboard-nav.js" defer></script>
     <style>body { opacity: 1; }</style>
     <script>(function() { var lang = localStorage.getItem('nexo_lang') || 'ru'; document.documentElement.lang = lang; document.addEventListener('gesturestart', function(e) { e.preventDefault(); }); document.addEventListener('gesturechange', function(e) { e.preventDefault(); }); document.addEventListener('gestureend', function(e) { e.preventDefault(); }); document.addEventListener('touchstart', function(e) { if(e.touches.length > 1) e.preventDefault(); }, { passive: false }); })();</script>
     <style>
@@ -1091,10 +1092,6 @@ exchangeBtn.onclick = async function() {
 
 amountInput.addEventListener('input', updateDisplay);
 refreshBtn.onclick = loadData;
-
-// Hide nav when input focused
-amountInput.addEventListener('focus', () => document.body.classList.add('input-focused'));
-amountInput.addEventListener('blur', () => setTimeout(() => document.body.classList.remove('input-focused'), 100));
 
 // Tap anywhere to dismiss keyboard (use touchend for mobile)
 function handleTapToDismiss(e) {

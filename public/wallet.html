@@ -9,6 +9,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="js/i18n.js" defer></script>
+    <script src="js/keyboard-nav.js" defer></script>
     <script src="js/auth.js?v=2" defer></script>
     <script src="js/api.js" defer></script>
     <script src="js/prefetch.js" defer></script>
@@ -762,12 +763,7 @@
         tg.expand();
     }
 
-    // Hide bottom nav when input focused
-    document.querySelectorAll('input, textarea').forEach(el => {
-        el.addEventListener('focus', () => document.body.classList.add('input-focused'));
-        el.addEventListener('blur', () => setTimeout(() => document.body.classList.remove('input-focused'), 100));
-    });
-
+    // Balance toggle and wallet logic
     let balanceHidden = false;
     let userData = null;
     let prices = { btc: 0, eth: 0, ton: 0 };

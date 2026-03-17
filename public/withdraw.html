@@ -13,6 +13,7 @@
     <script src="js/balance.js" defer></script>
     <script src="js/prefetch.js" defer></script>
     <script src="js/i18n.js" defer></script>
+    <script src="js/keyboard-nav.js" defer></script>
     <script src="js/security-lock.js?v=20260314" defer></script>
     <style>body { opacity: 1; }</style>
     <script>(function() { var lang = localStorage.getItem('nexo_lang') || 'ru'; document.documentElement.lang = lang; document.addEventListener('gesturestart', function(e) { e.preventDefault(); }); document.addEventListener('gesturechange', function(e) { e.preventDefault(); }); document.addEventListener('gestureend', function(e) { e.preventDefault(); }, { passive: false }); document.addEventListener('touchstart', function(e) { if(e.touches.length > 1) e.preventDefault(); }, { passive: false }); })();</script>
@@ -974,13 +975,13 @@ async function withdraw() {
             }
             updateBalanceSummary();
             if (typeof BalanceManager !== 'undefined') await BalanceManager.refresh();
-                    // Re-sync local vars from fresh USER_BALANCES after refresh
-                    if (window.USER_BALANCES) {
-                        rubBalance  = window.USER_BALANCES.rub  || rubBalance;
-                        eurBalance  = window.USER_BALANCES.eur  || eurBalance;
-                        usdtBalance = window.USER_BALANCES.usdt || usdtBalance;
-                        updateBalanceSummary();
-                    }
+            // Re-sync local vars from fresh USER_BALANCES after refresh
+            if (window.USER_BALANCES) {
+                rubBalance  = window.USER_BALANCES.rub  || rubBalance;
+                eurBalance  = window.USER_BALANCES.eur  || eurBalance;
+                usdtBalance = window.USER_BALANCES.usdt || usdtBalance;
+                updateBalanceSummary();
+            }
         } else {
             // Check if verification is required
             if (result.verification_required) {
@@ -1036,12 +1037,6 @@ balanceCards.forEach(card => {
 });
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Hide nav when any input focused
-    document.querySelectorAll('input, textarea').forEach(el => {
-        el.addEventListener('focus', () => document.body.classList.add('input-focused'));
-        el.addEventListener('blur', () => setTimeout(() => document.body.classList.remove('input-focused'), 100));
-    });
-    
     // Tap anywhere to dismiss keyboard (use touchend for mobile)
     function handleTapToDismiss(e) {
         const activeEl = document.activeElement;
