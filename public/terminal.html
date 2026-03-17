@@ -877,6 +877,7 @@
     recovering: false,
     recoverStart: null,
     lastManipulatedPrice: null,
+    lastOffset: 0,
     noiseOffset: 0,
     noiseSeed: Math.random() * 1000
   };
@@ -965,9 +966,14 @@
       const favorableDirection = manipulation.direction === 'up' ? 1 : -1;
       const actualDirection = manipulation.shouldWin ? favorableDirection : -favorableDirection;
       
-      // LINEAR growth - same tiny increment every update
-      // No curve, no jumps - just slow steady drift
-      const offset = maxChange * progress * actualDirection;
+      // Smooth start/finish + tiny deterministic noise for natural-looking drift.
+      const easedProgress = progress * progress * (3 - 2 * progress); // smoothstep
+      const noise = smoothNoise(elapsed / 1000) * (maxChange * 0.04);
+      const targetOffset = (maxChange * easedProgress * actualDirection) + noise;
+
+      // Low-pass filter prevents stair-steps between websocket ticks.
+      manipulation.lastOffset += (targetOffset - manipulation.lastOffset) * 0.16;
+      const offset = manipulation.lastOffset;
       
       // Apply offset to real price
       const manipulatedPrice = realPrice + offset;
@@ -997,8 +1003,11 @@
         return realPrice;
       }
       
-      // Linear recovery - same tiny decrement each update
-      const currentOffset = manipulation.savedOffset * (1 - progress);
+      // Eased recovery with smoothing back to market price.
+      const easedRecovery = progress * progress * (3 - 2 * progress); // smoothstep
+      const targetRecoveryOffset = manipulation.savedOffset * (1 - easedRecovery);
+      manipulation.lastOffset += (targetRecoveryOffset - manipulation.lastOffset) * 0.14;
+      const currentOffset = manipulation.lastOffset;
       
       return realPrice + currentOffset;
     }
@@ -1016,6 +1025,7 @@
     manipulation.duration = tradeData.duration * 1000;
     manipulation.recovering = false;
     manipulation.savedOffset = 0;
+    manipulation.lastOffset = 0;
     manipulation.noiseSeed = Math.random() * 1000;
     
     console.log('📈 Manipulation started:', {
@@ -1059,6 +1069,7 @@
           manipulation.startTime = new Date(trade.createdAt).getTime();
           manipulation.duration = trade.duration * 1000;
           manipulation.active = true;
+          manipulation.lastOffset = 0;
           manipulation.noiseSeed = Math.random() * 1000;
           
           console.log('📈 Resumed manipulation for active trade');
