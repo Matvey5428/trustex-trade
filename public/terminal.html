@@ -1043,7 +1043,7 @@
     if (!userId) return;
     
     try {
-      const res = await fetch(`/api/trades/active/${userId}`);
+      const res = await fetch(`/api/trades/active/${userId}?symbol=${encodeURIComponent(coinSymbol)}`);
       const payload = await res.json();
       
       if (payload.success && payload.data) {

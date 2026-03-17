@@ -270,6 +270,8 @@ router.post('/create', async (req, res) => {
           id: trade.id,
           amount,
           direction: direction || 'up',
+          symbol: tradeSymbol,
+          tradeMode,
           duration: durationSeconds,
           expiresAt: trade.expires_at,
           status: 'active',
@@ -494,6 +496,7 @@ router.get('/history/:userId', async (req, res) => {
 router.get('/active/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
+    const symbolFilter = (req.query.symbol || '').toString().trim().toUpperCase();
 
     // Get user
     const userResult = await pool.query(
@@ -508,14 +511,19 @@ router.get('/active/:userId', async (req, res) => {
     const user = userResult.rows[0];
 
     // Get active trade with its saved trade_mode
-    const tradeResult = await pool.query(
-      `SELECT id, direction, amount, symbol, duration, trade_mode, created_at, expires_at
+    let tradeQuery = `SELECT id, direction, amount, symbol, duration, trade_mode, created_at, expires_at
        FROM orders 
-       WHERE user_id = $1 AND status = 'active'
-       ORDER BY created_at DESC
-       LIMIT 1`,
-      [user.id]
-    );
+       WHERE user_id = $1 AND status = 'active'`;
+    const tradeParams = [user.id];
+
+    if (symbolFilter) {
+      tradeQuery += ' AND UPPER(symbol) = $2';
+      tradeParams.push(symbolFilter);
+    }
+
+    tradeQuery += ' ORDER BY created_at DESC LIMIT 1';
+
+    const tradeResult = await pool.query(tradeQuery, tradeParams);
 
     if (tradeResult.rows.length === 0) {
       return res.json({
