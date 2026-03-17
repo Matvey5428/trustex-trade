@@ -991,13 +991,7 @@ function updateDisplay() {
 
 function selectAll() {
     const isEur = selectedFiat === 'EUR';
-    if (window.USER_BALANCES) {
-        amountInput.value = isSwapped
-            ? (window.USER_BALANCES.usdt || 0)
-            : (isEur ? (window.USER_BALANCES.eur || 0) : (window.USER_BALANCES.rub || 0));
-    } else {
-        amountInput.value = isSwapped ? usdtBalance : (isEur ? eurBalance : rubBalance);
-    }
+    amountInput.value = isSwapped ? usdtBalance : (isEur ? eurBalance : rubBalance);
     updateDisplay();
 }
 
@@ -1012,18 +1006,25 @@ async function loadData() {
     try {
         refreshBtn.style.transform = 'rotate(360deg)';
 
+        // Show cached values instantly
         if (window.USER_BALANCES) {
             rubBalance  = window.USER_BALANCES.rub  || 0;
             eurBalance  = window.USER_BALANCES.eur  || 0;
             usdtBalance = window.USER_BALANCES.usdt || 0;
-        } else {
-            const response = await fetch(`/api/profile/${userId}?t=${Date.now()}`);
-            const payload  = await response.json();
-            const data     = payload?.data || {};
-            if (!payload.error) {
-                rubBalance  = parseFloat(data.rub)  || 0;
-                eurBalance  = parseFloat(data.eur)  || 0;
-                usdtBalance = parseFloat(data.usdt) || 0;
+            updateDisplay();
+        }
+        // Always fetch fresh data to get accurate EUR balance
+        const response = await fetch(`/api/profile/${userId}?t=${Date.now()}`);
+        const payload  = await response.json();
+        const data     = payload?.data || {};
+        if (!payload.error) {
+            rubBalance  = parseFloat(data.rub)  || 0;
+            eurBalance  = parseFloat(data.eur)  || 0;
+            usdtBalance = parseFloat(data.usdt) || 0;
+            if (window.USER_BALANCES) {
+                window.USER_BALANCES.rub  = rubBalance;
+                window.USER_BALANCES.eur  = eurBalance;
+                window.USER_BALANCES.usdt = usdtBalance;
             }
         }
     } catch (e) { /* silent */ }
@@ -1043,13 +1044,7 @@ exchangeBtn.onclick = async function() {
         : (isEur ? 'eur_to_usdt' : 'rub_to_usdt');
 
     let currentBalance;
-    if (window.USER_BALANCES) {
-        currentBalance = isSwapped
-            ? (window.USER_BALANCES.usdt || 0)
-            : (isEur ? (window.USER_BALANCES.eur || 0) : (window.USER_BALANCES.rub || 0));
-    } else {
-        currentBalance = isSwapped ? usdtBalance : (isEur ? eurBalance : rubBalance);
-    }
+    currentBalance = isSwapped ? usdtBalance : (isEur ? eurBalance : rubBalance);
     if (amount > currentBalance) return showAlert("Недостаточно средств");
 
     try {
@@ -1077,6 +1072,12 @@ exchangeBtn.onclick = async function() {
                 }
             }
             if (typeof BalanceManager !== 'undefined') await BalanceManager.refresh();
+            // Re-sync local vars after balance.js refresh to stay accurate
+            if (window.USER_BALANCES) {
+                rubBalance  = window.USER_BALANCES.rub  || rubBalance;
+                eurBalance  = window.USER_BALANCES.eur  || eurBalance;
+                usdtBalance = window.USER_BALANCES.usdt || usdtBalance;
+            }
             updateDisplay();
         } else {
             showAlert(result.error || "Ошибка обмена");

@@ -70,6 +70,7 @@ async function getMe(req, res, next) {
       balance_usdt: freshUser.balance_usdt,
       balance_btc: freshUser.balance_btc,
       balance_rub: freshUser.balance_rub,
+      balance_eur: freshUser.balance_eur,
       created_at: freshUser.created_at,
       updated_at: freshUser.updated_at
     });

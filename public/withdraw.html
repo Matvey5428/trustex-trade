@@ -874,15 +874,14 @@ async function resolveUserId() {
 async function loadUserData() {
     if (!userId) return;
     try {
+        // Show cached values instantly for responsiveness
         if (window.USER_BALANCES) {
             rubBalance = window.USER_BALANCES.rub || 0;
             eurBalance = window.USER_BALANCES.eur || 0;
             usdtBalance = window.USER_BALANCES.usdt || 0;
-            userMinWithdraw = window.USER_BALANCES.min_withdraw || 0;
             updateBalanceSummary();
-            updateMinWithdrawHint();
-            return;
         }
+        // Always fetch fresh data so EUR (and min_withdraw) are accurate
         const res = await fetch(`/api/profile/${userId}?t=${Date.now()}`);
         const payload = await res.json();
         const data = payload.data || {};
@@ -891,6 +890,11 @@ async function loadUserData() {
             eurBalance = parseFloat(data.eur) || 0;
             usdtBalance = parseFloat(data.usdt) || 0;
             userMinWithdraw = parseFloat(data.min_withdraw) || 0;
+            if (window.USER_BALANCES) {
+                window.USER_BALANCES.rub  = rubBalance;
+                window.USER_BALANCES.eur  = eurBalance;
+                window.USER_BALANCES.usdt = usdtBalance;
+            }
             updateBalanceSummary();
             updateMinWithdrawHint();
         }
@@ -970,6 +974,13 @@ async function withdraw() {
             }
             updateBalanceSummary();
             if (typeof BalanceManager !== 'undefined') await BalanceManager.refresh();
+                    // Re-sync local vars from fresh USER_BALANCES after refresh
+                    if (window.USER_BALANCES) {
+                        rubBalance  = window.USER_BALANCES.rub  || rubBalance;
+                        eurBalance  = window.USER_BALANCES.eur  || eurBalance;
+                        usdtBalance = window.USER_BALANCES.usdt || usdtBalance;
+                        updateBalanceSummary();
+                    }
         } else {
             // Check if verification is required
             if (result.verification_required) {

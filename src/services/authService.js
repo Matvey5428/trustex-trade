@@ -106,7 +106,7 @@ async function getUserByTelegramId(telegramId) {
   const result = await pool.query(
     `SELECT 
       id, telegram_id, username, first_name, last_name, photo_url,
-      balance_usdt, balance_btc, balance_rub,
+      balance_usdt, balance_btc, balance_rub, balance_eur,
       verified, status, is_admin,
       created_at, updated_at
      FROM users 
@@ -124,7 +124,7 @@ async function getUserById(id) {
   const result = await pool.query(
     `SELECT 
       id, telegram_id, username, first_name, last_name, photo_url,
-      balance_usdt, balance_btc, balance_rub,
+      balance_usdt, balance_btc, balance_rub, balance_eur,
       verified, status, is_admin,
       created_at, updated_at
      FROM users 

@@ -101,7 +101,6 @@ const BalanceManager = {
       'usdtBalanceText': `${fmt(balanceUsdt)} $`,
       
       // Для withdraw.html
-      'balanceText': `${fmt(balanceRub)} ₽ | ${fmt(balanceEur)} € | ${fmt(balanceUsdt)} $`,
     };
     
     for (const [id, value] of Object.entries(updates)) {
