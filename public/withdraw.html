@@ -787,6 +787,18 @@ function updateBalanceSummary() {
     balanceCards.forEach(card => {
         card.classList.toggle('active', card.dataset.currencyCard === selectedCurrency);
     });
+
+    const walletInput = document.getElementById('walletAddress');
+    const walletLabel = walletInput?.previousElementSibling;
+    const walletMeta = {
+        RUB: { label: 'Номер карты или кошелька', placeholder: '4276 **** **** 0000' },
+        EUR: { label: 'IBAN', placeholder: 'DE89 3704 0044 0532 0130 00' },
+        USDT: { label: 'Адрес кошелька', placeholder: 'TRC-20 / ERC-20 address' }
+    };
+    if (walletInput && walletMeta[selectedCurrency]) {
+        walletInput.placeholder = walletMeta[selectedCurrency].placeholder;
+        if (walletLabel) walletLabel.textContent = walletMeta[selectedCurrency].label;
+    }
 }
 
 function showAlert(msg, success = false, type = null) {
