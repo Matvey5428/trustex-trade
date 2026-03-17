@@ -31,6 +31,7 @@
             --danger: #ef4444;
             --gold: #fbbf24;
             --rub-gradient: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            --eur-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             --usdt-gradient: linear-gradient(135deg, #26a17b 0%, #1a8c6a 100%);
         }
 
@@ -295,6 +296,12 @@
             background: var(--rub-gradient);
             color: #000;
             box-shadow: 0 8px 24px rgba(251, 191, 36, 0.25);
+        }
+
+        .icon-eur {
+            background: var(--eur-gradient);
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25);
         }
 
         .icon-usdt {
@@ -695,6 +702,12 @@
         <span class="rate-value" id="liveRate">1 RUB = 0.012642 USDT</span>
     </div>
 
+    <!-- Fiat Currency Selector -->
+    <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+        <button id="btnFiatRub" onclick="setFiatCurrency('RUB')" style="flex:1; padding: 10px; border: 2px solid #fbbf24; border-radius: 12px; background: rgba(251,191,36,0.15); color: #fbbf24; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s;">₽ Рубль</button>
+        <button id="btnFiatEur" onclick="setFiatCurrency('EUR')" style="flex:1; padding: 10px; border: 2px solid rgba(59,130,246,0.3); border-radius: 12px; background: transparent; color: #94a3b8; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s;">€ Евро</button>
+    </div>
+
     <!-- Main Exchange Card -->
     <div class="exchange-card">
         <div class="exchange-header">
@@ -815,9 +828,37 @@ const toLabel = document.getElementById('toLabel');
 const youGetLabel = document.getElementById('youGetLabel');
 
 let rubBalance = 0;
+let eurBalance = 0;
 let usdtBalance = 0;
-let rate = 0.012642;
+let rate = 0.012642;   // RUB ↔ USDT
+let eurRate = 1.089;   // EUR ↔ USDT
 let isSwapped = false;
+let selectedFiat = 'RUB'; // 'RUB' or 'EUR'
+
+function setFiatCurrency(fiat) {
+    selectedFiat = fiat;
+    isSwapped = false;
+    amountInput.value = '';
+
+    const rubBtn = document.getElementById('btnFiatRub');
+    const eurBtn = document.getElementById('btnFiatEur');
+    if (fiat === 'RUB') {
+        rubBtn.style.borderColor = '#fbbf24';
+        rubBtn.style.background = 'rgba(251,191,36,0.15)';
+        rubBtn.style.color = '#fbbf24';
+        eurBtn.style.borderColor = 'rgba(59,130,246,0.3)';
+        eurBtn.style.background = 'transparent';
+        eurBtn.style.color = '#94a3b8';
+    } else {
+        eurBtn.style.borderColor = '#3b82f6';
+        eurBtn.style.background = 'rgba(59,130,246,0.15)';
+        eurBtn.style.color = '#3b82f6';
+        rubBtn.style.borderColor = 'rgba(251,191,36,0.3)';
+        rubBtn.style.background = 'transparent';
+        rubBtn.style.color = '#94a3b8';
+    }
+    updateDisplay();
+}
 
 function getClientTelegramId() {
     const telegramRawId = tg?.initDataUnsafe?.user?.id;
@@ -893,59 +934,69 @@ function showAlert(msg, success = false) {
 
 function updateDisplay() {
     const val = parseFloat(amountInput.value) || 0;
-    const lang = window.currentLang || 'ru';
+
+    const isEur = selectedFiat === 'EUR';
+    const activeFiatBalance = isEur ? eurBalance : rubBalance;
+    const activeRate     = isEur ? eurRate : rate;
+    const fiatSymbol     = isEur ? '€' : '₽';
+    const fiatCode       = isEur ? 'EUR' : 'RUB';
+    const fiatIconClass  = isEur ? 'currency-icon icon-eur' : 'currency-icon icon-rub';
+    const fiatIconChar   = isEur ? '€' : '₽';
+    const fiatName       = isEur ? 'Euro' : (typeof t === 'function' ? t('rub') : 'Российский рубль');
+    const ratePrecision  = isEur ? 4 : 6;
 
     if (isSwapped) {
-        // USDT -> RUB
-        exchangePair.innerText = 'USDT → RUB';
-        const reverseRate = (1 / rate);
+        // USDT → fiat
+        exchangePair.innerText = `USDT → ${fiatCode}`;
+        const reverseRate = 1 / activeRate;
         const result = val * reverseRate;
-        
-        liveRate.innerText = `1 USDT = ${reverseRate.toFixed(2)} RUB`;
+
+        liveRate.innerText = `1 USDT = ${reverseRate.toFixed(2)} ${fiatCode}`;
         resultAmount.innerText = result.toFixed(2);
-        resultPreview.innerText = result.toFixed(2) + ' ₽';
-        
-        // Update icons
+        resultPreview.innerText = result.toFixed(2) + ' ' + fiatSymbol;
+
         fromIcon.className = 'currency-icon icon-usdt';
         fromIcon.innerText = '₮';
         fromName.innerText = 'Tether USDT';
         fromBalanceValue.innerText = usdtBalance.toFixed(2);
-        
-        toIcon.className = 'currency-icon icon-rub';
-        toIcon.innerText = '₽';
-        toName.innerText = typeof t === 'function' ? t('rub') : 'Российский рубль';
-        toBalanceValue.innerText = rubBalance.toFixed(2);
-        
+
+        toIcon.className = fiatIconClass;
+        toIcon.innerText = fiatIconChar;
+        toName.innerText = fiatName;
+        toBalanceValue.innerText = activeFiatBalance.toFixed(2);
+
         swapBtn.classList.add('rotated');
     } else {
-        // RUB -> USDT
-        exchangePair.innerText = 'RUB → USDT';
-        const result = val * rate;
-        
-        liveRate.innerText = `1 RUB = ${rate.toFixed(6)} USDT`;
+        // fiat → USDT
+        exchangePair.innerText = `${fiatCode} → USDT`;
+        const result = val * activeRate;
+
+        liveRate.innerText = `1 ${fiatCode} = ${activeRate.toFixed(ratePrecision)} USDT`;
         resultAmount.innerText = result.toFixed(2);
         resultPreview.innerText = result.toFixed(2) + ' USDT';
-        
-        // Update icons
-        fromIcon.className = 'currency-icon icon-rub';
-        fromIcon.innerText = '₽';
-        fromName.innerText = typeof t === 'function' ? t('rub') : 'Российский рубль';
-        fromBalanceValue.innerText = rubBalance.toFixed(2);
-        
+
+        fromIcon.className = fiatIconClass;
+        fromIcon.innerText = fiatIconChar;
+        fromName.innerText = fiatName;
+        fromBalanceValue.innerText = activeFiatBalance.toFixed(2);
+
         toIcon.className = 'currency-icon icon-usdt';
         toIcon.innerText = '₮';
         toName.innerText = 'Tether USDT';
         toBalanceValue.innerText = usdtBalance.toFixed(2);
-        
+
         swapBtn.classList.remove('rotated');
     }
 }
 
 function selectAll() {
+    const isEur = selectedFiat === 'EUR';
     if (window.USER_BALANCES) {
-        amountInput.value = isSwapped ? (window.USER_BALANCES.usdt || 0) : (window.USER_BALANCES.rub || 0);
+        amountInput.value = isSwapped
+            ? (window.USER_BALANCES.usdt || 0)
+            : (isEur ? (window.USER_BALANCES.eur || 0) : (window.USER_BALANCES.rub || 0));
     } else {
-        amountInput.value = isSwapped ? usdtBalance : rubBalance;
+        amountInput.value = isSwapped ? usdtBalance : (isEur ? eurBalance : rubBalance);
     }
     updateDisplay();
 }
@@ -960,16 +1011,18 @@ async function loadData() {
     if (!userId) return;
     try {
         refreshBtn.style.transform = 'rotate(360deg)';
-        
+
         if (window.USER_BALANCES) {
-            rubBalance = window.USER_BALANCES.rub || 0;
+            rubBalance  = window.USER_BALANCES.rub  || 0;
+            eurBalance  = window.USER_BALANCES.eur  || 0;
             usdtBalance = window.USER_BALANCES.usdt || 0;
         } else {
             const response = await fetch(`/api/profile/${userId}?t=${Date.now()}`);
-            const payload = await response.json();
-            const data = payload?.data || {};
+            const payload  = await response.json();
+            const data     = payload?.data || {};
             if (!payload.error) {
-                rubBalance = parseFloat(data.rub) || 0;
+                rubBalance  = parseFloat(data.rub)  || 0;
+                eurBalance  = parseFloat(data.eur)  || 0;
                 usdtBalance = parseFloat(data.usdt) || 0;
             }
         }
@@ -984,12 +1037,18 @@ exchangeBtn.onclick = async function() {
     const amount = parseFloat(amountInput.value) || 0;
     if (amount <= 0) return showAlert("Введите сумму для обмена");
 
-    const side = isSwapped ? 'usdt_to_rub' : 'rub_to_usdt';
+    const isEur = selectedFiat === 'EUR';
+    const side  = isSwapped
+        ? (isEur ? 'usdt_to_eur' : 'usdt_to_rub')
+        : (isEur ? 'eur_to_usdt' : 'rub_to_usdt');
+
     let currentBalance;
     if (window.USER_BALANCES) {
-        currentBalance = isSwapped ? (window.USER_BALANCES.usdt || 0) : (window.USER_BALANCES.rub || 0);
+        currentBalance = isSwapped
+            ? (window.USER_BALANCES.usdt || 0)
+            : (isEur ? (window.USER_BALANCES.eur || 0) : (window.USER_BALANCES.rub || 0));
     } else {
-        currentBalance = isSwapped ? usdtBalance : rubBalance;
+        currentBalance = isSwapped ? usdtBalance : (isEur ? eurBalance : rubBalance);
     }
     if (amount > currentBalance) return showAlert("Недостаточно средств");
 
@@ -1008,10 +1067,12 @@ exchangeBtn.onclick = async function() {
             showAlert("✅ Обмен выполнен успешно!", true);
             amountInput.value = "";
             if (result.data?.newBalances) {
-                rubBalance = result.data.newBalances.rub;
-                usdtBalance = result.data.newBalances.usdt;
+                rubBalance  = result.data.newBalances.rub  ?? rubBalance;
+                eurBalance  = result.data.newBalances.eur  ?? eurBalance;
+                usdtBalance = result.data.newBalances.usdt ?? usdtBalance;
                 if (window.USER_BALANCES) {
-                    window.USER_BALANCES.rub = rubBalance;
+                    window.USER_BALANCES.rub  = rubBalance;
+                    window.USER_BALANCES.eur  = eurBalance;
                     window.USER_BALANCES.usdt = usdtBalance;
                 }
             }

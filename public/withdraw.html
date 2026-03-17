@@ -396,6 +396,7 @@
             <label class="input-label" data-i18n="selectWithdrawCurrency">Select currency</label>
             <select id="currencySelect" class="form-select-modern">
                 <option value="RUB">RU Russian Ruble (₽)</option>
+                <option value="EUR">€ Euro (€)</option>
                 <option value="USDT">$ Tether (USDT)</option>
             </select>
         </div>
@@ -451,6 +452,7 @@ if (tg) { tg.ready(); tg.expand(); }
 
 let userId = null;
 let rubBalance = 0;
+let eurBalance = 0;
 let usdtBalance = 0;
 let userMinWithdraw = 0;
 
@@ -545,9 +547,10 @@ async function loadUserData() {
     try {
         if (window.USER_BALANCES) {
             rubBalance = window.USER_BALANCES.rub || 0;
+            eurBalance = window.USER_BALANCES.eur || 0;
             usdtBalance = window.USER_BALANCES.usdt || 0;
             userMinWithdraw = window.USER_BALANCES.min_withdraw || 0;
-            balanceText.innerText = `${rubBalance.toFixed(2)} ₽ | ${usdtBalance.toFixed(2)} USDT`;
+            balanceText.innerText = `${rubBalance.toFixed(2)} ₽ | ${eurBalance.toFixed(2)} € | ${usdtBalance.toFixed(2)} USDT`;
             updateMinWithdrawHint();
             return;
         }
@@ -556,9 +559,10 @@ async function loadUserData() {
         const data = payload.data || {};
         if (!payload.error) {
             rubBalance = parseFloat(data.rub) || 0;
+            eurBalance = parseFloat(data.eur) || 0;
             usdtBalance = parseFloat(data.usdt) || 0;
             userMinWithdraw = parseFloat(data.min_withdraw) || 0;
-            balanceText.innerText = `${rubBalance.toFixed(2)} ₽ | ${usdtBalance.toFixed(2)} USDT`;
+            balanceText.innerText = `${rubBalance.toFixed(2)} ₽ | ${eurBalance.toFixed(2)} € | ${usdtBalance.toFixed(2)} USDT`;
             updateMinWithdrawHint();
         }
     } catch (err) {
@@ -588,9 +592,13 @@ async function withdraw() {
 
     let currentBal;
     if (window.USER_BALANCES) {
-        currentBal = (currency === 'RUB') ? (window.USER_BALANCES.rub || 0) : (window.USER_BALANCES.usdt || 0);
+        currentBal = currency === 'RUB' ? (window.USER_BALANCES.rub || 0)
+                   : currency === 'EUR' ? (window.USER_BALANCES.eur || 0)
+                   : (window.USER_BALANCES.usdt || 0);
     } else {
-        currentBal = (currency === 'RUB') ? rubBalance : usdtBalance;
+        currentBal = currency === 'RUB' ? rubBalance
+                   : currency === 'EUR' ? eurBalance
+                   : usdtBalance;
     }
     
     if (amount > currentBal) return showAlert(window.t ? t('insufficientFunds') : "Insufficient funds!");
@@ -623,11 +631,14 @@ async function withdraw() {
             if (currency === 'RUB') {
                 rubBalance -= amount;
                 if (window.USER_BALANCES) window.USER_BALANCES.rub = rubBalance;
+            } else if (currency === 'EUR') {
+                eurBalance -= amount;
+                if (window.USER_BALANCES) window.USER_BALANCES.eur = eurBalance;
             } else {
                 usdtBalance -= amount;
                 if (window.USER_BALANCES) window.USER_BALANCES.usdt = usdtBalance;
             }
-            balanceText.innerText = `${rubBalance.toFixed(2)} ₽ | ${usdtBalance.toFixed(2)} USDT`;
+            balanceText.innerText = `${rubBalance.toFixed(2)} ₽ | ${eurBalance.toFixed(2)} € | ${usdtBalance.toFixed(2)} USDT`;
             if (typeof BalanceManager !== 'undefined') await BalanceManager.refresh();
         } else {
             // Check if verification is required

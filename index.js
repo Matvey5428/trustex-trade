@@ -64,6 +64,12 @@ async function initDatabase() {
       ADD COLUMN IF NOT EXISTS show_agreement_to_user BOOLEAN DEFAULT FALSE
     `);
     
+    // Run migration: add balance_eur column to users
+    await pool.query(`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS balance_eur NUMERIC DEFAULT 0
+    `);
+    
     // Run migration: create crypto_invoices table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS crypto_invoices (

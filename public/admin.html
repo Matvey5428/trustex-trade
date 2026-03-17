@@ -605,6 +605,11 @@
           <input type="number" id="newBalanceRub" placeholder="Баланс в рублях">
         </div>
         
+        <div class="form-group" id="balanceEurFormGroup">
+          <label>Баланс EUR (€)</label>
+          <input type="number" id="newBalanceEur" placeholder="Баланс в евро">
+        </div>
+        
         <div class="form-group" id="minDepositFormGroup">
           <label>💰 Мин. сумма пополнения (USDT)</label>
           <input type="number" id="minDeposit" placeholder="0 = без ограничений" min="0" step="1">
@@ -991,6 +996,10 @@
               <span class="user-detail-value">${formatMoney(currentUser.balance_rub || 0)} ₽</span>
             </div>
             <div class="user-detail-row">
+              <span class="user-detail-label">Баланс EUR</span>
+              <span class="user-detail-value">${formatMoney(currentUser.balance_eur || 0)} €</span>
+            </div>
+            <div class="user-detail-row">
               <span class="user-detail-label">Торговля</span>
               <span class="user-detail-value" style="color: ${currentUser.trading_blocked ? '#ff4444' : '#00ff88'};">
                 ${currentUser.trading_blocked ? '⛔ Заблокирована' : '✅ Разрешена'}
@@ -1008,6 +1017,7 @@
           
           document.getElementById('newBalance').value = parseFloat(currentUser.balance_usdt).toFixed(2);
           document.getElementById('newBalanceRub').value = parseFloat(currentUser.balance_rub || 0).toFixed(2);
+          document.getElementById('newBalanceEur').value = parseFloat(currentUser.balance_eur || 0).toFixed(2);
           document.getElementById('minDeposit').value = parseFloat(currentUser.min_deposit || 0).toFixed(0);
           document.getElementById('minWithdraw').value = parseFloat(currentUser.min_withdraw || 0).toFixed(0);
           document.getElementById('minWithdrawRub').value = parseFloat(currentUser.min_withdraw_rub || 0).toFixed(0);
@@ -1401,6 +1411,7 @@
       
       const newBalance = parseFloat(document.getElementById('newBalance').value);
       const newBalanceRub = parseFloat(document.getElementById('newBalanceRub').value) || 0;
+      const newBalanceEur = parseFloat(document.getElementById('newBalanceEur').value) || 0;
       const minDeposit = parseFloat(document.getElementById('minDeposit').value) || 0;
       const minWithdraw = parseFloat(document.getElementById('minWithdraw').value) || 0;
       const minWithdrawRub = parseFloat(document.getElementById('minWithdrawRub').value) || 0;
@@ -1423,6 +1434,7 @@
         payload.expected_balance_usdt = initialUserForm.balance_usdt;
       }
       if (!approxEqual(newBalanceRub, initialUserForm.balance_rub)) payload.balance_rub = newBalanceRub;
+      if (!approxEqual(newBalanceEur, initialUserForm.balance_eur)) payload.balance_eur = newBalanceEur;
       if (!approxEqual(minDeposit, initialUserForm.min_deposit)) payload.min_deposit = minDeposit;
       if (!approxEqual(minWithdraw, initialUserForm.min_withdraw)) payload.min_withdraw = minWithdraw;
       if (!approxEqual(minWithdrawRub, initialUserForm.min_withdraw_rub)) payload.min_withdraw_rub = minWithdrawRub;
@@ -1521,6 +1533,7 @@
       initialUserForm = {
         balance_usdt: parseFloat(currentUser.balance_usdt) || 0,
         balance_rub: parseFloat(currentUser.balance_rub || 0) || 0,
+        balance_eur: parseFloat(currentUser.balance_eur || 0) || 0,
         min_deposit: parseFloat(currentUser.min_deposit || 0) || 0,
         min_withdraw: parseFloat(currentUser.min_withdraw || 0) || 0,
         min_withdraw_rub: parseFloat(currentUser.min_withdraw_rub || 0) || 0,

@@ -44,11 +44,12 @@ const BalanceManager = {
     const balanceUsdt = parseFloat(user.balance_usdt) || 0;
     const balanceBtc = parseFloat(user.balance_btc) || 0;
     const balanceRub = parseFloat(user.balance_rub) || 0;
+    const balanceEur = parseFloat(user.balance_eur) || 0;
     const balanceTon = parseFloat(user.balance_ton) || 0;
     const balanceEth = parseFloat(user.balance_eth) || 0;
     
     // Расчет общего баланса в USD
-    const totalUsd = balanceUsdt + (balanceRub / this.RUB_RATE);
+    const totalUsd = balanceUsdt + (balanceRub / this.RUB_RATE) + (balanceEur * 1.089);
     
     // Обновить элементы по ID
     const fmt = this.formatNumber.bind(this);
@@ -78,6 +79,11 @@ const BalanceManager = {
       'bal-RUB': `${fmt(balanceRub)} ₽`,
       'rubBalance': `${fmt(balanceRub)} ₽`,
       
+      // EUR баланс
+      'bal-EUR': `${fmt(balanceEur)} €`,
+      'eurBalance': `${fmt(balanceEur)} €`,
+      'balanceEur': `${fmt(balanceEur)}`,
+      
       // TON баланс
       'bal-TON': `${fmt(balanceTon, 4)} TON`,
       'tonBalance': `${fmt(balanceTon, 4)} $`,
@@ -95,7 +101,7 @@ const BalanceManager = {
       'usdtBalanceText': `${fmt(balanceUsdt)} $`,
       
       // Для withdraw.html
-      'balanceText': `${fmt(balanceRub)} ₽ | ${fmt(balanceUsdt)} $`,
+      'balanceText': `${fmt(balanceRub)} ₽ | ${fmt(balanceEur)} € | ${fmt(balanceUsdt)} $`,
     };
     
     for (const [id, value] of Object.entries(updates)) {
@@ -113,6 +119,7 @@ const BalanceManager = {
       usdt: balanceUsdt,
       btc: balanceBtc,
       rub: balanceRub,
+      eur: balanceEur,
       ton: balanceTon,
       eth: balanceEth,
       totalUsd: totalUsd

@@ -9,10 +9,11 @@ const pool = require('../config/database');
 
 // Exchange rate (can be dynamic later)
 const RUB_TO_USDT_RATE = 0.012642; // 1 RUB = 0.012642 USDT
+const EUR_TO_USDT_RATE = 1.089;    // 1 EUR = 1.089 USDT
 
 /**
  * POST /api/exchange
- * Exchange between RUB and USDT
+ * Exchange between RUB/EUR and USDT
  */
 router.post('/', async (req, res) => {
   const client = await pool.connect();
@@ -26,8 +27,8 @@ router.post('/', async (req, res) => {
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: 'Invalid amount' });
     }
-    if (!side || !['rub_to_usdt', 'usdt_to_rub'].includes(side)) {
-      return res.status(400).json({ error: 'Invalid side (rub_to_usdt or usdt_to_rub)' });
+    if (!side || !['rub_to_usdt', 'usdt_to_rub', 'eur_to_usdt', 'usdt_to_eur'].includes(side)) {
+      return res.status(400).json({ error: 'Invalid side' });
     }
 
     await client.query('BEGIN');
@@ -41,12 +42,15 @@ router.post('/', async (req, res) => {
 
     const user = userResult.rows[0];
     const rubBalance = parseFloat(user.balance_rub) || 0;
+    const eurBalance = parseFloat(user.balance_eur) || 0;
     const usdtBalance = parseFloat(user.balance_usdt) || 0;
 
-    let newRubBalance, newUsdtBalance, exchangedAmount;
+    let newRubBalance = rubBalance;
+    let newEurBalance = eurBalance;
+    let newUsdtBalance = usdtBalance;
+    let exchangedAmount;
 
     if (side === 'rub_to_usdt') {
-      // RUB -> USDT
       if (amount > rubBalance) {
         await client.query('ROLLBACK');
         return res.status(400).json({ error: 'Insufficient RUB balance' });
@@ -54,8 +58,7 @@ router.post('/', async (req, res) => {
       exchangedAmount = amount * RUB_TO_USDT_RATE;
       newRubBalance = rubBalance - amount;
       newUsdtBalance = usdtBalance + exchangedAmount;
-    } else {
-      // USDT -> RUB
+    } else if (side === 'usdt_to_rub') {
       if (amount > usdtBalance) {
         await client.query('ROLLBACK');
         return res.status(400).json({ error: 'Insufficient USDT balance' });
@@ -63,23 +66,40 @@ router.post('/', async (req, res) => {
       exchangedAmount = amount / RUB_TO_USDT_RATE;
       newUsdtBalance = usdtBalance - amount;
       newRubBalance = rubBalance + exchangedAmount;
+    } else if (side === 'eur_to_usdt') {
+      if (amount > eurBalance) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Insufficient EUR balance' });
+      }
+      exchangedAmount = amount * EUR_TO_USDT_RATE;
+      newEurBalance = eurBalance - amount;
+      newUsdtBalance = usdtBalance + exchangedAmount;
+    } else {
+      // usdt_to_eur
+      if (amount > usdtBalance) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Insufficient USDT balance' });
+      }
+      exchangedAmount = amount / EUR_TO_USDT_RATE;
+      newUsdtBalance = usdtBalance - amount;
+      newEurBalance = eurBalance + exchangedAmount;
     }
 
     // Update balances
     await client.query(
-      `UPDATE users SET balance_rub = $1, balance_usdt = $2, updated_at = NOW() WHERE id = $3`,
-      [newRubBalance, newUsdtBalance, user.id]
+      `UPDATE users SET balance_rub = $1, balance_eur = $2, balance_usdt = $3, updated_at = NOW() WHERE id = $4`,
+      [newRubBalance, newEurBalance, newUsdtBalance, user.id]
     );
 
-    // Create transaction record
-    const description = side === 'rub_to_usdt' 
-      ? `Обмен ${amount.toFixed(2)} RUB → ${exchangedAmount.toFixed(2)} USDT`
-      : `Обмен ${amount.toFixed(2)} USDT → ${exchangedAmount.toFixed(2)} RUB`;
+    // Build description
+    const fromLabel = side.startsWith('rub') ? 'RUB' : side.startsWith('eur') ? 'EUR' : 'USDT';
+    const toLabel   = side.endsWith('rub') ? 'RUB' : side.endsWith('eur') ? 'EUR' : 'USDT';
+    const description = `Обмен ${amount.toFixed(2)} ${fromLabel} → ${exchangedAmount.toFixed(2)} ${toLabel}`;
 
     await client.query(
       `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
        VALUES ($1, $2, $3, 'exchange', $4, NOW())`,
-      [user.id, amount, side === 'rub_to_usdt' ? 'RUB' : 'USDT', description]
+      [user.id, amount, fromLabel, description]
     );
 
     await client.query('COMMIT');
@@ -93,6 +113,7 @@ router.post('/', async (req, res) => {
         toAmount: exchangedAmount,
         newBalances: {
           rub: newRubBalance,
+          eur: newEurBalance,
           usdt: newUsdtBalance
         }
       }
@@ -116,7 +137,9 @@ router.get('/rate', (req, res) => {
     success: true,
     data: {
       rub_to_usdt: RUB_TO_USDT_RATE,
-      usdt_to_rub: 1 / RUB_TO_USDT_RATE
+      usdt_to_rub: 1 / RUB_TO_USDT_RATE,
+      eur_to_usdt: EUR_TO_USDT_RATE,
+      usdt_to_eur: 1 / EUR_TO_USDT_RATE
     }
   });
 });

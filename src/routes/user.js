@@ -61,7 +61,8 @@ router.post('/', async (req, res) => {
         username: user.username,
         balance_usdt: user.balance_usdt,
         balance_btc: user.balance_btc,
-        balance_rub: user.balance_rub
+        balance_rub: user.balance_rub,
+        balance_eur: user.balance_eur
       }
     });
 
@@ -104,7 +105,7 @@ router.get('/:userId', async (req, res) => {
         telegram_id: user.telegram_id,
         username: user.username,
         rub: parseFloat(user.balance_rub) || 0,
-        usdt: parseFloat(user.balance_usdt) || 0,
+        eur: parseFloat(user.balance_eur) || 0,        eur: parseFloat(user.balance_eur) || 0,        usdt: parseFloat(user.balance_usdt) || 0,
         btc: parseFloat(user.balance_btc) || 0,
         eth: parseFloat(user.balance_eth) || 0,
         ton: parseFloat(user.balance_ton) || 0,

@@ -202,7 +202,7 @@ router.get('/users', adminCheck, async (req, res) => {
       query = `
         SELECT 
           u.id, u.telegram_id, u.username, u.first_name, u.last_name,
-          u.balance_usdt, u.balance_btc, u.balance_rub,
+          u.balance_usdt, u.balance_btc, u.balance_rub, u.balance_eur,
           COALESCE(u.trade_mode, 'loss') as trade_mode,
           u.created_at,
           m.name as manager_name,
@@ -218,7 +218,7 @@ router.get('/users', adminCheck, async (req, res) => {
       query = `
         SELECT 
           u.id, u.telegram_id, u.username, u.first_name, u.last_name,
-          u.balance_usdt, u.balance_btc, u.balance_rub,
+          u.balance_usdt, u.balance_btc, u.balance_rub, u.balance_eur,
           COALESCE(u.trade_mode, 'loss') as trade_mode,
           u.created_at,
           m.name as manager_name
@@ -235,7 +235,7 @@ router.get('/users', adminCheck, async (req, res) => {
       query = `
         SELECT 
           id, telegram_id, username, first_name, last_name,
-          balance_usdt, balance_btc, balance_rub,
+          balance_usdt, balance_btc, balance_rub, balance_eur,
           COALESCE(trade_mode, 'loss') as trade_mode,
           created_at
         FROM users 
@@ -456,7 +456,7 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
     let withdrawalResult;
     if (req.isMainAdmin) {
       withdrawalResult = await client.query(
-        `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.balance_rub, u.first_name
+        `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.balance_rub, u.balance_eur, u.first_name
          FROM withdraw_requests wr 
          JOIN users u ON wr.user_id = u.id 
          WHERE wr.id = $1
@@ -465,7 +465,7 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
       );
     } else if (req.isSubAdmin) {
       withdrawalResult = await client.query(
-        `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.balance_rub, u.first_name
+        `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.balance_rub, u.balance_eur, u.first_name
          FROM withdraw_requests wr 
          JOIN users u ON wr.user_id = u.id 
          WHERE wr.id = $1 
@@ -475,7 +475,7 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
       );
     } else {
       withdrawalResult = await client.query(
-        `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.balance_rub, u.first_name
+        `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.balance_rub, u.balance_eur, u.first_name
          FROM withdraw_requests wr 
          JOIN users u ON wr.user_id = u.id 
          WHERE wr.id = $1 AND u.manager_id = $2
@@ -496,11 +496,13 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Withdrawal already processed' });
     }
     
-    // Determine currency from wallet field (format: "RUB: card" or "USDT: address")
-    const isRub = withdrawal.wallet && withdrawal.wallet.toUpperCase().startsWith('RUB');
-    const currency = isRub ? 'RUB' : 'USDT';
-    const balanceField = isRub ? 'balance_rub' : 'balance_usdt';
-    const currentBalance = parseFloat(isRub ? withdrawal.balance_rub : withdrawal.balance_usdt) || 0;
+    // Determine currency from wallet field (format: "RUB: card", "EUR: card", or "USDT: address")
+    const walletUpper = withdrawal.wallet ? withdrawal.wallet.toUpperCase() : '';
+    const isRub = walletUpper.startsWith('RUB');
+    const isEur = walletUpper.startsWith('EUR');
+    const currency = isRub ? 'RUB' : isEur ? 'EUR' : 'USDT';
+    const balanceField = isRub ? 'balance_rub' : isEur ? 'balance_eur' : 'balance_usdt';
+    const currentBalance = parseFloat(isRub ? withdrawal.balance_rub : isEur ? withdrawal.balance_eur : withdrawal.balance_usdt) || 0;
     
     // Return balance to user
     const newBalance = currentBalance + parseFloat(withdrawal.amount);
@@ -557,7 +559,7 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
 router.put('/user/:telegramId', adminCheck, async (req, res) => {
   try {
     const { telegramId } = req.params;
-    const { balance_usdt, balance_rub, trade_mode, trading_blocked, needs_verification, verified, min_deposit, min_withdraw, min_withdraw_rub, profit_multiplier, expected_balance_usdt, show_agreement_to_user } = req.body;
+    const { balance_usdt, balance_rub, balance_eur, trade_mode, trading_blocked, needs_verification, verified, min_deposit, min_withdraw, min_withdraw_rub, profit_multiplier, expected_balance_usdt, show_agreement_to_user } = req.body;
     
     // Check user belongs to admin/sub-admin/manager
     if (!req.isMainAdmin) {
@@ -605,6 +607,11 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
     if (balance_rub !== undefined) {
       updates.push(`balance_rub = $${paramIndex++}`);
       values.push(parseFloat(balance_rub) || 0);
+    }
+    
+    if (balance_eur !== undefined) {
+      updates.push(`balance_eur = $${paramIndex++}`);
+      values.push(parseFloat(balance_eur) || 0);
     }
     
     if (trade_mode) {

@@ -449,6 +449,16 @@
                 </div>
                 <div class="asset-balance" id="bal-RUB">0.00 ₽</div>
             </div>
+            <div class="asset-item" onclick="openPayment('EUR')">
+                <div class="asset-left">
+                    <div class="coin" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;">€</div>
+                    <div>
+                        <div class="asset-name">Euro</div>
+                        <div class="asset-price" id="price-EUR">≈ $1.09</div>
+                    </div>
+                </div>
+                <div class="asset-balance" id="bal-EUR">0.00 €</div>
+            </div>
         </div>
 
         <div class="section-card">
@@ -603,6 +613,7 @@
 
     const coinIcons = {
         'RUB': { symbol: '₽', class: 'rub' },
+        'EUR': { symbol: '€', class: '', style: 'background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;' },
         'BTC': { symbol: '₿', class: 'btc' },
         'TON': { symbol: 'T', class: 'ton' },
         'ETH': { symbol: '◆', class: 'eth' },
@@ -611,6 +622,7 @@
 
     const presets = {
         'RUB': [5000, 10000, 25000, 50000],
+        'EUR': [50, 100, 500, 1000],
         'USDT': [50, 100, 500, 1000],
         'BTC': [0.001, 0.005, 0.01, 0.05],
         'TON': [20, 100, 500, 1000],
@@ -657,6 +669,7 @@
         try {
             if (window.USER_BALANCES) {
                 document.getElementById('bal-RUB').innerText = `${(window.USER_BALANCES.rub || 0).toFixed(2)} ₽`;
+                document.getElementById('bal-EUR').innerText = `${(window.USER_BALANCES.eur || 0).toFixed(2)} €`;
                 document.getElementById('bal-BTC').innerText = `${(window.USER_BALANCES.btc || 0).toFixed(6)} BTC`;
                 document.getElementById('bal-ETH').innerText = `${(window.USER_BALANCES.eth || 0).toFixed(6)} ETH`;
                 document.getElementById('bal-TON').innerText = `${(window.USER_BALANCES.ton || 0).toFixed(2)} TON`;
@@ -668,6 +681,7 @@
             const payload = await res.json();
             const data = payload?.data || {};
             document.getElementById('bal-RUB').innerText = `${(data.rub || 0).toFixed(2)} ₽`;
+            document.getElementById('bal-EUR').innerText = `${(data.eur || 0).toFixed(2)} €`;
             document.getElementById('bal-BTC').innerText = `${(data.btc || 0).toFixed(6)} BTC`;
             document.getElementById('bal-ETH').innerText = `${(data.eth || 0).toFixed(6)} ETH`;
             document.getElementById('bal-TON').innerText = `${(data.ton || 0).toFixed(2)} TON`;
@@ -686,7 +700,8 @@
         const iconData = coinIcons[symbol] || coinIcons['RUB'];
         const iconEl = document.getElementById('paymentCoinIcon');
         iconEl.innerText = iconData.symbol;
-        iconEl.className = 'coin ' + iconData.class;
+        iconEl.className = 'coin ' + (iconData.class || '');
+        iconEl.style.cssText = iconData.style || '';
         const container = document.getElementById('presetContainer');
         container.innerHTML = '';
         (presets[symbol] || [10, 50, 100, 500]).forEach(val => {

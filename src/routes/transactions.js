@@ -16,7 +16,7 @@ async function notifyManagerAboutWithdraw(user, amount, currency, wallet) {
   if (!adminBot) return;
 
   const MAIN_ADMIN_ID = process.env.ADMIN_IDS?.split(',')[0]?.trim();
-  const currencySymbol = currency === 'RUB' ? '₽' : currency === 'BTC' ? '₿' : '$';
+  const currencySymbol = currency === 'RUB' ? '₽' : currency === 'EUR' ? '€' : currency === 'BTC' ? '₿' : '$';
   
   const message = `💸 <b>Заявка на вывод</b>\n\n` +
     `👤 Пользователь: ${user.first_name || ''} ${user.last_name || ''} (@${user.username || 'нет'})\n` +
@@ -65,7 +65,7 @@ router.post('/withdraw', async (req, res) => {
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: 'Invalid amount' });
     }
-    if (!currency || !['RUB', 'USDT', 'BTC'].includes(currency)) {
+    if (!currency || !['RUB', 'USDT', 'BTC', 'EUR'].includes(currency)) {
       return res.status(400).json({ error: 'Invalid currency' });
     }
     if (!wallet || wallet.length < 5) {
@@ -120,6 +120,7 @@ router.post('/withdraw', async (req, res) => {
     
     // Determine balance field
     const balanceField = currency === 'RUB' ? 'balance_rub' : 
+                         currency === 'EUR' ? 'balance_eur' :
                          currency === 'BTC' ? 'balance_btc' : 'balance_usdt';
     const currentBalance = parseFloat(user[balanceField]) || 0;
 
