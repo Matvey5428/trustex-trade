@@ -666,14 +666,11 @@
 
         <div class="form-section-label">Withdrawal Details</div>
 
-        <div class="input-group-modern">
-            <label class="input-label" data-i18n="selectWithdrawCurrency">Select currency</label>
-            <select id="currencySelect" class="form-select-modern">
-                <option value="RUB">₽  RUB — Russian Ruble</option>
-                <option value="EUR">€  EUR — Euro</option>
-                <option value="USDT">₮  USDT — Tether</option>
-            </select>
-        </div>
+        <select id="currencySelect" style="display:none">
+            <option value="RUB">RUB</option>
+            <option value="EUR">EUR</option>
+            <option value="USDT">USDT</option>
+        </select>
 
         <div class="input-group-modern">
             <label class="input-label" data-i18n="withdrawAmount">Withdrawal Amount</label>
