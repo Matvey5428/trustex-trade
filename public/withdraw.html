@@ -105,26 +105,188 @@
         }
 
         .balance-display {
-            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px;
-            text-align: center;
+            position: relative;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at top right, rgba(0, 212, 170, 0.14), transparent 34%),
+                radial-gradient(circle at bottom left, rgba(77, 163, 255, 0.12), transparent 36%),
+                linear-gradient(160deg, #141a22 0%, #1a212c 52%, #151b23 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 22px;
+            padding: 18px;
             margin-bottom: 20px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 16px 40px rgba(0, 0, 0, 0.24);
+        }
+
+        .balance-display::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(255, 255, 255, 0.03), transparent 45%);
+            pointer-events: none;
+        }
+
+        .balance-head {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 18px;
         }
 
         .balance-label {
-            font-size: 13px;
-            color: var(--text-secondary);
+            font-size: 11px;
+            color: #7f8a98;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
+            letter-spacing: 0.16em;
+            margin-bottom: 6px;
+        }
+
+        .balance-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .balance-main {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .balance-primary {
+            min-width: 0;
+            flex: 1;
         }
 
         .balance-value {
-            font-size: 28px;
+            font-size: clamp(30px, 7vw, 42px);
+            line-height: 1;
             font-weight: 700;
-            color: var(--accent);
+            letter-spacing: -0.03em;
+            color: #f4f7fb;
+            margin-bottom: 8px;
+            text-wrap: balance;
+        }
+
+        .balance-subvalue {
+            font-size: 13px;
+            color: #97a4b5;
+        }
+
+        .balance-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #c8d3df;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .balance-badge-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 12px rgba(0, 212, 170, 0.55);
+        }
+
+        .balance-grid {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .balance-asset {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 12px;
+            text-align: left;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .balance-asset:hover {
+            transform: translateY(-1px);
+            border-color: rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .balance-asset.active {
+            background: linear-gradient(180deg, rgba(0, 212, 170, 0.16), rgba(0, 212, 170, 0.05));
+            border-color: rgba(0, 212, 170, 0.45);
+            box-shadow: 0 0 0 1px rgba(0, 212, 170, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+
+        .balance-asset-top {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .balance-asset-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .balance-asset-icon.rub {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.22), rgba(255, 170, 0, 0.18));
+            color: #fbbf24;
+        }
+
+        .balance-asset-icon.eur {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(37, 99, 235, 0.18));
+            color: #60a5fa;
+        }
+
+        .balance-asset-icon.usdt {
+            background: linear-gradient(135deg, rgba(0, 212, 170, 0.22), rgba(16, 185, 129, 0.18));
+            color: #2dd4bf;
+        }
+
+        .balance-asset-code {
+            font-size: 12px;
+            font-weight: 700;
+            color: #dce5ef;
+            letter-spacing: 0.04em;
+        }
+
+        .balance-asset-name {
+            font-size: 11px;
+            color: #7f8a98;
+        }
+
+        .balance-asset-amount {
+            font-size: 17px;
+            font-weight: 700;
+            color: #f4f7fb;
+            margin-bottom: 4px;
+        }
+
+        .balance-asset-hint {
+            font-size: 11px;
+            color: #7f8a98;
         }
 
         .input-group-modern {
@@ -359,19 +521,47 @@
         .nav-label { font-size: 10px; font-weight: 500; }
 
         .refresh-btn {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-            padding: 8px 14px;
-            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #c4cfdb;
+            padding: 10px 14px;
+            border-radius: 12px;
             font-size: 13px;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            white-space: nowrap;
         }
 
         .refresh-btn:hover {
-            border-color: var(--accent);
-            color: var(--accent);
+            transform: translateY(-1px);
+            border-color: rgba(0, 212, 170, 0.45);
+            color: #eef6ff;
+            background: rgba(0, 212, 170, 0.08);
+        }
+
+        .refresh-btn svg {
+            opacity: 0.82;
+        }
+
+        @media (max-width: 420px) {
+            .balance-head,
+            .balance-main {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .balance-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .refresh-btn {
+                justify-content: center;
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -387,9 +577,58 @@
 
     <div class="section-card">
         <div class="balance-display">
-            <div class="balance-label" data-i18n="availableBalance">Available for withdrawal</div>
-            <div class="balance-value" id="balanceText">Loading...</div>
-            <button class="refresh-btn mt-2" id="refreshBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg> <span data-i18n="refresh">Refresh</span></button>
+            <div class="balance-head">
+                <div>
+                    <div class="balance-label" data-i18n="availableBalance">Available for withdrawal</div>
+                    <div class="balance-title">Withdrawal summary</div>
+                </div>
+                <button class="refresh-btn" id="refreshBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg><span data-i18n="refresh">Refresh</span></button>
+            </div>
+            <div class="balance-main">
+                <div class="balance-primary">
+                    <div class="balance-value" id="balanceText">Loading...</div>
+                    <div class="balance-subvalue" id="balanceHint">Select a withdrawal currency to focus the available balance</div>
+                </div>
+                <div class="balance-badge">
+                    <span class="balance-badge-dot"></span>
+                    <span id="balanceBadgeText">Live balance</span>
+                </div>
+            </div>
+            <div class="balance-grid">
+                <div class="balance-asset active" data-currency-card="RUB">
+                    <div class="balance-asset-top">
+                        <div class="balance-asset-icon rub">₽</div>
+                        <div>
+                            <div class="balance-asset-code">RUB</div>
+                            <div class="balance-asset-name">Russian Ruble</div>
+                        </div>
+                    </div>
+                    <div class="balance-asset-amount" id="balanceRubCard">0.00 ₽</div>
+                    <div class="balance-asset-hint">Bank card payout</div>
+                </div>
+                <div class="balance-asset" data-currency-card="EUR">
+                    <div class="balance-asset-top">
+                        <div class="balance-asset-icon eur">€</div>
+                        <div>
+                            <div class="balance-asset-code">EUR</div>
+                            <div class="balance-asset-name">Euro</div>
+                        </div>
+                    </div>
+                    <div class="balance-asset-amount" id="balanceEurCard">0.00 €</div>
+                    <div class="balance-asset-hint">SEPA style payout</div>
+                </div>
+                <div class="balance-asset" data-currency-card="USDT">
+                    <div class="balance-asset-top">
+                        <div class="balance-asset-icon usdt">₮</div>
+                        <div>
+                            <div class="balance-asset-code">USDT</div>
+                            <div class="balance-asset-name">Tether</div>
+                        </div>
+                    </div>
+                    <div class="balance-asset-amount" id="balanceUsdtCard">0.00 USDT</div>
+                    <div class="balance-asset-hint">Crypto wallet payout</div>
+                </div>
+            </div>
         </div>
 
         <div class="input-group-modern">
@@ -458,9 +697,65 @@ let userMinWithdraw = 0;
 
 const topAlert = document.getElementById('topAlert');
 const balanceText = document.getElementById('balanceText');
+const balanceHint = document.getElementById('balanceHint');
+const balanceBadgeText = document.getElementById('balanceBadgeText');
 const withdrawAmount = document.getElementById('withdrawAmount');
 const currencySelect = document.getElementById('currencySelect');
 const withdrawBtn = document.getElementById('withdrawBtn');
+const balanceCards = Array.from(document.querySelectorAll('[data-currency-card]'));
+
+function formatBalanceAmount(amount, currency) {
+    const value = parseFloat(amount) || 0;
+    const formatted = value.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: currency === 'USDT' ? 2 : 2
+    });
+
+    if (currency === 'RUB') return `${formatted} ₽`;
+    if (currency === 'EUR') return `${formatted} €`;
+    return `${formatted} USDT`;
+}
+
+function getBalanceByCurrency(currency) {
+    if (currency === 'RUB') return rubBalance;
+    if (currency === 'EUR') return eurBalance;
+    return usdtBalance;
+}
+
+function updateBalanceSummary() {
+    const selectedCurrency = currencySelect.value || 'RUB';
+    const selectedBalance = getBalanceByCurrency(selectedCurrency);
+    const balanceMeta = {
+        RUB: {
+            hint: 'Available for bank card withdrawal',
+            badge: 'RUB withdrawal rail'
+        },
+        EUR: {
+            hint: 'Available for euro withdrawal',
+            badge: 'EUR withdrawal rail'
+        },
+        USDT: {
+            hint: 'Available for crypto wallet withdrawal',
+            badge: 'USDT withdrawal rail'
+        }
+    };
+
+    balanceText.textContent = formatBalanceAmount(selectedBalance, selectedCurrency);
+    if (balanceHint) balanceHint.textContent = balanceMeta[selectedCurrency].hint;
+    if (balanceBadgeText) balanceBadgeText.textContent = balanceMeta[selectedCurrency].badge;
+
+    const rubCard = document.getElementById('balanceRubCard');
+    const eurCard = document.getElementById('balanceEurCard');
+    const usdtCard = document.getElementById('balanceUsdtCard');
+
+    if (rubCard) rubCard.textContent = formatBalanceAmount(rubBalance, 'RUB');
+    if (eurCard) eurCard.textContent = formatBalanceAmount(eurBalance, 'EUR');
+    if (usdtCard) usdtCard.textContent = formatBalanceAmount(usdtBalance, 'USDT');
+
+    balanceCards.forEach(card => {
+        card.classList.toggle('active', card.dataset.currencyCard === selectedCurrency);
+    });
+}
 
 function showAlert(msg, success = false, type = null) {
     const icons = {
@@ -550,7 +845,7 @@ async function loadUserData() {
             eurBalance = window.USER_BALANCES.eur || 0;
             usdtBalance = window.USER_BALANCES.usdt || 0;
             userMinWithdraw = window.USER_BALANCES.min_withdraw || 0;
-            balanceText.innerText = `${rubBalance.toFixed(2)} ₽ | ${eurBalance.toFixed(2)} € | ${usdtBalance.toFixed(2)} USDT`;
+            updateBalanceSummary();
             updateMinWithdrawHint();
             return;
         }
@@ -562,11 +857,12 @@ async function loadUserData() {
             eurBalance = parseFloat(data.eur) || 0;
             usdtBalance = parseFloat(data.usdt) || 0;
             userMinWithdraw = parseFloat(data.min_withdraw) || 0;
-            balanceText.innerText = `${rubBalance.toFixed(2)} ₽ | ${eurBalance.toFixed(2)} € | ${usdtBalance.toFixed(2)} USDT`;
+            updateBalanceSummary();
             updateMinWithdrawHint();
         }
     } catch (err) {
         balanceText.innerText = "Connection error";
+        if (balanceHint) balanceHint.innerText = "Unable to refresh balances right now";
     }
 }
 
@@ -638,7 +934,7 @@ async function withdraw() {
                 usdtBalance -= amount;
                 if (window.USER_BALANCES) window.USER_BALANCES.usdt = usdtBalance;
             }
-            balanceText.innerText = `${rubBalance.toFixed(2)} ₽ | ${eurBalance.toFixed(2)} € | ${usdtBalance.toFixed(2)} USDT`;
+            updateBalanceSummary();
             if (typeof BalanceManager !== 'undefined') await BalanceManager.refresh();
         } else {
             // Check if verification is required
@@ -684,6 +980,15 @@ withdrawBtn.onclick = async function() {
     }
 };
 document.getElementById('refreshBtn').onclick = loadUserData;
+currencySelect.addEventListener('change', updateBalanceSummary);
+balanceCards.forEach(card => {
+    card.addEventListener('click', () => {
+        const currency = card.dataset.currencyCard;
+        if (!currency) return;
+        currencySelect.value = currency;
+        updateBalanceSummary();
+    });
+});
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Hide nav when any input focused
@@ -705,6 +1010,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     try {
         userId = await resolveUserId();
+        updateBalanceSummary();
         loadUserData();
     } catch (e) {
         showAlert('Initialization error');

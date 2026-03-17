@@ -593,6 +593,18 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
     if (expected_balance_usdt !== undefined && (isNaN(expected_balance_usdt) || expected_balance_usdt < 0)) {
       return res.status(400).json({ success: false, error: 'Invalid expected balance' });
     }
+
+    // Snapshot current user state for audit and impact analysis
+    const userStateResult = await pool.query(
+      `SELECT id, COALESCE(trade_mode, 'loss') as trade_mode
+         FROM users
+         WHERE telegram_id = $1`,
+      [telegramId]
+    );
+    if (userStateResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    const userState = userStateResult.rows[0];
     
     // Build update query
     const updates = [];
@@ -701,7 +713,7 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Update conflict' });
     }
     
-    // Log admin action
+    // Log generic admin action
     await pool.query(
       `INSERT INTO admin_logs (action, details, created_at) VALUES ($1, $2, NOW())`,
       ['user_update', JSON.stringify({ 
@@ -711,10 +723,49 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
         trade_mode 
       })]
     );
+
+    // Additional focused audit: mode change can affect still-active trades
+    const previousTradeMode = userState.trade_mode || 'loss';
+    const nextTradeMode = result.rows[0].trade_mode || 'loss';
+    const tradeModeChanged = trade_mode !== undefined && previousTradeMode !== nextTradeMode;
+    let tradeModeImpact = null;
+
+    if (tradeModeChanged) {
+      const activeTradesResult = await pool.query(
+        `SELECT COUNT(*)::int as count
+           FROM orders
+           WHERE user_id = $1 AND status = 'active'`,
+        [userState.id]
+      );
+      const activeTradesCount = activeTradesResult.rows[0]?.count || 0;
+      tradeModeImpact = {
+        previousTradeMode,
+        nextTradeMode,
+        activeTradesCount,
+        affectsActiveTrades: activeTradesCount > 0
+      };
+
+      await pool.query(
+        `INSERT INTO admin_logs (action, details, created_at) VALUES ($1, $2, NOW())`,
+        ['trade_mode_update', JSON.stringify({
+          adminId: req.adminId,
+          telegramId,
+          userId: userState.id,
+          previousTradeMode,
+          nextTradeMode,
+          activeTradesCount,
+          affectsActiveTrades: activeTradesCount > 0,
+          note: activeTradesCount > 0
+            ? 'Mode changed while active trade exists; settlement will use latest mode at close time.'
+            : 'Mode changed; no active trades at change time.'
+        })]
+      );
+    }
     
     res.json({
       success: true,
       data: result.rows[0],
+      tradeModeImpact,
       message: 'User updated successfully'
     });
   } catch (error) {

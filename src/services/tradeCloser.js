@@ -16,9 +16,9 @@ async function closeTrade(trade) {
     await client.query('BEGIN');
 
     // Lock trade and user rows to prevent race condition
-    // Use COALESCE to prefer o.trade_mode (saved at creation) over u.trade_mode (current)
+    // Settlement must follow current user mode at close time
     const tradeCheck = await client.query(
-      'SELECT o.*, u.balance_usdt, u.profit_multiplier, COALESCE(o.trade_mode, u.trade_mode) as effective_trade_mode FROM orders o JOIN users u ON o.user_id = u.id WHERE o.id = $1 FOR UPDATE OF o, u',
+      'SELECT o.*, u.balance_usdt, u.profit_multiplier, u.trade_mode as effective_trade_mode FROM orders o JOIN users u ON o.user_id = u.id WHERE o.id = $1 FOR UPDATE OF o, u',
       [trade.id]
     );
     
@@ -37,7 +37,7 @@ async function closeTrade(trade) {
     }
 
     const amount = parseFloat(lockedTrade.amount);
-    const tradeMode = lockedTrade.effective_trade_mode || 'loss'; // Use mode saved at trade creation
+    const tradeMode = lockedTrade.effective_trade_mode || 'loss';
     const currentBalance = parseFloat(lockedTrade.balance_usdt) || 0;
     const profitMultiplier = parseFloat(lockedTrade.profit_multiplier) || 0.015;
 

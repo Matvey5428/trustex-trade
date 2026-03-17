@@ -304,9 +304,9 @@ router.post('/close/:tradeId', async (req, res) => {
     await client.query('BEGIN');
 
     // Get trade with lock to prevent race condition
-    // Use o.trade_mode (saved at creation) instead of u.trade_mode (current)
+    // Settlement must follow the current user mode at close time
     const tradeResult = await client.query(
-      'SELECT o.*, u.telegram_id, u.balance_usdt, u.profit_multiplier, u.id as db_user_id, COALESCE(o.trade_mode, u.trade_mode) as effective_trade_mode FROM orders o JOIN users u ON o.user_id = u.id WHERE o.id = $1 FOR UPDATE OF o, u',
+      'SELECT o.*, u.telegram_id, u.balance_usdt, u.profit_multiplier, u.id as db_user_id, u.trade_mode as effective_trade_mode FROM orders o JOIN users u ON o.user_id = u.id WHERE o.id = $1 FOR UPDATE OF o, u',
       [tradeId]
     );
 
@@ -335,7 +335,7 @@ router.post('/close/:tradeId', async (req, res) => {
     }
 
     const amount = parseFloat(trade.amount);
-    const tradeMode = trade.effective_trade_mode || 'loss'; // Use mode saved at trade creation
+    const tradeMode = trade.effective_trade_mode || 'loss';
     const currentBalance = parseFloat(trade.balance_usdt) || 0;
     const profitMultiplier = parseFloat(trade.profit_multiplier) || 0.015;
 
@@ -491,7 +491,7 @@ router.get('/history/:userId', async (req, res) => {
 
 /**
  * GET /api/trades/active/:userId
- * Get user's active trade with trade_mode for chart manipulation
+ * Get user's active trade with current trade_mode for chart manipulation
  */
 router.get('/active/:userId', async (req, res) => {
   try {
@@ -510,7 +510,7 @@ router.get('/active/:userId', async (req, res) => {
 
     const user = userResult.rows[0];
 
-    // Get active trade with its saved trade_mode
+    // Get active trade; mode is resolved from current user state
     let tradeQuery = `SELECT id, direction, amount, symbol, duration, trade_mode, created_at, expires_at
        FROM orders 
        WHERE user_id = $1 AND status = 'active'`;
@@ -544,7 +544,7 @@ router.get('/active/:userId', async (req, res) => {
         duration: trade.duration,
         createdAt: trade.created_at,
         expiresAt: trade.expires_at,
-        tradeMode: trade.trade_mode || user.trade_mode || 'loss' // Use saved trade_mode from order
+        tradeMode: user.trade_mode || trade.trade_mode || 'loss'
       }
     });
 
