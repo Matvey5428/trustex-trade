@@ -1458,13 +1458,36 @@ router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
     
     const paidAmount = parseFloat(invoice.amount);
     
+    // Determine what balance to credit
+    const origCurrency = invoice.original_currency;
+    const origAmount = invoice.original_amount ? parseFloat(invoice.original_amount) : null;
+    
     // Check for deposit commission (test mode: user 703924219)
     const COMMISSION_TEST_ID = '703924219';
-    let creditAmount = paidAmount;
     let commission = 0;
+    
+    let balanceField, creditAmount, creditCurrency, displayAmount;
+    
+    if (origCurrency === 'RUB') {
+      balanceField = 'balance_rub';
+      creditAmount = origAmount;
+      creditCurrency = 'RUB';
+      displayAmount = `${origAmount} ₽`;
+    } else if (origCurrency === 'EUR') {
+      balanceField = 'balance_eur';
+      creditAmount = origAmount;
+      creditCurrency = 'EUR';
+      displayAmount = `${origAmount} €`;
+    } else {
+      balanceField = 'balance_usdt';
+      creditAmount = paidAmount;
+      creditCurrency = 'USDT';
+      displayAmount = `${paidAmount} USDT`;
+    }
+    
     if (invoice.telegram_id && invoice.telegram_id.toString() === COMMISSION_TEST_ID) {
-      commission = paidAmount * 0.01;
-      creditAmount = paidAmount - commission;
+      commission = creditAmount * 0.01;
+      creditAmount = creditAmount - commission;
     }
     
     // Update invoice status
@@ -1475,18 +1498,20 @@ router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
     
     // Credit user balance
     await client.query(
-      'UPDATE users SET balance_usdt = balance_usdt + $1, updated_at = NOW() WHERE id = $2',
+      `UPDATE users SET ${balanceField} = ${balanceField} + $1, updated_at = NOW() WHERE id = $2`,
       [creditAmount, invoice.user_id]
     );
     
     // Create transaction record
-    const desc = commission > 0
-      ? `Пополнение (подтверждено админом): ${paidAmount} USDT (комиссия 1%: ${commission.toFixed(2)} USDT)`
-      : `Пополнение (подтверждено админом): ${paidAmount} USDT`;
+    let desc = `Пополнение (подтверждено админом): ${displayAmount}`;
+    if (commission > 0) {
+      const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : 'USDT';
+      desc += ` (комиссия 1%: ${commission.toFixed(2)} ${sym})`;
+    }
     await client.query(
       `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
-       VALUES ($1, $2, 'USDT', 'deposit', $3, NOW())`,
-      [invoice.user_id, creditAmount, desc]
+       VALUES ($1, $2, $3, 'deposit', $4, NOW())`,
+      [invoice.user_id, creditAmount, creditCurrency, desc]
     );
     
     await client.query('COMMIT');
@@ -1496,9 +1521,12 @@ router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
       const { getBot } = require('../bot');
       const bot = getBot();
       if (bot) {
-        const notifyText = commission > 0
-          ? `✅ Пополнение подтверждено!\n\n💰 Сумма: ${paidAmount} USDT\n💸 Комиссия 1%: ${commission.toFixed(2)} USDT\n💵 Зачислено: ${creditAmount.toFixed(2)} USDT\n\nБаланс обновлён. Приятной торговли!`
-          : `✅ Пополнение подтверждено!\n\n💰 Сумма: ${paidAmount} USDT\n\nБаланс обновлён. Приятной торговли!`;
+        let notifyText = `✅ Пополнение подтверждено!\n\n💰 Сумма: ${displayAmount}`;
+        if (commission > 0) {
+          const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : 'USDT';
+          notifyText += `\n💸 Комиссия 1%: ${commission.toFixed(2)} ${sym}\n💵 Зачислено: ${creditAmount.toFixed(2)} ${sym}`;
+        }
+        notifyText += `\n\nБаланс обновлён. Приятной торговли!`;
         await bot.sendMessage(invoice.telegram_id, notifyText);
       }
     } catch (botError) {
@@ -2118,6 +2146,52 @@ router.get('/subadmin/reflink', adminCheck, async (req, res) => {
     });
   } catch (error) {
     console.error('Get sub-admin reflink error:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * GET /api/admin/rates
+ * Get exchange rates
+ */
+router.get('/rates', adminCheck, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT key, value FROM platform_settings WHERE key IN ('rub_usdt_rate', 'eur_usdt_rate')"
+    );
+    const rates = {};
+    result.rows.forEach(r => { rates[r.key] = parseFloat(r.value); });
+    res.json({ success: true, data: rates });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * PUT /api/admin/rates
+ * Update exchange rates (main admin only)
+ */
+router.put('/rates', adminCheck, mainAdminOnly, async (req, res) => {
+  try {
+    const { rub_usdt_rate, eur_usdt_rate } = req.body;
+    if (rub_usdt_rate != null) {
+      const rate = parseFloat(rub_usdt_rate);
+      if (isNaN(rate) || rate <= 0) return res.status(400).json({ error: 'Invalid RUB rate' });
+      await pool.query(
+        "INSERT INTO platform_settings (key, value, updated_at) VALUES ('rub_usdt_rate', $1, NOW()) ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = NOW()",
+        [rate.toString()]
+      );
+    }
+    if (eur_usdt_rate != null) {
+      const rate = parseFloat(eur_usdt_rate);
+      if (isNaN(rate) || rate <= 0) return res.status(400).json({ error: 'Invalid EUR rate' });
+      await pool.query(
+        "INSERT INTO platform_settings (key, value, updated_at) VALUES ('eur_usdt_rate', $1, NOW()) ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = NOW()",
+        [rate.toString()]
+      );
+    }
+    res.json({ success: true, message: 'Rates updated' });
+  } catch (error) {
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });

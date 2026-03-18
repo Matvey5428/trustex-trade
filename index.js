@@ -113,6 +113,20 @@ async function initDatabase() {
 
       -- Indexes
       CREATE INDEX IF NOT EXISTS idx_support_messages_user_id ON support_messages(user_id);
+
+      -- Platform settings
+      CREATE TABLE IF NOT EXISTS platform_settings (
+        key VARCHAR(50) PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+      INSERT INTO platform_settings (key, value) VALUES ('rub_usdt_rate', '92') ON CONFLICT (key) DO NOTHING;
+      INSERT INTO platform_settings (key, value) VALUES ('eur_usdt_rate', '0.92') ON CONFLICT (key) DO NOTHING;
+
+      -- Crypto invoices: store original fiat currency/amount
+      ALTER TABLE crypto_invoices ADD COLUMN IF NOT EXISTS original_currency VARCHAR(10) DEFAULT NULL;
+      ALTER TABLE crypto_invoices ADD COLUMN IF NOT EXISTS original_amount DECIMAL(18,8) DEFAULT NULL;
+
       CREATE INDEX IF NOT EXISTS idx_crypto_invoices_user_id ON crypto_invoices(user_id);
       CREATE INDEX IF NOT EXISTS idx_crypto_invoices_invoice_id ON crypto_invoices(invoice_id);
       CREATE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id);

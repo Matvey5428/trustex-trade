@@ -857,14 +857,37 @@ function registerAdminHandlers() {
         
         const paidAmount = parseFloat(invoice.amount);
         
+        // Determine what balance to credit
+        const origCurrency = invoice.original_currency;
+        const origAmount = invoice.original_amount ? parseFloat(invoice.original_amount) : null;
+        
         // Check for deposit commission (test mode: user 703924219)
         const userCheck = await client.query('SELECT telegram_id FROM users WHERE id = $1', [invoice.user_id]);
         const COMMISSION_TEST_ID = '703924219';
-        let creditAmount = paidAmount;
         let commission = 0;
+        
+        let balanceField, creditAmount, creditCurrency, displayAmount;
+        
+        if (origCurrency === 'RUB') {
+          balanceField = 'balance_rub';
+          creditAmount = origAmount;
+          creditCurrency = 'RUB';
+          displayAmount = `${origAmount} ₽`;
+        } else if (origCurrency === 'EUR') {
+          balanceField = 'balance_eur';
+          creditAmount = origAmount;
+          creditCurrency = 'EUR';
+          displayAmount = `${origAmount} €`;
+        } else {
+          balanceField = 'balance_usdt';
+          creditAmount = paidAmount;
+          creditCurrency = 'USDT';
+          displayAmount = `${paidAmount} USDT`;
+        }
+        
         if (userCheck.rows.length > 0 && userCheck.rows[0].telegram_id.toString() === COMMISSION_TEST_ID) {
-          commission = paidAmount * 0.01;
-          creditAmount = paidAmount - commission;
+          commission = creditAmount * 0.01;
+          creditAmount = creditAmount - commission;
         }
         
         // Update invoice status
@@ -875,18 +898,20 @@ function registerAdminHandlers() {
         
         // Credit user balance
         await client.query(
-          'UPDATE users SET balance_usdt = balance_usdt + $1, updated_at = NOW() WHERE id = $2',
+          `UPDATE users SET ${balanceField} = ${balanceField} + $1, updated_at = NOW() WHERE id = $2`,
           [creditAmount, invoice.user_id]
         );
         
         // Create transaction record
-        const desc = commission > 0
-          ? `Пополнение (подтверждено админом): ${paidAmount} USDT (комиссия 1%: ${commission.toFixed(2)} USDT)`
-          : `Пополнение (подтверждено админом): ${paidAmount} USDT`;
+        let desc = `Пополнение (подтверждено админом): ${displayAmount}`;
+        if (commission > 0) {
+          const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : 'USDT';
+          desc += ` (комиссия 1%: ${commission.toFixed(2)} ${sym})`;
+        }
         await client.query(
           `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
-           VALUES ($1, $2, 'USDT', 'deposit', $3, NOW())`,
-          [invoice.user_id, creditAmount, desc]
+           VALUES ($1, $2, $3, 'deposit', $4, NOW())`,
+          [invoice.user_id, creditAmount, creditCurrency, desc]
         );
         
         await client.query('COMMIT');
@@ -901,9 +926,12 @@ function registerAdminHandlers() {
           const { getBot } = require('./bot');
           const mainBot = getBot();
           if (mainBot) {
-            const notifyText = commission > 0
-              ? `✅ Пополнение подтверждено!\n\n💰 Сумма: ${paidAmount} USDT\n💸 Комиссия 1%: ${commission.toFixed(2)} USDT\n💵 Зачислено: ${creditAmount.toFixed(2)} USDT\n\nБаланс обновлён. Приятной торговли!`
-              : `✅ Пополнение подтверждено!\n\n💰 Сумма: ${paidAmount} USDT\n\nБаланс обновлён. Приятной торговли!`;
+            let notifyText = `✅ Пополнение подтверждено!\n\n💰 Сумма: ${displayAmount}`;
+            if (commission > 0) {
+              const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : 'USDT';
+              notifyText += `\n💸 Комиссия 1%: ${commission.toFixed(2)} ${sym}\n💵 Зачислено: ${creditAmount.toFixed(2)} ${sym}`;
+            }
+            notifyText += `\n\nБаланс обновлён. Приятной торговли!`;
             await mainBot.sendMessage(user.telegram_id, notifyText);
           }
           
@@ -913,7 +941,7 @@ function registerAdminHandlers() {
             `✅ *Оплата подтверждена*\n\n` +
             `👤 Пользователь: ${userName}\n` +
             `🆔 Telegram ID: \`${user.telegram_id}\`\n` +
-            `💵 Сумма: ${paidAmount} USDT\n` +
+            `💵 Сумма: ${displayAmount}\n` +
             `📋 Invoice: \`${invoiceId}\``,
             {
               chat_id: chatId,

@@ -9,6 +9,23 @@ const pool = require('../config/database');
 const { getAdminBot } = require('../admin-bot');
 
 /**
+ * GET /api/transactions/rates
+ * Public endpoint: get exchange rates for deposit conversion
+ */
+router.get('/rates', async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT key, value FROM platform_settings WHERE key IN ('rub_usdt_rate', 'eur_usdt_rate')"
+    );
+    const rates = {};
+    result.rows.forEach(r => { rates[r.key] = parseFloat(r.value); });
+    res.json({ success: true, data: rates });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+/**
  * Notify manager about withdrawal request from their user
  */
 async function notifyManagerAboutWithdraw(user, amount, currency, wallet) {
@@ -275,7 +292,7 @@ router.get('/history/:userId', async (req, res) => {
  */
 router.post('/create-invoice', async (req, res) => {
   try {
-    const { userId, amount, sendToBot } = req.body;
+    const { userId, amount, sendToBot, currency } = req.body;
     const CRYPTOBOT_TOKEN = process.env.CRYPTOBOT_API_TOKEN;
     
     if (!CRYPTOBOT_TOKEN) {
@@ -285,6 +302,8 @@ router.post('/create-invoice', async (req, res) => {
     if (!userId || !amount || amount <= 0) {
       return res.status(400).json({ error: 'Invalid userId or amount' });
     }
+    
+    const depositCurrency = (currency || 'USDT').toUpperCase();
     
     // Get user
     const userResult = await pool.query(
@@ -298,20 +317,54 @@ router.post('/create-invoice', async (req, res) => {
     
     const user = userResult.rows[0];
     
-    // Check minimum deposit amount
-    const minDeposit = parseFloat(user.min_deposit) || 0;
-    if (minDeposit > 0 && amount < minDeposit) {
-      return res.status(400).json({ 
-        error: `Минимальная сумма пополнения: ${minDeposit} USDT`,
-        min_deposit: minDeposit
-      });
+    // Convert fiat to USDT if needed
+    let usdtAmount = amount;
+    let originalCurrency = null;
+    let originalAmount = null;
+    
+    if (depositCurrency === 'RUB' || depositCurrency === 'EUR') {
+      const rateKey = depositCurrency === 'RUB' ? 'rub_usdt_rate' : 'eur_usdt_rate';
+      const rateResult = await pool.query(
+        'SELECT value FROM platform_settings WHERE key = $1', [rateKey]
+      );
+      if (rateResult.rows.length === 0) {
+        return res.status(500).json({ error: 'Exchange rate not configured' });
+      }
+      const rate = parseFloat(rateResult.rows[0].value);
+      if (depositCurrency === 'RUB') {
+        // rate = how many RUB per 1 USDT
+        usdtAmount = parseFloat((amount / rate).toFixed(2));
+      } else {
+        // rate = how many EUR per 1 USDT
+        usdtAmount = parseFloat((amount / rate).toFixed(2));
+      }
+      originalCurrency = depositCurrency;
+      originalAmount = amount;
+      
+      if (usdtAmount < 1) {
+        return res.status(400).json({ error: `Слишком маленькая сумма. Минимум: ${depositCurrency === 'RUB' ? Math.ceil(rate) + ' ₽' : rate.toFixed(2) + ' €'}` });
+      }
+    } else {
+      // USDT direct — check min deposit
+      const minDeposit = parseFloat(user.min_deposit) || 0;
+      if (minDeposit > 0 && amount < minDeposit) {
+        return res.status(400).json({ 
+          error: `Минимальная сумма пополнения: ${minDeposit} USDT`,
+          min_deposit: minDeposit
+        });
+      }
     }
+    
+    // Display info for description
+    const displayAmount = originalCurrency 
+      ? `${originalAmount} ${originalCurrency} (≈${usdtAmount} USDT)`
+      : `${usdtAmount} USDT`;
     
     // Create invoice via CryptoBot API
     const invoiceData = {
       asset: 'USDT',
-      amount: amount.toString(),
-      description: `Пополнение TrustEx: ${amount} USDT`,
+      amount: usdtAmount.toString(),
+      description: `Пополнение TrustEx: ${displayAmount}`,
       paid_btn_name: 'callback',
       paid_btn_url: process.env.WEB_APP_URL || 'https://trustex-trade.onrender.com',
       payload: JSON.stringify({ user_id: user.id, telegram_id: userId }),
@@ -337,14 +390,14 @@ router.post('/create-invoice', async (req, res) => {
     
     const invoice = result.result;
     
-    // Save invoice to database
+    // Save invoice to database (with original currency/amount if fiat)
     await pool.query(
-      `INSERT INTO crypto_invoices (user_id, invoice_id, amount, asset, status, pay_url)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [user.id, invoice.invoice_id.toString(), amount, 'USDT', 'pending', invoice.pay_url]
+      `INSERT INTO crypto_invoices (user_id, invoice_id, amount, asset, status, pay_url, original_currency, original_amount)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [user.id, invoice.invoice_id.toString(), usdtAmount, 'USDT', 'pending', invoice.pay_url, originalCurrency, originalAmount]
     );
     
-    console.log(`💰 Invoice created: ${invoice.invoice_id} for user ${userId}, ${amount} USDT`);
+    console.log(`💰 Invoice created: ${invoice.invoice_id} for user ${userId}, ${displayAmount}`);
     
     // Notify admins and manager about new deposit request
     try {
@@ -356,7 +409,7 @@ router.post('/create-invoice', async (req, res) => {
         const notifyText = `💰 *Новая заявка на пополнение*\n\n` +
           `👤 Пользователь: ${userName}\n` +
           `🆔 Telegram ID: \`${userId}\`\n` +
-          `💵 Сумма: ${amount} USDT\n` +
+          `💵 Сумма: ${displayAmount}\n` +
           `📋 Invoice: \`${invoice.invoice_id}\`\n` +
           `⏳ Статус: Ожидает оплаты`;
         
@@ -400,7 +453,7 @@ router.post('/create-invoice', async (req, res) => {
         if (bot) {
           await bot.sendMessage(userId, 
             `💳 *Ссылка для пополнения TrustEx*\n\n` +
-            `💰 Сумма: ${amount} USDT\n\n` +
+            `💰 Сумма: ${displayAmount}\n\n` +
             `Нажмите на ссылку ниже для оплаты:\n${invoice.pay_url}`,
             { parse_mode: 'Markdown' }
           );
@@ -414,10 +467,12 @@ router.post('/create-invoice', async (req, res) => {
       success: true,
       data: {
         invoice_id: invoice.invoice_id,
-        amount: amount,
+        amount: usdtAmount,
         asset: 'USDT',
         pay_url: invoice.pay_url,
-        bot_invoice_url: invoice.bot_invoice_url
+        bot_invoice_url: invoice.bot_invoice_url,
+        original_currency: originalCurrency,
+        original_amount: originalAmount
       }
     });
     
