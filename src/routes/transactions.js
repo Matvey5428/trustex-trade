@@ -65,7 +65,7 @@ router.post('/withdraw', async (req, res) => {
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: 'Invalid amount' });
     }
-    if (!currency || !['RUB', 'USDT', 'BTC', 'EUR'].includes(currency)) {
+    if (!currency || !['RUB', 'EUR'].includes(currency)) {
       return res.status(400).json({ error: 'Invalid currency' });
     }
     if (!wallet || wallet.length < 5) {

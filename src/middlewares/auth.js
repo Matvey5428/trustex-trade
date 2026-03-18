@@ -4,7 +4,7 @@
  */
 
 const { extractToken, verifyToken } = require('../utils/jwt');
-const { UnauthorizedError } = require('../utils/errors');
+const { UnauthorizedError, ForbiddenError } = require('../utils/errors');
 
 /**
  * Verify JWT token and attach user to request
