@@ -784,9 +784,9 @@
                 if (response.ok && result.success) {
                     const sym = currencySymbols[currentSymbol] || currentSymbol;
                     showAlert(`${window.t ? t('depositSuccess') : 'Заявка создана!'} ${amount} ${sym}`, true, 'info');
-                    if (result.data.pay_url) {
-                        if (tg && tg.openLink) tg.openLink(result.data.pay_url);
-                        else if (tg && tg.openTelegramLink && result.data.bot_invoice_url) tg.openTelegramLink(result.data.bot_invoice_url);
+                    if (result.data.bot_invoice_url || result.data.pay_url) {
+                        if (tg && tg.openTelegramLink && result.data.bot_invoice_url) tg.openTelegramLink(result.data.bot_invoice_url);
+                        else if (tg && tg.openLink) tg.openLink(result.data.pay_url);
                         else window.location.href = result.data.pay_url;
                     }
                     closePayment();
