@@ -704,12 +704,12 @@
             </div>
             <span class="version-tag">v1.5.2</span>
         </div>
-        <div class="settings-item" id="agreementSettingsItem" style="display: none;">
+        <div class="settings-item" id="agreementSettingsItem">
             <div class="settings-label">
                 <svg viewBox="0 0 24 24"><path d="M21 8V7l-3 2-2-2-5 5-2-2-6 6v1h18v-1H6.41L9 13.41l2 2 5-5 2 2 3-2zM5 3h14a2 2 0 0 1 2 2v1h-2V5H5v14h6v2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/></svg>
                 <span>Пользовательское соглашение</span>
             </div>
-            <button class="lang-select" style="max-width: 170px;" onclick="openAgreementModal('read', 'admin')">Открыть</button>
+            <button class="lang-select" style="max-width: 170px;" onclick="openAgreementModal('read')">Открыть</button>
         </div>
     </div>
 </div>
@@ -772,6 +772,7 @@
     let agreementModalMode = 'required';
     let agreementTextPrimary = '';
     let agreementTextAdmin = '';
+    let useAdminAgreement = false;
 
     // Ensure agreement modal is hidden by default
     document.addEventListener('DOMContentLoaded', () => {
@@ -814,7 +815,7 @@
         // Signature flow always uses primary agreement text.
         const textForModal = mode === 'required'
             ? agreementTextPrimary
-            : (source === 'admin' ? agreementTextAdmin : agreementTextPrimary);
+            : (useAdminAgreement ? agreementTextAdmin : agreementTextPrimary);
         document.getElementById('agreementText').textContent = textForModal || 'Загрузка соглашения...';
 
         const subtitle = document.getElementById('agreementModalSubtitle');
@@ -1075,19 +1076,9 @@
                 userData = data.data;
                 updateBalanceDisplay();
 
-                // Show/hide agreement row only when admin explicitly enabled it.
-                const shouldShowAgreement = data.data?.show_agreement_to_user === true;
+                // Track which agreement text to show based on admin flag
                 const hasAcceptedAgreement = agreementAcceptedLocal || data.data?.agreement_accepted === true;
-                const agreementSettingsItem = document.getElementById('agreementSettingsItem');
-                if (agreementSettingsItem) {
-                    agreementSettingsItem.style.display = shouldShowAgreement ? 'flex' : 'none';
-                }
-
-                // If admin row is disabled, close only read-mode modal (not mandatory flow).
-                if (!shouldShowAgreement && agreementPromptOpen && agreementModalMode !== 'required') {
-                    agreementPromptOpen = false;
-                    document.getElementById('agreementModal').style.display = 'none';
-                }
+                useAdminAgreement = data.data?.show_agreement_to_user === true;
 
                 updateAgreementStatusUI(hasAcceptedAgreement);
             }
