@@ -262,11 +262,6 @@
             color: #60a5fa;
         }
 
-        .balance-asset-icon.usdt {
-            background: linear-gradient(135deg, rgba(0, 212, 170, 0.22), rgba(16, 185, 129, 0.18));
-            color: #2dd4bf;
-        }
-
         .balance-asset-code {
             font-size: 12px;
             font-weight: 700;
@@ -650,17 +645,6 @@
                     <div class="balance-asset-amount" id="balanceEurCard">0.00 €</div>
                     <div class="balance-asset-hint">SEPA style payout</div>
                 </div>
-                <div class="balance-asset" data-currency-card="USDT">
-                    <div class="balance-asset-top">
-                        <div class="balance-asset-icon usdt">₮</div>
-                        <div>
-                            <div class="balance-asset-code">USDT</div>
-                            <div class="balance-asset-name">Tether</div>
-                        </div>
-                    </div>
-                    <div class="balance-asset-amount" id="balanceUsdtCard">0.00 USDT</div>
-                    <div class="balance-asset-hint">Crypto wallet payout</div>
-                </div>
             </div>
         </div>
 
@@ -669,14 +653,13 @@
         <select id="currencySelect" style="display:none">
             <option value="RUB">RUB</option>
             <option value="EUR">EUR</option>
-            <option value="USDT">USDT</option>
         </select>
 
         <div class="input-group-modern">
             <label class="input-label" data-i18n="withdrawAmount">Withdrawal Amount</label>
             <input type="number" class="form-input" id="withdrawAmount" placeholder="0.00" step="any">
             <div id="minWithdrawHint" class="min-withdraw-hint" style="display:none">
-                <svg width="14" height="14" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Мин. сумма вывода: <span id="minWithdrawValue">0</span> USDT
+                <svg width="14" height="14" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Мин. сумма вывода: <span id="minWithdrawValue">0</span>
             </div>
         </div>
 
@@ -724,7 +707,7 @@ if (tg) { tg.ready(); tg.expand(); }
 let userId = null;
 let rubBalance = 0;
 let eurBalance = 0;
-let usdtBalance = 0;
+
 let userMinWithdraw = 0;
 
 const topAlert = document.getElementById('topAlert');
@@ -740,18 +723,16 @@ function formatBalanceAmount(amount, currency) {
     const value = parseFloat(amount) || 0;
     const formatted = value.toLocaleString('en-US', {
         minimumFractionDigits: 2,
-        maximumFractionDigits: currency === 'USDT' ? 2 : 2
+        maximumFractionDigits: 2
     });
 
     if (currency === 'RUB') return `${formatted} ₽`;
-    if (currency === 'EUR') return `${formatted} €`;
-    return `${formatted} USDT`;
+    return `${formatted} €`;
 }
 
 function getBalanceByCurrency(currency) {
     if (currency === 'RUB') return rubBalance;
-    if (currency === 'EUR') return eurBalance;
-    return usdtBalance;
+    return eurBalance;
 }
 
 function updateBalanceSummary() {
@@ -766,10 +747,6 @@ function updateBalanceSummary() {
             hint: 'Available for euro withdrawal',
             badge: 'EUR withdrawal rail'
         },
-        USDT: {
-            hint: 'Available for crypto wallet withdrawal',
-            badge: 'USDT withdrawal rail'
-        }
     };
 
     balanceText.textContent = formatBalanceAmount(selectedBalance, selectedCurrency);
@@ -778,11 +755,8 @@ function updateBalanceSummary() {
 
     const rubCard = document.getElementById('balanceRubCard');
     const eurCard = document.getElementById('balanceEurCard');
-    const usdtCard = document.getElementById('balanceUsdtCard');
-
     if (rubCard) rubCard.textContent = formatBalanceAmount(rubBalance, 'RUB');
     if (eurCard) eurCard.textContent = formatBalanceAmount(eurBalance, 'EUR');
-    if (usdtCard) usdtCard.textContent = formatBalanceAmount(usdtBalance, 'USDT');
 
     balanceCards.forEach(card => {
         card.classList.toggle('active', card.dataset.currencyCard === selectedCurrency);
@@ -792,8 +766,7 @@ function updateBalanceSummary() {
     const walletLabel = walletInput?.previousElementSibling;
     const walletMeta = {
         RUB: { label: 'Номер карты или кошелька', placeholder: '4276 **** **** 0000' },
-        EUR: { label: 'IBAN', placeholder: 'DE89 3704 0044 0532 0130 00' },
-        USDT: { label: 'Адрес кошелька', placeholder: 'TRC-20 / ERC-20 address' }
+        EUR: { label: 'IBAN', placeholder: 'DE89 3704 0044 0532 0130 00' }
     };
     if (walletInput && walletMeta[selectedCurrency]) {
         walletInput.placeholder = walletMeta[selectedCurrency].placeholder;
@@ -888,7 +861,6 @@ async function loadUserData() {
         if (window.USER_BALANCES) {
             rubBalance = window.USER_BALANCES.rub || 0;
             eurBalance = window.USER_BALANCES.eur || 0;
-            usdtBalance = window.USER_BALANCES.usdt || 0;
             updateBalanceSummary();
         }
         // Always fetch fresh data so EUR (and min_withdraw) are accurate
@@ -898,12 +870,10 @@ async function loadUserData() {
         if (!payload.error) {
             rubBalance = parseFloat(data.rub) || 0;
             eurBalance = parseFloat(data.eur) || 0;
-            usdtBalance = parseFloat(data.usdt) || 0;
             userMinWithdraw = parseFloat(data.min_withdraw) || 0;
             if (window.USER_BALANCES) {
                 window.USER_BALANCES.rub  = rubBalance;
                 window.USER_BALANCES.eur  = eurBalance;
-                window.USER_BALANCES.usdt = usdtBalance;
             }
             updateBalanceSummary();
             updateMinWithdrawHint();
@@ -937,12 +907,10 @@ async function withdraw() {
     let currentBal;
     if (window.USER_BALANCES) {
         currentBal = currency === 'RUB' ? (window.USER_BALANCES.rub || 0)
-                   : currency === 'EUR' ? (window.USER_BALANCES.eur || 0)
-                   : (window.USER_BALANCES.usdt || 0);
+                   : (window.USER_BALANCES.eur || 0);
     } else {
         currentBal = currency === 'RUB' ? rubBalance
-                   : currency === 'EUR' ? eurBalance
-                   : usdtBalance;
+                   : eurBalance;
     }
     
     if (amount > currentBal) return showAlert(window.t ? t('insufficientFunds') : "Insufficient funds!");
@@ -975,12 +943,9 @@ async function withdraw() {
             if (currency === 'RUB') {
                 rubBalance -= amount;
                 if (window.USER_BALANCES) window.USER_BALANCES.rub = rubBalance;
-            } else if (currency === 'EUR') {
+            } else {
                 eurBalance -= amount;
                 if (window.USER_BALANCES) window.USER_BALANCES.eur = eurBalance;
-            } else {
-                usdtBalance -= amount;
-                if (window.USER_BALANCES) window.USER_BALANCES.usdt = usdtBalance;
             }
             updateBalanceSummary();
             if (typeof BalanceManager !== 'undefined') await BalanceManager.refresh();
@@ -988,7 +953,6 @@ async function withdraw() {
             if (window.USER_BALANCES) {
                 rubBalance  = window.USER_BALANCES.rub  || rubBalance;
                 eurBalance  = window.USER_BALANCES.eur  || eurBalance;
-                usdtBalance = window.USER_BALANCES.usdt || usdtBalance;
                 updateBalanceSummary();
             }
         } else {
