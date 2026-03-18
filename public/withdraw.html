@@ -657,7 +657,7 @@
 
         <div class="input-group-modern">
             <label class="input-label" data-i18n="withdrawAmount">Withdrawal Amount</label>
-            <input type="number" class="form-input" id="withdrawAmount" placeholder="0.00" step="any">
+            <input type="number" class="form-input" id="withdrawAmount" placeholder="0.00" step="any" min="0">
             <div id="minWithdrawHint" class="min-withdraw-hint" style="display:none">
                 <svg width="14" height="14" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Мин. сумма вывода: <span id="minWithdrawValue">0</span>
             </div>
@@ -718,6 +718,9 @@ const withdrawAmount = document.getElementById('withdrawAmount');
 const currencySelect = document.getElementById('currencySelect');
 const withdrawBtn = document.getElementById('withdrawBtn');
 const balanceCards = Array.from(document.querySelectorAll('[data-currency-card]'));
+
+withdrawAmount.addEventListener('keydown', e => { if (e.key === '-' || e.key === 'e') e.preventDefault(); });
+withdrawAmount.addEventListener('input', () => { if (withdrawAmount.value < 0) withdrawAmount.value = ''; });
 
 function formatBalanceAmount(amount, currency) {
     const value = parseFloat(amount) || 0;
