@@ -159,17 +159,30 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
         ['paid', invoiceId]
       );
       
+      // Check for deposit commission (test mode: user 703924219)
+      const userCheck = await client.query('SELECT telegram_id FROM users WHERE id = $1', [dbInvoice.user_id]);
+      const COMMISSION_TEST_ID = '703924219';
+      let creditAmount = paidAmount;
+      let commission = 0;
+      if (userCheck.rows.length > 0 && userCheck.rows[0].telegram_id.toString() === COMMISSION_TEST_ID) {
+        commission = paidAmount * 0.01;
+        creditAmount = paidAmount - commission;
+      }
+      
       // Credit user balance
       await client.query(
         'UPDATE users SET balance_usdt = balance_usdt + $1, updated_at = NOW() WHERE id = $2',
-        [paidAmount, dbInvoice.user_id]
+        [creditAmount, dbInvoice.user_id]
       );
       
       // Create transaction record
+      const desc = commission > 0
+        ? `Пополнение через CryptoBot: ${paidAmount} USDT (комиссия 1%: ${commission.toFixed(2)} USDT)`
+        : `Пополнение через CryptoBot: ${paidAmount} USDT`;
       await client.query(
         `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
          VALUES ($1, $2, 'USDT', 'deposit', $3, NOW())`,
-        [dbInvoice.user_id, paidAmount, `Пополнение через CryptoBot: ${paidAmount} USDT`]
+        [dbInvoice.user_id, creditAmount, desc]
       );
       
       await client.query('COMMIT');
@@ -182,9 +195,10 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
           const { getBot } = require('./bot');
           const bot = getBot();
           if (bot) {
-            await bot.sendMessage(userResult.rows[0].telegram_id, 
-              `✅ Пополнение успешно!\n\n💰 Сумма: ${paidAmount} USDT\n\nБаланс обновлён. Приятной торговли!`
-            );
+            const notifyText = commission > 0
+              ? `✅ Пополнение успешно!\n\n💰 Сумма: ${paidAmount} USDT\n💸 Комиссия 1%: ${commission.toFixed(2)} USDT\n💵 Зачислено: ${creditAmount.toFixed(2)} USDT\n\nБаланс обновлён. Приятной торговли!`
+              : `✅ Пополнение успешно!\n\n💰 Сумма: ${paidAmount} USDT\n\nБаланс обновлён. Приятной торговли!`;
+            await bot.sendMessage(userResult.rows[0].telegram_id, notifyText);
           }
           
           // Notify admins about successful payment
