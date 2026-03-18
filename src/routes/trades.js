@@ -218,9 +218,9 @@ router.post('/create', async (req, res) => {
       const tradeMode = user.trade_mode || 'loss';
       const tradeResult = await client.query(
         `INSERT INTO orders (user_id, amount, direction, duration, status, symbol, trade_mode, created_at, expires_at)
-         VALUES ($1, $2, $3, $4, 'active', $5, $6, NOW(), NOW() + INTERVAL '${durationSeconds} seconds')
+         VALUES ($1, $2, $3, $4, 'active', $5, $6, NOW(), NOW() + $7 * INTERVAL '1 second')
          RETURNING *`,
-        [user.id, amount, direction || 'up', durationSeconds, tradeSymbol, tradeMode]
+        [user.id, amount, direction || 'up', durationSeconds, tradeSymbol, tradeMode, durationSeconds]
       );
 
       await client.query('COMMIT');
