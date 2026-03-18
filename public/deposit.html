@@ -150,39 +150,65 @@
 
         #paymentScreen { display: none; animation: fadeIn 0.3s ease; }
 
-        .payment-header { text-align: center; margin-bottom: 20px; }
+        .payment-header {
+            text-align: center;
+            margin-bottom: 24px;
+            padding: 24px 16px 20px;
+            background: radial-gradient(ellipse at 50% 0%, rgba(0, 212, 170, 0.08) 0%, transparent 70%);
+            border-radius: 20px;
+            position: relative;
+        }
 
         .payment-currency {
             display: inline-flex;
             align-items: center;
             gap: 14px;
-            background: var(--bg-secondary);
-            padding: 14px 28px;
-            border-radius: 16px;
-            border: 1px solid var(--border);
+            padding: 0;
+            background: none;
         }
 
-        .payment-currency .coin { width: 44px; height: 44px; font-size: 18px; }
-        .payment-currency-name { font-size: 22px; font-weight: 700; }
+        .payment-currency .coin {
+            width: 52px;
+            height: 52px;
+            font-size: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        .payment-currency-name { font-size: 24px; font-weight: 700; letter-spacing: -0.3px; }
         .payment-currency-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
 
         .payment-balance {
-            margin-top: 12px;
+            margin-top: 14px;
             font-size: 13px;
             color: var(--text-secondary);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg-secondary);
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
         }
         .payment-balance span { color: var(--text-primary); font-weight: 600; }
+
+        .payment-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+            margin: 0 0 20px 0;
+        }
 
         .input-group-modern {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
             border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 16px;
-            transition: border-color 0.2s;
+            padding: 18px;
+            margin-bottom: 18px;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        .input-group-modern:focus-within { border-color: var(--accent); }
+        .input-group-modern:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.08);
+        }
 
         .input-label {
             font-size: 11px;
@@ -208,20 +234,29 @@
         .amount-input::placeholder { color: var(--text-muted); }
         .currency-tag { font-size: 16px; font-weight: 600; color: var(--accent); }
 
+        .presets-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
         .presets {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 22px;
         }
 
         .preset-btn {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
             color: var(--text-primary);
-            padding: 10px 16px;
-            border-radius: 20px;
-            font-size: 13px;
+            padding: 10px 0;
+            border-radius: 12px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
@@ -252,15 +287,16 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
+            box-shadow: 0 4px 16px rgba(0, 212, 170, 0.2);
         }
 
         .btn-primary-modern:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 212, 170, 0.3);
+            box-shadow: 0 8px 24px rgba(0, 212, 170, 0.35);
         }
 
         .btn-primary-modern:disabled {
-            opacity: 0.6;
+            opacity: 0.5;
             transform: none;
             box-shadow: none;
         }
@@ -268,12 +304,12 @@
         .btn-secondary-modern {
             width: 100%;
             padding: 13px;
-            background: rgba(0, 212, 170, 0.06);
-            border: 1px solid rgba(0, 212, 170, 0.25);
+            background: transparent;
+            border: 1px solid var(--border);
             border-radius: 14px;
             font-size: 13px;
             font-weight: 600;
-            color: var(--accent);
+            color: var(--text-secondary);
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
@@ -282,22 +318,10 @@
             gap: 6px;
         }
 
-        .btn-secondary-modern:hover { background: rgba(0, 212, 170, 0.12); }
-
-        .payment-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 14px;
-            background: rgba(0, 212, 170, 0.06);
-            border: 1px solid rgba(0, 212, 170, 0.15);
-            border-radius: 10px;
-            margin-bottom: 16px;
-            font-size: 12px;
-            color: var(--text-secondary);
+        .btn-secondary-modern:hover {
+            border-color: var(--accent);
+            color: var(--accent);
         }
-
-        .payment-info svg { flex-shrink: 0; }
 
         /* Bottom Navigation Bar */
         .bottom-nav {
@@ -560,10 +584,7 @@
                 <div class="payment-balance">Баланс: <span id="paymentCurrentBalance">0.00</span></div>
             </div>
 
-            <div class="payment-info" id="paymentMethodInfo">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--accent)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                <span>Оплата через CryptoBot в USDT. Зачислится в выбранной валюте.</span>
-            </div>
+            <div class="payment-divider"></div>
 
             <div class="input-group-modern">
                 <div class="input-label">Сумма пополнения</div>
@@ -579,6 +600,7 @@
                 </div>
             </div>
 
+            <div class="presets-label">Быстрый выбор</div>
             <div class="presets" id="presetContainer"></div>
 
             <button class="btn-primary-modern" id="submitBtn" onclick="submitDeposit()">
@@ -797,18 +819,6 @@
         const balSym = { RUB: '₽', EUR: '€' }[symbol] || symbol;
         const balDecimals = (symbol === 'BTC' || symbol === 'ETH') ? 6 : 2;
         balEl.textContent = balVal.toFixed(balDecimals) + ' ' + balSym;
-
-        // Payment method info
-        const infoEl = document.getElementById('paymentMethodInfo');
-        if (symbol === 'RUB' || symbol === 'EUR') {
-            infoEl.style.display = 'flex';
-            infoEl.querySelector('span').textContent = 'Оплата через CryptoBot в USDT. Зачислится в ' + symbol + ' по текущему курсу.';
-        } else if (symbol === 'USDT') {
-            infoEl.style.display = 'flex';
-            infoEl.querySelector('span').textContent = 'Оплата через CryptoBot. Зачисление мгновенное.';
-        } else {
-            infoEl.style.display = 'none';
-        }
 
         const container = document.getElementById('presetContainer');
         container.innerHTML = '';
