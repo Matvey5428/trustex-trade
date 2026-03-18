@@ -805,7 +805,7 @@
       width: max-content;
     }
 
-    .ticker-track:hover {
+    .ticker-track.paused {
       animation-play-state: paused;
     }
 
@@ -2374,6 +2374,19 @@
     // Start loading non-blocking data immediately (these don't need auth)
     updatePriceTicker();
     initReviews();
+
+    // Ticker pause on touch/mouse - resume on release
+    const tickerEl = document.getElementById('tickerTrack');
+    if (tickerEl) {
+      const pause = () => tickerEl.classList.add('paused');
+      const resume = () => tickerEl.classList.remove('paused');
+      tickerEl.addEventListener('mousedown', pause);
+      tickerEl.addEventListener('mouseup', resume);
+      tickerEl.addEventListener('mouseleave', resume);
+      tickerEl.addEventListener('touchstart', pause, { passive: true });
+      tickerEl.addEventListener('touchend', resume);
+      tickerEl.addEventListener('touchcancel', resume);
+    }
     
     // Hide security loading overlay
     function hideSecurityOverlay() {
