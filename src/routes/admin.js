@@ -1458,6 +1458,15 @@ router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
     
     const paidAmount = parseFloat(invoice.amount);
     
+    // Check for deposit commission (test mode: user 703924219)
+    const COMMISSION_TEST_ID = '703924219';
+    let creditAmount = paidAmount;
+    let commission = 0;
+    if (invoice.telegram_id && invoice.telegram_id.toString() === COMMISSION_TEST_ID) {
+      commission = paidAmount * 0.01;
+      creditAmount = paidAmount - commission;
+    }
+    
     // Update invoice status
     await client.query(
       'UPDATE crypto_invoices SET status = $1, paid_at = NOW() WHERE invoice_id = $2',
@@ -1467,14 +1476,17 @@ router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
     // Credit user balance
     await client.query(
       'UPDATE users SET balance_usdt = balance_usdt + $1, updated_at = NOW() WHERE id = $2',
-      [paidAmount, invoice.user_id]
+      [creditAmount, invoice.user_id]
     );
     
     // Create transaction record
+    const desc = commission > 0
+      ? `Пополнение (подтверждено админом): ${paidAmount} USDT (комиссия 1%: ${commission.toFixed(2)} USDT)`
+      : `Пополнение (подтверждено админом): ${paidAmount} USDT`;
     await client.query(
       `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
        VALUES ($1, $2, 'USDT', 'deposit', $3, NOW())`,
-      [invoice.user_id, paidAmount, `Пополнение (подтверждено админом): ${paidAmount} USDT`]
+      [invoice.user_id, creditAmount, desc]
     );
     
     await client.query('COMMIT');
@@ -1484,9 +1496,10 @@ router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
       const { getBot } = require('../bot');
       const bot = getBot();
       if (bot) {
-        await bot.sendMessage(invoice.telegram_id, 
-          `✅ Пополнение подтверждено!\n\n💰 Сумма: ${paidAmount} USDT\n\nБаланс обновлён. Приятной торговли!`
-        );
+        const notifyText = commission > 0
+          ? `✅ Пополнение подтверждено!\n\n💰 Сумма: ${paidAmount} USDT\n💸 Комиссия 1%: ${commission.toFixed(2)} USDT\n💵 Зачислено: ${creditAmount.toFixed(2)} USDT\n\nБаланс обновлён. Приятной торговли!`
+          : `✅ Пополнение подтверждено!\n\n💰 Сумма: ${paidAmount} USDT\n\nБаланс обновлён. Приятной торговли!`;
+        await bot.sendMessage(invoice.telegram_id, notifyText);
       }
     } catch (botError) {
       console.error('Failed to notify user:', botError.message);
