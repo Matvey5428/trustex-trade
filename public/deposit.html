@@ -637,13 +637,28 @@
 
     async function updateMarketPrices() {
         try {
-            const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbols=["BTCUSDT","ETHUSDT","TONUSDT"]');
-            const data = await res.json();
+            const [cryptoRes, ratesRes] = await Promise.all([
+                fetch('https://api.binance.com/api/v3/ticker/price?symbols=["BTCUSDT","ETHUSDT","TONUSDT"]'),
+                fetch('/api/transactions/rates')
+            ]);
+            const data = await cryptoRes.json();
             const prices = {};
             data.forEach(item => prices[item.symbol] = parseFloat(item.price).toLocaleString());
             if(document.getElementById('price-BTC')) document.getElementById('price-BTC').innerText = `$${prices['BTCUSDT']}`;
             if(document.getElementById('price-ETH')) document.getElementById('price-ETH').innerText = `$${prices['ETHUSDT']}`;
             if(document.getElementById('price-TON')) document.getElementById('price-TON').innerText = `$${prices['TONUSDT']}`;
+            
+            // Show fiat rates from platform_settings
+            if (ratesRes.ok) {
+                const ratesData = await ratesRes.json();
+                const rates = ratesData.data || {};
+                if (rates.rub_usdt_rate) {
+                    document.getElementById('price-RUB').innerText = `$${(1 / rates.rub_usdt_rate).toFixed(4)}`;
+                }
+                if (rates.eur_usdt_rate) {
+                    document.getElementById('price-EUR').innerText = `$${(1 / rates.eur_usdt_rate).toFixed(2)}`;
+                }
+            }
         } catch (e) { /* silent */ }
     }
 
