@@ -643,7 +643,7 @@
                         </div>
                     </div>
                     <div class="balance-asset-amount" id="balanceEurCard">0.00 €</div>
-                    <div class="balance-asset-hint">SEPA style payout</div>
+                    <div class="balance-asset-hint">Bank card payout</div>
                 </div>
             </div>
         </div>
@@ -747,7 +747,7 @@ function updateBalanceSummary() {
             badge: 'RUB withdrawal rail'
         },
         EUR: {
-            hint: 'Available for euro withdrawal',
+            hint: 'Available for bank card withdrawal',
             badge: 'EUR withdrawal rail'
         },
     };
@@ -769,7 +769,7 @@ function updateBalanceSummary() {
     const walletLabel = walletInput?.previousElementSibling;
     const walletMeta = {
         RUB: { label: 'Номер карты', placeholder: '4276 **** **** 0000' },
-        EUR: { label: 'IBAN', placeholder: 'DE89 3704 0044 0532 0130 00' }
+        EUR: { label: 'Номер карты', placeholder: '4276 **** **** 0000' }
     };
     if (walletInput && walletMeta[selectedCurrency]) {
         walletInput.placeholder = walletMeta[selectedCurrency].placeholder;
