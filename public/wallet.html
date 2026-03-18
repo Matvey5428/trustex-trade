@@ -1078,7 +1078,15 @@
 
                 // Track which agreement text to show based on admin flag
                 const hasAcceptedAgreement = agreementAcceptedLocal || data.data?.agreement_accepted === true;
-                useAdminAgreement = data.data?.show_agreement_to_user === true;
+                const newAdminFlag = data.data?.show_agreement_to_user === true;
+                if (newAdminFlag !== useAdminAgreement) {
+                    useAdminAgreement = newAdminFlag;
+                    // If modal is open in read mode, update text live
+                    if (agreementPromptOpen && agreementModalMode !== 'required') {
+                        document.getElementById('agreementText').textContent =
+                            useAdminAgreement ? agreementTextAdmin : agreementTextPrimary;
+                    }
+                }
 
                 updateAgreementStatusUI(hasAcceptedAgreement);
             }
@@ -1099,8 +1107,8 @@
     initSecuritySettings();
     loadAgreementTexts();
     loadData();
-    // Refresh every 30 seconds
-    setInterval(loadData, 30000);
+    // Refresh every 10 seconds
+    setInterval(loadData, 10000);
 </script>
 </body>
 </html>
