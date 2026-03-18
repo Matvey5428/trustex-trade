@@ -20,6 +20,12 @@ async function initDatabase() {
     // All migrations in a single batch — idempotent (IF NOT EXISTS / IF NOT EXISTS)
     await pool.query(`
       -- Tables
+      CREATE TABLE IF NOT EXISTS blocked_users (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        telegram_id VARCHAR(50) UNIQUE NOT NULL,
+        reason TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
       CREATE TABLE IF NOT EXISTS support_messages (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
