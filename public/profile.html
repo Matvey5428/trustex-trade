@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Профиль - TrustEx</title>
+    <link rel="preconnect" href="https://trustex-trade.onrender.com">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="js/i18n.js" defer></script>
+    <script src="js/keyboard-nav.js" defer></script>
+    <script src="js/auth.js?v=2" defer></script>
+    <script src="js/api.js" defer></script>
+    <script src="js/prefetch.js" defer></script>
+    <script src="js/security-lock.js?v=20260314" defer></script>
+    <link rel="stylesheet" href="css/nav.css">
+    <style>body { opacity: 1; }</style>
+    <script>(function() { var lang = localStorage.getItem('nexo_lang') || 'ru'; document.documentElement.lang = lang; })();</script>
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-card: #1c2128;
+            --bg-elevated: #262c36;
+            --accent: #00d4aa;
+            --accent-hover: #00f5c4;
+            --green: #3fb950;
+            --green-light: rgba(63, 185, 80, 0.1);
+            --red: #f85149;
+            --red-light: rgba(248, 81, 73, 0.1);
+            --yellow: #d29922;
+            --yellow-light: rgba(210, 153, 34, 0.1);
+            --blue: #58a6ff;
+            --blue-light: rgba(88, 166, 255, 0.1);
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --border: #30363d;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+        
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, sans-serif;
+            min-height: 100vh;
+            padding-bottom: 90px;
+        }
+
+        .profile-container {
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .profile-header {
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+            padding: 20px 16px 28px;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), #0088cc);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .user-name {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .user-id {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .user-id code {
+            background: var(--bg-elevated);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: 'Inter', monospace;
+            font-size: 12px;
+        }
+
+        /* Section Card */
+        .section-card {
+            margin: 12px 16px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .section-card-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 16px 10px;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .section-card-title svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--text-secondary);
+        }
+
+        /* Info Row */
+        .info-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .info-row:first-child {
+            border-top: none;
+        }
+
+        .info-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .info-value {
+            font-size: 13px;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        /* Verification Badge */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge.verified {
+            background: var(--green-light);
+            color: var(--green);
+        }
+
+        .badge.not-verified {
+            background: var(--yellow-light);
+            color: var(--yellow);
+        }
+
+        .badge.pending {
+            background: var(--blue-light);
+            color: var(--blue);
+        }
+
+        /* Verification Button */
+        .verify-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: calc(100% - 32px);
+            margin: 0 16px 14px;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--accent), #0088cc);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .verify-btn:active {
+            opacity: 0.8;
+        }
+
+        .verify-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        /* Balance Cards */
+        .balance-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding: 0 16px 12px;
+        }
+
+        .balance-item {
+            background: var(--bg-elevated);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .balance-item .currency {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .balance-item .amount {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        /* Transaction History */
+        .history-tabs {
+            display: flex;
+            gap: 6px;
+            padding: 0 16px;
+            margin-bottom: 8px;
+        }
+
+        .history-tab {
+            flex: 1;
+            padding: 8px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .history-tab.active {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+            font-weight: 600;
+        }
+
+        .tx-list {
+            padding: 0 16px 12px;
+        }
+
+        .tx-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg-elevated);
+            border-radius: 10px;
+            margin-bottom: 6px;
+        }
+
+        .tx-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .tx-icon.deposit-icon {
+            background: var(--green-light);
+            color: var(--green);
+        }
+
+        .tx-icon.withdraw-icon {
+            background: var(--red-light);
+            color: var(--red);
+        }
+
+        .tx-icon svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        .tx-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .tx-type {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .tx-date {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .tx-amount {
+            font-size: 14px;
+            font-weight: 700;
+            text-align: right;
+        }
+
+        .tx-amount.positive { color: var(--green); }
+        .tx-amount.negative { color: var(--red); }
+
+        .empty-history {
+            text-align: center;
+            padding: 32px 16px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        /* Settings */
+        .settings-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .settings-item:first-child { border-top: none; }
+
+        .settings-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .settings-label svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--text-secondary);
+        }
+
+        .lang-select {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .version-tag {
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 600;
+            background: rgba(139, 148, 158, 0.12);
+            border: 1px solid var(--border);
+            padding: 4px 8px;
+            border-radius: 999px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            display: inline-block;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #3a404a;
+            transition: .2s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            top: 3px;
+            background: white;
+            transition: .2s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: var(--accent);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        .open-btn {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        /* Skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Support link */
+        .support-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 16px;
+            padding: 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .support-link:hover {
+            background: var(--bg-elevated);
+        }
+
+        .support-link svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--accent);
+        }
+    </style>
+</head>
+<body>
+
+<div class="profile-container">
+    <!-- Header -->
+    <div class="profile-header">
+        <div class="avatar" id="avatarInitial">?</div>
+        <div class="user-name" id="userName">—</div>
+        <div class="user-id">ID: <code id="userIdDisplay">—</code></div>
+    </div>
+
+    <!-- Verification -->
+    <div class="section-card">
+        <div class="section-card-title">
+            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+            <span data-i18n="verification">Верификация</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label" data-i18n="profileStatus">Статус</span>
+            <span id="verificationBadge" class="badge not-verified">⚠️ Не верифицирован</span>
+        </div>
+        <button class="verify-btn" id="verifyBtn" onclick="requestVerification()" style="display: none;">
+            <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+            <span data-i18n="requestVerification">Подать заявку на верификацию</span>
+        </button>
+    </div>
+
+    <!-- Account Info -->
+    <div class="section-card">
+        <div class="section-card-title">
+            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            <span data-i18n="profileAccountInfo">Информация об аккаунте</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label" data-i18n="accountId">ID аккаунта</span>
+            <span class="info-value" id="accountId">—</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label" data-i18n="profileUsername">Юзернейм</span>
+            <span class="info-value" id="accountUsername">—</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label" data-i18n="statsLabel">Статистика</span>
+            <span class="info-value" id="statsValue">0 / <span style="color:#3fb950">0</span> / <span style="color:#f85149">0</span></span>
+        </div>
+        <div class="info-row">
+            <span class="info-label" data-i18n="tradingVolume">Объем торгов</span>
+            <span class="info-value" id="volumeValue">0.00 USDT</span>
+        </div>
+    </div>
+
+    <!-- Balances -->
+    <div class="section-card">
+        <div class="section-card-title">
+            <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+            <span data-i18n="profileBalances">Балансы</span>
+        </div>
+        <div class="balance-grid" style="padding-top: 4px;">
+            <div class="balance-item">
+                <div class="currency">USDT</div>
+                <div class="amount" id="balUsdt">0.00</div>
+            </div>
+            <div class="balance-item">
+                <div class="currency">BTC</div>
+                <div class="amount" id="balBtc">0.00</div>
+            </div>
+            <div class="balance-item">
+                <div class="currency">ETH</div>
+                <div class="amount" id="balEth">0.00</div>
+            </div>
+            <div class="balance-item">
+                <div class="currency">TON</div>
+                <div class="amount" id="balTon">0.00</div>
+            </div>
+            <div class="balance-item">
+                <div class="currency">RUB</div>
+                <div class="amount" id="balRub">0.00</div>
+            </div>
+            <div class="balance-item">
+                <div class="currency">EUR</div>
+                <div class="amount" id="balEur">0.00</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction History -->
+    <div class="section-card">
+        <div class="section-card-title">
+            <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+            <span data-i18n="transactionHistory">История транзакций</span>
+        </div>
+        <div class="history-tabs" style="padding-top: 4px;">
+            <button class="history-tab active" onclick="filterTx('all')" id="tabAll" data-i18n="all">Все</button>
+            <button class="history-tab" onclick="filterTx('deposit')" id="tabDeposit" data-i18n="deposits">Пополнения</button>
+            <button class="history-tab" onclick="filterTx('withdraw')" id="tabWithdraw" data-i18n="withdrawals">Выводы</button>
+        </div>
+        <div class="tx-list" id="txList">
+            <div class="empty-history" data-i18n="historyEmpty">История транзакций пуста</div>
+        </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="section-card">
+        <div class="section-card-title">
+            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            <span data-i18n="profileSettings">Настройки</span>
+        </div>
+        <div class="settings-item">
+            <div class="settings-label">
+                <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2 0-.68.07-1.35.16-2h4.68c.09.65.16 1.32.16 2 0 .68-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>
+                <span data-i18n="language">Язык</span>
+            </div>
+            <select class="lang-select" id="languageSelect">
+                <option value="ru" selected>RU Русский</option>
+                <option value="en">EN English</option>
+            </select>
+        </div>
+        <div class="settings-item">
+            <div class="settings-label">
+                <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg>
+                <span data-i18n="notifications">Уведомления</span>
+            </div>
+            <label class="toggle-switch">
+                <input type="checkbox" id="notificationsToggle" checked>
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+        <div class="settings-item" id="pinSettingsItem" style="display:none;">
+            <div class="settings-label">
+                <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
+                <span>PIN-код</span>
+            </div>
+            <label class="toggle-switch">
+                <input type="checkbox" id="pinToggle">
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+        <div class="settings-item">
+            <div class="settings-label">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                <span data-i18n="version">Версия</span>
+            </div>
+            <span class="version-tag">v1.5.2</span>
+        </div>
+        <div class="settings-item" id="agreementItem">
+            <div class="settings-label">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
+                <span data-i18n="profileAgreement">Соглашение</span>
+            </div>
+            <button class="open-btn" onclick="openAgreementModal('read')">Открыть</button>
+        </div>
+    </div>
+
+    <!-- Support Link -->
+    <a href="support.html" class="support-link">
+        <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+        <span data-i18n="profileSupport">Связаться с поддержкой</span>
+    </a>
+</div>
+
+<!-- Bottom Navigation Bar -->
+<nav class="bottom-nav">
+    <a href="index.html" class="nav-item">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span>
+        <span class="nav-label" data-i18n="home">Главная</span>
+    </a>
+    <a href="trading.html" class="nav-item">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg></span>
+        <span class="nav-label" data-i18n="markets">Рынки</span>
+    </a>
+    <a href="exchange.html" class="nav-item">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></span>
+        <span class="nav-label" data-i18n="exchange">Обмен</span>
+    </a>
+    <a href="wallet.html" class="nav-item">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span>
+        <span class="nav-label" data-i18n="wallet">Кошелек</span>
+    </a>
+    <a href="profile.html" class="nav-item active">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></span>
+        <span class="nav-label" data-i18n="profile">Профиль</span>
+    </a>
+</nav>
+
+<!-- Agreement Modal -->
+<div id="agreementModal" style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.78); align-items:center; justify-content:center;">
+    <div style="background:#1a1f2e; border:1px solid #2a3050; border-radius:16px; width:92%; max-width:520px; max-height:88vh; display:flex; flex-direction:column; overflow:hidden;">
+        <div style="padding:18px 20px 12px; border-bottom:1px solid #2a3050; flex-shrink:0;">
+            <div style="font-size:17px; font-weight:700; color:#fff;">Пользовательское соглашение</div>
+        </div>
+        <div id="agreementText" style="flex:1; overflow-y:auto; padding:16px 20px; font-size:12.5px; line-height:1.65; color:#c0c8e0; white-space:pre-wrap;"></div>
+        <div style="padding:14px 20px; border-top:1px solid #2a3050; flex-shrink:0;">
+            <button onclick="closeAgreementModal()" style="width:100%; padding:11px; background:#2a3050; border:none; border-radius:10px; color:#c0c8e0; font-size:14px; font-weight:600; cursor:pointer;">Закрыть</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const tg = window.Telegram?.WebApp;
+    if (tg) { tg.ready(); tg.expand(); }
+
+    let userData = null;
+    let allTransactions = [];
+    let currentFilter = 'all';
+
+    // Agreement modal
+    async function loadAgreementText() {
+        try {
+            const res = await fetch('/agreement.txt');
+            if (res.ok) {
+                document.getElementById('agreementText').textContent = await res.text();
+            }
+        } catch (e) { /* silent */ }
+    }
+
+    function openAgreementModal() {
+        document.getElementById('agreementModal').style.display = 'flex';
+    }
+
+    function closeAgreementModal() {
+        document.getElementById('agreementModal').style.display = 'none';
+    }
+
+    // Verification request
+    async function requestVerification() {
+        const telegramId = tg?.initDataUnsafe?.user?.id || localStorage.getItem('nexo_guest_telegram_id');
+        if (!telegramId) return;
+
+        try {
+            const res = await fetch('/api/user/verification/request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: telegramId, sendChatMessage: true })
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('verifyBtn').style.display = 'none';
+                const badge = document.getElementById('verificationBadge');
+                badge.className = 'badge pending';
+                badge.textContent = '⏳ На рассмотрении';
+                // Redirect to support chat
+                setTimeout(() => { window.location.href = 'support.html'; }, 800);
+            }
+        } catch (e) { /* silent */ }
+    }
+
+    // Filter transactions
+    function filterTx(type) {
+        currentFilter = type;
+        document.querySelectorAll('.history-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(type === 'all' ? 'tabAll' : type === 'deposit' ? 'tabDeposit' : 'tabWithdraw').classList.add('active');
+        renderTransactions();
+    }
+
+    function renderTransactions() {
+        const list = document.getElementById('txList');
+        const filtered = currentFilter === 'all' 
+            ? allTransactions 
+            : allTransactions.filter(tx => tx.type === currentFilter);
+
+        if (filtered.length === 0) {
+            const emptyText = typeof t === 'function' ? t('historyEmpty') : 'История транзакций пуста';
+            list.innerHTML = `<div class="empty-history">${emptyText}</div>`;
+            return;
+        }
+
+        list.innerHTML = filtered.map(tx => {
+            const isDeposit = tx.type === 'deposit';
+            const icon = isDeposit 
+                ? '<svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>'
+                : '<svg viewBox="0 0 24 24"><path d="M12 4l1.41 1.41L7.83 11H20v2H7.83l5.58 5.59L12 20l-8-8z"/></svg>';
+            const typeText = isDeposit 
+                ? (typeof t === 'function' ? t('deposits') : 'Пополнение') 
+                : (typeof t === 'function' ? t('withdrawals') : 'Вывод');
+            const date = new Date(tx.created_at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+            const amount = parseFloat(tx.amount || 0);
+            const currency = tx.currency || 'USDT';
+            const sign = isDeposit ? '+' : '-';
+            const amountClass = isDeposit ? 'positive' : 'negative';
+
+            return `<div class="tx-item">
+                <div class="tx-icon ${isDeposit ? 'deposit-icon' : 'withdraw-icon'}">${icon}</div>
+                <div class="tx-info">
+                    <div class="tx-type">${typeText}</div>
+                    <div class="tx-date">${date}</div>
+                </div>
+                <div class="tx-amount ${amountClass}">${sign}${amount.toFixed(2)} ${currency}</div>
+            </div>`;
+        }).join('');
+    }
+
+    function formatBalance(val, decimals = 2) {
+        return parseFloat(val || 0).toFixed(decimals);
+    }
+
+    // Security PIN setup
+    async function initSecuritySettings() {
+        const telegramId = tg?.initDataUnsafe?.user?.id || localStorage.getItem('nexo_guest_telegram_id');
+        if (!telegramId) return;
+        try {
+            const res = await fetch(`/api/security/status/${telegramId}`);
+            const data = await res.json();
+            if (!data.success || !data.data.security_available) return;
+
+            const pinItem = document.getElementById('pinSettingsItem');
+            const pinToggle = document.getElementById('pinToggle');
+            if (!pinItem || !pinToggle) return;
+
+            pinItem.style.display = 'flex';
+            pinToggle.checked = data.data.security_enabled && data.data.has_pin;
+
+            pinToggle.addEventListener('change', async (e) => {
+                if (e.target.checked) {
+                    if (window.SecurityLock) {
+                        SecurityLock.showSetup(telegramId, () => { pinToggle.checked = true; });
+                    }
+                } else {
+                    if (confirm('Отключить защиту PIN-кодом?')) {
+                        try {
+                            const r = await fetch('/api/security/disable', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ userId: telegramId })
+                            });
+                            const p = await r.json();
+                            if (!p.success) {
+                                e.target.checked = true;
+                            } else {
+                                localStorage.setItem('trustex_needs_security', 'false');
+                                localStorage.setItem(`trustex_setup_skipped_${telegramId}`, 'true');
+                                sessionStorage.removeItem('trustex_security_session');
+                            }
+                        } catch (err) { e.target.checked = true; }
+                    } else { e.target.checked = true; }
+                }
+            });
+        } catch (e) { /* silent */ }
+    }
+
+    // Load data
+    async function loadData() {
+        const telegramId = tg?.initDataUnsafe?.user?.id || localStorage.getItem('nexo_guest_telegram_id');
+        if (!telegramId) return;
+
+        try {
+            const [profileRes, historyRes, tradesRes] = await Promise.all([
+                fetch(`/api/profile/${telegramId}`),
+                fetch(`/api/transactions/history/${telegramId}?limit=100`),
+                fetch(`/api/trades/history/${telegramId}?limit=1000`)
+            ]);
+
+            // Profile
+            if (profileRes.ok) {
+                const data = await profileRes.json();
+                userData = data.data;
+
+                // Avatar & name
+                const tgUser = tg?.initDataUnsafe?.user;
+                const name = tgUser?.first_name || userData.username || 'User';
+                document.getElementById('avatarInitial').textContent = name.charAt(0).toUpperCase();
+                document.getElementById('userName').textContent = name + (tgUser?.last_name ? ' ' + tgUser.last_name : '');
+                document.getElementById('userIdDisplay').textContent = userData.telegram_id;
+                document.getElementById('accountId').textContent = userData.telegram_id;
+                document.getElementById('accountUsername').textContent = userData.username ? '@' + userData.username : '—';
+
+                // Volume
+                document.getElementById('volumeValue').textContent = parseFloat(userData.total_volume || 0).toFixed(2) + ' USDT';
+
+                // Balances
+                document.getElementById('balUsdt').textContent = formatBalance(userData.usdt);
+                document.getElementById('balBtc').textContent = formatBalance(userData.btc, 8);
+                document.getElementById('balEth').textContent = formatBalance(userData.eth, 8);
+                document.getElementById('balTon').textContent = formatBalance(userData.ton, 4);
+                document.getElementById('balRub').textContent = formatBalance(userData.rub);
+                document.getElementById('balEur').textContent = formatBalance(userData.eur);
+
+                // Verification
+                const badge = document.getElementById('verificationBadge');
+                const btn = document.getElementById('verifyBtn');
+                if (userData.verified) {
+                    badge.className = 'badge verified';
+                    badge.textContent = typeof t === 'function' ? t('verified') : '✅ Верифицирован';
+                    btn.style.display = 'none';
+                } else if (userData.verification_pending) {
+                    badge.className = 'badge pending';
+                    badge.textContent = '⏳ На рассмотрении';
+                    btn.style.display = 'none';
+                } else if (userData.needs_verification) {
+                    badge.className = 'badge not-verified';
+                    badge.textContent = typeof t === 'function' ? t('notVerified') : '⚠️ Не верифицирован';
+                    btn.style.display = 'flex';
+                } else {
+                    badge.className = 'badge not-verified';
+                    badge.textContent = typeof t === 'function' ? t('notVerified') : '⚠️ Не верифицирован';
+                    btn.style.display = 'none';
+                }
+            }
+
+            // Trades stats
+            if (tradesRes.ok) {
+                const tradesData = await tradesRes.json();
+                const trades = tradesData.data || [];
+                const closed = trades.filter(t => t.status !== 'active');
+                const wins = closed.filter(t => t.status === 'won' || t.status === 'resolved_win').length;
+                const losses = closed.filter(t => t.status === 'lost' || t.status === 'resolved_loss').length;
+                document.getElementById('statsValue').innerHTML = 
+                    `${closed.length} / <span style="color:#3fb950">${wins}</span> / <span style="color:#f85149">${losses}</span>`;
+            }
+
+            // Transaction history
+            if (historyRes.ok) {
+                const histData = await historyRes.json();
+                allTransactions = histData.data || [];
+                renderTransactions();
+            }
+        } catch (e) {
+            console.error('Profile load error:', e);
+        }
+    }
+
+    // Settings
+    function initSettings() {
+        const langSelect = document.getElementById('languageSelect');
+        const notifToggle = document.getElementById('notificationsToggle');
+
+        langSelect.value = localStorage.getItem('nexo_lang') || 'ru';
+        langSelect.addEventListener('change', () => {
+            localStorage.setItem('nexo_lang', langSelect.value);
+            window.location.reload();
+        });
+
+        notifToggle.checked = localStorage.getItem('nexo_notifications_enabled') !== '0';
+        notifToggle.addEventListener('change', () => {
+            localStorage.setItem('nexo_notifications_enabled', notifToggle.checked ? '1' : '0');
+        });
+    }
+
+    initSettings();
+    initSecuritySettings();
+    loadAgreementText();
+    loadData();
+</script>
+</body>
+</html>
