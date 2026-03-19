@@ -182,9 +182,9 @@ router.post('/create', async (req, res) => {
         });
       }
 
-      // Check if user already has an active trade (inside transaction for atomicity)
+      // Check if user already has an active trade (locked to prevent race condition)
       const activeTradeResult = await client.query(
-        `SELECT id FROM orders WHERE user_id = $1 AND status = 'active' LIMIT 1`,
+        `SELECT id FROM orders WHERE user_id = $1 AND status = 'active' LIMIT 1 FOR UPDATE`,
         [user.id]
       );
       
@@ -207,12 +207,12 @@ router.post('/create', async (req, res) => {
         });
       }
 
-      // Deduct balance immediately (stake is locked)
-      const newBalance = currentBalance - amount;
-      await client.query(
-        'UPDATE users SET balance_usdt = $1, updated_at = NOW() WHERE id = $2',
-        [newBalance, user.id]
+      // Deduct balance immediately (atomic SQL decrement)
+      const deductResult = await client.query(
+        'UPDATE users SET balance_usdt = balance_usdt - $1, updated_at = NOW() WHERE id = $2 RETURNING balance_usdt',
+        [amount, user.id]
       );
+      const newBalance = parseFloat(deductResult.rows[0].balance_usdt);
 
       // Create trade record with status "active" and save current trade_mode
       const tradeMode = user.trade_mode || 'loss';

@@ -6,6 +6,7 @@
 const pool = require('../config/database');
 
 let intervalId = null;
+let isRunning = false;
 
 /**
  * Close a single expired trade
@@ -105,6 +106,8 @@ async function closeTrade(trade) {
  * Check and close all expired trades
  */
 async function closeExpiredTrades() {
+  if (isRunning) return;
+  isRunning = true;
   try {
     // Find all active trades that have expired
     const result = await pool.query(`
@@ -122,6 +125,8 @@ async function closeExpiredTrades() {
     }
   } catch (error) {
     console.error('❌ Trade closer error:', error.message);
+  } finally {
+    isRunning = false;
   }
 }
 

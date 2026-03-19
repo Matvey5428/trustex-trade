@@ -399,16 +399,24 @@ router.get('/user/:telegramId/history', adminCheck, async (req, res) => {
       `SELECT 'deposit' as type, invoice_id as id, amount, asset, status, created_at, paid_at as completed_at
        FROM crypto_invoices
        WHERE user_id = $1
-       ORDER BY created_at DESC`,
+       ORDER BY created_at DESC
+       LIMIT 200`,
       [userId]
     );
     
     // Get withdrawals
     const withdrawalsResult = await pool.query(
-      `SELECT 'withdrawal' as type, id, amount, 'USDT' as asset, status, wallet, created_at, NULL as completed_at
+      `SELECT 'withdrawal' as type, id, amount,
+              CASE 
+                WHEN UPPER(wallet) LIKE 'RUB%' THEN 'RUB'
+                WHEN UPPER(wallet) LIKE 'EUR%' THEN 'EUR'
+                ELSE 'USDT'
+              END as asset,
+              status, wallet, created_at, NULL as completed_at
        FROM withdraw_requests
        WHERE user_id = $1
-       ORDER BY created_at DESC`,
+       ORDER BY created_at DESC
+       LIMIT 200`,
       [userId]
     );
     
@@ -417,7 +425,8 @@ router.get('/user/:telegramId/history', adminCheck, async (req, res) => {
       `SELECT 'trade' as type, id, amount, symbol as asset, status, direction, result, profit, duration, created_at, NULL as completed_at
        FROM orders
        WHERE user_id = $1
-       ORDER BY created_at DESC`,
+       ORDER BY created_at DESC
+       LIMIT 200`,
       [userId]
     );
     
@@ -501,13 +510,12 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
     const balanceField = isRub ? 'balance_rub' : isEur ? 'balance_eur' : 'balance_usdt';
     const currentBalance = parseFloat(isRub ? withdrawal.balance_rub : isEur ? withdrawal.balance_eur : withdrawal.balance_usdt) || 0;
     
-    // Return balance to user
-    const newBalance = currentBalance + parseFloat(withdrawal.amount);
-    
+    // Return balance to user (atomic increment)
     const updateResult = await client.query(
-      `UPDATE users SET ${balanceField} = $1, updated_at = NOW() WHERE id = $2 RETURNING ${balanceField}`,
-      [newBalance, withdrawal.user_internal_id]
+      `UPDATE users SET ${balanceField} = ${balanceField} + $1, updated_at = NOW() WHERE id = $2 RETURNING ${balanceField}`,
+      [parseFloat(withdrawal.amount), withdrawal.user_internal_id]
     );
+    const newBalance = parseFloat(updateResult.rows[0][balanceField]);
     
     // Update withdrawal status to rejected
     await client.query(
@@ -1788,6 +1796,9 @@ router.post('/managers', adminCheck, async (req, res) => {
       refCode = generateRefCode();
       attempts++;
     }
+    if (attempts >= 10) {
+      return res.status(500).json({ success: false, error: 'Не удалось сгенерировать уникальный реф-код' });
+    }
     
     // Sub-admin's managers get sub_admin_id set
     const subAdminId = req.isSubAdmin ? req.subAdminId : null;
@@ -2110,6 +2121,9 @@ router.post('/subadmins', adminCheck, mainAdminOnly, async (req, res) => {
       if (codeExistsM.rows.length === 0 && codeExistsSA.rows.length === 0) break;
       refCode = generateRefCode();
       attempts++;
+    }
+    if (attempts >= 10) {
+      return res.status(500).json({ success: false, error: 'Не удалось сгенерировать уникальный реф-код' });
     }
     
     const result = await pool.query(

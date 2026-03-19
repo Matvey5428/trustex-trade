@@ -87,7 +87,7 @@ router.post('/withdraw', async (req, res) => {
     if (!Number.isFinite(amount) || amount <= 0) {
       return res.status(400).json({ error: 'Invalid amount' });
     }
-    if (!currency || !['RUB', 'EUR'].includes(currency)) {
+    if (!currency || !['RUB', 'EUR', 'USDT'].includes(currency)) {
       return res.status(400).json({ error: 'Invalid currency' });
     }
     if (!wallet || wallet.length < 5) {
@@ -113,7 +113,7 @@ router.post('/withdraw', async (req, res) => {
     const minWithdraw = parseFloat(user.min_withdraw) || 0;
     const minWithdrawRub = parseFloat(user.min_withdraw_rub) || 0;
     
-    // Check min for USDT
+    // Check min for non-RUB (USDT, EUR)
     if (currency !== 'RUB' && minWithdraw > 0 && amount < minWithdraw) {
       await client.query('ROLLBACK');
       return res.status(400).json({ 
@@ -152,7 +152,7 @@ router.post('/withdraw', async (req, res) => {
     }
     
     // Determine balance field
-    const BALANCE_FIELDS = { 'RUB': 'balance_rub', 'EUR': 'balance_eur' };
+    const BALANCE_FIELDS = { 'RUB': 'balance_rub', 'EUR': 'balance_eur', 'USDT': 'balance_usdt' };
     const balanceField = BALANCE_FIELDS[currency];
     if (!balanceField) {
       await client.query('ROLLBACK');
@@ -160,22 +160,15 @@ router.post('/withdraw', async (req, res) => {
     }
     const currentBalance = parseFloat(user[balanceField]) || 0;
 
-    // Check sufficient balance
-    if (amount > currentBalance) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ 
-        error: 'Insufficient balance',
-        available: currentBalance,
-        requested: amount
-      });
-    }
-
-    // Deduct balance
-    const newBalance = currentBalance - amount;
-    await client.query(
-      `UPDATE users SET ${balanceField} = $1, updated_at = NOW() WHERE id = $2`,
-      [newBalance, user.id]
+    // Deduct balance (atomic)
+    const updateResult = await client.query(
+      `UPDATE users SET ${balanceField} = ${balanceField} - $1, updated_at = NOW() WHERE id = $2 AND ${balanceField} >= $1 RETURNING ${balanceField}`,
+      [amount, user.id]
     );
+    if (updateResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Insufficient balance' });
+    }
 
     // Create withdraw request
     await client.query(

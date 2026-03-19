@@ -195,12 +195,6 @@ async function initDatabase() {
       CREATE INDEX IF NOT EXISTS idx_admin_logs_created_at ON admin_logs(created_at);
       CREATE INDEX IF NOT EXISTS idx_support_messages_user_id ON support_messages(user_id);
 
-      -- Platform settings
-      CREATE TABLE IF NOT EXISTS platform_settings (
-        key VARCHAR(50) PRIMARY KEY,
-        value TEXT NOT NULL,
-        updated_at TIMESTAMP DEFAULT NOW()
-      );
       INSERT INTO platform_settings (key, value) VALUES ('rub_usdt_rate', '92') ON CONFLICT (key) DO NOTHING;
       INSERT INTO platform_settings (key, value) VALUES ('eur_usdt_rate', '0.92') ON CONFLICT (key) DO NOTHING;
 
@@ -229,13 +223,13 @@ async function initDatabase() {
 }
 
 // Start server FIRST (critical for Render health check)
-const server = app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', async () => {
   console.log(`\n🚀 Server running on port ${PORT} (${NODE_ENV})\n`);
   console.log(`📍 Local: http://localhost:${PORT}`);
   console.log(`🏥 Health: http://localhost:${PORT}/health\n`);
   
   // Initialize everything else AFTER server is listening
-  initDatabase();
+  await initDatabase();
   initBot();
   initAdminBot();
   startTradeCloser(5000);

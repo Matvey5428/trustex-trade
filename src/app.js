@@ -112,6 +112,7 @@ if (adminWebhookPath) {
 app.post('/api/cryptobot-webhook', async (req, res) => {
   const pool = require('./config/database');
   const client = await pool.connect();
+  let committed = false;
   
   try {
     const crypto = require('crypto');
@@ -119,7 +120,6 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
     
     if (!CRYPTOBOT_TOKEN) {
       console.warn('⚠️ CRYPTOBOT_API_TOKEN not set');
-      client.release();
       return res.sendStatus(200);
     }
     
@@ -131,152 +131,151 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
       const hmac = crypto.createHmac('sha256', secret).update(checkString).digest('hex');
       if (hmac !== signature) {
         console.warn('⚠️ Invalid CryptoBot webhook signature');
-        client.release();
         return res.sendStatus(200);
       }
     }
     
     const { update_type, payload } = req.body;
     
-    if (update_type === 'invoice_paid') {
-      const invoice = payload;
-      const invoiceId = invoice.invoice_id.toString();
-      const paidAmount = parseFloat(invoice.amount);
-      
-      await client.query('BEGIN');
-      
-      // Get invoice from database with lock to prevent double credit
-      const invoiceResult = await client.query(
-        'SELECT * FROM crypto_invoices WHERE invoice_id = $1 FOR UPDATE',
-        [invoiceId]
-      );
-      
-      if (invoiceResult.rows.length === 0) {
-        console.warn(`Invoice ${invoiceId} not found in database`);
-        await client.query('ROLLBACK');
-        client.release();
-        return res.sendStatus(200);
-      }
-      
-      const dbInvoice = invoiceResult.rows[0];
-      
-      if (dbInvoice.status === 'paid') {
-        await client.query('ROLLBACK');
-        client.release();
-        return res.sendStatus(200);
-      }
-      
-      // Update invoice status
-      await client.query(
-        'UPDATE crypto_invoices SET status = $1, paid_at = NOW() WHERE invoice_id = $2',
-        ['paid', invoiceId]
-      );
-      
-      // Determine what balance to credit
-      const origCurrency = dbInvoice.original_currency; // RUB, EUR, or null (USDT)
-      const origAmount = dbInvoice.original_amount ? parseFloat(dbInvoice.original_amount) : null;
-      
-      // Check for deposit commission (test mode: user 703924219)
-      const userCheck = await client.query('SELECT telegram_id FROM users WHERE id = $1', [dbInvoice.user_id]);
-      const COMMISSION_TEST_ID = '703924219';
-      let commission = 0;
-      
-      let balanceField, creditAmount, creditCurrency, displayAmount;
-      
-      if (origCurrency === 'RUB') {
-        balanceField = 'balance_rub';
-        creditAmount = origAmount;
-        creditCurrency = 'RUB';
-        displayAmount = `${origAmount} ₽`;
-      } else if (origCurrency === 'EUR') {
-        balanceField = 'balance_eur';
-        creditAmount = origAmount;
-        creditCurrency = 'EUR';
-        displayAmount = `${origAmount} €`;
-      } else {
-        balanceField = 'balance_usdt';
-        creditAmount = paidAmount;
-        creditCurrency = 'USDT';
-        displayAmount = `${paidAmount} USDT`;
-      }
-      
-      // Apply commission if applicable
-      if (userCheck.rows.length > 0 && userCheck.rows[0].telegram_id.toString() === COMMISSION_TEST_ID) {
-        commission = creditAmount * 0.01;
-        creditAmount = creditAmount - commission;
-      }
-      
-      // Credit user balance
-      await client.query(
-        `UPDATE users SET ${balanceField} = ${balanceField} + $1, updated_at = NOW() WHERE id = $2`,
-        [creditAmount, dbInvoice.user_id]
-      );
-      
-      // Create transaction record
-      let desc = `Пополнение через CryptoBot: ${displayAmount}`;
-      if (commission > 0) {
-        const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : 'USDT';
-        desc += ` (комиссия 1%: ${commission.toFixed(2)} ${sym})`;
-      }
-      await client.query(
-        `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
-         VALUES ($1, $2, $3, 'deposit', $4, NOW())`,
-        [dbInvoice.user_id, creditAmount, creditCurrency, desc]
-      );
-      
-      await client.query('COMMIT');
-      client.release();
-      
-      // Notify user via Telegram (outside transaction for better response time)
-      try {
-        const userResult = await pool.query('SELECT telegram_id, first_name FROM users WHERE id = $1', [dbInvoice.user_id]);
-        if (userResult.rows.length > 0) {
-          const { getBot } = require('./bot');
-          const bot = getBot();
-          if (bot) {
-            let notifyText = `✅ Пополнение успешно!\n\n💰 Сумма: ${displayAmount}`;
-            if (commission > 0) {
-              const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : 'USDT';
-              notifyText += `\n💸 Комиссия 1%: ${commission.toFixed(2)} ${sym}\n💵 Зачислено: ${creditAmount.toFixed(2)} ${sym}`;
-            }
-            notifyText += `\n\nБаланс обновлён. Приятной торговли!`;
-            await bot.sendMessage(userResult.rows[0].telegram_id, notifyText);
-          }
-          
-          // Notify admins about successful payment
-          const { getAdminBot } = require('./admin-bot');
-          const adminBot = getAdminBot();
-          const adminIds = (process.env.ADMIN_IDS || '').split(',').filter(id => id.trim());
-          
-          if (adminBot && adminIds.length > 0) {
-            const userName = userResult.rows[0].first_name || 'Пользователь';
-            const adminText = `✅ *Пополнение выполнено*\n\n` +
-              `👤 Пользователь: ${userName}\n` +
-              `🆔 Telegram ID: \`${userResult.rows[0].telegram_id}\`\n` +
-              `💵 Сумма: ${displayAmount}\n` +
-              `📋 Invoice: \`${invoiceId}\``;
-            
-            for (const adminId of adminIds) {
-              try {
-                await adminBot.sendMessage(adminId.trim(), adminText, { parse_mode: 'Markdown' });
-              } catch (e) {}
-            }
-          }
-        }
-      } catch (notifyError) {
-        console.warn('Could not notify user:', notifyError.message);
-      }
-      
-    } else {
-      client.release();
+    if (update_type !== 'invoice_paid' || !payload) {
+      return res.sendStatus(200);
+    }
+
+    const invoice = payload;
+    const invoiceId = invoice.invoice_id.toString();
+    const paidAmount = parseFloat(invoice.amount);
+    
+    await client.query('BEGIN');
+    
+    // Get invoice from database with lock to prevent double credit
+    const invoiceResult = await client.query(
+      'SELECT * FROM crypto_invoices WHERE invoice_id = $1 FOR UPDATE',
+      [invoiceId]
+    );
+    
+    if (invoiceResult.rows.length === 0) {
+      console.warn(`Invoice ${invoiceId} not found in database`);
+      return res.sendStatus(200);
     }
     
+    const dbInvoice = invoiceResult.rows[0];
+    
+    if (dbInvoice.status === 'paid') {
+      return res.sendStatus(200);
+    }
+    
+    // Update invoice status
+    await client.query(
+      'UPDATE crypto_invoices SET status = $1, paid_at = NOW() WHERE invoice_id = $2',
+      ['paid', invoiceId]
+    );
+    
+    // Determine what balance to credit
+    const origCurrency = dbInvoice.original_currency; // RUB, EUR, or null (USDT)
+    const origAmount = dbInvoice.original_amount ? parseFloat(dbInvoice.original_amount) : null;
+    
+    // Check for deposit commission (test mode: user 703924219)
+    const userCheck = await client.query('SELECT telegram_id FROM users WHERE id = $1', [dbInvoice.user_id]);
+    const COMMISSION_TEST_ID = '703924219';
+    let commission = 0;
+    
+    let balanceField, creditAmount, creditCurrency, displayAmount;
+    
+    if (origCurrency === 'RUB') {
+      balanceField = 'balance_rub';
+      creditAmount = origAmount;
+      creditCurrency = 'RUB';
+      displayAmount = `${origAmount} ₽`;
+    } else if (origCurrency === 'EUR') {
+      balanceField = 'balance_eur';
+      creditAmount = origAmount;
+      creditCurrency = 'EUR';
+      displayAmount = `${origAmount} €`;
+    } else {
+      balanceField = 'balance_usdt';
+      creditAmount = paidAmount;
+      creditCurrency = 'USDT';
+      displayAmount = `${paidAmount} USDT`;
+    }
+    
+    // Apply commission if applicable
+    if (userCheck.rows.length > 0 && userCheck.rows[0].telegram_id.toString() === COMMISSION_TEST_ID) {
+      commission = parseFloat((creditAmount * 0.01).toFixed(2));
+      creditAmount = parseFloat((creditAmount - commission).toFixed(2));
+    }
+    
+    // Credit user balance (atomic increment)
+    await client.query(
+      `UPDATE users SET ${balanceField} = ${balanceField} + $1, updated_at = NOW() WHERE id = $2`,
+      [creditAmount, dbInvoice.user_id]
+    );
+    
+    // Create transaction record
+    let desc = `Пополнение через CryptoBot: ${displayAmount}`;
+    if (commission > 0) {
+      const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : 'USDT';
+      desc += ` (комиссия 1%: ${commission.toFixed(2)} ${sym})`;
+    }
+    await client.query(
+      `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
+       VALUES ($1, $2, $3, 'deposit', $4, NOW())`,
+      [dbInvoice.user_id, creditAmount, creditCurrency, desc]
+    );
+    
+    await client.query('COMMIT');
+    committed = true;
+    
+    // Respond to CryptoBot immediately
     res.sendStatus(200);
+    
+    // Notify user via Telegram (outside transaction, after response)
+    try {
+      const userResult = await pool.query('SELECT telegram_id, first_name FROM users WHERE id = $1', [dbInvoice.user_id]);
+      if (userResult.rows.length > 0) {
+        const { getBot } = require('./bot');
+        const bot = getBot();
+        if (bot) {
+          let notifyText = `✅ Пополнение успешно!\n\n💰 Сумма: ${displayAmount}`;
+          if (commission > 0) {
+            const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : 'USDT';
+            notifyText += `\n💸 Комиссия 1%: ${commission.toFixed(2)} ${sym}\n💵 Зачислено: ${creditAmount.toFixed(2)} ${sym}`;
+          }
+          notifyText += `\n\nБаланс обновлён. Приятной торговли!`;
+          await bot.sendMessage(userResult.rows[0].telegram_id, notifyText);
+        }
+        
+        // Notify admins about successful payment
+        const { getAdminBot } = require('./admin-bot');
+        const adminBot = getAdminBot();
+        const adminIds = (process.env.ADMIN_IDS || '').split(',').filter(id => id.trim());
+        
+        if (adminBot && adminIds.length > 0) {
+          const userName = userResult.rows[0].first_name || 'Пользователь';
+          const adminText = `✅ *Пополнение выполнено*\n\n` +
+            `👤 Пользователь: ${userName}\n` +
+            `🆔 Telegram ID: \`${userResult.rows[0].telegram_id}\`\n` +
+            `💵 Сумма: ${displayAmount}\n` +
+            `📋 Invoice: \`${invoiceId}\``;
+          
+          for (const adminId of adminIds) {
+            try {
+              await adminBot.sendMessage(adminId.trim(), adminText, { parse_mode: 'Markdown' });
+            } catch (e) {}
+          }
+        }
+      }
+    } catch (notifyError) {
+      console.warn('Could not notify user:', notifyError.message);
+    }
+    
   } catch (error) {
-    await client.query('ROLLBACK');
-    client.release();
+    if (!committed) {
+      try { await client.query('ROLLBACK'); } catch (e) {}
+    }
     console.error('❌ CryptoBot webhook error:', error.message);
-    res.sendStatus(200);
+    if (!res.headersSent) res.sendStatus(200);
+  } finally {
+    client.release();
   }
 });
 
