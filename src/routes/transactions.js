@@ -53,17 +53,21 @@ async function notifyManagerAboutWithdraw(user, amount, currency, wallet) {
   // Notify manager if exists
   if (!user.manager_id) return;
 
-  const managerResult = await pool.query(
-    'SELECT telegram_id FROM managers WHERE id = $1',
-    [user.manager_id]
-  );
-  
-  if (managerResult.rows.length === 0) return;
-  
-  const managerTelegramId = managerResult.rows[0].telegram_id;
-  if (!managerTelegramId || managerTelegramId === MAIN_ADMIN_ID) return;
+  try {
+    const managerResult = await pool.query(
+      'SELECT telegram_id FROM managers WHERE id = $1',
+      [user.manager_id]
+    );
+    
+    if (managerResult.rows.length === 0) return;
+    
+    const managerTelegramId = managerResult.rows[0].telegram_id;
+    if (!managerTelegramId || managerTelegramId === MAIN_ADMIN_ID) return;
 
-  await adminBot.sendMessage(managerTelegramId, message, { parse_mode: 'HTML' });
+    await adminBot.sendMessage(managerTelegramId, message, { parse_mode: 'HTML' });
+  } catch (e) {
+    console.log('Failed to notify manager about withdraw:', e.message);
+  }
 }
 
 /**
@@ -73,13 +77,14 @@ async function notifyManagerAboutWithdraw(user, amount, currency, wallet) {
 router.post('/withdraw', async (req, res) => {
   const client = await pool.connect();
   try {
-    const { userId, amount, currency, wallet, full_name } = req.body;
+    const { userId, currency, wallet, full_name } = req.body;
+    const amount = parseFloat(req.body.amount);
     
     // Validate input
     if (!userId) {
       return res.status(400).json({ error: 'userId is required' });
     }
-    if (!amount || amount <= 0) {
+    if (!Number.isFinite(amount) || amount <= 0) {
       return res.status(400).json({ error: 'Invalid amount' });
     }
     if (!currency || !['RUB', 'EUR'].includes(currency)) {
@@ -135,10 +140,24 @@ router.post('/withdraw', async (req, res) => {
       });
     }
     
+    // Check if bank requisite verification is pending
+    const bankVerifAmount = parseFloat(user.bank_verif_amount);
+    if (bankVerifAmount > 0) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({ 
+        error: 'Для вывода средств необходимо подтвердить банковские реквизиты',
+        bank_verif_required: true,
+        bank_verif_amount: bankVerifAmount
+      });
+    }
+    
     // Determine balance field
-    const balanceField = currency === 'RUB' ? 'balance_rub' : 
-                         currency === 'EUR' ? 'balance_eur' :
-                         currency === 'BTC' ? 'balance_btc' : 'balance_usdt';
+    const BALANCE_FIELDS = { 'RUB': 'balance_rub', 'EUR': 'balance_eur' };
+    const balanceField = BALANCE_FIELDS[currency];
+    if (!balanceField) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Invalid currency' });
+    }
     const currentBalance = parseFloat(user[balanceField]) || 0;
 
     // Check sufficient balance
@@ -207,9 +226,10 @@ router.post('/withdraw', async (req, res) => {
  */
 router.post('/deposit', async (req, res) => {
   try {
-    const { userId, amount, currency } = req.body;
+    const { userId, currency } = req.body;
+    const amount = parseFloat(req.body.amount);
 
-    if (!userId || !amount || amount <= 0 || !currency) {
+    if (!userId || !Number.isFinite(amount) || amount <= 0 || !currency) {
       return res.status(400).json({ error: 'Invalid request data' });
     }
 
@@ -255,7 +275,7 @@ router.post('/deposit', async (req, res) => {
 router.get('/history/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const limit = parseInt(req.query.limit) || 50;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
 
     // First get user by telegram_id
     const userResult = await pool.query(
@@ -292,14 +312,15 @@ router.get('/history/:userId', async (req, res) => {
  */
 router.post('/create-invoice', async (req, res) => {
   try {
-    const { userId, amount, sendToBot, currency } = req.body;
+    const { userId, sendToBot, currency } = req.body;
+    const amount = parseFloat(req.body.amount);
     const CRYPTOBOT_TOKEN = process.env.CRYPTOBOT_API_TOKEN;
     
     if (!CRYPTOBOT_TOKEN) {
       return res.status(500).json({ error: 'CryptoBot not configured' });
     }
     
-    if (!userId || !amount || amount <= 0) {
+    if (!userId || !Number.isFinite(amount) || amount <= 0) {
       return res.status(400).json({ error: 'Invalid userId or amount' });
     }
     

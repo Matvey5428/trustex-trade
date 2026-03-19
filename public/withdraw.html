@@ -970,6 +970,8 @@ async function withdraw() {
                     ? 'Для вывода средств требуется верификация. Пройдите верификацию в профиле.'
                     : 'Verification required for withdrawal. Please verify in your profile.';
                 showAlert('🔒 ' + verifyMsg);
+            } else if (result.bank_verif_required) {
+                showAlert('🏦 Для вывода средств необходимо подтвердить банковские реквизиты. Пополните баланс на ' + result.bank_verif_amount + ' USDT.');
             } else {
                 showAlert(result.error || (window.t ? t('error') : "Withdrawal error"));
             }

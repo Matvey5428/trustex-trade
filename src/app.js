@@ -123,6 +123,19 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
       return res.sendStatus(200);
     }
     
+    // Verify CryptoBot webhook signature
+    const signature = req.headers['crypto-pay-api-signature'];
+    if (signature) {
+      const secret = crypto.createHash('sha256').update(CRYPTOBOT_TOKEN).digest();
+      const checkString = JSON.stringify(req.body);
+      const hmac = crypto.createHmac('sha256', secret).update(checkString).digest('hex');
+      if (hmac !== signature) {
+        console.warn('⚠️ Invalid CryptoBot webhook signature');
+        client.release();
+        return res.sendStatus(200);
+      }
+    }
+    
     const { update_type, payload } = req.body;
     
     if (update_type === 'invoice_paid') {
