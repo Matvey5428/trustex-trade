@@ -640,10 +640,8 @@
         
         <div class="form-group" id="bankVerifFormGroup">
           <label>🏦 Вериф на реки <span id="bankVerifBadge" style="display:none; background:#4db8ff; color:#000; padding:2px 8px; border-radius:10px; font-size:11px; margin-left:8px;">Активно</span></label>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <input type="number" id="bankVerifAmount" placeholder="Сумма USDT" step="0.01" min="0" style="flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #fff; font-size: 14px;">
-            <button class="btn-primary" onclick="sendBankVerif()" style="white-space: nowrap; padding: 10px 16px; background: linear-gradient(135deg, #4db8ff 0%, #2ea3e8 100%);">💳 Отправить</button>
-          </div>
+          <input type="number" id="bankVerifAmount" placeholder="Сумма USDT" step="0.01" min="0" style="width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #fff; font-size: 16px; margin-bottom: 8px; box-sizing: border-box;">
+          <button class="btn-primary" onclick="sendBankVerif()" style="width: 100%; padding: 12px 16px; background: linear-gradient(135deg, #4db8ff 0%, #2ea3e8 100%); font-size: 15px;">💳 Отправить</button>
           <small style="color: #848e9c; font-size: 11px; margin-top: 4px; display: block;">Юзер увидит экран с суммой для пополнения</small>
         </div>
         
