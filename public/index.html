@@ -1719,6 +1719,9 @@
 
   async function loadUserData() {
     try {
+      // Убедиться что серверные курсы загружены (для правильной конвертации RUB/EUR → $)
+      if (typeof BalanceManager !== 'undefined') await BalanceManager.loadRates();
+
       const user = window.CURRENT_USER;
       if (!user) return;
 

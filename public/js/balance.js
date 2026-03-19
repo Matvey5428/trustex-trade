@@ -54,15 +54,26 @@ const BalanceManager = {
     return this._rates;
   },
 
+  /** Получить курсы — если ещё не загружены async, попробовать синхронно из кэша */
+  _ensureRates() {
+    if (this._rates) return this._rates;
+    try {
+      const cached = JSON.parse(localStorage.getItem(this._RATES_KEY) || 'null');
+      if (cached && cached.rub_to_usdt) { this._rates = cached; return cached; }
+    } catch(e) {}
+    // Жёсткий fallback
+    return { rub_to_usdt: 0.012642, usdt_to_rub: 79.10, eur_to_usdt: 1.089, usdt_to_eur: 0.9183, ts: 0 };
+  },
+
   /** Конвертировать RUB в USDT (≈ USD) */
   rubToUsd(rubAmount) {
-    if (!this._rates) return 0;
-    return rubAmount * this._rates.rub_to_usdt;
+    const r = this._ensureRates();
+    return rubAmount * r.rub_to_usdt;
   },
   /** Конвертировать EUR в USDT (≈ USD) */
   eurToUsd(eurAmount) {
-    if (!this._rates) return 0;
-    return eurAmount * this._rates.eur_to_usdt;
+    const r = this._ensureRates();
+    return eurAmount * r.eur_to_usdt;
   },
 
   async init() {
