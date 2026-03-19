@@ -91,15 +91,16 @@ const BalanceManager = {
     const balanceTon = parseFloat(user.balance_ton) || 0;
     const balanceEth = parseFloat(user.balance_eth) || 0;
 
-    // Конвертация в USD через серверные курсы
+    // Конвертация в USD через серверные курсы (только USDT+RUB+EUR — без BTC/ETH/TON)
     const rubInUsd = this.rubToUsd(balanceRub);
     const eurInUsd = this.eurToUsd(balanceEur);
     const totalUsd = balanceUsdt + rubInUsd + eurInUsd;
 
     const fmt = this.formatNumber.bind(this);
+    // НЕ пишем в totalBalance / total-balance — каждая страница считает общий
+    // баланс самостоятельно (index.html учитывает BTC/ETH/TON по рыночным ценам,
+    // wallet.html тоже). balance.js обновляет только отдельные валютные элементы.
     const updates = {
-      'totalBalance': `$${fmt(totalUsd)}`,
-      'total-balance': `$${fmt(totalUsd)}`,
       'userUsdtBalance': `${fmt(balanceUsdt)} USDT`,
       'usdt-balance': `${fmt(balanceUsdt)} USDT`,
       'balanceUsdt': `${fmt(balanceUsdt)}`,
