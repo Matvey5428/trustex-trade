@@ -657,18 +657,17 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
     if (verified !== undefined) {
       updates.push(`verified = $${paramIndex++}`);
       values.push(verified);
-      // Reset pending status when verification is set
-      updates.push(`verification_pending = $${paramIndex++}`);
-      values.push(false);
     }
     
     if (verification_rejected !== undefined) {
       updates.push(`verification_rejected = $${paramIndex++}`);
       values.push(verification_rejected);
-      if (verification_rejected) {
-        updates.push(`verification_pending = $${paramIndex++}`);
-        values.push(false);
-      }
+    }
+    
+    // Reset verification_pending when any verification state changes
+    if (verified !== undefined || verification_rejected !== undefined) {
+      updates.push(`verification_pending = $${paramIndex++}`);
+      values.push(false);
     }
     
     if (min_deposit !== undefined) {
