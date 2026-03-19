@@ -449,45 +449,6 @@
       background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
     }
 
-    /* History */
-    .history-item {
-      background: var(--bg-secondary);
-      border-radius: 12px;
-      padding: 14px;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      border: 1px solid var(--border);
-      transition: all 0.2s;
-    }
-
-    .history-item:hover {
-      border-color: var(--accent);
-    }
-
-    .history-icon {
-      width: 42px;
-      height: 42px;
-      background: var(--bg-card);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      margin-right: 12px;
-    }
-
-    .history-info { flex-grow: 1; }
-    .history-type { font-weight: 500; font-size: 14px; margin-bottom: 2px; color: var(--text-primary); }
-    .history-date { font-size: 12px; color: var(--text-muted); }
-    
-    .history-amount { text-align: right; }
-    .amount-val { font-weight: 600; font-size: 15px; }
-    .amount-cur { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
-
-    .text-plus { color: var(--success); }
-    .text-minus { color: var(--danger); }
-
     /* Reviews Section */
     .reviews-section {
       background: var(--bg-card);
@@ -557,7 +518,7 @@
     }
 
     /* Analytics */
-    .analytics-btn-group, .history-btn-group {
+    .analytics-btn-group {
       display: flex;
       gap: 8px;
       flex-wrap: nowrap;
@@ -566,10 +527,9 @@
       scrollbar-width: none;
     }
 
-    .analytics-btn-group::-webkit-scrollbar,
-    .history-btn-group::-webkit-scrollbar { display: none; }    
+    .analytics-btn-group::-webkit-scrollbar { display: none; }    
 
-    .btn-period, .btn-filter {
+    .btn-period {
       background: var(--bg-secondary);
       border: 1px solid var(--border);
       color: var(--text-secondary);
@@ -584,12 +544,12 @@
       cursor: pointer;
     }
 
-    .btn-period:hover, .btn-filter:hover {
+    .btn-period:hover {
       border-color: var(--accent);
       color: var(--text-primary);
     }
 
-    .btn-period.active, .btn-filter.active {
+    .btn-period.active {
       background: var(--accent);
       border-color: var(--accent);
       color: #0d1117;
@@ -732,8 +692,7 @@
     }
 
     @media (max-width: 380px) {
-      .btn-period, .btn-filter { font-size: 11px; padding: 6px 8px; }
-      .history-btn-group { gap: 4px; }
+      .btn-period { font-size: 11px; padding: 6px 8px; }
       .action-wrapper { gap: 8px; }
       .action-box { height: 48px; font-size: 16px; }
       .action-item .label { font-size: 11px; }
@@ -1346,21 +1305,6 @@
         </div>
     </div>
 
-    <!-- Transaction History -->
-    <div class="section-card">
-        <h5 class="section-title"><span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg></span> <span data-i18n="transactionHistory">История транзакций</span></h5>
-        <div class="history-btn-group">
-            <button class="btn-filter active" onclick="filterHistory('all')" id="filterAll">Все (0)</button>
-            <button class="btn-filter" onclick="filterHistory('withdraw')" id="filterWithdraw">Выводы (0)</button>
-            <button class="btn-filter" onclick="filterHistory('deposit')" id="filterDeposit">Пополнения (0)</button>
-        </div>
-        <div id="historyContent" style="min-height: 120px;">
-            <div style="height: 150px; display: flex; align-items: center; justify-content: center;">
-                <span>История транзакций пуста</span>
-            </div>
-        </div>
-    </div>
-
     <!-- Bottom Navigation Bar -->
     <nav class="bottom-nav">
         <a href="index.html" class="nav-item active">
@@ -1465,8 +1409,7 @@
 
   let userId = null;
   let RUB_RATE = 79.10;
-  let allTransactions = [];
-  let currentHistoryFilter = 'all';
+
   let currentLang = localStorage.getItem('nexo_lang') || 'ru';
 
   // Translations
@@ -2018,9 +1961,6 @@
       if (usdtEl) { usdtEl.textContent = `${fmt(usdtAmount)} USDT`; usdtEl.classList.remove('skeleton'); }
       if (usdtEq) { usdtEq.textContent = `≈ $${fmt(usdtAmount)}`; }
       
-      // Загрузить историю в фоне (не блокируя)
-      loadTransactionHistory();
-      
       log('✅ User data loaded:', user);
     } catch (e) {
       document.getElementById('userIdDisplay').textContent = '❌ Ошибка';
@@ -2030,24 +1970,6 @@
   async function requestVerification() {
     if (!userId) return;
     await doVerificationRequest();
-  }
-
-  async function loadTransactionHistory() {
-    if (!userId) return;
-    try {
-      const res = await fetch(`/api/transactions/history/${userId}`);
-      if (res.ok) {
-        const payload = await res.json();
-        allTransactions = (payload.data || []).map(tx => ({
-          ...tx,
-          createdAt: tx.created_at
-        }));
-        updateFilterCounts();
-        filterHistory(currentHistoryFilter);
-      }
-    } catch (e) {
-      /* silent */
-    }
   }
 
   function selectPeriod(btn, period) {
@@ -2207,53 +2129,6 @@
       });
       
     } catch (e) { /* silent */ }
-  }
-
-  function updateFilterCounts() {
-    const counts = {
-        all: allTransactions.length,
-        deposit: allTransactions.filter(t => t.type === 'deposit').length,
-        withdraw: allTransactions.filter(t => t.type === 'withdraw').length
-    };
-    const filters = document.querySelectorAll('.btn-filter');
-    if(filters.length >= 3) {
-        filters[0].innerText = `Все (${counts.all})`;
-        filters[1].innerText = `Выводы (${counts.withdraw})`;
-        filters[2].innerText = `Пополнения (${counts.deposit})`;
-    }
-  }
-
-  function filterHistory(type) {
-    currentHistoryFilter = type;
-    const container = document.getElementById('historyContent');
-    document.querySelectorAll('.btn-filter').forEach(btn => {
-        btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${type}'`));
-    });
-
-    const filtered = type === 'all' ? allTransactions : allTransactions.filter(tx => tx.type === type);
-    if (filtered.length === 0) {
-      container.innerHTML = '<div style="height: 150px; display: flex; align-items: center; justify-content: center;"><span>История пуста</span></div>';
-      return;
-    }
-
-    container.innerHTML = filtered.map(tx => {
-      const isDep = tx.type === 'deposit';
-      const created = tx.createdAt ? new Date(tx.createdAt) : null;
-      const dateStr = created ? created.toLocaleDateString('ru-RU') : '';
-      const timeStr = created ? created.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '';
-      return `
-        <div class="history-item">
-          <div class="history-icon">${isDep ? '📥' : '📤'}</div>
-          <div class="history-info">
-            <div class="history-type">${isDep ? 'Пополнение' : 'Вывод'}</div>
-            <div class="history-date">${dateStr},<br>${timeStr}</div>
-          </div>
-          <div class="history-amount">
-            <div class="amount-val ${isDep ? 'text-plus' : 'text-minus'}">${isDep ? '+' : '-'}${parseFloat(tx.amount).toFixed(2)}</div>
-            <div class="amount-cur">${tx.currency || 'RUB'}</div>
-          </div>
-        </div>`;
-    }).join('');
   }
 
   const reviewsContainer = document.getElementById('reviewsContainer');
