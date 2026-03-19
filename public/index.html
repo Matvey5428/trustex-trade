@@ -1648,12 +1648,14 @@
     // Использовать кэшированные цены или дефолтные
     const market = cachedMarketPrices || { btc: 95000, eth: 3500, ton: 5.5 };
     
-    const rbcInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.rubToUsd(parseFloat(user.balance_rub) || 0) : 0;
-    const eurInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.eurToUsd(parseFloat(user.balance_eur) || 0) : 0;
-    const usdtBalance = parseFloat(user.balance_usdt) || 0;
-    const btcInUsd = (parseFloat(user.balance_btc) || 0) * market.btc;
-    const ethInUsd = (parseFloat(user.balance_eth) || 0) * market.eth;
-    const tonInUsd = (parseFloat(user.balance_ton) || 0) * market.ton;
+    // Поддержка обоих форматов полей: balance_rub (auth) и rub (profile)
+    const bal = (f) => parseFloat(user['balance_' + f] ?? user[f]) || 0;
+    const rbcInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.rubToUsd(bal('rub')) : 0;
+    const eurInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.eurToUsd(bal('eur')) : 0;
+    const usdtBalance = bal('usdt');
+    const btcInUsd = bal('btc') * market.btc;
+    const ethInUsd = bal('eth') * market.eth;
+    const tonInUsd = bal('ton') * market.ton;
     const totalBalanceUsd = rbcInUsd + eurInUsd + usdtBalance + btcInUsd + ethInUsd + tonInUsd;
     
     const formattedBalance = totalBalanceUsd.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/,/g, '.');
@@ -1675,12 +1677,12 @@
     const usdtEq = document.getElementById('usdtEquiv');
     
     // Количество монет
-    const rubAmount = parseFloat(user.balance_rub) || 0;
-    const eurAmount = parseFloat(user.balance_eur) || 0;
-    const btcAmount = parseFloat(user.balance_btc) || 0;
-    const tonAmount = parseFloat(user.balance_ton) || 0;
-    const ethAmount = parseFloat(user.balance_eth) || 0;
-    const usdtAmount = parseFloat(user.balance_usdt) || 0;
+    const rubAmount = bal('rub');
+    const eurAmount = bal('eur');
+    const btcAmount = bal('btc');
+    const tonAmount = bal('ton');
+    const ethAmount = bal('eth');
+    const usdtAmount = bal('usdt');
     
     if (rubEl) { rubEl.textContent = `${fmt(rubAmount)} ₽`; rubEl.classList.remove('skeleton'); }
     if (rubEq) { rubEq.textContent = `≈ $${fmt(rbcInUsd)}`; }
@@ -1798,13 +1800,14 @@
       }
 
       // Показать баланс
+      const bal = (f) => parseFloat(user['balance_' + f] ?? user[f]) || 0;
       const m = market || cachedMarketPrices || { btc: 95000, eth: 3500, ton: 5.5 };
-      const rbcInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.rubToUsd(parseFloat(user.balance_rub) || 0) : 0;
-      const eurInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.eurToUsd(parseFloat(user.balance_eur) || 0) : 0;
-      const usdtBalance = parseFloat(user.balance_usdt) || 0;
-      const btcInUsd = (parseFloat(user.balance_btc) || 0) * m.btc;
-      const ethInUsd = (parseFloat(user.balance_eth) || 0) * m.eth;
-      const tonInUsd = (parseFloat(user.balance_ton) || 0) * m.ton;
+      const rbcInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.rubToUsd(bal('rub')) : 0;
+      const eurInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.eurToUsd(bal('eur')) : 0;
+      const usdtBalance = bal('usdt');
+      const btcInUsd = bal('btc') * m.btc;
+      const ethInUsd = bal('eth') * m.eth;
+      const tonInUsd = bal('ton') * m.ton;
       const totalBalanceUsd = rbcInUsd + eurInUsd + usdtBalance + btcInUsd + ethInUsd + tonInUsd;
       
       const formattedBalance = totalBalanceUsd.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/,/g, '.');
@@ -1828,12 +1831,12 @@
       const usdtEq = document.getElementById('usdtEquiv');
       
       // Количество монет
-      const rubAmount = parseFloat(user.balance_rub) || 0;
-      const eurAmount = parseFloat(user.balance_eur) || 0;
-      const btcAmount = parseFloat(user.balance_btc) || 0;
-      const tonAmount = parseFloat(user.balance_ton) || 0;
-      const ethAmount = parseFloat(user.balance_eth) || 0;
-      const usdtAmount = parseFloat(user.balance_usdt) || 0;
+      const rubAmount = bal('rub');
+      const eurAmount = bal('eur');
+      const btcAmount = bal('btc');
+      const tonAmount = bal('ton');
+      const ethAmount = bal('eth');
+      const usdtAmount = bal('usdt');
       
       if (rubEl) { rubEl.textContent = `${fmt(rubAmount)} ₽`; rubEl.classList.remove('skeleton'); }
       if (rubEq) { rubEq.textContent = `≈ $${fmt(rbcInUsd)}`; }

@@ -95,12 +95,13 @@ const BalanceManager = {
   },
 
   updateBalanceElements(user) {
-    const balanceUsdt = parseFloat(user.balance_usdt) || 0;
-    const balanceBtc = parseFloat(user.balance_btc) || 0;
-    const balanceRub = parseFloat(user.balance_rub) || 0;
-    const balanceEur = parseFloat(user.balance_eur) || 0;
-    const balanceTon = parseFloat(user.balance_ton) || 0;
-    const balanceEth = parseFloat(user.balance_eth) || 0;
+    const b = (f) => parseFloat(user['balance_' + f] ?? user[f]) || 0;
+    const balanceUsdt = b('usdt');
+    const balanceBtc = b('btc');
+    const balanceRub = b('rub');
+    const balanceEur = b('eur');
+    const balanceTon = b('ton');
+    const balanceEth = b('eth');
 
     // Конвертация в USD через серверные курсы (только USDT+RUB+EUR — без BTC/ETH/TON)
     const rubInUsd = this.rubToUsd(balanceRub);

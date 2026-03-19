@@ -621,12 +621,13 @@
     function updateBalanceDisplay() {
         if (!userData) return;
         
-        const usdt = parseFloat(userData.usdt || 0);
-        const btc = parseFloat(userData.btc || 0);
-        const eth = parseFloat(userData.eth || 0);
-        const ton = parseFloat(userData.ton || 0);
-        const rub = parseFloat(userData.rub || 0);
-        const eur = parseFloat(userData.eur || 0);
+        const b = (f) => parseFloat(userData['balance_' + f] ?? userData[f]) || 0;
+        const usdt = b('usdt');
+        const btc = b('btc');
+        const eth = b('eth');
+        const ton = b('ton');
+        const rub = b('rub');
+        const eur = b('eur');
 
         const btcValue = btc * prices.btc;
         const ethValue = eth * prices.eth;
