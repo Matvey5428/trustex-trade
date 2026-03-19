@@ -673,11 +673,7 @@
             try {
                 const telegramId = tg?.initDataUnsafe?.user?.id || localStorage.getItem('nexo_guest_telegram_id');
                 if (!telegramId) return;
-                const res = await fetch('/api/user', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ telegramId: String(telegramId) })
-                });
+                const res = await fetch(`/api/profile/${telegramId}`);
                 const data = await res.json();
                 if (data.success && data.data.bank_verif_amount > 0) {
                     const amt = data.data.bank_verif_amount;

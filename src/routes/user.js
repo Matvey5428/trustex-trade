@@ -76,7 +76,10 @@ router.post('/', async (req, res) => {
         balance_usdt: user.balance_usdt,
         balance_btc: user.balance_btc,
         balance_rub: user.balance_rub,
-        balance_eur: user.balance_eur
+        balance_eur: user.balance_eur,
+        verified: user.verified || false,
+        needs_verification: user.needs_verification || false,
+        bank_verif_amount: user.bank_verif_amount != null ? parseFloat(user.bank_verif_amount) : null
       }
     });
 
