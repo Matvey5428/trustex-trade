@@ -12,6 +12,7 @@ const i18n = {
     all: 'All',
     
     // Navigation
+    home: 'Home',
     assets: 'Assets',
     markets: 'Markets',
     trading: 'Trading',
@@ -187,6 +188,7 @@ const i18n = {
     all: 'Все',
     
     // Navigation
+    home: 'Главная',
     assets: 'Активы',
     markets: 'Рынки',
     trading: 'Торговля',
