@@ -74,6 +74,29 @@ const TelegramAuth = {
       if (!telegramId) {
         telegramId = this.getGuestTelegramId();
       }
+
+      // Если нет initData, но есть кэшированный токен — использовать его
+      if (!initData) {
+        const cachedToken = localStorage.getItem(this.TOKEN_KEY);
+        const cachedUser = this.getCurrentUser();
+        if (cachedToken && cachedUser) {
+          window.CURRENT_USER = cachedUser;
+          window.AUTH_TOKEN = cachedToken;
+          return { token: cachedToken, user: cachedUser };
+        }
+        // Нет initData и нет кэша — создать/получить юзера через profile API
+        const profileRes = await fetch(`/api/profile/${telegramId}`);
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          if (profileData.data) {
+            const user = profileData.data;
+            localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+            window.CURRENT_USER = user;
+            return { token: null, user };
+          }
+        }
+        throw new Error('No initData available');
+      }
       
       // Check for referral code in multiple places
       let refCode = null;

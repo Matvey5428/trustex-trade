@@ -2277,7 +2277,9 @@
       
     } catch (e) {
       hideSecurityOverlay();
-      showNotification('Ошибка авторизации: ' + e.message, 'error');
+      console.warn('Auth warning:', e.message);
+      // Auth failed but try loading data with cached/guest ID anyway
+      loadAllUserData();
     }
   });
 
