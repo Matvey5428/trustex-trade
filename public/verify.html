@@ -649,6 +649,10 @@
     const tg = window.Telegram?.WebApp;
     if (tg) { tg.ready(); tg.expand(); }
 
+    document.addEventListener('click', e => {
+        if (!e.target.closest('input, textarea, select')) document.activeElement?.blur();
+    });
+
     let currentStep = 1;
     const photoFiles = { front: null, back: null, selfie: null };
 
