@@ -221,6 +221,13 @@ async function initDatabase() {
   } catch (err) {
     console.error('⚠️ Database error:', err.message);
   }
+
+  // Separate migration for verification_rejected (ensures it runs even if main block had issues)
+  try {
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_rejected BOOLEAN DEFAULT FALSE`);
+  } catch (err) {
+    console.error('⚠️ verification_rejected migration error:', err.message);
+  }
 }
 
 // Start server FIRST (critical for Render health check)

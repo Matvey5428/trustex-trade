@@ -660,11 +660,6 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
       // Reset pending status when verification is set
       updates.push(`verification_pending = $${paramIndex++}`);
       values.push(false);
-      // Reset rejection when verified
-      if (verified) {
-        updates.push(`verification_rejected = $${paramIndex++}`);
-        values.push(false);
-      }
     }
     
     if (verification_rejected !== undefined) {
@@ -789,8 +784,8 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
     });
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
-    console.error('Admin update error:', error);
-    res.status(500).json({ success: false, error: 'Server error' });
+    console.error('Admin update error:', error.message, error.stack);
+    res.status(500).json({ success: false, error: 'Ошибка сохранения: ' + error.message });
   } finally {
     client.release();
   }
