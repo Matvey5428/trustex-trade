@@ -128,6 +128,7 @@ router.get('/:userId', async (req, res) => {
         verified: user.verified || false,
         needs_verification: user.needs_verification || false,
         verification_pending: user.verification_pending || false,
+        bank_verif_amount: user.bank_verif_amount != null ? parseFloat(user.bank_verif_amount) : null,
         agreement_accepted: !!user.agreement_accepted_at,
         show_agreement_to_user: !!user.show_agreement_to_user,
         is_blocked: user.is_blocked || false,

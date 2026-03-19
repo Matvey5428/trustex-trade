@@ -978,7 +978,12 @@
                 // Verification
                 const badge = document.getElementById('verificationBadge');
                 const btn = document.getElementById('verifyBtn');
-                if (userData.verified) {
+                if (userData.verified && userData.bank_verif_amount > 0) {
+                    badge.className = 'badge pending';
+                    badge.textContent = '🏦 Верификация реквизитов';
+                    btn.style.display = 'none';
+                    document.getElementById('statusBtn').style.display = 'flex';
+                } else if (userData.verified) {
                     badge.className = 'badge verified';
                     badge.textContent = typeof t === 'function' ? t('verified') : '✅ Верифицирован';
                     btn.style.display = 'none';

