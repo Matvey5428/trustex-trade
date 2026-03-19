@@ -169,6 +169,7 @@ router.post('/withdraw', async (req, res) => {
       await client.query('ROLLBACK');
       return res.status(400).json({ error: `Недостаточно средств. Баланс ${currency}: ${currentBalance}` });
     }
+    const newBalance = parseFloat(updateResult.rows[0][balanceField]) || 0;
 
     // Create withdraw request
     await client.query(
