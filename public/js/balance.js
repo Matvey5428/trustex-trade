@@ -191,11 +191,16 @@ const BalanceManager = {
 document.addEventListener('DOMContentLoaded', async () => {
   // Загрузить курсы первым делом (из кэша — мгновенно)
   await BalanceManager.loadRates();
-  // Показать кэш мгновенно
+
+  // index.html и wallet.html управляют своим балансом сами —
+  // balance.js на этих страницах нужен только ради rubToUsd/eurToUsd
+  const p = window.location.pathname;
+  if (p === '/' || p === '/index.html' || p === '/wallet.html') return;
+
+  // На остальных страницах — показать кэш мгновенно и обновить с сервера
   const cachedUser = TelegramAuth.getCurrentUser();
   if (cachedUser) {
     BalanceManager.updateBalanceElements(cachedUser);
   }
-  // Обновить с сервера в фоне
   BalanceManager.init();
 });
