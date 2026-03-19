@@ -629,7 +629,7 @@
         </div>
         <div class="info-row">
             <span class="info-label" data-i18n="statsLabel">Статистика</span>
-            <span class="info-value" id="statsValue">0</span>
+            <span class="info-value" id="statsValue">0 / <span style="color:#3fb950">0</span> / <span style="color:#f85149">0</span></span>
         </div>
         <div class="info-row">
             <span class="info-label" data-i18n="tradingVolume">Объем торгов</span>
@@ -987,7 +987,7 @@
             if (statsRes.ok) {
                 const statsData = await statsRes.json();
                 const s = statsData.data || {};
-                document.getElementById('statsValue').textContent = `${s.total || 0}`;
+                document.getElementById('statsValue').innerHTML = `${s.total || 0} / <span style="color:#3fb950">${s.wins || 0}</span> / <span style="color:#f85149">${s.losses || 0}</span>`;
             }
 
             // Transaction history
