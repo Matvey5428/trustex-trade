@@ -273,11 +273,19 @@ router.post('/verification/request', async (req, res) => {
  * Sends photos to admin, manager, sub-admin via Telegram
  */
 router.post('/verification/submit',
-  upload.fields([
-    { name: 'passportFront', maxCount: 1 },
-    { name: 'passportBack', maxCount: 1 },
-    { name: 'selfie', maxCount: 1 }
-  ]),
+  (req, res, next) => {
+    upload.fields([
+      { name: 'passportFront', maxCount: 1 },
+      { name: 'passportBack', maxCount: 1 },
+      { name: 'selfie', maxCount: 1 }
+    ])(req, res, (err) => {
+      if (err) {
+        const msg = err.code === 'LIMIT_FILE_SIZE' ? 'File too large (max 10MB)' : err.message;
+        return res.status(400).json({ success: false, error: msg });
+      }
+      next();
+    });
+  },
   async (req, res) => {
     try {
       const { userId, fullName, birthDate, address } = req.body;
@@ -314,6 +322,10 @@ router.post('/verification/submit',
         return res.status(400).json({ success: false, error: 'Already verified' });
       }
 
+      if (user.verification_pending) {
+        return res.status(400).json({ success: false, error: 'Verification already pending' });
+      }
+
       // Save verification data and set pending
       await pool.query(
         `UPDATE users SET
@@ -329,13 +341,17 @@ router.post('/verification/submit',
 
       if (adminBot) {
         const userName = user.first_name || user.username || user.telegram_id;
+        const esc = (s) => String(s).replace(/[_*`\[\]()~>#+\-=|{}.!\\]/g, '\\$&');
         const caption = `📋 *Заявка на верификацию*\n\n` +
-          `👤 Пользователь: ${userName}\n` +
+          `👤 Пользователь: ${esc(userName)}\n` +
           `🆔 ID: \`${user.telegram_id}\`\n` +
-          `📝 ФИО: ${fullName}\n` +
-          `📅 Дата рождения: ${birthDate}\n` +
-          `📍 Адрес: ${address}\n` +
-          `🕐 Дата подачи: ${new Date().toLocaleString('ru')}`;
+          `📝 ФИО: ${esc(fullName)}\n` +
+          `📅 Дата рождения: ${esc(birthDate)}\n` +
+          `📍 Адрес: ${esc(address)}\n` +
+          `🕐 Дата подачи: ${esc(new Date().toLocaleString('ru'))}`;
+
+        // Use MarkdownV2 for proper escaping
+        const parseMode = 'MarkdownV2';
 
         // Collect all recipients
         const recipients = new Set();
@@ -352,7 +368,7 @@ router.post('/verification/submit',
 
         for (const recipientId of recipients) {
           try {
-            await adminBot.sendMessage(recipientId, caption, { parse_mode: 'Markdown' });
+            await adminBot.sendMessage(recipientId, caption, { parse_mode: parseMode });
             for (const photo of photoFiles) {
               await adminBot.sendPhoto(recipientId, photo.buffer, {
                 caption: photo.label
