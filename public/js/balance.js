@@ -1,45 +1,88 @@
 /**
  * balance.js - Universal Balance Display
- * Автоматически загружает и отображает баланс на всех страницах
+ * Загружает актуальные курсы с сервера и отображает баланс на всех страницах.
+ * Единый источник правды для конвертации валют.
  */
 
 const BalanceManager = {
-  RUB_RATE: 79.10, // Фиксированный курс, тот же что и в exchange.html
-  
-  /**
-   * Форматирование числа с пробелами как разделителями тысяч
-   */
+  // Серверные курсы (загружаются при init, обновляются при каждом refresh)
+  _rates: null,
+  // Кэш-ключ
+  _RATES_KEY: 'nexo_exchange_rates',
+
   formatNumber(num, decimals = 2) {
     return num.toLocaleString('ru-RU', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).replace(/,/g, '.');
   },
-  
-  /**
-   * Инициализация - автоматически вызывается при загрузке
-   */
+
+  /** Загрузить курсы с сервера или из кэша */
+  async loadRates() {
+    // Если уже загружены в этой сессии — не дёргать снова
+    if (this._rates) return this._rates;
+    // Попробуем кэш
+    try {
+      const cached = JSON.parse(localStorage.getItem(this._RATES_KEY) || 'null');
+      if (cached && cached.ts && Date.now() - cached.ts < 5 * 60 * 1000) {
+        this._rates = cached;
+        return cached;
+      }
+    } catch(e) {}
+    // Запрос к серверу
+    try {
+      const res = await fetch('/api/exchange/rate');
+      if (res.ok) {
+        const payload = await res.json();
+        if (payload.data) {
+          this._rates = {
+            rub_to_usdt: payload.data.rub_to_usdt,
+            usdt_to_rub: payload.data.usdt_to_rub,
+            eur_to_usdt: payload.data.eur_to_usdt,
+            usdt_to_eur: payload.data.usdt_to_eur,
+            ts: Date.now()
+          };
+          localStorage.setItem(this._RATES_KEY, JSON.stringify(this._rates));
+          return this._rates;
+        }
+      }
+    } catch(e) {}
+    // Fallback: кэш без ограничения по времени
+    try {
+      const cached = JSON.parse(localStorage.getItem(this._RATES_KEY) || 'null');
+      if (cached) { this._rates = cached; return cached; }
+    } catch(e) {}
+    // Жёсткий fallback
+    this._rates = { rub_to_usdt: 0.012642, usdt_to_rub: 79.10, eur_to_usdt: 1.089, usdt_to_eur: 0.9183, ts: 0 };
+    return this._rates;
+  },
+
+  /** Конвертировать RUB в USDT (≈ USD) */
+  rubToUsd(rubAmount) {
+    if (!this._rates) return 0;
+    return rubAmount * this._rates.rub_to_usdt;
+  },
+  /** Конвертировать EUR в USDT (≈ USD) */
+  eurToUsd(eurAmount) {
+    if (!this._rates) return 0;
+    return eurAmount * this._rates.eur_to_usdt;
+  },
+
   async init() {
     try {
-      // Сначала авторизуемся если нужно
+      // Загрузить курсы первым делом
+      await this.loadRates();
+
       if (!TelegramAuth.isAuthenticated()) {
         await TelegramAuth.login();
       } else {
-        // Обновить данные пользователя с сервера
         await TelegramAuth.refreshUser();
       }
-      
-      // Получить пользователя
       const user = window.CURRENT_USER || TelegramAuth.getCurrentUser();
       if (!user) return;
-      
-      // Обновить все элементы баланса на странице
       this.updateBalanceElements(user);
     } catch (error) {
       // Silent fail
     }
   },
-  
-  /**
-   * Обновить все элементы баланса на странице
-   */
+
   updateBalanceElements(user) {
     const balanceUsdt = parseFloat(user.balance_usdt) || 0;
     const balanceBtc = parseFloat(user.balance_btc) || 0;
@@ -47,71 +90,53 @@ const BalanceManager = {
     const balanceEur = parseFloat(user.balance_eur) || 0;
     const balanceTon = parseFloat(user.balance_ton) || 0;
     const balanceEth = parseFloat(user.balance_eth) || 0;
-    
-    // Расчет общего баланса в USD
-    const totalUsd = balanceUsdt + (balanceRub / this.RUB_RATE) + (balanceEur * 1.089);
-    
-    // Обновить элементы по ID
+
+    // Конвертация в USD через серверные курсы
+    const rubInUsd = this.rubToUsd(balanceRub);
+    const eurInUsd = this.eurToUsd(balanceEur);
+    const totalUsd = balanceUsdt + rubInUsd + eurInUsd;
+
     const fmt = this.formatNumber.bind(this);
     const updates = {
-      // Главный баланс
       'totalBalance': `$${fmt(totalUsd)}`,
       'total-balance': `$${fmt(totalUsd)}`,
-      
-      // USDT баланс
       'userUsdtBalance': `${fmt(balanceUsdt)} USDT`,
       'usdt-balance': `${fmt(balanceUsdt)} USDT`,
       'balanceUsdt': `${fmt(balanceUsdt)}`,
       'bal-USDT': `${fmt(balanceUsdt)} USDT`,
       'usdtBalance': `${fmt(balanceUsdt)} $`,
-      
-      // BTC баланс  
       'userBtcBalance': `${fmt(balanceBtc, 8)} BTC`,
       'btc-balance': `${fmt(balanceBtc, 8)} BTC`,
       'balanceBtc': `${fmt(balanceBtc, 8)}`,
       'bal-BTC': `${fmt(balanceBtc, 8)} BTC`,
       'btcBalance': `${fmt(balanceBtc, 8)} $`,
-      
-      // RUB баланс
       'userRubBalance': `${fmt(balanceRub)} ₽`,
       'rub-balance': `${fmt(balanceRub)} ₽`,
       'balanceRub': `${fmt(balanceRub)}`,
       'bal-RUB': `${fmt(balanceRub)} ₽`,
       'rubBalance': `${fmt(balanceRub)} ₽`,
-      
-      // EUR баланс
       'bal-EUR': `${fmt(balanceEur)} €`,
       'eurBalance': `${fmt(balanceEur)} €`,
       'balanceEur': `${fmt(balanceEur)}`,
-      
-      // TON баланс
       'bal-TON': `${fmt(balanceTon, 4)} TON`,
       'tonBalance': `${fmt(balanceTon, 4)} $`,
-      
-      // ETH баланс
       'bal-ETH': `${fmt(balanceEth, 6)} ETH`,
       'ethBalance': `${fmt(balanceEth, 6)} $`,
-      
-      // Для страниц deposit/withdraw
       'available-balance': `${fmt(balanceUsdt)} USDT`,
       'availableBalance': `${fmt(balanceUsdt)} USDT`,
-      
-      // Для exchange.html
       'rubBalanceText': `${fmt(balanceRub)} ₽`,
       'usdtBalanceText': `${fmt(balanceUsdt)} $`,
     };
-    
+
     for (const [id, value] of Object.entries(updates)) {
       const el = document.getElementById(id);
       if (el) {
         el.textContent = value;
-        // Remove skeleton loading state and add loaded animation
         el.classList.remove('skeleton');
         el.classList.add('loaded');
       }
     }
-    
-    // Сохранить балансы глобально для использования в других скриптах
+
     window.USER_BALANCES = {
       usdt: balanceUsdt,
       btc: balanceBtc,
@@ -122,26 +147,22 @@ const BalanceManager = {
       totalUsd: totalUsd
     };
   },
-  
-  /**
-   * Получить текущий баланс USDT
-   */
+
   getUsdtBalance() {
     return window.USER_BALANCES?.usdt || 0;
   },
-  
-  /**
-   * Получить общий баланс в USD
-   */
   getTotalBalance() {
     return window.USER_BALANCES?.totalUsd || 0;
   },
-  
-  /**
-   * Обновить баланс с сервера
-   */
+  /** Получить актуальные курсы (для использования из других страниц) */
+  getRates() {
+    return this._rates;
+  },
+
   async refresh() {
     try {
+      // Обновить курсы при каждом refresh
+      await this.loadRates();
       const user = await TelegramAuth.refreshUser();
       if (user) {
         this.updateBalanceElements(user);
@@ -154,13 +175,14 @@ const BalanceManager = {
 };
 
 // Автоматическая инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', () => {
-  // Сначала мгновенно показать закэшированные данные
+document.addEventListener('DOMContentLoaded', async () => {
+  // Загрузить курсы первым делом (из кэша — мгновенно)
+  await BalanceManager.loadRates();
+  // Показать кэш мгновенно
   const cachedUser = TelegramAuth.getCurrentUser();
   if (cachedUser) {
     BalanceManager.updateBalanceElements(cachedUser);
   }
-  
-  // Потом обновить с сервера в фоне
+  // Обновить с сервера в фоне
   BalanceManager.init();
 });

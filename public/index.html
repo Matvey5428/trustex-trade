@@ -1354,7 +1354,6 @@
   }
 
   let userId = null;
-  let RUB_RATE = 79.10;
 
   let currentLang = localStorage.getItem('nexo_lang') || 'ru';
 
@@ -1621,8 +1620,11 @@
         const priceMap = {};
         prices.forEach(p => priceMap[p.symbol] = parseFloat(p.price));
 
-        // Используем фиксированный курс 79.10 (тот же что в exchange.html)
-        updateEl('rubPrice', `${RUB_RATE.toFixed(2)} ₽`);
+        // Курс RUB из серверных данных BalanceManager
+        const rubPriceText = (typeof BalanceManager !== 'undefined' && BalanceManager.getRates())
+          ? (BalanceManager.getRates().usdt_to_rub || 79.10).toFixed(2)
+          : '79.10';
+        updateEl('rubPrice', `${rubPriceText} ₽`);
         updateEl('btcPrice', `${priceMap['BTCUSDT'].toLocaleString()} $`);
         updateEl('ethPrice', `${priceMap['ETHUSDT'].toLocaleString()} $`);
         updateEl('tonPrice', `${priceMap['TONUSDT'].toFixed(2)} $`);
@@ -1646,8 +1648,8 @@
     // Использовать кэшированные цены или дефолтные
     const market = cachedMarketPrices || { btc: 95000, eth: 3500, ton: 5.5 };
     
-    const rbcInUsd = (parseFloat(user.balance_rub) || 0) / RUB_RATE;
-    const eurInUsd = (parseFloat(user.balance_eur) || 0) * 1.089;
+    const rbcInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.rubToUsd(parseFloat(user.balance_rub) || 0) : 0;
+    const eurInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.eurToUsd(parseFloat(user.balance_eur) || 0) : 0;
     const usdtBalance = parseFloat(user.balance_usdt) || 0;
     const btcInUsd = (parseFloat(user.balance_btc) || 0) * market.btc;
     const ethInUsd = (parseFloat(user.balance_eth) || 0) * market.eth;
@@ -1794,8 +1796,8 @@
 
       // Показать баланс
       const m = market || cachedMarketPrices || { btc: 95000, eth: 3500, ton: 5.5 };
-      const rbcInUsd = (parseFloat(user.balance_rub) || 0) / RUB_RATE;
-      const eurInUsd = (parseFloat(user.balance_eur) || 0) * 1.089;
+      const rbcInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.rubToUsd(parseFloat(user.balance_rub) || 0) : 0;
+      const eurInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.eurToUsd(parseFloat(user.balance_eur) || 0) : 0;
       const usdtBalance = parseFloat(user.balance_usdt) || 0;
       const btcInUsd = (parseFloat(user.balance_btc) || 0) * m.btc;
       const ethInUsd = (parseFloat(user.balance_eth) || 0) * m.eth;

@@ -625,11 +625,15 @@
         const btc = parseFloat(userData.btc || 0);
         const eth = parseFloat(userData.eth || 0);
         const ton = parseFloat(userData.ton || 0);
+        const rub = parseFloat(userData.rub || 0);
+        const eur = parseFloat(userData.eur || 0);
 
         const btcValue = btc * prices.btc;
         const ethValue = eth * prices.eth;
         const tonValue = ton * prices.ton;
-        const totalUsd = usdt + btcValue + ethValue + tonValue;
+        const rubValue = typeof BalanceManager !== 'undefined' ? BalanceManager.rubToUsd(rub) : 0;
+        const eurValue = typeof BalanceManager !== 'undefined' ? BalanceManager.eurToUsd(eur) : 0;
+        const totalUsd = usdt + btcValue + ethValue + tonValue + rubValue + eurValue;
 
         // Update total balance
         document.getElementById('totalBalance').innerHTML = balanceHidden 

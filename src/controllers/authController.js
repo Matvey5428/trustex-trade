@@ -71,6 +71,8 @@ async function getMe(req, res, next) {
       balance_btc: freshUser.balance_btc,
       balance_rub: freshUser.balance_rub,
       balance_eur: freshUser.balance_eur,
+      balance_eth: freshUser.balance_eth,
+      balance_ton: freshUser.balance_ton,
       created_at: freshUser.created_at,
       updated_at: freshUser.updated_at
     });
