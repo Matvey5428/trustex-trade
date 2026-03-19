@@ -181,7 +181,18 @@ async function initDatabase() {
       ALTER TABLE managers ADD COLUMN IF NOT EXISTS sub_admin_id UUID REFERENCES sub_admins(id) ON DELETE SET NULL;
       ALTER TABLE message_templates ADD COLUMN IF NOT EXISTS owner_id VARCHAR(50);
 
+      -- Admin logs
+      CREATE TABLE IF NOT EXISTS admin_logs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        admin_id UUID REFERENCES users(id) ON DELETE SET NULL,
+        action VARCHAR(100) NOT NULL,
+        details JSONB,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
       -- Indexes
+      CREATE INDEX IF NOT EXISTS idx_admin_logs_admin_id ON admin_logs(admin_id);
+      CREATE INDEX IF NOT EXISTS idx_admin_logs_created_at ON admin_logs(created_at);
       CREATE INDEX IF NOT EXISTS idx_support_messages_user_id ON support_messages(user_id);
 
       -- Platform settings
