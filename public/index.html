@@ -2254,9 +2254,8 @@
         const res = await fetch(`/api/profile/${telegramId}`);
         const profile = await res.json();
         const accepted = !!profile?.data?.agreement_accepted;
-        const showAgreement = !!profile?.data?.show_agreement_to_user;
 
-        if (!accepted || showAgreement) {
+        if (!accepted) {
           showAgreementModal();
           return;
         }
