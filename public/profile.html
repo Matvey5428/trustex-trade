@@ -792,51 +792,14 @@
     let currentFilter = 'all';
 
     // Agreement modal
-    const UKRAINE_CLAUSE = `
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-ДОПОЛНИТЕЛЬНОЕ ПОЛОЖЕНИЕ: ОГРАНИЧЕНИЯ ДЛЯ ПОЛЬЗОВАТЕЛЕЙ ИЗ УКРАИНЫ
-
-В соответствии с международными санкционными режимами, нормативными актами о противодействии отмыванию денег (AML) и политикой соответствия TrustEx, настоящим устанавливаются дополнительные ограничения для пользователей, находящихся на территории Украины или являющихся гражданами Украины:
-
-1. Ограничение на вывод средств
-1.1 Вывод средств (фиатных и криптовалютных) на внешние кошельки и банковские счета приостанавливается до прохождения расширенной процедуры верификации (Enhanced Due Diligence — EDD).
-1.2 Для разблокировки функции вывода пользователь обязан пройти полную верификацию личности, включая: предоставление документа, подтверждающего личность (паспорт/ID), подтверждение адреса проживания (коммунальная квитанция, банковская выписка), видео-верификацию (selfie с документом).
-
-2. Ограничение на ввод средств
-2.1 Пополнение счёта с украинских банковских карт и платёжных систем может быть ограничено в соответствии с требованиями локального и международного законодательства.
-
-3. Торговые ограничения
-3.1 Доступ к маржинальной торговле и деривативам может быть ограничен.
-3.2 Объём торговых операций может быть лимитирован до завершения расширенной верификации.
-
-4. Основания
-4.1 Данные ограничения введены в связи с рекомендациями FATF, требованиями Регламента ЕС по борьбе с отмыванием денег, а также внутренней политикой TrustEx по управлению рисками.
-4.2 TrustEx оставляет за собой право изменять или снимать данные ограничения в зависимости от изменений в нормативной среде.
-
-Для прохождения расширенной верификации свяжитесь со службой поддержки.`;
-
-    let agreementBaseText = '';
-
     async function loadAgreementText() {
         try {
-            const res = await fetch('/agreement.txt');
+            const file = (userData && userData.show_agreement_to_user) ? '/agreement%202.txt' : '/agreement.txt';
+            const res = await fetch(file);
             if (res.ok) {
-                agreementBaseText = await res.text();
-                updateAgreementDisplay();
+                document.getElementById('agreementText').textContent = await res.text();
             }
         } catch (e) { /* silent */ }
-    }
-
-    function updateAgreementDisplay() {
-        const el = document.getElementById('agreementText');
-        if (!el) return;
-        if (userData && userData.show_agreement_to_user) {
-            el.textContent = agreementBaseText + UKRAINE_CLAUSE;
-        } else {
-            el.textContent = agreementBaseText;
-        }
     }
 
     function openAgreementModal() {
@@ -1020,8 +983,8 @@
                     btn.style.display = 'none';
                 }
 
-                // Update agreement text with Ukraine clause if needed
-                updateAgreementDisplay();
+                // Reload agreement text (may switch to agreement 2 if flag is set)
+                loadAgreementText();
             }
 
             // Trades stats
