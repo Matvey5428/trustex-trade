@@ -629,7 +629,7 @@
         </div>
         <div class="info-row">
             <span class="info-label" data-i18n="statsLabel">Статистика</span>
-            <span class="info-value" id="statsValue">0 / <span style="color:#3fb950">0</span> / <span style="color:#f85149">0</span></span>
+            <span class="info-value" id="statsValue">0</span>
         </div>
         <div class="info-row">
             <span class="info-label" data-i18n="tradingVolume">Объем торгов</span>
@@ -924,10 +924,10 @@
         if (!telegramId) return;
 
         try {
-            const [profileRes, historyRes, tradesRes] = await Promise.all([
+            const [profileRes, historyRes, statsRes] = await Promise.all([
                 fetch(`/api/profile/${telegramId}`),
-                fetch(`/api/transactions/history/${telegramId}?limit=100`),
-                fetch(`/api/trades/history/${telegramId}?limit=1000`)
+                fetch(`/api/transactions/history/${telegramId}?limit=50`),
+                fetch(`/api/trades/stats/${telegramId}`)
             ]);
 
             // Profile
@@ -984,14 +984,10 @@
             }
 
             // Trades stats
-            if (tradesRes.ok) {
-                const tradesData = await tradesRes.json();
-                const trades = tradesData.data || [];
-                const closed = trades.filter(t => t.status !== 'active');
-                const wins = closed.filter(t => t.status === 'won' || t.status === 'resolved_win').length;
-                const losses = closed.filter(t => t.status === 'lost' || t.status === 'resolved_loss').length;
-                document.getElementById('statsValue').innerHTML = 
-                    `${closed.length} / <span style="color:#3fb950">${wins}</span> / <span style="color:#f85149">${losses}</span>`;
+            if (statsRes.ok) {
+                const statsData = await statsRes.json();
+                const s = statsData.data || {};
+                document.getElementById('statsValue').textContent = `${s.total || 0}`;
             }
 
             // Transaction history
