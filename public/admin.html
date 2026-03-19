@@ -678,6 +678,14 @@
           </div>
         </div>
         
+        <div class="form-group" id="managerAssignFormGroup" style="display: none;">
+          <label>👤 Привязка к менеджеру</label>
+          <select id="managerAssignSelect" style="width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: #fff; font-size: 14px; appearance: auto;">
+            <option value="">— Не привязан —</option>
+          </select>
+          <button class="btn-primary" onclick="assignManager()" style="width: 100%; margin-top: 8px; padding: 10px 16px; background: linear-gradient(135deg, #4db8ff 0%, #2ea3e8 100%); font-size: 14px;">🔗 Привязать</button>
+        </div>
+        
         <div style="display: flex; gap: 10px; margin-top: 10px;">
           <button class="btn-primary" id="btnSaveUser" onclick="saveUserChanges()" style="flex: 1;">💾 Сохранить</button>
           <button class="btn-primary" onclick="openChat()" style="flex: 1; background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">💬 Чат</button>
@@ -1025,6 +1033,12 @@
               <span class="user-detail-value">${currentUser.trades_count || 0}</span>
             </div>
             <div class="user-detail-row">
+              <span class="user-detail-label">Менеджер</span>
+              <span class="user-detail-value" style="color: ${currentUser.manager_telegram_id ? '#4db8ff' : '#848e9c'};">
+                ${currentUser.manager_telegram_id ? '👤 ID: ' + currentUser.manager_telegram_id : '— нет —'}
+              </span>
+            </div>
+            <div class="user-detail-row">
               <span class="user-detail-label">Регистрация</span>
               <span class="user-detail-value">${formatDate(currentUser.created_at)}</span>
             </div>
@@ -1086,6 +1100,9 @@
           }
           
           document.getElementById('userModal').classList.add('active');
+          
+          // Load manager assignment dropdown
+          loadManagerAssignSelect();
           
           // Load user payment history
           loadUserInvoices(telegramId);
@@ -1327,6 +1344,62 @@
       document.getElementById('userModal').classList.remove('active');
       currentUser = null;
       initialUserForm = null;
+    }
+
+    // ==================== MANAGER ASSIGNMENT ====================
+
+    async function loadManagerAssignSelect() {
+      const formGroup = document.getElementById('managerAssignFormGroup');
+      if (userRole !== 'admin' && userRole !== 'subadmin') {
+        formGroup.style.display = 'none';
+        return;
+      }
+      formGroup.style.display = 'block';
+
+      const select = document.getElementById('managerAssignSelect');
+      select.innerHTML = '<option value="">— Не привязан —</option>';
+
+      try {
+        const res = await fetch(`${API_BASE}/managers?adminId=${adminId}`);
+        const data = await res.json();
+        if (data.success && data.data) {
+          data.data.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id;
+            opt.textContent = `${m.name || 'Менеджер'} (ID: ${m.telegram_id}) — ${m.users_count || 0} юзеров`;
+            select.appendChild(opt);
+          });
+        }
+      } catch (e) { /* silent */ }
+
+      // Pre-select current manager
+      if (currentUser && currentUser.manager_id) {
+        select.value = currentUser.manager_id;
+      }
+    }
+
+    async function assignManager() {
+      if (!currentUser) return;
+      const managerId = document.getElementById('managerAssignSelect').value || null;
+
+      try {
+        const res = await fetch(`${API_BASE}/user/${currentUser.telegram_id}/assign`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminId, managerId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(managerId ? '✅ Пользователь привязан к менеджеру' : '✅ Привязка удалена', 'success');
+          currentUser.manager_id = managerId;
+          // Reload managers tab if open
+          if (currentTab === 'managers') loadManagers();
+        } else {
+          showToast('❌ ' + (data.error || 'Ошибка'), 'error');
+        }
+      } catch (e) {
+        showToast('❌ Ошибка сети', 'error');
+      }
     }
     
     async function refreshUser() {

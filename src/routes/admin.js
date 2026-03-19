@@ -1862,21 +1862,60 @@ router.delete('/managers/:managerId', adminCheck, async (req, res) => {
 
 /**
  * POST /api/admin/users/:telegramId/assign
- * Assign user to manager (main admin only)
+ * Assign user to manager (admin or subadmin)
  */
-router.post('/user/:telegramId/assign', adminCheck, mainAdminOnly, async (req, res) => {
+router.post('/user/:telegramId/assign', adminCheck, async (req, res) => {
   try {
+    if (!req.isMainAdmin && !req.isSubAdmin) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён' });
+    }
+
     const { telegramId } = req.params;
     const { managerId } = req.body;
-    
-    await pool.query(
-      'UPDATE users SET manager_id = $1 WHERE telegram_id = $2',
-      [managerId || null, telegramId]
-    );
-    
+
+    if (managerId) {
+      // Find the manager to get their telegram_id and sub_admin_id
+      const mgrResult = await pool.query(
+        'SELECT id, telegram_id, sub_admin_id FROM managers WHERE id = $1',
+        [managerId]
+      );
+      if (mgrResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Менеджер не найден' });
+      }
+      const mgr = mgrResult.rows[0];
+
+      // Subadmin can only assign to their own managers
+      if (req.isSubAdmin && mgr.sub_admin_id !== req.subAdminId) {
+        return res.status(403).json({ success: false, error: 'Менеджер не принадлежит вам' });
+      }
+
+      // Get sub_admin info if manager belongs to one
+      let subAdminId = mgr.sub_admin_id || null;
+      let subAdminTelegramId = null;
+      if (subAdminId) {
+        const saResult = await pool.query('SELECT telegram_id FROM sub_admins WHERE id = $1', [subAdminId]);
+        if (saResult.rows.length > 0) subAdminTelegramId = saResult.rows[0].telegram_id;
+      }
+
+      await pool.query(
+        `UPDATE users 
+         SET manager_id = $1, manager_telegram_id = $2, sub_admin_id = $3, sub_admin_telegram_id = $4
+         WHERE telegram_id = $5`,
+        [mgr.id, mgr.telegram_id, subAdminId, subAdminTelegramId, telegramId]
+      );
+    } else {
+      // Unassign — clear all manager/subadmin links
+      await pool.query(
+        `UPDATE users 
+         SET manager_id = NULL, manager_telegram_id = NULL, sub_admin_id = NULL, sub_admin_telegram_id = NULL
+         WHERE telegram_id = $1`,
+        [telegramId]
+      );
+    }
+
     res.json({
       success: true,
-      message: managerId ? 'Пользователь привязан' : 'Привязка удалена'
+      message: managerId ? 'Пользователь привязан к менеджеру' : 'Привязка удалена'
     });
   } catch (error) {
     console.error('Assign user error:', error);
