@@ -415,40 +415,6 @@
       flex-shrink: 0;
     }
 
-    .verification-btn {
-      width: 100%;
-      padding: 12px 16px;
-      margin-top: 12px;
-      background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
-      border: none;
-      border-radius: 12px;
-      color: #000;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.2s;
-    }
-    
-    .verification-btn:hover {
-      transform: scale(1.02);
-      box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
-    }
-    
-    .verification-btn:disabled {
-      background: linear-gradient(135deg, #666 0%, #444 100%);
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-    
-    .verification-btn.success {
-      background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
-    }
-
     /* Reviews Section */
     .reviews-section {
       background: var(--bg-card);
@@ -1000,10 +966,6 @@
       width: 22px;
       height: 22px;
     }
-    .verification-btn .icon-svg {
-      width: 18px;
-      height: 18px;
-    }
   </style>
 </head>
 <body>
@@ -1171,16 +1133,6 @@
         <span class="profile-stat-label" data-i18n="tradingVolume">Объем торгов</span>
         <span class="profile-stat-value" id="tradingVolume">0.00 USDT</span>
       </div>
-      <div class="profile-stat verification-row" id="verificationRow" style="display: none;">
-        <span class="profile-stat-label" data-i18n="verification">Верификация</span>
-        <span class="profile-stat-value" id="verification">
-          <span id="verificationStatus" style="color: var(--warning)">Неизвестно</span>
-        </span>
-      </div>
-      <button class="verification-btn" id="verificationBtn" style="display: none;" onclick="requestVerification()">
-        <span class="icon-svg"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg></span>
-        <span id="verificationBtnText">Подать заявку на верификацию</span>
-      </button>
     </div>
 
     <!-- Fiat -->
@@ -1765,24 +1717,6 @@
         if (cachedProfile.tradingVolume !== undefined) {
           updateEl('tradingVolume', `${parseFloat(cachedProfile.tradingVolume).toFixed(2)} USDT`);
         }
-        // Верификация
-        if (cachedProfile.verification) {
-          const v = cachedProfile.verification;
-          const verificationRow = document.getElementById('verificationRow');
-          const verifStatusEl = document.getElementById('verificationStatus');
-          const verificationBtn = document.getElementById('verificationBtn');
-          if (verificationRow && verifStatusEl && verificationBtn) {
-            if (v.needsVerif) {
-              verificationRow.style.display = 'flex';
-              verifStatusEl.textContent = v.statusText;
-              verifStatusEl.style.color = v.statusColor;
-              verificationBtn.style.display = v.btnDisplay;
-            } else {
-              verificationRow.style.display = 'none';
-              verificationBtn.style.display = 'none';
-            }
-          }
-        }
       }
     } catch(e) {}
   }
@@ -1852,52 +1786,11 @@
           const tradingVol = parseFloat(profileData.data?.total_volume) || 0;
           updateEl('tradingVolume', `${tradingVol.toFixed(2)} USDT`);
 
-          const needsVerif = profileData.data?.needs_verification === true;
-          const verificationRow = document.getElementById('verificationRow');
-          const verifStatusEl = document.getElementById('verificationStatus');
-          const verificationBtn = document.getElementById('verificationBtn');
-          const verificationBtnText = document.getElementById('verificationBtnText');
-          
-          let verifCache = { needsVerif: false, statusText: '', statusColor: '', btnDisplay: 'none' };
-          
-          if (verificationRow && verifStatusEl && verificationBtn) {
-            if (needsVerif) {
-              verificationRow.style.display = 'flex';
-              const isVerified = profileData.data?.verified === true;
-              const pendingVerif = profileData.data?.verification_pending === true;
-              
-              if (isVerified) {
-                verifStatusEl.textContent = '✅ Верифицирован';
-                verifStatusEl.style.color = '#00ff88';
-                verificationBtn.style.display = 'none';
-                verifCache = { needsVerif: true, statusText: '✅ Верифицирован', statusColor: '#00ff88', btnDisplay: 'none' };
-              } else if (pendingVerif) {
-                verifStatusEl.textContent = '⏳ На рассмотрении';
-                verifStatusEl.style.color = '#ffc107';
-                verificationBtn.style.display = 'flex';
-                verificationBtn.disabled = true;
-                verificationBtnText.textContent = 'Заявка отправлена';
-                verifCache = { needsVerif: true, statusText: '⏳ На рассмотрении', statusColor: '#ffc107', btnDisplay: 'flex' };
-              } else {
-                verifStatusEl.textContent = '⚠️ Требуется';
-                verifStatusEl.style.color = '#ffc107';
-                verificationBtn.style.display = 'flex';
-                verificationBtn.disabled = false;
-                verificationBtnText.textContent = 'Подать заявку на верификацию';
-                verifCache = { needsVerif: true, statusText: '⚠️ Требуется', statusColor: '#ffc107', btnDisplay: 'flex' };
-              }
-            } else {
-              verificationRow.style.display = 'none';
-              verificationBtn.style.display = 'none';
-            }
-          }
-          
           // Сохранить данные профиля в кэш для мгновенного отображения
           try {
             localStorage.setItem('nexo_profile_cache', JSON.stringify({
               stats: cachedStats,
-              tradingVolume: tradingVol,
-              verification: verifCache
+              tradingVolume: tradingVol
             }));
           } catch(e) {}
         }
@@ -1965,11 +1858,6 @@
     } catch (e) {
       document.getElementById('userIdDisplay').textContent = '❌ Ошибка';
     }
-  }
-
-  async function requestVerification() {
-    if (!userId) return;
-    await doVerificationRequest();
   }
 
   function selectPeriod(btn, period) {
@@ -2410,23 +2298,6 @@
     }
   }, 5000);
 
-  async function doVerificationRequest() {
-    try {
-      const res = await fetch('/api/user/verification/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, sendChatMessage: true })
-      });
-      const data = await res.json();
-      if (data.success) {
-        window.location.href = 'support.html';
-      } else {
-        showNotification(data.error || 'Error', 'error');
-      }
-    } catch (e) {
-      showNotification('Error submitting request', 'error');
-    }
-  }
 </script>
 </body>
 </html>
