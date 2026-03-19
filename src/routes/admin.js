@@ -442,8 +442,8 @@ router.get('/user/:telegramId/history', adminCheck, async (req, res) => {
       data: allHistory
     });
   } catch (error) {
-    console.error('User history error:', error);
-    res.status(500).json({ success: false, error: 'Server error' });
+    console.error('User history error:', error.message, error.stack);
+    res.status(500).json({ success: false, error: 'Ошибка загрузки истории' });
   }
 });
 

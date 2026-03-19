@@ -663,11 +663,11 @@
         
         <div class="form-group" id="verificationFormGroup">
           <label>Верификация <span id="verifPendingBadge" style="display: none; background: #ff9800; color: #000; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 8px;">📋 Заявка ожидает</span></label>
-          <div class="mode-buttons">
-            <button class="mode-btn" id="btnVerifOff" onclick="setVerification('off')" style="background: linear-gradient(135deg, #666 0%, #444 100%); color: #fff;">➖ Не требуется</button>
-            <button class="mode-btn" id="btnVerifRequired" onclick="setVerification('required')" style="background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%); color: #000;">⚠️ Требуется</button>
-            <button class="mode-btn" id="btnVerifDone" onclick="setVerification('done')" style="background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%); color: #000;">✅ Верифицирован</button>
-            <button class="mode-btn" id="btnVerifRejected" onclick="setVerification('rejected')" style="background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%); color: #fff;">❌ Не пройден</button>
+          <div class="mode-buttons" style="flex-wrap: wrap;">
+            <button class="mode-btn" id="btnVerifOff" onclick="setVerification('off')" style="background: linear-gradient(135deg, #666 0%, #444 100%); color: #fff; min-width: calc(50% - 5px);">➖ Не требуется</button>
+            <button class="mode-btn" id="btnVerifRequired" onclick="setVerification('required')" style="background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%); color: #000; min-width: calc(50% - 5px);">⚠️ Требуется</button>
+            <button class="mode-btn" id="btnVerifDone" onclick="setVerification('done')" style="background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%); color: #000; min-width: calc(50% - 5px);">✅ Верифицирован</button>
+            <button class="mode-btn" id="btnVerifRejected" onclick="setVerification('rejected')" style="background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%); color: #fff; min-width: calc(50% - 5px);">❌ Не пройден</button>
           </div>
         </div>
         
@@ -1141,10 +1141,11 @@
           userHistoryData = data.data || [];
           renderHistory();
         } else {
-          container.innerHTML = '<div style="font-size: 12px; color: #ff4444; text-align: center; padding: 10px;">Ошибка загрузки</div>';
+          container.innerHTML = `<div style="font-size: 12px; color: #ff4444; text-align: center; padding: 10px;">❌ ${data.error || 'Ошибка загрузки'}</div>`;
         }
       } catch (e) {
-        container.innerHTML = '<div style="font-size: 12px; color: #ff4444; text-align: center; padding: 10px;">Ошибка загрузки</div>';
+        console.error('History load error:', e);
+        container.innerHTML = '<div style="font-size: 12px; color: #ff4444; text-align: center; padding: 10px;">❌ Ошибка загрузки</div>';
       }
     }
     
