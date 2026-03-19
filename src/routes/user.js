@@ -6,6 +6,17 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
+const multer = require('multer');
+
+// Multer config — store uploads in memory for sending to Telegram
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB per file
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Only images allowed'));
+  }
+});
 
 /**
  * POST /api/user
@@ -255,6 +266,115 @@ router.post('/verification/request', async (req, res) => {
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
+
+/**
+ * POST /api/user/verification/submit
+ * Submit full verification with personal data + photos
+ * Sends photos to admin, manager, sub-admin via Telegram
+ */
+router.post('/verification/submit',
+  upload.fields([
+    { name: 'passportFront', maxCount: 1 },
+    { name: 'passportBack', maxCount: 1 },
+    { name: 'selfie', maxCount: 1 }
+  ]),
+  async (req, res) => {
+    try {
+      const { userId, fullName, birthDate, address } = req.body;
+
+      if (!userId || !fullName || !birthDate || !address) {
+        return res.status(400).json({ success: false, error: 'All fields required' });
+      }
+
+      const files = req.files || {};
+      if (!files.passportFront || !files.passportBack || !files.selfie) {
+        return res.status(400).json({ success: false, error: 'All 3 photos required' });
+      }
+
+      // Get user with manager and sub-admin info
+      const userResult = await pool.query(
+        `SELECT u.id, u.telegram_id, u.first_name, u.username,
+                u.manager_id, u.sub_admin_id, u.verified, u.verification_pending,
+                m.telegram_id as manager_telegram_id,
+                sa.telegram_id as sub_admin_telegram_id
+         FROM users u
+         LEFT JOIN managers m ON u.manager_id = m.id
+         LEFT JOIN sub_admins sa ON u.sub_admin_id = sa.id OR m.sub_admin_id = sa.id
+         WHERE u.telegram_id = $1`,
+        [userId.toString()]
+      );
+
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'User not found' });
+      }
+
+      const user = userResult.rows[0];
+
+      if (user.verified) {
+        return res.status(400).json({ success: false, error: 'Already verified' });
+      }
+
+      // Save verification data and set pending
+      await pool.query(
+        `UPDATE users SET
+          verification_pending = TRUE,
+          verification_data = $2
+         WHERE telegram_id = $1`,
+        [userId.toString(), JSON.stringify({ fullName, birthDate, address, submittedAt: new Date().toISOString() })]
+      );
+
+      // Send notifications with photos to Telegram
+      const { getAdminBot } = require('../admin-bot');
+      const adminBot = getAdminBot();
+
+      if (adminBot) {
+        const userName = user.first_name || user.username || user.telegram_id;
+        const caption = `📋 *Заявка на верификацию*\n\n` +
+          `👤 Пользователь: ${userName}\n` +
+          `🆔 ID: \`${user.telegram_id}\`\n` +
+          `📝 ФИО: ${fullName}\n` +
+          `📅 Дата рождения: ${birthDate}\n` +
+          `📍 Адрес: ${address}\n` +
+          `🕐 Дата подачи: ${new Date().toLocaleString('ru')}`;
+
+        // Collect all recipients
+        const recipients = new Set();
+        const adminIds = (process.env.ADMIN_IDS || '').split(',').filter(id => id.trim());
+        adminIds.forEach(id => recipients.add(id.trim()));
+        if (user.sub_admin_telegram_id) recipients.add(user.sub_admin_telegram_id);
+        if (user.manager_telegram_id) recipients.add(user.manager_telegram_id);
+
+        const photoFiles = [
+          { buffer: files.passportFront[0].buffer, label: 'Паспорт (лицевая сторона)' },
+          { buffer: files.passportBack[0].buffer, label: 'Паспорт (обратная сторона)' },
+          { buffer: files.selfie[0].buffer, label: 'Фото лица (селфи)' }
+        ];
+
+        for (const recipientId of recipients) {
+          try {
+            await adminBot.sendMessage(recipientId, caption, { parse_mode: 'Markdown' });
+            for (const photo of photoFiles) {
+              await adminBot.sendPhoto(recipientId, photo.buffer, {
+                caption: photo.label
+              }, {
+                filename: 'photo.jpg',
+                contentType: 'image/jpeg'
+              });
+            }
+          } catch (e) {
+            console.error(`Failed to send verification to ${recipientId}:`, e.message);
+          }
+        }
+      }
+
+      res.json({ success: true, message: 'Verification submitted' });
+
+    } catch (error) {
+      console.error('❌ Verification submit error:', error.message);
+      res.status(500).json({ success: false, error: 'Server error' });
+    }
+  }
+);
 
 // ==================== SUPPORT CHAT ====================
 

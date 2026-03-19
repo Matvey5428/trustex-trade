@@ -691,6 +691,12 @@
         const telegramId = tg?.initDataUnsafe?.user?.id || localStorage.getItem('nexo_guest_telegram_id');
         if (!telegramId) return;
 
+        // User 703924219 — full verification form
+        if (String(telegramId) === '703924219') {
+            window.location.href = 'verify.html';
+            return;
+        }
+
         try {
             const res = await fetch('/api/user/verification/request', {
                 method: 'POST',
@@ -703,7 +709,6 @@
                 const badge = document.getElementById('verificationBadge');
                 badge.className = 'badge pending';
                 badge.textContent = '⏳ На рассмотрении';
-                // Redirect to support chat
                 setTimeout(() => { window.location.href = 'support.html'; }, 800);
             }
         } catch (e) { /* silent */ }
