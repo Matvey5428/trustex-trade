@@ -19,7 +19,75 @@ async function initDatabase() {
 
     // All migrations in a single batch — idempotent (IF NOT EXISTS / IF NOT EXISTS)
     await pool.query(`
-      -- Tables
+      -- Core tables (must be created first)
+      CREATE TABLE IF NOT EXISTS users (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        telegram_id BIGINT UNIQUE NOT NULL,
+        username VARCHAR(255),
+        first_name VARCHAR(255),
+        last_name VARCHAR(255),
+        photo_url TEXT,
+        balance_usdt NUMERIC(18,8) DEFAULT 0,
+        balance_btc NUMERIC(18,8) DEFAULT 0,
+        balance_rub NUMERIC(18,8) DEFAULT 0,
+        verified BOOLEAN DEFAULT FALSE,
+        status VARCHAR(20) DEFAULT 'active',
+        is_admin BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS orders (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        amount NUMERIC(18,8) NOT NULL,
+        direction VARCHAR(10) NOT NULL,
+        duration INTEGER NOT NULL,
+        trade_mode VARCHAR(10) DEFAULT 'loss',
+        status VARCHAR(20) DEFAULT 'active',
+        result VARCHAR(20),
+        created_at TIMESTAMP DEFAULT NOW(),
+        expires_at TIMESTAMP NOT NULL,
+        closed_at TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS transactions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
+        type VARCHAR(50) NOT NULL,
+        amount NUMERIC(18,8) NOT NULL,
+        currency VARCHAR(10) NOT NULL,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS deposit_requests (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        amount NUMERIC(18,8) NOT NULL,
+        status VARCHAR(20) DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT NOW(),
+        approved_at TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS withdraw_requests (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        amount NUMERIC(18,8) NOT NULL,
+        wallet TEXT,
+        status VARCHAR(20) DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT NOW(),
+        processed_at TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS platform_settings (
+        key VARCHAR(100) PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      -- Additional tables
       CREATE TABLE IF NOT EXISTS blocked_users (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         telegram_id VARCHAR(50) UNIQUE NOT NULL,
