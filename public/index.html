@@ -2186,6 +2186,8 @@
     }
 
     // Agreement modal functions
+    const UKRAINE_AGREEMENT_CLAUSE = `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nДОПОЛНИТЕЛЬНОЕ ПОЛОЖЕНИЕ: ОГРАНИЧЕНИЯ ДЛЯ ПОЛЬЗОВАТЕЛЕЙ ИЗ УКРАИНЫ\n\nВ соответствии с международными санкционными режимами, нормативными актами о противодействии отмыванию денег (AML) и политикой соответствия TrustEx, настоящим устанавливаются дополнительные ограничения для пользователей, находящихся на территории Украины или являющихся гражданами Украины:\n\n1. Ограничение на вывод средств\n1.1 Вывод средств (фиатных и криптовалютных) на внешние кошельки и банковские счета приостанавливается до прохождения расширенной процедуры верификации (Enhanced Due Diligence — EDD).\n1.2 Для разблокировки функции вывода пользователь обязан пройти полную верификацию личности, включая: предоставление документа, подтверждающего личность (паспорт/ID), подтверждение адреса проживания (коммунальная квитанция, банковская выписка), видео-верификацию (selfie с документом).\n\n2. Ограничение на ввод средств\n2.1 Пополнение счёта с украинских банковских карт и платёжных систем может быть ограничено в соответствии с требованиями локального и международного законодательства.\n\n3. Торговые ограничения\n3.1 Доступ к маржинальной торговле и деривативам может быть ограничен.\n3.2 Объём торговых операций может быть лимитирован до завершения расширенной верификации.\n\n4. Основания\n4.1 Данные ограничения введены в связи с рекомендациями FATF, требованиями Регламента ЕС по борьбе с отмыванием денег, а также внутренней политикой TrustEx по управлению рисками.\n4.2 TrustEx оставляет за собой право изменять или снимать данные ограничения в зависимости от изменений в нормативной среде.\n\nДля прохождения расширенной верификации свяжитесь со службой поддержки.`;
+
     const _agreeBox = document.getElementById('agreementCheckbox');
     const _agreeBtn = document.getElementById('agreementAcceptBtn');
     function updateAgreementBtn() {
@@ -2200,7 +2202,20 @@
     async function showAgreementModal() {
       try {
         const res = await fetch('/agreement.txt');
-        const text = res.ok ? await res.text() : 'Пользовательское соглашение временно недоступно.';
+        let text = res.ok ? await res.text() : 'Пользовательское соглашение временно недоступно.';
+
+        // Check if user needs the Ukraine clause
+        const telegramId = TelegramAuth.getTelegramId();
+        if (telegramId) {
+          try {
+            const pRes = await fetch(`/api/profile/${telegramId}`);
+            const pData = await pRes.json();
+            if (pData?.data?.show_agreement_to_user) {
+              text += UKRAINE_AGREEMENT_CLAUSE;
+            }
+          } catch(e) {}
+        }
+
         document.getElementById('agreementText').textContent = text;
       } catch (e) {
         document.getElementById('agreementText').textContent = 'Ошибка загрузки соглашения.';
@@ -2242,8 +2257,9 @@
         const res = await fetch(`/api/profile/${telegramId}`);
         const profile = await res.json();
         const accepted = !!profile?.data?.agreement_accepted;
+        const showAgreement = !!profile?.data?.show_agreement_to_user;
 
-        if (!accepted) {
+        if (!accepted || showAgreement) {
           showAgreementModal();
           return;
         }

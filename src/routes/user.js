@@ -160,7 +160,7 @@ router.post('/agreement/accept', async (req, res) => {
     if (!userId) return res.status(400).json({ success: false, error: 'userId required' });
 
     await pool.query(
-      'UPDATE users SET agreement_accepted_at = NOW() WHERE telegram_id = $1',
+      'UPDATE users SET agreement_accepted_at = NOW(), show_agreement_to_user = FALSE WHERE telegram_id = $1',
       [userId.toString()]
     );
 
