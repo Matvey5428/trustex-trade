@@ -811,7 +811,7 @@
 
     // Verification status modal
     function showVerifStatus() {
-        document.getElementById('verifModal').classList.add('show');
+        window.location.href = 'verify.html?status=pending';
     }
     function closeVerifModal() {
         document.getElementById('verifModal').classList.remove('show');

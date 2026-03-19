@@ -656,6 +656,19 @@
     let currentStep = 1;
     const photoFiles = { front: null, back: null, selfie: null };
 
+    // If opened with ?status=pending, show step 3 directly
+    if (new URLSearchParams(location.search).get('status') === 'pending') {
+        document.getElementById('step1').classList.remove('active');
+        document.getElementById('step3').classList.add('active');
+        currentStep = 3;
+        for (let i = 1; i <= 3; i++) {
+            document.getElementById(`si${i}`).classList.add(i < 3 ? 'done' : 'active');
+            document.getElementById(`slbl${i}`).classList.add(i < 3 ? 'done' : 'active');
+        }
+        document.getElementById('sl1').classList.add('done');
+        document.getElementById('sl2').classList.add('done');
+    }
+
     function goBack() {
         if (currentStep === 2) { nextStep(1); return; }
         window.location.href = 'profile.html';
