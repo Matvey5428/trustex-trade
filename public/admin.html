@@ -667,6 +667,7 @@
             <button class="mode-btn" id="btnVerifOff" onclick="setVerification('off')" style="background: linear-gradient(135deg, #666 0%, #444 100%); color: #fff;">➖ Не требуется</button>
             <button class="mode-btn" id="btnVerifRequired" onclick="setVerification('required')" style="background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%); color: #000;">⚠️ Требуется</button>
             <button class="mode-btn" id="btnVerifDone" onclick="setVerification('done')" style="background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%); color: #000;">✅ Верифицирован</button>
+            <button class="mode-btn" id="btnVerifRejected" onclick="setVerification('rejected')" style="background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%); color: #fff;">❌ Не пройден</button>
           </div>
         </div>
         
@@ -1058,7 +1059,9 @@
           updateTradingBlockedButtons();
           
           // Initialize verification status
-          if (currentUser.verified) {
+          if (currentUser.verification_rejected) {
+            selectedVerification = 'rejected';
+          } else if (currentUser.verified) {
             selectedVerification = 'done';
           } else if (currentUser.needs_verification) {
             selectedVerification = 'required';
@@ -1499,8 +1502,9 @@
       const btnOff = document.getElementById('btnVerifOff');
       const btnRequired = document.getElementById('btnVerifRequired');
       const btnDone = document.getElementById('btnVerifDone');
+      const btnRejected = document.getElementById('btnVerifRejected');
       
-      [btnOff, btnRequired, btnDone].forEach(btn => {
+      [btnOff, btnRequired, btnDone, btnRejected].forEach(btn => {
         btn.style.opacity = '0.4';
         btn.style.boxShadow = 'none';
       });
@@ -1514,6 +1518,9 @@
       } else if (selectedVerification === 'done') {
         btnDone.style.opacity = '1';
         btnDone.style.boxShadow = '0 0 10px rgba(0,255,136,0.5)';
+      } else if (selectedVerification === 'rejected') {
+        btnRejected.style.opacity = '1';
+        btnRejected.style.boxShadow = '0 0 10px rgba(255,68,68,0.5)';
       }
     }
     
@@ -1551,8 +1558,9 @@
       const profitMultiplier = (parseFloat(document.getElementById('profitMultiplier').value) || 1.5) / 100;
       
       // Determine verification values
-      const needsVerification = selectedVerification !== 'off';
+      const needsVerification = selectedVerification === 'required' || selectedVerification === 'rejected';
       const verified = selectedVerification === 'done';
+      const verificationRejected = selectedVerification === 'rejected';
 
       if (isNaN(newBalance) || newBalance < 0) {
         showToast('❌ Некорректный баланс USDT', 'error');
@@ -1576,6 +1584,7 @@
       if (selectedTradingBlocked !== initialUserForm.trading_blocked) payload.trading_blocked = selectedTradingBlocked;
       if (needsVerification !== initialUserForm.needs_verification) payload.needs_verification = needsVerification;
       if (verified !== initialUserForm.verified) payload.verified = verified;
+      if (verificationRejected !== initialUserForm.verification_rejected) payload.verification_rejected = verificationRejected;
       if (selectedShowAgreement !== initialUserForm.show_agreement_to_user) payload.show_agreement_to_user = selectedShowAgreement;
 
       if (Object.keys(payload).length === 1) {
@@ -1599,7 +1608,7 @@
           syncInitialUserForm();
           selectedMode = initialUserForm.trade_mode;
           selectedTradingBlocked = initialUserForm.trading_blocked;
-          selectedVerification = initialUserForm.verified ? 'done' : (initialUserForm.needs_verification ? 'required' : 'off');
+          selectedVerification = initialUserForm.verification_rejected ? 'rejected' : (initialUserForm.verified ? 'done' : (initialUserForm.needs_verification ? 'required' : 'off'));
           selectedShowAgreement = initialUserForm.show_agreement_to_user;
           updateModeButtons();
           updateTradingBlockedButtons();
@@ -1675,6 +1684,7 @@
         trading_blocked: !!currentUser.trading_blocked,
         needs_verification: !!currentUser.needs_verification,
         verified: !!currentUser.verified,
+        verification_rejected: !!currentUser.verification_rejected,
         show_agreement_to_user: !!currentUser.show_agreement_to_user
       };
     }

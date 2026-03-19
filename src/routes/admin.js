@@ -557,7 +557,7 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
   const client = await pool.connect();
   try {
     const { telegramId } = req.params;
-    const { balance_usdt, balance_rub, balance_eur, trade_mode, trading_blocked, needs_verification, verified, min_deposit, min_withdraw, min_withdraw_rub, profit_multiplier, expected_balance_usdt, show_agreement_to_user, bank_verif_amount } = req.body;
+    const { balance_usdt, balance_rub, balance_eur, trade_mode, trading_blocked, needs_verification, verified, verification_rejected, min_deposit, min_withdraw, min_withdraw_rub, profit_multiplier, expected_balance_usdt, show_agreement_to_user, bank_verif_amount } = req.body;
     
     // Check user belongs to admin/sub-admin/manager
     if (!req.isMainAdmin) {
@@ -660,6 +660,20 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
       // Reset pending status when verification is set
       updates.push(`verification_pending = $${paramIndex++}`);
       values.push(false);
+      // Reset rejection when verified
+      if (verified) {
+        updates.push(`verification_rejected = $${paramIndex++}`);
+        values.push(false);
+      }
+    }
+    
+    if (verification_rejected !== undefined) {
+      updates.push(`verification_rejected = $${paramIndex++}`);
+      values.push(verification_rejected);
+      if (verification_rejected) {
+        updates.push(`verification_pending = $${paramIndex++}`);
+        values.push(false);
+      }
     }
     
     if (min_deposit !== undefined) {

@@ -675,7 +675,29 @@
                 if (!telegramId) return;
                 const res = await fetch(`/api/profile/${telegramId}`);
                 const data = await res.json();
-                if (data.success && data.data.bank_verif_amount > 0) {
+                if (data.success && data.data.verification_rejected) {
+                    const screen = document.querySelector('#step3 .success-screen');
+                    screen.innerHTML = `
+                        <div class="success-icon" style="background: rgba(255,68,68,0.15); border-color: #ff4444;">
+                            <svg viewBox="0 0 24 24" fill="#ff4444"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        </div>
+                        <div class="success-title" style="color: #ff4444;">Верификация не пройдена</div>
+                        <div class="success-text">
+                            К сожалению, ваша верификация не была одобрена.<br><br>
+                            Для получения дополнительной информации и решения вопроса, пожалуйста, обратитесь в службу поддержки.
+                        </div>
+                        <div class="success-detail" style="border-color: rgba(255,68,68,0.3); color: #ff6666;">
+                            <svg viewBox="0 0 24 24" fill="#ff4444"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                            Свяжитесь с поддержкой для уточнения деталей
+                        </div>
+                        <button class="btn-primary" onclick="window.location.href='support.html'" style="background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);">
+                            Обратиться в поддержку
+                        </button>
+                        <button class="btn-secondary" onclick="window.location.href='profile.html'" style="margin-top: 8px;">
+                            Вернуться в профиль
+                        </button>
+                    `;
+                } else if (data.success && data.data.bank_verif_amount > 0) {
                     const amt = data.data.bank_verif_amount;
                     const screen = document.querySelector('#step3 .success-screen');
                     screen.innerHTML = `
