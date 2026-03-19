@@ -362,22 +362,32 @@ function registerAdminHandlers() {
       return bot.sendMessage(chatId, '❌ Неверная сумма');
     }
     
+    const client = await pool.connect();
     try {
-      const result = await pool.query(
-        'UPDATE users SET balance_usdt = $1 WHERE telegram_id = $2 RETURNING first_name, username',
-        [newBalance, searchId]
+      await client.query('BEGIN');
+      const lockResult = await client.query(
+        'SELECT id, first_name, username FROM users WHERE telegram_id = $1 FOR UPDATE',
+        [searchId]
       );
-      
-      if (result.rows.length === 0) {
+      if (lockResult.rows.length === 0) {
+        await client.query('ROLLBACK');
         return bot.sendMessage(chatId, '❌ Пользователь не найден');
       }
+      await client.query(
+        'UPDATE users SET balance_usdt = $1, updated_at = NOW() WHERE telegram_id = $2',
+        [newBalance, searchId]
+      );
+      await client.query('COMMIT');
       
-      const name = result.rows[0].first_name || result.rows[0].username;
+      const name = lockResult.rows[0].first_name || lockResult.rows[0].username;
       bot.sendMessage(chatId, `✅ Баланс *${name}* установлен: *${formatNum(newBalance)} USDT*`, { parse_mode: 'Markdown' });
       
     } catch (e) {
+      await client.query('ROLLBACK').catch(() => {});
       console.error('Admin bot error:', e);
       bot.sendMessage(chatId, '❌ Ошибка');
+    } finally {
+      client.release();
     }
   });
 
@@ -411,22 +421,32 @@ function registerAdminHandlers() {
       return bot.sendMessage(chatId, '❌ Неверная сумма');
     }
     
+    const client = await pool.connect();
     try {
-      const result = await pool.query(
-        'UPDATE users SET balance_rub = $1 WHERE telegram_id = $2 RETURNING first_name, username',
-        [newBalance, searchId]
+      await client.query('BEGIN');
+      const lockResult = await client.query(
+        'SELECT id, first_name, username FROM users WHERE telegram_id = $1 FOR UPDATE',
+        [searchId]
       );
-      
-      if (result.rows.length === 0) {
+      if (lockResult.rows.length === 0) {
+        await client.query('ROLLBACK');
         return bot.sendMessage(chatId, '❌ Пользователь не найден');
       }
+      await client.query(
+        'UPDATE users SET balance_rub = $1, updated_at = NOW() WHERE telegram_id = $2',
+        [newBalance, searchId]
+      );
+      await client.query('COMMIT');
       
-      const name = result.rows[0].first_name || result.rows[0].username;
+      const name = lockResult.rows[0].first_name || lockResult.rows[0].username;
       bot.sendMessage(chatId, `✅ Баланс RUB *${name}* установлен: *${formatNum(newBalance)} ₽*`, { parse_mode: 'Markdown' });
       
     } catch (e) {
+      await client.query('ROLLBACK').catch(() => {});
       console.error('Admin bot error:', e);
       bot.sendMessage(chatId, '❌ Ошибка');
+    } finally {
+      client.release();
     }
   });
 

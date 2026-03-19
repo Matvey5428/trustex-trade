@@ -157,7 +157,10 @@ const BalanceManager = {
       eur: balanceEur,
       ton: balanceTon,
       eth: balanceEth,
-      totalUsd: totalUsd
+      totalUsd: totalUsd,
+      min_deposit: parseFloat(user.min_deposit) || 0,
+      min_withdraw: parseFloat(user.min_withdraw) || 0,
+      min_withdraw_rub: parseFloat(user.min_withdraw_rub) || 0
     };
   },
 

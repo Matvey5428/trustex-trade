@@ -554,6 +554,7 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
  * Update user balance and mode (admin or manager for their users)
  */
 router.put('/user/:telegramId', adminCheck, async (req, res) => {
+  const client = await pool.connect();
   try {
     const { telegramId } = req.params;
     const { balance_usdt, balance_rub, balance_eur, trade_mode, trading_blocked, needs_verification, verified, min_deposit, min_withdraw, min_withdraw_rub, profit_multiplier, expected_balance_usdt, show_agreement_to_user, bank_verif_amount } = req.body;
@@ -591,17 +592,32 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Invalid expected balance' });
     }
 
-    // Snapshot current user state for audit and impact analysis
-    const userStateResult = await pool.query(
-      `SELECT id, COALESCE(trade_mode, 'loss') as trade_mode
+    await client.query('BEGIN');
+
+    // Lock user row to prevent race conditions with concurrent balance operations
+    const userStateResult = await client.query(
+      `SELECT id, COALESCE(trade_mode, 'loss') as trade_mode, balance_usdt, balance_rub, balance_eur
          FROM users
-         WHERE telegram_id = $1`,
+         WHERE telegram_id = $1 FOR UPDATE`,
       [telegramId]
     );
     if (userStateResult.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ success: false, error: 'User not found' });
     }
     const userState = userStateResult.rows[0];
+
+    // Optimistic lock: check expected balance AFTER acquiring lock
+    if (balance_usdt !== undefined && expected_balance_usdt !== undefined) {
+      const currentUsdt = parseFloat(userState.balance_usdt) || 0;
+      if (Math.abs(currentUsdt - parseFloat(expected_balance_usdt)) >= 0.0000001) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({
+          success: false,
+          error: 'Баланс пользователя уже изменился. Обновите карточку и повторите сохранение.'
+        });
+      }
+    }
     
     // Build update query
     const updates = [];
@@ -681,6 +697,7 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
     }
     
     if (updates.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(400).json({ success: false, error: 'No updates provided' });
     }
     
@@ -688,35 +705,20 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
 
     const whereParts = [`telegram_id = $${paramIndex++}`];
     values.push(telegramId);
-
-    // Prevent stale admin forms from overwriting a newer trade settlement balance.
-    if (balance_usdt !== undefined && expected_balance_usdt !== undefined) {
-      whereParts.push(`ABS(COALESCE(balance_usdt, 0) - $${paramIndex++}) < 0.0000001`);
-      values.push(parseFloat(expected_balance_usdt));
-    }
     
-    const result = await pool.query(
+    const result = await client.query(
       `UPDATE users SET ${updates.join(', ')} WHERE ${whereParts.join(' AND ')} RETURNING *`,
       values
     );
     
     if (result.rows.length === 0) {
-      const existsResult = await pool.query('SELECT id FROM users WHERE telegram_id = $1', [telegramId]);
-      if (existsResult.rows.length === 0) {
-        return res.status(404).json({ success: false, error: 'User not found' });
-      }
-
-      if (balance_usdt !== undefined && expected_balance_usdt !== undefined) {
-        return res.status(409).json({
-          success: false,
-          error: 'Баланс пользователя уже изменился. Обновите карточку и повторите сохранение.'
-        });
-      }
-
+      await client.query('ROLLBACK');
       return res.status(400).json({ success: false, error: 'Update conflict' });
     }
+
+    await client.query('COMMIT');
     
-    // Log generic admin action
+    // Log generic admin action (outside transaction, non-critical)
     await pool.query(
       `INSERT INTO admin_logs (action, details, created_at) VALUES ($1, $2, NOW())`,
       ['user_update', JSON.stringify({ 
@@ -772,8 +774,11 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
       message: 'User updated successfully'
     });
   } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
     console.error('Admin update error:', error);
     res.status(500).json({ success: false, error: 'Server error' });
+  } finally {
+    client.release();
   }
 });
 

@@ -47,13 +47,14 @@ async function getRates(client) {
 router.post('/', async (req, res) => {
   const client = await pool.connect();
   try {
-    const { user_id, amount, side } = req.body;
+    const { user_id, side } = req.body;
+    const amount = parseFloat(req.body.amount);
 
     // Validate
     if (!user_id) {
       return res.status(400).json({ error: 'user_id is required' });
     }
-    if (!amount || amount <= 0) {
+    if (!Number.isFinite(amount) || amount <= 0) {
       return res.status(400).json({ error: 'Invalid amount' });
     }
     if (!side || !['rub_to_usdt', 'usdt_to_rub', 'eur_to_usdt', 'usdt_to_eur'].includes(side)) {
