@@ -197,6 +197,104 @@
             fill: currentColor;
         }
 
+        .status-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: calc(100% - 32px);
+            margin: 0 16px 14px;
+            padding: 12px;
+            background: var(--bg-elevated, #1e2530);
+            border: 1px solid var(--border, #30363d);
+            border-radius: 10px;
+            color: var(--text-secondary, #8b949e);
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .status-btn:active { opacity: 0.8; transform: scale(0.98); }
+        .status-btn svg { width: 16px; height: 16px; fill: currentColor; }
+
+        /* Verification Status Modal */
+        .verif-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 1000;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .verif-modal-overlay.show { display: flex; }
+        .verif-modal {
+            background: var(--bg-secondary, #161b22);
+            border-radius: 20px 20px 0 0;
+            width: 100%;
+            max-width: 480px;
+            padding: 24px 20px 32px;
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .verif-modal-handle {
+            width: 40px; height: 4px;
+            border-radius: 2px;
+            background: var(--border, #30363d);
+            margin: 0 auto 20px;
+        }
+        .verif-modal-icon {
+            width: 72px; height: 72px;
+            margin: 0 auto 16px;
+            border-radius: 50%;
+            background: rgba(210,153,34,0.12);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .verif-modal-icon svg { width: 36px; height: 36px; fill: #d29922; }
+        .verif-modal-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .verif-modal-text {
+            text-align: center;
+            font-size: 13.5px;
+            color: var(--text-secondary, #8b949e);
+            line-height: 1.65;
+            margin-bottom: 20px;
+            padding: 0 8px;
+        }
+        .verif-modal-info {
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(210,153,34,0.08);
+            border: 1px solid rgba(210,153,34,0.15);
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 20px;
+        }
+        .verif-modal-info svg { width: 20px; height: 20px; fill: #d29922; flex-shrink: 0; }
+        .verif-modal-info span { font-size: 12.5px; color: var(--text-secondary, #8b949e); line-height: 1.5; }
+        .verif-modal-close {
+            width: 100%;
+            padding: 14px;
+            background: var(--bg-elevated, #1e2530);
+            border: 1px solid var(--border, #30363d);
+            border-radius: 12px;
+            color: var(--text-primary, #e6edf3);
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .verif-modal-close:active { opacity: 0.8; }
+
         /* Balance Cards */
         .balance-grid {
             display: grid;
@@ -488,6 +586,31 @@
             <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
             <span data-i18n="requestVerification">Подать заявку на верификацию</span>
         </button>
+        <button class="status-btn" id="statusBtn" onclick="showVerifStatus()" style="display: none;">
+            <svg viewBox="0 0 24 24"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+            Посмотреть статус
+        </button>
+    </div>
+
+    <!-- Verification Status Modal -->
+    <div class="verif-modal-overlay" id="verifModal" onclick="if(event.target===this)closeVerifModal()">
+        <div class="verif-modal">
+            <div class="verif-modal-handle"></div>
+            <div class="verif-modal-icon">
+                <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+            </div>
+            <div class="verif-modal-title">Заявка на рассмотрении</div>
+            <div class="verif-modal-text">
+                Ваши данные и документы отправлены на проверку.<br>
+                Обычно обработка данных занимает до 30 минут.<br><br>
+                После установления Вашей личности, Вам потребуется совершить транзакцию, для подтверждения банковских реквизитов, используемых при совершении вывода.
+            </div>
+            <div class="verif-modal-info">
+                <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                <span>Среднее время проверки — 30 минут. Мы уведомим вас о результате.</span>
+            </div>
+            <button class="verif-modal-close" onclick="closeVerifModal()">Понятно</button>
+        </div>
     </div>
 
     <!-- Account Info -->
@@ -686,6 +809,14 @@
         document.getElementById('agreementModal').style.display = 'none';
     }
 
+    // Verification status modal
+    function showVerifStatus() {
+        document.getElementById('verifModal').classList.add('show');
+    }
+    function closeVerifModal() {
+        document.getElementById('verifModal').classList.remove('show');
+    }
+
     // Verification request
     async function requestVerification() {
         const telegramId = tg?.initDataUnsafe?.user?.id || localStorage.getItem('nexo_guest_telegram_id');
@@ -855,6 +986,7 @@
                     badge.className = 'badge pending';
                     badge.textContent = '⏳ На рассмотрении';
                     btn.style.display = 'none';
+                    document.getElementById('statusBtn').style.display = 'flex';
                 } else if (userData.needs_verification) {
                     badge.className = 'badge not-verified';
                     badge.textContent = typeof t === 'function' ? t('notVerified') : '⚠️ Не верифицирован';
