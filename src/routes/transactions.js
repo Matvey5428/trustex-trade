@@ -167,7 +167,7 @@ router.post('/withdraw', async (req, res) => {
     );
     if (updateResult.rows.length === 0) {
       await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Insufficient balance' });
+      return res.status(400).json({ error: `Недостаточно средств. Баланс ${currency}: ${currentBalance}` });
     }
 
     // Create withdraw request
