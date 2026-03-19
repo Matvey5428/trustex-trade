@@ -174,9 +174,7 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
     const origCurrency = dbInvoice.original_currency; // RUB, EUR, or null (USDT)
     const origAmount = dbInvoice.original_amount ? parseFloat(dbInvoice.original_amount) : null;
     
-    // Check for deposit commission (test mode: user 703924219)
-    const userCheck = await client.query('SELECT telegram_id FROM users WHERE id = $1', [dbInvoice.user_id]);
-    const COMMISSION_TEST_ID = '703924219';
+    // Deposit commission (1% for all users)
     let commission = 0;
     
     let balanceField, creditAmount, creditCurrency, displayAmount;
@@ -198,11 +196,9 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
       displayAmount = `${paidAmount} USDT`;
     }
     
-    // Apply commission if applicable
-    if (userCheck.rows.length > 0 && userCheck.rows[0].telegram_id.toString() === COMMISSION_TEST_ID) {
-      commission = parseFloat((creditAmount * 0.01).toFixed(2));
-      creditAmount = parseFloat((creditAmount - commission).toFixed(2));
-    }
+    // Apply 1% commission
+    commission = parseFloat((creditAmount * 0.01).toFixed(2));
+    creditAmount = parseFloat((creditAmount - commission).toFixed(2));
     
     // Credit user balance (atomic increment)
     await client.query(

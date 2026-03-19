@@ -625,8 +625,7 @@
     let userId = null;
     let currentSymbol = 'RUB';
     let userMinDeposit = 0;
-    let hasCommission = false;
-    const COMMISSION_TEST_ID = 703924219;
+    let hasCommission = true;
     const topAlert = document.getElementById('topAlert');
 
     function showAlert(msg, success = false, type = null) {
@@ -919,7 +918,7 @@
         
         try {
             userId = await resolveUserId();
-            hasCommission = (getClientTelegramId() === COMMISSION_TEST_ID);
+            hasCommission = true;
             Promise.all([loadUserBalances(), updateMarketPrices()]);
             setInterval(updateMarketPrices, 15000);
             

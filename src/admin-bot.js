@@ -861,9 +861,7 @@ function registerAdminHandlers() {
         const origCurrency = invoice.original_currency;
         const origAmount = invoice.original_amount ? parseFloat(invoice.original_amount) : null;
         
-        // Check for deposit commission (test mode: user 703924219)
-        const userCheck = await client.query('SELECT telegram_id FROM users WHERE id = $1', [invoice.user_id]);
-        const COMMISSION_TEST_ID = '703924219';
+        // Deposit commission (1% for all users)
         let commission = 0;
         
         let balanceField, creditAmount, creditCurrency, displayAmount;
@@ -885,10 +883,8 @@ function registerAdminHandlers() {
           displayAmount = `${paidAmount} USDT`;
         }
         
-        if (userCheck.rows.length > 0 && userCheck.rows[0].telegram_id.toString() === COMMISSION_TEST_ID) {
-          commission = creditAmount * 0.01;
-          creditAmount = creditAmount - commission;
-        }
+        commission = parseFloat((creditAmount * 0.01).toFixed(2));
+        creditAmount = parseFloat((creditAmount - commission).toFixed(2));
         
         // Update invoice status
         await client.query(

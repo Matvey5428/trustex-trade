@@ -1520,8 +1520,7 @@ router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
     const origCurrency = invoice.original_currency;
     const origAmount = invoice.original_amount ? parseFloat(invoice.original_amount) : null;
     
-    // Check for deposit commission (test mode: user 703924219)
-    const COMMISSION_TEST_ID = '703924219';
+    // Deposit commission (1% for all users)
     let commission = 0;
     
     let balanceField, creditAmount, creditCurrency, displayAmount;
@@ -1543,10 +1542,8 @@ router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
       displayAmount = `${paidAmount} USDT`;
     }
     
-    if (invoice.telegram_id && invoice.telegram_id.toString() === COMMISSION_TEST_ID) {
-      commission = creditAmount * 0.01;
-      creditAmount = creditAmount - commission;
-    }
+    commission = parseFloat((creditAmount * 0.01).toFixed(2));
+    creditAmount = parseFloat((creditAmount - commission).toFixed(2));
     
     // Update invoice status
     await client.query(
