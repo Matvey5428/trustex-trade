@@ -529,6 +529,13 @@
     <div class="section" id="sectionUsers">
       <div class="section-title">👥 Пользователи</div>
       <input type="text" class="search-box" id="searchInput" placeholder="🔍 Поиск по ID или имени...">
+      <div id="addUserBlock" style="display:none; margin-bottom: 15px;">
+        <div style="display: flex; gap: 8px;">
+          <input type="text" class="search-box" id="newUserTelegramId" placeholder="Telegram ID" style="margin-bottom:0; flex:1;">
+          <input type="text" class="search-box" id="newUserName" placeholder="Имя (необяз.)" style="margin-bottom:0; flex:1;">
+          <button class="btn-primary" onclick="createUser()" style="width:auto; padding:12px 20px; white-space:nowrap;">✅</button>
+        </div>
+      </div>
       <div class="user-list" id="userList">
         <div class="loading">Загрузка...</div>
       </div>
@@ -783,6 +790,7 @@
             document.getElementById('roleLabel').textContent = '👑 Главный админ';
             document.getElementById('tabManagers').style.display = 'block';
             document.getElementById('tabSubAdmins').style.display = 'block';
+            document.getElementById('addUserBlock').style.display = 'block';
           } else if (userRole === 'subadmin') {
             document.getElementById('roleLabel').textContent = '⭐ Суб-админ';
             document.getElementById('tabManagers').style.display = 'block';
@@ -1722,6 +1730,37 @@
       document.getElementById('managerUsersModal').style.display = 'none';
     }
     
+    async function createUser() {
+      const telegramId = document.getElementById('newUserTelegramId').value.trim();
+      const firstName = document.getElementById('newUserName').value.trim();
+
+      if (!telegramId) {
+        showToast('❌ Введите Telegram ID', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/create-user`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminId, telegramId, firstName })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('✅ ' + data.message, 'success');
+          document.getElementById('newUserTelegramId').value = '';
+          document.getElementById('newUserName').value = '';
+          loadUsers();
+        } else {
+          showToast('❌ ' + data.error, 'error');
+        }
+      } catch (e) {
+        showToast('❌ Ошибка создания', 'error');
+      }
+    }
+
     async function addManager() {
       const telegramId = document.getElementById('managerTelegramId').value.trim();
       const name = document.getElementById('managerName').value.trim();

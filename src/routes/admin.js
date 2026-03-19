@@ -852,6 +852,50 @@ router.post('/user/:telegramId/block', adminCheck, async (req, res) => {
 });
 
 /**
+ * POST /api/admin/create-user
+ * Manually create a user by telegram_id (main admin only)
+ */
+router.post('/create-user', adminCheck, async (req, res) => {
+  try {
+    if (!req.isMainAdmin) {
+      return res.status(403).json({ success: false, error: 'Только главный админ может создавать пользователей' });
+    }
+
+    const telegramId = String(req.body.telegramId || '').trim();
+    if (!telegramId || !/^\d+$/.test(telegramId)) {
+      return res.status(400).json({ success: false, error: 'Некорректный Telegram ID' });
+    }
+
+    // Check if user already exists
+    const existing = await pool.query('SELECT id, telegram_id FROM users WHERE telegram_id = $1', [telegramId]);
+    if (existing.rows.length > 0) {
+      return res.status(409).json({ success: false, error: 'Пользователь с таким ID уже существует' });
+    }
+
+    const firstName = (req.body.firstName || '').trim() || null;
+
+    const result = await pool.query(
+      `INSERT INTO users (telegram_id, first_name, trade_mode, balance_usdt, balance_rub, balance_eur)
+       VALUES ($1, $2, 'loss', 0, 0, 0)
+       RETURNING id, telegram_id, first_name`,
+      [telegramId, firstName]
+    );
+
+    const user = result.rows[0];
+    console.log(`✅ Admin manually created user: ${telegramId} (${firstName || 'no name'})`);
+
+    res.json({
+      success: true,
+      message: `Пользователь ${telegramId} создан`,
+      data: user
+    });
+  } catch (error) {
+    console.error('Admin create-user error:', error);
+    res.status(500).json({ success: false, error: 'Server error: ' + error.message });
+  }
+});
+
+/**
  * GET /api/admin/transactions
  * Get recent transactions
  */
