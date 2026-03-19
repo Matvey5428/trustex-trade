@@ -155,12 +155,14 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
     
     if (invoiceResult.rows.length === 0) {
       console.warn(`Invoice ${invoiceId} not found in database`);
+      await client.query('ROLLBACK');
       return res.sendStatus(200);
     }
     
     const dbInvoice = invoiceResult.rows[0];
     
     if (dbInvoice.status === 'paid') {
+      await client.query('ROLLBACK');
       return res.sendStatus(200);
     }
     

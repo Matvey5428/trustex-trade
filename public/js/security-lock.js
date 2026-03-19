@@ -100,6 +100,7 @@
   // Create CSS styles
   function createStyles() {
     const style = document.createElement('style');
+    style.id = 'securityLockStyles';
     style.textContent = `
       .security-lock-screen {
         position: fixed;
@@ -356,7 +357,9 @@
 
   // Initialize lock screen
   function init() {
-    createStyles();
+    if (!document.getElementById('securityLockStyles')) {
+      createStyles();
+    }
     document.body.insertAdjacentHTML('beforeend', createLockScreenHTML());
     bindEvents();
     checkBiometricAvailability();

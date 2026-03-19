@@ -321,7 +321,8 @@
       container.innerHTML = messages.map(msg => {
         const time = new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
         const isUser = msg.sender === 'user';
-        const formattedMessage = msg.message.replace(/\n/g, '<br>');
+        const escaped = msg.message.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        const formattedMessage = escaped.replace(/\n/g, '<br>');
         
         return `
           <div class="message ${isUser ? 'user' : 'admin'}">

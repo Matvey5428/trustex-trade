@@ -28,7 +28,11 @@ function hashPin(pin, salt = null) {
 function verifyPin(pin, storedCombined) {
   const [salt, storedHash] = storedCombined.split(':');
   const { hash } = hashPin(pin, salt);
-  return hash === storedHash;
+  try {
+    return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(storedHash, 'hex'));
+  } catch (e) {
+    return false;
+  }
 }
 
 /**

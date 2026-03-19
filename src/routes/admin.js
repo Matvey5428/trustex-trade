@@ -1058,6 +1058,9 @@ router.post('/deposits/:id/approve', adminCheck, async (req, res) => {
     
     const deposit = depositResult.rows[0];
     
+    // Lock user row to prevent concurrent balance modifications
+    await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [deposit.user_id]);
+    
     // Update user balance
     await client.query(
       'UPDATE users SET balance_usdt = balance_usdt + $1, updated_at = NOW() WHERE id = $2',
