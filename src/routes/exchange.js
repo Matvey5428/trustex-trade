@@ -163,6 +163,39 @@ router.post('/', async (req, res) => {
 });
 
 /**
+ * GET /api/exchange/history/:telegramId
+ * Get recent exchange transactions for user
+ */
+router.get('/history/:telegramId', async (req, res) => {
+  try {
+    const { telegramId } = req.params;
+    const limit = Math.min(parseInt(req.query.limit) || 10, 50);
+
+    const userResult = await pool.query(
+      'SELECT id FROM users WHERE telegram_id = $1',
+      [telegramId.toString()]
+    );
+    if (userResult.rows.length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const result = await pool.query(
+      `SELECT amount, currency, description, created_at
+       FROM transactions
+       WHERE user_id = $1 AND type = 'exchange'
+       ORDER BY created_at DESC
+       LIMIT $2`,
+      [userResult.rows[0].id, limit]
+    );
+
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('❌ Exchange history error:', error.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+/**
  * GET /api/exchange/rate
  * Get current exchange rate (from database)
  */

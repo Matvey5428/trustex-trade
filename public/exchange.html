@@ -591,6 +591,90 @@
             margin-top: 18px;
         }
 
+        /* Exchange History */
+        .history-section {
+            margin-top: 24px;
+        }
+        .history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .history-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .history-badge {
+            font-size: 11px;
+            color: var(--text-muted);
+            background: rgba(255,255,255,0.05);
+            padding: 3px 8px;
+            border-radius: 10px;
+        }
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 14px;
+        }
+        .history-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--accent-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .history-icon svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--accent);
+        }
+        .history-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .history-desc {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .history-date {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .history-amount {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent);
+            white-space: nowrap;
+        }
+        .history-empty {
+            text-align: center;
+            padding: 24px 16px;
+            color: var(--text-muted);
+            font-size: 13px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
         .feature-chip {
             display: flex;
             align-items: center;
@@ -902,6 +986,15 @@
             </div>
         </div>
     </div>
+
+    <!-- Exchange History -->
+    <div class="history-section" id="historySection" style="display:none">
+        <div class="history-header">
+            <span class="history-title" data-i18n="exchangeHistory">История обменов</span>
+            <span class="history-badge" id="historyCount"></span>
+        </div>
+        <div class="history-list" id="historyList"></div>
+    </div>
 </div>
 
 <script>
@@ -1177,6 +1270,7 @@ exchangeBtn.onclick = async function() {
                 usdtBalance = window.USER_BALANCES.usdt || usdtBalance;
             }
             updateDisplay();
+            loadExchangeHistory();
         } else {
             showAlert(result.error || "Ошибка обмена");
         }
@@ -1202,6 +1296,55 @@ function handleTapToDismiss(e) {
 document.addEventListener('touchend', handleTapToDismiss, { passive: true });
 document.addEventListener('click', handleTapToDismiss);
 
+function formatHistoryDate(dateStr) {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = now - d;
+    if (diff < 60000) return 'Только что';
+    if (diff < 3600000) return Math.floor(diff / 60000) + ' мин. назад';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + ' ч. назад';
+    return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+async function loadExchangeHistory() {
+    if (!userId) return;
+    try {
+        const res = await fetch(`/api/exchange/history/${userId}?limit=10`);
+        if (!res.ok) return;
+        const json = await res.json();
+        const items = json.data || [];
+        const section = document.getElementById('historySection');
+        const list = document.getElementById('historyList');
+        const badge = document.getElementById('historyCount');
+
+        if (items.length === 0) {
+            section.style.display = '';
+            badge.textContent = '';
+            list.innerHTML = '<div class="history-empty">Нет обменов — совершите первый!</div>';
+            return;
+        }
+
+        section.style.display = '';
+        badge.textContent = items.length + ' посл.';
+
+        list.innerHTML = items.map(tx => {
+            // description format: "Обмен 1000.00 RUB → 12.64 USDT"
+            const desc = tx.description || '';
+            const parts = desc.match(/→\s*([\d.]+)\s*(\S+)/);
+            const toAmount = parts ? parts[1] : '';
+            const toCurrency = parts ? parts[2] : '';
+            return `<div class="history-item">
+                <div class="history-icon"><svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></div>
+                <div class="history-info">
+                    <div class="history-desc">${desc.replace('Обмен ', '')}</div>
+                    <div class="history-date">${formatHistoryDate(tx.created_at)}</div>
+                </div>
+                <div class="history-amount">+${toAmount} ${toCurrency}</div>
+            </div>`;
+        }).join('');
+    } catch (e) { /* silent */ }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         // Fetch live rates from server
@@ -1215,6 +1358,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         userId = await resolveUserId();
         await loadData();
+        await loadExchangeHistory();
     } catch (e) { /* silent */ }
 });
 </script>
