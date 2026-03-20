@@ -176,6 +176,7 @@
             margin-bottom: 8px;
             text-decoration: none;
             transition: all 0.2s;
+            contain: layout style;
         }
 
         .trade-card:hover {
@@ -201,7 +202,11 @@
             font-size: 14px;
             color: var(--text-primary);
             text-align: right;
+            transition: color 0.3s ease;
         }
+
+        .current-price.flash-up { color: var(--success); }
+        .current-price.flash-down { color: var(--danger); }
 
         .change-percent {
             font-size: 13px;
@@ -717,8 +722,19 @@
             
             if (priceEl && changeEl) {
                 const price = parseFloat(coin.lastPrice);
-                priceEl.innerText = price < 0.0001 ? price.toFixed(8) : 
+                const newText = price < 0.0001 ? price.toFixed(8) : 
                                    (price < 1 ? price.toFixed(4) : '$' + price.toLocaleString());
+                
+                // Flash animation on price change
+                if (priceEl.textContent !== newText && priceEl.textContent !== '...') {
+                    const oldPrice = parseFloat(priceEl.textContent.replace(/[$,]/g, ''));
+                    if (!isNaN(oldPrice)) {
+                        const flashClass = price > oldPrice ? 'flash-up' : 'flash-down';
+                        priceEl.classList.add(flashClass);
+                        setTimeout(() => priceEl.classList.remove(flashClass), 600);
+                    }
+                }
+                priceEl.textContent = newText;
                 
                 const change = parseFloat(coin.priceChangePercent).toFixed(2);
                 changeEl.innerText = (change > 0 ? '+' : '') + change + '%';
@@ -754,7 +770,29 @@
     })();
     
     updatePrices();
-    setInterval(updatePrices, 15000);
+
+    // Use Binance WebSocket for real-time price streaming
+    let tradingWs = null;
+    function connectTradingWebSocket() {
+        const cards = document.querySelectorAll('.trade-card');
+        const symbols = Array.from(cards).map(c => c.dataset.symbol.toLowerCase());
+        const streams = symbols.map(s => s + '@miniTicker').join('/');
+        const wsUrl = `wss://stream.binance.com:9443/stream?streams=${streams}`;
+        tradingWs = new WebSocket(wsUrl);
+        tradingWs.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+            if (msg.data) {
+                const d = msg.data;
+                displayPrices([{ symbol: d.s, lastPrice: d.c, priceChangePercent: ((parseFloat(d.c) - parseFloat(d.o)) / parseFloat(d.o) * 100).toFixed(2) }]);
+            }
+        };
+        tradingWs.onclose = () => { setTimeout(connectTradingWebSocket, 3000); };
+        tradingWs.onerror = () => { tradingWs.close(); };
+    }
+    connectTradingWebSocket();
+
+    // Fallback HTTP poll every 30s in case WS drops
+    setInterval(updatePrices, 30000);
     
     // Check if user is blocked
     (async function checkBlocked() {

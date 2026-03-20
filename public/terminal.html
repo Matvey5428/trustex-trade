@@ -1749,8 +1749,7 @@
         console.log('Could not start manipulation:', e.message);
       }
       
-      await loadUserBalance();
-      await loadActiveTrades();
+      await Promise.all([loadUserBalance(), loadActiveTrades()]);
 
     } catch (err) {
       showTradeNotification(lang === 'ru' ? 'Ошибка сети' : 'Network error', 'loss');
@@ -1850,6 +1849,14 @@
       .catch((e) => {
         /* silent */
       });
+  });
+
+  // Refresh balance & trades when returning to app
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && userId) {
+      loadUserBalance();
+      loadActiveTrades();
+    }
   });
 </script>
 
