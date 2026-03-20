@@ -707,8 +707,8 @@
         <div class="form-group" id="notificationsFormGroup">
           <label>🔔 Уведомления в боте</label>
           <div class="mode-buttons">
-            <button class="mode-btn" id="btnNotifUserOn" onclick="setUserNotifications(true)" style="background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); color: #fff; flex: 1;">✅ Включены</button>
-            <button class="mode-btn" id="btnNotifUserOff" onclick="setUserNotifications(false)" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: #fff; flex: 1;">❌ Выключены</button>
+            <button class="mode-btn" id="btnNotifUserOn" onclick="setUserNotifications(true)" style="color: #fff; flex: 1;">✅ Включены</button>
+            <button class="mode-btn" id="btnNotifUserOff" onclick="setUserNotifications(false)" style="color: #fff; flex: 1;">❌ Выключены</button>
           </div>
         </div>
         
@@ -1589,13 +1589,17 @@
       const btnOff = document.getElementById('btnNotifUserOff');
       if (selectedNotifications) {
         btnOn.style.opacity = '1';
+        btnOn.style.background = 'linear-gradient(135deg, #27ae60 0%, #2ecc71 100%)';
         btnOn.style.boxShadow = '0 0 10px rgba(39,174,96,0.5)';
         btnOff.style.opacity = '0.4';
+        btnOff.style.background = 'linear-gradient(135deg, #666 0%, #444 100%)';
         btnOff.style.boxShadow = 'none';
       } else {
         btnOff.style.opacity = '1';
+        btnOff.style.background = 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
         btnOff.style.boxShadow = '0 0 10px rgba(231,76,60,0.5)';
         btnOn.style.opacity = '0.4';
+        btnOn.style.background = 'linear-gradient(135deg, #666 0%, #444 100%)';
         btnOn.style.boxShadow = 'none';
       }
     }
