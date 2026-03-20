@@ -785,7 +785,7 @@
       const resp = await fetch(`/api/profile/${userTelegramId}`, { headers });
       if (resp.ok) {
         const data = await resp.json();
-        userVerified = data.verified === true;
+        userVerified = (data.data?.verified || data.verified) === true;
       }
     } catch (e) { /* ignore */ }
 
