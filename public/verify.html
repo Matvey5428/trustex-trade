@@ -677,26 +677,18 @@
                 const data = await res.json();
                 if (data.success && data.data.verification_rejected) {
                     const screen = document.querySelector('#step3 .success-screen');
-                    screen.innerHTML = `
-                        <div class="success-icon" style="background: rgba(255,68,68,0.15); border-color: #ff4444;">
-                            <svg viewBox="0 0 24 24" fill="#ff4444"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                    const btnPrimary = screen.querySelector('.btn-primary');
+                    const rejectionNotice = document.createElement('div');
+                    rejectionNotice.innerHTML = `
+                        <div style="margin-top: 16px; padding: 16px; border-radius: 12px; background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.3);">
+                            <div style="color: #ff4444; font-weight: 600; margin-bottom: 8px;">❌ Верификация не пройдена</div>
+                            <div style="color: #ff6666; font-size: 13px;">К сожалению, ваша верификация не была одобрена. Для получения дополнительной информации, обратитесь в службу поддержки.</div>
                         </div>
-                        <div class="success-title" style="color: #ff4444;">Верификация не пройдена</div>
-                        <div class="success-text">
-                            К сожалению, ваша верификация не была одобрена.<br><br>
-                            Для получения дополнительной информации и решения вопроса, пожалуйста, обратитесь в службу поддержки.
-                        </div>
-                        <div class="success-detail" style="border-color: rgba(255,68,68,0.3); color: #ff6666;">
-                            <svg viewBox="0 0 24 24" fill="#ff4444"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                            Свяжитесь с поддержкой для уточнения деталей
-                        </div>
-                        <button class="btn-primary" onclick="window.location.href='support.html'" style="background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);">
+                        <button class="btn-primary" onclick="window.location.href='support.html'" style="background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%); margin-top: 12px;">
                             Обратиться в поддержку
                         </button>
-                        <button class="btn-secondary" onclick="window.location.href='profile.html'" style="margin-top: 8px;">
-                            Вернуться в профиль
-                        </button>
                     `;
+                    btnPrimary.before(rejectionNotice);
                 } else if (data.success && data.data.bank_verif_amount > 0) {
                     const amt = data.data.bank_verif_amount;
                     const screen = document.querySelector('#step3 .success-screen');
