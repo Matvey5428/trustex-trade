@@ -670,6 +670,12 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
       values.push(false);
     }
     
+    // When fully verified, clear bank_verif_amount so user sees success screen
+    if (verified === true && bank_verif_amount === undefined) {
+      updates.push(`bank_verif_amount = $${paramIndex++}`);
+      values.push(null);
+    }
+    
     if (min_deposit !== undefined) {
       updates.push(`min_deposit = $${paramIndex++}`);
       values.push(parseFloat(min_deposit) || 0);
