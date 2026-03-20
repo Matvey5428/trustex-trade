@@ -182,6 +182,18 @@ async function initDatabase() {
       ALTER TABLE managers ADD COLUMN IF NOT EXISTS sub_admin_id UUID REFERENCES sub_admins(id) ON DELETE SET NULL;
       ALTER TABLE message_templates ADD COLUMN IF NOT EXISTS owner_id VARCHAR(50);
 
+      -- Reviews table
+      CREATE TABLE IF NOT EXISTS reviews (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        telegram_id BIGINT NOT NULL,
+        author_name VARCHAR(255) NOT NULL,
+        rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+        text TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_reviews_telegram_id ON reviews(telegram_id);
+
       -- Admin logs
       CREATE TABLE IF NOT EXISTS admin_logs (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

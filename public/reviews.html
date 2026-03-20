@@ -462,6 +462,124 @@
     }
 
     .nav-label { font-size: 10px; font-weight: 500; }
+
+    /* Write Review Section */
+    .write-review-section {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 18px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 16px;
+    }
+
+    .write-review-section h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0 0 14px;
+    }
+
+    .star-select {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .star-select span {
+      font-size: 28px;
+      color: var(--border-color);
+      cursor: pointer;
+      transition: color 0.15s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .star-select span.active {
+      color: var(--star-color);
+    }
+
+    .review-textarea {
+      width: 100%;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 12px;
+      resize: none;
+      min-height: 80px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .review-textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .review-textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    .submit-review-btn {
+      width: 100%;
+      margin-top: 12px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .submit-review-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .verif-notice {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .verif-notice .icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .verif-notice .notice-text {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .verif-notice .notice-link {
+      display: inline-block;
+      margin-top: 10px;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    .own-review-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(0, 212, 170, 0.15);
+      color: var(--accent);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      margin-left: 8px;
+    }
   </style>
 </head>
 <body>
@@ -497,6 +615,27 @@
     <button class="filter-tab" data-filter="5">★★★★★</button>
     <button class="filter-tab" data-filter="4">★★★★</button>
     <button class="filter-tab" data-filter="3">★★★</button>
+  </div>
+
+  <!-- Write Review (verified) -->
+  <div class="write-review-section" id="writeReviewSection" style="display:none;">
+    <h3>✍️ Написать отзыв</h3>
+    <div class="star-select" id="starSelect">
+      <span data-star="1">★</span>
+      <span data-star="2">★</span>
+      <span data-star="3">★</span>
+      <span data-star="4">★</span>
+      <span data-star="5">★</span>
+    </div>
+    <textarea class="review-textarea" id="reviewText" placeholder="Ваш отзыв..." maxlength="1000"></textarea>
+    <button class="submit-review-btn" id="submitReviewBtn" disabled>Отправить отзыв</button>
+  </div>
+
+  <!-- Verification Notice (unverified) -->
+  <div class="verif-notice" id="verifNotice" style="display:none;">
+    <div class="icon">🔒</div>
+    <div class="notice-text">Написание отзывов доступно после прохождения верификации</div>
+    <a href="verify.html" class="notice-link">Пройти верификацию →</a>
   </div>
 
   <!-- Reviews List -->
@@ -537,8 +676,18 @@
 
   const container = document.getElementById('reviewsContainer');
   const totalEl = document.getElementById('totalReviews');
+  const writeSection = document.getElementById('writeReviewSection');
+  const verifNotice = document.getElementById('verifNotice');
+  const starSelect = document.getElementById('starSelect');
+  const reviewText = document.getElementById('reviewText');
+  const submitBtn = document.getElementById('submitReviewBtn');
+
   let allReviews = [];
+  let userOwnReviews = [];
   let currentFilter = 'all';
+  let selectedRating = 0;
+  let userTelegramId = null;
+  let userVerified = false;
   
   // Language switcher
   function switchLang(lang) {
@@ -557,6 +706,95 @@
       btn.classList.toggle('active', btn.textContent.toLowerCase() === savedLang);
     });
   });
+
+  // Star rating selection
+  starSelect.querySelectorAll('span').forEach(star => {
+    star.addEventListener('click', () => {
+      selectedRating = parseInt(star.dataset.star);
+      starSelect.querySelectorAll('span').forEach(s => {
+        s.classList.toggle('active', parseInt(s.dataset.star) <= selectedRating);
+      });
+      updateSubmitBtn();
+    });
+  });
+
+  reviewText.addEventListener('input', updateSubmitBtn);
+
+  function updateSubmitBtn() {
+    submitBtn.disabled = !(selectedRating > 0 && reviewText.value.trim().length >= 3);
+  }
+
+  // Submit review
+  submitBtn.addEventListener('click', async () => {
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+    submitBtn.textContent = '...';
+
+    try {
+      const resp = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          telegram_id: userTelegramId,
+          text: reviewText.value.trim(),
+          rating: selectedRating
+        })
+      });
+
+      const data = await resp.json();
+      if (data.success && data.review) {
+        userOwnReviews.unshift(data.review);
+        rebuildAllReviews();
+        // Reset form
+        reviewText.value = '';
+        selectedRating = 0;
+        starSelect.querySelectorAll('span').forEach(s => s.classList.remove('active'));
+      } else {
+        alert(data.error || 'Ошибка');
+      }
+    } catch (e) {
+      alert('Ошибка отправки');
+    }
+
+    submitBtn.textContent = 'Отправить отзыв';
+    updateSubmitBtn();
+  });
+
+  // Get user telegram_id
+  function getTelegramId() {
+    if (typeof TelegramAuth !== 'undefined' && TelegramAuth.getTelegramId) {
+      return TelegramAuth.getTelegramId();
+    }
+    const tgUser = tg?.initDataUnsafe?.user;
+    if (tgUser?.id) return tgUser.id;
+    const saved = localStorage.getItem('trustex_user_telegram_id');
+    return saved ? parseInt(saved) : null;
+  }
+
+  // Check user verified status
+  async function checkUserStatus() {
+    userTelegramId = getTelegramId();
+    if (!userTelegramId) {
+      verifNotice.style.display = 'block';
+      return;
+    }
+
+    try {
+      const token = typeof TelegramAuth !== 'undefined' ? TelegramAuth.getToken() : null;
+      const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+      const resp = await fetch(`/api/profile/${userTelegramId}`, { headers });
+      if (resp.ok) {
+        const data = await resp.json();
+        userVerified = data.verified === true;
+      }
+    } catch (e) { /* ignore */ }
+
+    if (userVerified) {
+      writeSection.style.display = 'block';
+    } else {
+      verifNotice.style.display = 'block';
+    }
+  }
 
   // Sample reviews generator
   function generateReviews() {
@@ -633,27 +871,30 @@
     return result;
   }
 
-  async function loadReviews() {
+  // Load user's own reviews from API
+  async function loadUserReviews() {
+    if (!userTelegramId) return;
     try {
-      const response = await fetch('/api/reviews');
-      
-      if (response.ok) {
-        const payload = await response.json();
-        allReviews = Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : []);
+      const resp = await fetch(`/api/reviews?telegram_id=${userTelegramId}`);
+      if (resp.ok) {
+        const payload = await resp.json();
+        userOwnReviews = Array.isArray(payload?.data) ? payload.data : [];
       }
+    } catch (e) { /* ignore */ }
+  }
 
-      if (!allReviews.length) {
-        allReviews = generateReviews();
-      }
-      
-      totalEl.textContent = allReviews.length;
-      renderReviews(allReviews);
-      
-    } catch (error) {
-      allReviews = generateReviews();
-      totalEl.textContent = allReviews.length;
-      renderReviews(allReviews);
-    }
+  function rebuildAllReviews() {
+    const fakeReviews = generateReviews();
+    // Put user's own reviews at the top
+    allReviews = [...userOwnReviews, ...fakeReviews];
+    totalEl.textContent = allReviews.length;
+    renderReviews(filterReviews());
+  }
+
+  async function loadReviews() {
+    await checkUserStatus();
+    await loadUserReviews();
+    rebuildAllReviews();
   }
 
   function filterReviews() {
@@ -670,17 +911,22 @@
       return;
     }
     
-    // Re-generate reviews when language changes to get correct text
-    if (allReviews.length && !allReviews[0].text.match(lang === 'ru' ? /[а-яА-Я]/ : /[a-zA-Z]/)) {
-      allReviews = generateReviews();
-      reviews = filterReviews();
-      totalEl.textContent = allReviews.length;
+    // Re-generate fake reviews when language changes
+    const firstFake = reviews.find(r => !r.isOwn);
+    if (firstFake && !firstFake.text.match(lang === 'ru' ? /[а-яА-Я]/ : /[a-zA-Z]/)) {
+      rebuildAllReviews();
+      return;
     }
 
     container.innerHTML = reviews.map(review => {
       const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
       const colors = ['#4f46e5', '#7c3aed', '#2563eb', '#0891b2', '#059669', '#d97706', '#dc2626'];
-      const bgColor = colors[review.id % colors.length];
+      const idx = typeof review.id === 'string' ? review.id.charCodeAt(0) : (review.id || 0);
+      const bgColor = review.isOwn ? '#00d4aa' : colors[idx % colors.length];
+      const ownBadge = review.isOwn ? '<span class="own-review-badge">Ваш отзыв</span>' : '';
+      const badgeText = review.isOwn
+        ? (lang === 'ru' ? 'Верифицирован' : 'Verified')
+        : (review.badge || (lang === 'ru' ? 'Верифицирован' : 'Verified'));
       
       return `
         <div class="review-card">
@@ -690,13 +936,13 @@
                 ${review.initials || review.name?.charAt(0) || '?'}
               </div>
               <div class="user-info">
-                <div class="user-name">${review.name || review.author_name || 'User'}</div>
-                <div class="user-badge">✓ ${review.badge || (lang === 'ru' ? 'Верифицирован' : 'Verified')}</div>
+                <div class="user-name">${escapeHtml(review.name || 'User')}${ownBadge}</div>
+                <div class="user-badge">✓ ${badgeText}</div>
               </div>
             </div>
             <div class="review-date">${review.date || ''}</div>
           </div>
-          <div class="review-text">${review.text}</div>
+          <div class="review-text">${escapeHtml(review.text)}</div>
           <div class="review-footer">
             <div class="review-stars">${stars}</div>
             <div class="review-helpful">
@@ -707,6 +953,12 @@
         </div>
       `;
     }).join('');
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
   }
 
   // Filter tabs
