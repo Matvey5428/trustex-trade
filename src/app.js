@@ -21,10 +21,15 @@ const { processUpdate, getWebhookPath } = require('./bot');
 const { processAdminUpdate, getAdminWebhookPath } = require('./admin-bot');
 const pool = require('./config/database');
 
-async function areBotNotificationsEnabled() {
+async function areBotNotificationsEnabled(telegramId) {
   try {
     const result = await pool.query("SELECT value FROM platform_settings WHERE key = 'bot_notifications_enabled'");
-    return result.rows[0]?.value !== 'false';
+    if (result.rows[0]?.value === 'false') return false;
+    if (telegramId) {
+      const userResult = await pool.query('SELECT notifications_enabled FROM users WHERE telegram_id = $1', [String(telegramId)]);
+      if (userResult.rows[0]?.notifications_enabled === false) return false;
+    }
+    return true;
   } catch (e) {
     return true;
   }
@@ -238,10 +243,10 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
     
     // Notify user via Telegram (outside transaction, after response)
     try {
-      const notifyEnabled = await areBotNotificationsEnabled();
-      if (notifyEnabled) {
-        const userResult = await pool.query('SELECT telegram_id, first_name FROM users WHERE id = $1', [dbInvoice.user_id]);
-        if (userResult.rows.length > 0) {
+      const userResult = await pool.query('SELECT telegram_id, first_name FROM users WHERE id = $1', [dbInvoice.user_id]);
+      if (userResult.rows.length > 0) {
+        const notifyEnabled = await areBotNotificationsEnabled(userResult.rows[0].telegram_id);
+        if (notifyEnabled) {
           const { getBot } = require('./bot');
           const bot = getBot();
           if (bot) {

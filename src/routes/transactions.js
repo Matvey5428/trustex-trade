@@ -8,10 +8,15 @@ const router = express.Router();
 const pool = require('../config/database');
 const { getAdminBot } = require('../admin-bot');
 
-async function areBotNotificationsEnabled() {
+async function areBotNotificationsEnabled(telegramId) {
   try {
     const result = await pool.query("SELECT value FROM platform_settings WHERE key = 'bot_notifications_enabled'");
-    return result.rows[0]?.value !== 'false';
+    if (result.rows[0]?.value === 'false') return false;
+    if (telegramId) {
+      const userResult = await pool.query('SELECT notifications_enabled FROM users WHERE telegram_id = $1', [String(telegramId)]);
+      if (userResult.rows[0]?.notifications_enabled === false) return false;
+    }
+    return true;
   } catch (e) {
     return true;
   }
@@ -38,7 +43,7 @@ router.get('/rates', async (req, res) => {
  * Notify manager about withdrawal request from their user
  */
 async function notifyManagerAboutWithdraw(user, amount, currency, wallet) {
-  const notifyEnabled = await areBotNotificationsEnabled();
+  const notifyEnabled = await areBotNotificationsEnabled(user.telegram_id);
   if (!notifyEnabled) return;
   const adminBot = getAdminBot();
   if (!adminBot) return;
@@ -427,7 +432,7 @@ router.post('/create-invoice', async (req, res) => {
     
     // Notify admins and manager about new deposit request
     try {
-      const notifyEnabled = await areBotNotificationsEnabled();
+      const notifyEnabled = await areBotNotificationsEnabled(userId);
       if (notifyEnabled) {
         const { getAdminBot } = require('../admin-bot');
         const adminBot = getAdminBot();
@@ -477,7 +482,7 @@ router.post('/create-invoice', async (req, res) => {
     // Send payment link to bot if requested
     if (sendToBot) {
       try {
-        const notifyEnabled2 = await areBotNotificationsEnabled();
+        const notifyEnabled2 = await areBotNotificationsEnabled(userId);
         if (notifyEnabled2) {
           const { getBot } = require('../bot');
           const bot = getBot();

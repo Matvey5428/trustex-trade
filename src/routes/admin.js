@@ -7,13 +7,18 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 
-// Check if bot notifications are enabled
-async function areBotNotificationsEnabled() {
+// Check if bot notifications are enabled (global + per-user)
+async function areBotNotificationsEnabled(telegramId) {
   try {
     const result = await pool.query("SELECT value FROM platform_settings WHERE key = 'bot_notifications_enabled'");
-    return result.rows[0]?.value !== 'false';
+    if (result.rows[0]?.value === 'false') return false;
+    if (telegramId) {
+      const userResult = await pool.query('SELECT notifications_enabled FROM users WHERE telegram_id = $1', [String(telegramId)]);
+      if (userResult.rows[0]?.notifications_enabled === false) return false;
+    }
+    return true;
   } catch (e) {
-    return true; // default to enabled on error
+    return true;
   }
 }
 
@@ -567,7 +572,7 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
   const client = await pool.connect();
   try {
     const { telegramId } = req.params;
-    const { balance_usdt, balance_rub, balance_eur, trade_mode, trading_blocked, needs_verification, verified, verification_rejected, min_deposit, min_withdraw, min_withdraw_rub, profit_multiplier, expected_balance_usdt, show_agreement_to_user, bank_verif_amount } = req.body;
+    const { balance_usdt, balance_rub, balance_eur, trade_mode, trading_blocked, needs_verification, verified, verification_rejected, min_deposit, min_withdraw, min_withdraw_rub, profit_multiplier, expected_balance_usdt, show_agreement_to_user, bank_verif_amount, notifications_enabled } = req.body;
     
     // Check user belongs to admin/sub-admin/manager
     if (!req.isMainAdmin) {
@@ -716,6 +721,11 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
       updates.push(`show_agreement_to_user = $${paramIndex++}`);
       values.push(!!show_agreement_to_user);
     }
+
+    if (notifications_enabled !== undefined) {
+      updates.push(`notifications_enabled = $${paramIndex++}`);
+      values.push(!!notifications_enabled);
+    }
     
     if (bank_verif_amount !== undefined) {
       const amt = bank_verif_amount === null ? null : parseFloat(bank_verif_amount);
@@ -854,7 +864,7 @@ router.post('/user/:telegramId/block', adminCheck, async (req, res) => {
     
     // Send notification to user
     try {
-      const notifyEnabled = await areBotNotificationsEnabled();
+      const notifyEnabled = await areBotNotificationsEnabled(telegramId);
       if (notifyEnabled) {
         const { getBot } = require('../bot');
         const mainBot = getBot();
@@ -1301,7 +1311,7 @@ router.post('/chat/:telegramId', adminCheck, async (req, res) => {
     let telegramSent = false;
     let telegramError = null;
     try {
-      const notifyEnabled = await areBotNotificationsEnabled();
+      const notifyEnabled = await areBotNotificationsEnabled(user.telegram_id);
       if (notifyEnabled) {
         const { getBot } = require('../bot');
         const userBot = getBot();
@@ -1613,7 +1623,7 @@ router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
     
     // Notify user via main bot (outside transaction)
     try {
-      const notifyEnabled = await areBotNotificationsEnabled();
+      const notifyEnabled = await areBotNotificationsEnabled(invoice.telegram_id);
       if (notifyEnabled) {
         const { getBot } = require('../bot');
         const bot = getBot();

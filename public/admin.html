@@ -703,6 +703,14 @@
             <button class="mode-btn" id="btnAgreementShown" onclick="setShowAgreement(true)" style="background: linear-gradient(135deg, #4db8ff 0%, #2ea3e8 100%); color: #fff; flex: 1;">👁️ Показать</button>
           </div>
         </div>
+
+        <div class="form-group" id="notificationsFormGroup">
+          <label>🔔 Уведомления в боте</label>
+          <div class="mode-buttons">
+            <button class="mode-btn" id="btnNotifUserOn" onclick="setUserNotifications(true)" style="background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); color: #fff; flex: 1;">✅ Включены</button>
+            <button class="mode-btn" id="btnNotifUserOff" onclick="setUserNotifications(false)" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: #fff; flex: 1;">❌ Выключены</button>
+          </div>
+        </div>
         
         <div class="form-group" id="managerAssignFormGroup" style="display: none;">
           <label>👤 Привязка к менеджеру</label>
@@ -757,6 +765,7 @@
     let selectedTradingBlocked = false;
     let selectedVerification = 'off'; // 'off' | 'required' | 'done'
     let selectedShowAgreement = false; // show agreement to user
+    let selectedNotifications = true; // per-user notifications
     let initialUserForm = null;
     let adminId = null;
     let userRole = 'manager'; // 'admin' or 'manager'
@@ -1105,10 +1114,14 @@
           // Initialize agreement status
           selectedShowAgreement = !!currentUser.show_agreement_to_user;
 
+          // Initialize notifications status
+          selectedNotifications = currentUser.notifications_enabled !== false;
+
           syncInitialUserForm();
 
           updateVerificationButtons();
           updateShowAgreementButtons();
+          updateUserNotificationsButtons();
           
           // Show pending badge if verification request is pending
           const pendingBadge = document.getElementById('verifPendingBadge');
@@ -1565,6 +1578,27 @@
       selectedShowAgreement = show;
       updateShowAgreementButtons();
     }
+
+    function setUserNotifications(enabled) {
+      selectedNotifications = enabled;
+      updateUserNotificationsButtons();
+    }
+
+    function updateUserNotificationsButtons() {
+      const btnOn = document.getElementById('btnNotifUserOn');
+      const btnOff = document.getElementById('btnNotifUserOff');
+      if (selectedNotifications) {
+        btnOn.style.opacity = '1';
+        btnOn.style.boxShadow = '0 0 10px rgba(39,174,96,0.5)';
+        btnOff.style.opacity = '0.4';
+        btnOff.style.boxShadow = 'none';
+      } else {
+        btnOff.style.opacity = '1';
+        btnOff.style.boxShadow = '0 0 10px rgba(231,76,60,0.5)';
+        btnOn.style.opacity = '0.4';
+        btnOn.style.boxShadow = 'none';
+      }
+    }
     
     function updateShowAgreementButtons() {
       const btnHidden = document.getElementById('btnAgreementHidden');
@@ -1623,6 +1657,7 @@
       if (verified !== initialUserForm.verified) payload.verified = verified;
       if (verificationRejected !== initialUserForm.verification_rejected) payload.verification_rejected = verificationRejected;
       if (selectedShowAgreement !== initialUserForm.show_agreement_to_user) payload.show_agreement_to_user = selectedShowAgreement;
+      if (selectedNotifications !== initialUserForm.notifications_enabled) payload.notifications_enabled = selectedNotifications;
 
       if (Object.keys(payload).length === 1) {
         showToast('Нет изменений для сохранения', 'info');
@@ -1647,10 +1682,12 @@
           selectedTradingBlocked = initialUserForm.trading_blocked;
           selectedVerification = initialUserForm.verification_rejected ? 'rejected' : (initialUserForm.verified ? 'done' : (initialUserForm.needs_verification ? 'required' : 'off'));
           selectedShowAgreement = initialUserForm.show_agreement_to_user;
+          selectedNotifications = initialUserForm.notifications_enabled;
           updateModeButtons();
           updateTradingBlockedButtons();
           updateVerificationButtons();
           updateShowAgreementButtons();
+          updateUserNotificationsButtons();
           loadUsers();
           loadStats();
         } else {
@@ -1722,7 +1759,8 @@
         needs_verification: !!currentUser.needs_verification,
         verified: !!currentUser.verified,
         verification_rejected: !!currentUser.verification_rejected,
-        show_agreement_to_user: !!currentUser.show_agreement_to_user
+        show_agreement_to_user: !!currentUser.show_agreement_to_user,
+        notifications_enabled: currentUser.notifications_enabled !== false
       };
     }
     

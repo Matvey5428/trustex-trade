@@ -171,6 +171,7 @@ async function initDatabase() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_rejected BOOLEAN DEFAULT FALSE;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS balance_eth NUMERIC(18,8) DEFAULT 0;
       ALTER TABLE users ADD COLUMN IF NOT EXISTS balance_ton NUMERIC(18,8) DEFAULT 0;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS notifications_enabled BOOLEAN DEFAULT TRUE;
 
       -- Orders columns
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS symbol VARCHAR(20) DEFAULT 'BTC';

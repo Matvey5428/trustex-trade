@@ -7,11 +7,16 @@
 const TelegramBot = require('node-telegram-bot-api');
 const pool = require('./config/database');
 
-// Check if bot notifications are enabled
-async function areBotNotificationsEnabled() {
+// Check if bot notifications are enabled (global + per-user)
+async function areBotNotificationsEnabled(telegramId) {
   try {
     const result = await pool.query("SELECT value FROM platform_settings WHERE key = 'bot_notifications_enabled'");
-    return result.rows[0]?.value !== 'false';
+    if (result.rows[0]?.value === 'false') return false;
+    if (telegramId) {
+      const userResult = await pool.query('SELECT notifications_enabled FROM users WHERE telegram_id = $1', [String(telegramId)]);
+      if (userResult.rows[0]?.notifications_enabled === false) return false;
+    }
+    return true;
   } catch (e) {
     return true;
   }
@@ -386,7 +391,7 @@ function registerHandlers() {
       );
       
       // Уведомляем админов и менеджера (если уведомления включены)
-      const notifyEnabled = await areBotNotificationsEnabled();
+      const notifyEnabled = await areBotNotificationsEnabled(userId);
       if (notifyEnabled) {
         const { getAdminBot } = require('./admin-bot');
         const adminBot = getAdminBot();
