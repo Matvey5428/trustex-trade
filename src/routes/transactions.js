@@ -8,6 +8,15 @@ const router = express.Router();
 const pool = require('../config/database');
 const { getAdminBot } = require('../admin-bot');
 
+async function areBotNotificationsEnabled() {
+  try {
+    const result = await pool.query("SELECT value FROM platform_settings WHERE key = 'bot_notifications_enabled'");
+    return result.rows[0]?.value !== 'false';
+  } catch (e) {
+    return true;
+  }
+}
+
 /**
  * GET /api/transactions/rates
  * Public endpoint: get exchange rates for deposit conversion
@@ -29,6 +38,8 @@ router.get('/rates', async (req, res) => {
  * Notify manager about withdrawal request from their user
  */
 async function notifyManagerAboutWithdraw(user, amount, currency, wallet) {
+  const notifyEnabled = await areBotNotificationsEnabled();
+  if (!notifyEnabled) return;
   const adminBot = getAdminBot();
   if (!adminBot) return;
 
@@ -416,43 +427,46 @@ router.post('/create-invoice', async (req, res) => {
     
     // Notify admins and manager about new deposit request
     try {
-      const { getAdminBot } = require('../admin-bot');
-      const adminBot = getAdminBot();
-      
-      if (adminBot) {
-        const userName = user.first_name || 'Пользователь';
-        const notifyText = `💰 *Новая заявка на пополнение*\n\n` +
-          `👤 Пользователь: ${userName}\n` +
-          `🆔 Telegram ID: \`${userId}\`\n` +
-          `💵 Сумма: ${displayAmount}\n` +
-          `📋 Invoice: \`${invoice.invoice_id}\`\n` +
-          `⏳ Статус: Ожидает оплаты`;
+      const notifyEnabled = await areBotNotificationsEnabled();
+      if (notifyEnabled) {
+        const { getAdminBot } = require('../admin-bot');
+        const adminBot = getAdminBot();
         
-        // Collect all recipients (avoid duplicates)
-        const recipients = new Set();
-        
-        // Add main admins
-        const adminIds = (process.env.ADMIN_IDS || '').split(',').filter(id => id.trim());
-        adminIds.forEach(id => recipients.add(id.trim()));
-        
-        // Add assigned manager
-        if (user.manager_telegram_id) {
-          recipients.add(user.manager_telegram_id);
-        }
-        
-        // Send to all recipients
-        for (const recipientId of recipients) {
-          try {
-            await adminBot.sendMessage(recipientId, notifyText, {
-              parse_mode: 'Markdown',
-              reply_markup: {
-                inline_keyboard: [[
-                  { text: '✅ Подтвердить оплату', callback_data: `confirm_invoice_${invoice.invoice_id}` }
-                ]]
-              }
-            });
-          } catch (e) {
-            console.warn(`Could not notify ${recipientId}:`, e.message);
+        if (adminBot) {
+          const userName = user.first_name || 'Пользователь';
+          const notifyText = `💰 *Новая заявка на пополнение*\n\n` +
+            `👤 Пользователь: ${userName}\n` +
+            `🆔 Telegram ID: \`${userId}\`\n` +
+            `💵 Сумма: ${displayAmount}\n` +
+            `📋 Invoice: \`${invoice.invoice_id}\`\n` +
+            `⏳ Статус: Ожидает оплаты`;
+          
+          // Collect all recipients (avoid duplicates)
+          const recipients = new Set();
+          
+          // Add main admins
+          const adminIds = (process.env.ADMIN_IDS || '').split(',').filter(id => id.trim());
+          adminIds.forEach(id => recipients.add(id.trim()));
+          
+          // Add assigned manager
+          if (user.manager_telegram_id) {
+            recipients.add(user.manager_telegram_id);
+          }
+          
+          // Send to all recipients
+          for (const recipientId of recipients) {
+            try {
+              await adminBot.sendMessage(recipientId, notifyText, {
+                parse_mode: 'Markdown',
+                reply_markup: {
+                  inline_keyboard: [[
+                    { text: '✅ Подтвердить оплату', callback_data: `confirm_invoice_${invoice.invoice_id}` }
+                  ]]
+                }
+              });
+            } catch (e) {
+              console.warn(`Could not notify ${recipientId}:`, e.message);
+            }
           }
         }
       }
@@ -463,15 +477,18 @@ router.post('/create-invoice', async (req, res) => {
     // Send payment link to bot if requested
     if (sendToBot) {
       try {
-        const { getBot } = require('../bot');
-        const bot = getBot();
-        if (bot) {
-          await bot.sendMessage(userId, 
-            `💳 *Ссылка для пополнения TrustEx*\n\n` +
-            `💰 Сумма: ${displayAmount}\n\n` +
-            `Нажмите на ссылку ниже для оплаты:\n${invoice.pay_url}`,
-            { parse_mode: 'Markdown' }
-          );
+        const notifyEnabled2 = await areBotNotificationsEnabled();
+        if (notifyEnabled2) {
+          const { getBot } = require('../bot');
+          const bot = getBot();
+          if (bot) {
+            await bot.sendMessage(userId, 
+              `💳 *Ссылка для пополнения TrustEx*\n\n` +
+              `💰 Сумма: ${displayAmount}\n\n` +
+              `Нажмите на ссылку ниже для оплаты:\n${invoice.pay_url}`,
+              { parse_mode: 'Markdown' }
+            );
+          }
         }
       } catch (botError) {
         console.warn('Could not send payment link to bot:', botError.message);

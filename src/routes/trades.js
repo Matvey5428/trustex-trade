@@ -8,10 +8,21 @@ const router = express.Router();
 const pool = require('../config/database');
 const { getAdminBot } = require('../admin-bot');
 
+async function areBotNotificationsEnabled() {
+  try {
+    const result = await pool.query("SELECT value FROM platform_settings WHERE key = 'bot_notifications_enabled'");
+    return result.rows[0]?.value !== 'false';
+  } catch (e) {
+    return true;
+  }
+}
+
 /**
  * Notify manager about new trade opened by their user
  */
 async function notifyManagerAboutTrade(user, trade, symbol, direction, amount, durationSeconds) {
+  const notifyEnabled = await areBotNotificationsEnabled();
+  if (!notifyEnabled) return;
   const adminBot = getAdminBot();
   if (!adminBot) return;
 
