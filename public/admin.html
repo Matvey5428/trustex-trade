@@ -1475,6 +1475,9 @@
           showToast('✅ Вериф на реки установлен: ' + amount + ' USDT', 'success');
           currentUser = data.data;
           syncInitialUserForm();
+          // Sync selectedVerification to match new state (verified=true)
+          selectedVerification = 'done';
+          updateVerificationButtons();
           updateBankVerifBadge();
         } else {
           showToast('❌ ' + data.error, 'error');

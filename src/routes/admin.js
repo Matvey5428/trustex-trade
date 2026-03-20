@@ -596,7 +596,8 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
 
     // Lock user row to prevent race conditions with concurrent balance operations
     const userStateResult = await client.query(
-      `SELECT id, COALESCE(trade_mode, 'loss') as trade_mode, balance_usdt, balance_rub, balance_eur
+      `SELECT id, COALESCE(trade_mode, 'loss') as trade_mode, balance_usdt, balance_rub, balance_eur,
+              verified, verification_rejected, verification_pending
          FROM users
          WHERE telegram_id = $1 FOR UPDATE`,
       [telegramId]
@@ -664,14 +665,16 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
       values.push(verification_rejected);
     }
     
-    // Reset verification_pending when any verification state changes
-    if (verified !== undefined || verification_rejected !== undefined) {
+    // Reset verification_pending only when verification state actually changes
+    const verifChanged = (verified !== undefined && verified !== (userState.verified || false))
+                      || (verification_rejected !== undefined && verification_rejected !== (userState.verification_rejected || false));
+    if (verifChanged) {
       updates.push(`verification_pending = $${paramIndex++}`);
       values.push(false);
     }
     
-    // When fully verified, clear bank_verif_amount so user sees success screen
-    if (verified === true && bank_verif_amount === undefined) {
+    // When newly set to verified, clear bank_verif_amount so user sees success screen
+    if (verified === true && bank_verif_amount === undefined && !(userState.verified)) {
       updates.push(`bank_verif_amount = $${paramIndex++}`);
       values.push(null);
     }
