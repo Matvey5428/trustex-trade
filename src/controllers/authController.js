@@ -67,6 +67,7 @@ async function getMe(req, res, next) {
       is_admin: freshUser.is_admin,
       verified: freshUser.verified,
       status: freshUser.status,
+      is_blocked: freshUser.is_blocked || false,
       balance_usdt: freshUser.balance_usdt,
       balance_btc: freshUser.balance_btc,
       balance_rub: freshUser.balance_rub,

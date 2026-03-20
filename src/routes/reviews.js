@@ -22,8 +22,8 @@ router.get('/', async (req, res) => {
       );
       userReviews = result.rows.map(r => ({
         id: r.id,
-        name: r.author_name,
-        initials: r.author_name.split(' ').map(n => n[0]).join(''),
+        name: r.author_name || 'User',
+        initials: (r.author_name || 'U').split(' ').map(n => n[0]).join(''),
         badge: null,
         text: r.text,
         rating: r.rating,
@@ -91,8 +91,8 @@ router.post('/', async (req, res) => {
       success: true,
       review: {
         id: review.id,
-        name: review.author_name,
-        initials: review.author_name.split(' ').map(n => n[0]).join(''),
+        name: review.author_name || 'User',
+        initials: (review.author_name || 'U').split(' ').map(n => n[0]).join(''),
         text: review.text,
         rating: review.rating,
         date: new Date(review.created_at).toLocaleDateString('ru-RU'),

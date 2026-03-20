@@ -50,7 +50,7 @@ async function verifyAndGetUser(initData, refCode = null) {
 
   if (user) {
     // User exists - check if blocked
-    if (user.status === 'blocked') {
+    if (user.is_blocked) {
       throw new ForbiddenError('User is blocked');
     }
 
@@ -100,8 +100,8 @@ async function getUserByTelegramId(telegramId) {
   const result = await pool.query(
     `SELECT 
       id, telegram_id, username, first_name, last_name, photo_url,
-      balance_usdt, balance_btc, balance_rub, balance_eur,
-      verified, status, is_admin,
+      balance_usdt, balance_btc, balance_rub, balance_eur, balance_eth, balance_ton,
+      verified, status, is_admin, is_blocked,
       created_at, updated_at
      FROM users 
      WHERE telegram_id = $1`,
@@ -118,8 +118,8 @@ async function getUserById(id) {
   const result = await pool.query(
     `SELECT 
       id, telegram_id, username, first_name, last_name, photo_url,
-      balance_usdt, balance_btc, balance_rub, balance_eur,
-      verified, status, is_admin,
+      balance_usdt, balance_btc, balance_rub, balance_eur, balance_eth, balance_ton,
+      verified, status, is_admin, is_blocked,
       created_at, updated_at
      FROM users 
      WHERE id = $1`,
