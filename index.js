@@ -208,7 +208,7 @@ async function initDatabase() {
       CREATE INDEX IF NOT EXISTS idx_admin_logs_created_at ON admin_logs(created_at);
       CREATE INDEX IF NOT EXISTS idx_support_messages_user_id ON support_messages(user_id);
 
-      INSERT INTO platform_settings (key, value) VALUES ('rub_usdt_rate', '92') ON CONFLICT (key) DO NOTHING;
+      INSERT INTO platform_settings (key, value) VALUES ('rub_usdt_rate', '83.33') ON CONFLICT (key) DO UPDATE SET value = '83.33', updated_at = NOW();
       INSERT INTO platform_settings (key, value) VALUES ('eur_usdt_rate', '0.92') ON CONFLICT (key) DO NOTHING;
 
       -- Crypto invoices: store original fiat currency/amount

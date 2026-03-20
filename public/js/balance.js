@@ -50,7 +50,7 @@ const BalanceManager = {
       if (cached) { this._rates = cached; return cached; }
     } catch(e) {}
     // Жёсткий fallback
-    this._rates = { rub_to_usdt: 0.012642, usdt_to_rub: 79.10, eur_to_usdt: 1.089, usdt_to_eur: 0.9183, ts: 0 };
+    this._rates = { rub_to_usdt: 0.012, usdt_to_rub: 83.33, eur_to_usdt: 1.089, usdt_to_eur: 0.9183, ts: 0 };
     return this._rates;
   },
 
@@ -62,7 +62,7 @@ const BalanceManager = {
       if (cached && cached.rub_to_usdt) { this._rates = cached; return cached; }
     } catch(e) {}
     // Жёсткий fallback
-    return { rub_to_usdt: 0.012642, usdt_to_rub: 79.10, eur_to_usdt: 1.089, usdt_to_eur: 0.9183, ts: 0 };
+    return { rub_to_usdt: 0.012, usdt_to_rub: 83.33, eur_to_usdt: 1.089, usdt_to_eur: 0.9183, ts: 0 };
   },
 
   /** Конвертировать RUB в USDT (≈ USD) */

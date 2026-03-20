@@ -1623,8 +1623,8 @@
 
         // Курс RUB из серверных данных BalanceManager
         const rubPriceText = (typeof BalanceManager !== 'undefined' && BalanceManager.getRates())
-          ? (BalanceManager.getRates().usdt_to_rub || 79.10).toFixed(2)
-          : '79.10';
+          ? (BalanceManager.getRates().usdt_to_rub || 83.33).toFixed(2)
+          : '83.33';
         updateEl('rubPrice', `${rubPriceText} ₽`);
         updateEl('btcPrice', `${priceMap['BTCUSDT'].toLocaleString()} $`);
         updateEl('ethPrice', `${priceMap['ETHUSDT'].toLocaleString()} $`);

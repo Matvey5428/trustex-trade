@@ -8,7 +8,7 @@ const router = express.Router();
 const pool = require('../config/database');
 
 // Fallback exchange rates (used if DB rates unavailable)
-const DEFAULT_RUB_TO_USDT_RATE = 0.012642;
+const DEFAULT_RUB_TO_USDT_RATE = 0.012;
 const DEFAULT_EUR_TO_USDT_RATE = 1.089;
 
 /**
