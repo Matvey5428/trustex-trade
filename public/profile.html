@@ -968,6 +968,7 @@
                     badge.className = 'badge verified';
                     badge.textContent = typeof t === 'function' ? t('verified') : '✅ Верифицирован';
                     btn.style.display = 'none';
+                    document.getElementById('statusBtn').style.display = 'none';
                 } else if (userData.verification_rejected || userData.verification_pending) {
                     badge.className = 'badge pending';
                     badge.textContent = '⏳ На рассмотрении';
