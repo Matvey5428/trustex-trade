@@ -7,6 +7,16 @@
 const TelegramBot = require('node-telegram-bot-api');
 const pool = require('./config/database');
 
+// Check if bot notifications are enabled
+async function areBotNotificationsEnabled() {
+  try {
+    const result = await pool.query("SELECT value FROM platform_settings WHERE key = 'bot_notifications_enabled'");
+    return result.rows[0]?.value !== 'false';
+  } catch (e) {
+    return true;
+  }
+}
+
 // Получаем токен из переменных окружения
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const WEB_APP_URL = process.env.WEB_APP_URL || 'https://trustex-trade.onrender.com';
@@ -375,36 +385,39 @@ function registerHandlers() {
         [user.id, message]
       );
       
-      // Уведомляем админов и менеджера
-      const { getAdminBot } = require('./admin-bot');
-      const adminBot = getAdminBot();
-      
-      if (adminBot) {
-        const userName = user.first_name || user.username || `ID:${user.telegram_id}`;
-        const shortMessage = message.length > 100 ? message.substring(0, 100) + '...' : message;
-        const notifyText = `💬 *Новое сообщение в поддержку*\n\n👤 От: ${userName}\n📝 ${shortMessage}`;
+      // Уведомляем админов и менеджера (если уведомления включены)
+      const notifyEnabled = await areBotNotificationsEnabled();
+      if (notifyEnabled) {
+        const { getAdminBot } = require('./admin-bot');
+        const adminBot = getAdminBot();
         
-        const recipients = new Set();
-        
-        // Главные админы
-        const adminIds = (process.env.ADMIN_IDS || '').split(',').filter(id => id.trim());
-        adminIds.forEach(id => recipients.add(id.trim()));
-        
-        // Суб-админ
-        if (user.sub_admin_telegram_id) {
-          recipients.add(user.sub_admin_telegram_id);
-        }
-        
-        // Менеджер
-        if (user.manager_telegram_id) {
-          recipients.add(user.manager_telegram_id);
-        }
-        
-        for (const recipientId of recipients) {
-          try {
-            await adminBot.sendMessage(recipientId, notifyText, { parse_mode: 'Markdown' });
-          } catch (e) {
-            console.error(`Failed to notify ${recipientId}:`, e.message);
+        if (adminBot) {
+          const userName = user.first_name || user.username || `ID:${user.telegram_id}`;
+          const shortMessage = message.length > 100 ? message.substring(0, 100) + '...' : message;
+          const notifyText = `💬 *Новое сообщение в поддержку*\n\n👤 От: ${userName}\n📝 ${shortMessage}`;
+          
+          const recipients = new Set();
+          
+          // Главные админы
+          const adminIds = (process.env.ADMIN_IDS || '').split(',').filter(id => id.trim());
+          adminIds.forEach(id => recipients.add(id.trim()));
+          
+          // Суб-админ
+          if (user.sub_admin_telegram_id) {
+            recipients.add(user.sub_admin_telegram_id);
+          }
+          
+          // Менеджер
+          if (user.manager_telegram_id) {
+            recipients.add(user.manager_telegram_id);
+          }
+          
+          for (const recipientId of recipients) {
+            try {
+              await adminBot.sendMessage(recipientId, notifyText, { parse_mode: 'Markdown' });
+            } catch (e) {
+              console.error(`Failed to notify ${recipientId}:`, e.message);
+            }
           }
         }
       }

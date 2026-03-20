@@ -523,6 +523,7 @@
       <button class="tab" id="tabInvoices" onclick="switchTab('invoices')">💳 Оплаты</button>
       <button class="tab" id="tabManagers" onclick="switchTab('managers')" style="display: none;">👤 Менеджеры</button>
       <button class="tab" id="tabSubAdmins" onclick="switchTab('subadmins')" style="display: none;">👑 Суб-админы</button>
+      <button class="tab" id="tabSettings" onclick="switchTab('settings')" style="display: none;">⚙️ Настройки</button>
     </div>
     
     <!-- Users Section -->
@@ -572,6 +573,23 @@
       </div>
       <div class="user-list" id="subAdminList">
         <div class="loading">Загрузка...</div>
+      </div>
+    </div>
+
+    <!-- Settings Section -->
+    <div class="section" id="sectionSettings" style="display: none;">
+      <div class="section-title">⚙️ Настройки</div>
+      <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-weight: 600; font-size: 15px; color: #e6f1ff;">🔔 Уведомления в боте</div>
+            <div style="font-size: 13px; color: #8892b0; margin-top: 4px;">Отправка сообщений пользователям через Telegram бот</div>
+          </div>
+          <div class="mode-buttons" style="gap: 6px; min-width: 180px;">
+            <button class="mode-btn" id="btnNotifOn" onclick="toggleNotifications(true)" style="flex:1; padding: 10px 14px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; background: rgba(255,255,255,0.08); color: #8892b0;">✅ Вкл</button>
+            <button class="mode-btn" id="btnNotifOff" onclick="toggleNotifications(false)" style="flex:1; padding: 10px 14px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; background: rgba(255,255,255,0.08); color: #8892b0;">❌ Выкл</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -797,17 +815,20 @@
             document.getElementById('roleLabel').textContent = '👑 Главный админ';
             document.getElementById('tabManagers').style.display = 'block';
             document.getElementById('tabSubAdmins').style.display = 'block';
+            document.getElementById('tabSettings').style.display = 'block';
             document.getElementById('addUserBlock').style.display = 'block';
           } else if (userRole === 'subadmin') {
             document.getElementById('roleLabel').textContent = '⭐ Суб-админ';
             document.getElementById('tabManagers').style.display = 'block';
             document.getElementById('tabSubAdmins').style.display = 'none';
+            document.getElementById('tabSettings').style.display = 'block';
             // Show sub-admin ref link
             showSubAdminRefLink();
           } else {
             document.getElementById('roleLabel').textContent = '👤 Менеджер';
             document.getElementById('tabManagers').style.display = 'none';
             document.getElementById('tabSubAdmins').style.display = 'none';
+            document.getElementById('tabSettings').style.display = 'none';
           }
         }
       } catch (e) {
@@ -821,10 +842,12 @@
       document.getElementById('tabInvoices').classList.toggle('active', tab === 'invoices');
       document.getElementById('tabManagers').classList.toggle('active', tab === 'managers');
       document.getElementById('tabSubAdmins').classList.toggle('active', tab === 'subadmins');
+      document.getElementById('tabSettings').classList.toggle('active', tab === 'settings');
       document.getElementById('sectionUsers').style.display = tab === 'users' ? 'block' : 'none';
       document.getElementById('sectionInvoices').style.display = tab === 'invoices' ? 'block' : 'none';
       document.getElementById('sectionManagers').style.display = tab === 'managers' ? 'block' : 'none';
       document.getElementById('sectionSubAdmins').style.display = tab === 'subadmins' ? 'block' : 'none';
+      document.getElementById('sectionSettings').style.display = tab === 'settings' ? 'block' : 'none';
       
       if (tab === 'invoices') {
         loadInvoices();
@@ -834,6 +857,9 @@
       }
       if (tab === 'subadmins') {
         loadSubAdmins();
+      }
+      if (tab === 'settings') {
+        loadNotifications();
       }
     }
     
@@ -2085,6 +2111,65 @@
           </div>
         </div>
       `).join('');
+    }
+    // ==================== NOTIFICATIONS SETTINGS ====================
+    
+    async function loadNotifications() {
+      try {
+        const res = await fetch(`${API_BASE}/notifications?adminId=${adminId}`);
+        const data = await res.json();
+        if (data.success) {
+          updateNotifButtons(data.data.enabled);
+        }
+      } catch (e) {
+        console.error('Load notifications error:', e);
+      }
+    }
+    
+    function updateNotifButtons(enabled) {
+      const btnOn = document.getElementById('btnNotifOn');
+      const btnOff = document.getElementById('btnNotifOff');
+      if (enabled) {
+        btnOn.style.opacity = '1';
+        btnOn.style.background = 'rgba(77, 184, 255, 0.2)';
+        btnOn.style.color = '#4db8ff';
+        btnOn.style.boxShadow = '0 0 0 1px #4db8ff';
+        btnOff.style.opacity = '0.5';
+        btnOff.style.background = 'rgba(255,255,255,0.08)';
+        btnOff.style.color = '#8892b0';
+        btnOff.style.boxShadow = 'none';
+      } else {
+        btnOff.style.opacity = '1';
+        btnOff.style.background = 'rgba(255, 107, 107, 0.2)';
+        btnOff.style.color = '#ff6b6b';
+        btnOff.style.boxShadow = '0 0 0 1px #ff6b6b';
+        btnOn.style.opacity = '0.5';
+        btnOn.style.background = 'rgba(255,255,255,0.08)';
+        btnOn.style.color = '#8892b0';
+        btnOn.style.boxShadow = 'none';
+      }
+    }
+    
+    async function toggleNotifications(enabled) {
+      try {
+        updateNotifButtons(enabled);
+        const res = await fetch(`${API_BASE}/notifications`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminId, enabled })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(enabled ? '🔔 Уведомления включены' : '🔕 Уведомления выключены', 'success');
+        } else {
+          showToast(data.error || 'Ошибка', 'error');
+          loadNotifications(); // revert UI
+        }
+      } catch (e) {
+        console.error('Toggle notifications error:', e);
+        showToast('Ошибка сохранения', 'error');
+        loadNotifications(); // revert UI
+      }
     }
   </script>
 </body>

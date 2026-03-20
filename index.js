@@ -212,6 +212,7 @@ async function initDatabase() {
 
       INSERT INTO platform_settings (key, value) VALUES ('rub_usdt_rate', '83.33') ON CONFLICT (key) DO UPDATE SET value = '83.33', updated_at = NOW();
       INSERT INTO platform_settings (key, value) VALUES ('eur_usdt_rate', '0.92') ON CONFLICT (key) DO NOTHING;
+      INSERT INTO platform_settings (key, value) VALUES ('bot_notifications_enabled', 'true') ON CONFLICT (key) DO NOTHING;
 
       -- Crypto invoices: store original fiat currency/amount
       ALTER TABLE crypto_invoices ADD COLUMN IF NOT EXISTS original_currency VARCHAR(10) DEFAULT NULL;

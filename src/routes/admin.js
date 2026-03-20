@@ -7,6 +7,16 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 
+// Check if bot notifications are enabled
+async function areBotNotificationsEnabled() {
+  try {
+    const result = await pool.query("SELECT value FROM platform_settings WHERE key = 'bot_notifications_enabled'");
+    return result.rows[0]?.value !== 'false';
+  } catch (e) {
+    return true; // default to enabled on error
+  }
+}
+
 // Main Admin ID from environment (single admin)
 const MAIN_ADMIN_ID = (process.env.ADMIN_IDS || '').split(',')[0]?.trim();
 
@@ -844,19 +854,22 @@ router.post('/user/:telegramId/block', adminCheck, async (req, res) => {
     
     // Send notification to user
     try {
-      const { getBot } = require('../bot');
-      const mainBot = getBot();
-      if (mainBot) {
-        if (blocked) {
-          await mainBot.sendMessage(telegramId, 
-            '⛔ Ваш аккаунт был заблокирован администратором.\n\n' +
-            'Для получения информации обратитесь в поддержку.'
-          );
-        } else {
-          await mainBot.sendMessage(telegramId, 
-            '✅ Ваш аккаунт был разблокирован.\n\n' +
-            'Добро пожаловать обратно!'
-          );
+      const notifyEnabled = await areBotNotificationsEnabled();
+      if (notifyEnabled) {
+        const { getBot } = require('../bot');
+        const mainBot = getBot();
+        if (mainBot) {
+          if (blocked) {
+            await mainBot.sendMessage(telegramId, 
+              '⛔ Ваш аккаунт был заблокирован администратором.\n\n' +
+              'Для получения информации обратитесь в поддержку.'
+            );
+          } else {
+            await mainBot.sendMessage(telegramId, 
+              '✅ Ваш аккаунт был разблокирован.\n\n' +
+              'Добро пожаловать обратно!'
+            );
+          }
         }
       }
     } catch (e) {
@@ -1288,19 +1301,21 @@ router.post('/chat/:telegramId', adminCheck, async (req, res) => {
     let telegramSent = false;
     let telegramError = null;
     try {
-      const { getBot } = require('../bot');
-      const userBot = getBot();
-      
-      if (userBot) {
-        await userBot.sendMessage(user.telegram_id, `💬 *Ответ от поддержки:*\n\n${message.trim()}`, { 
-          parse_mode: 'Markdown' 
-        });
-        telegramSent = true;
+      const notifyEnabled = await areBotNotificationsEnabled();
+      if (notifyEnabled) {
+        const { getBot } = require('../bot');
+        const userBot = getBot();
+        
+        if (userBot) {
+          await userBot.sendMessage(user.telegram_id, `💬 *Ответ от поддержки:*\n\n${message.trim()}`, { 
+            parse_mode: 'Markdown' 
+          });
+          telegramSent = true;
+        }
       }
     } catch (notifyError) {
       console.error(`Failed to send message to user ${user.telegram_id}:`, notifyError.message);
       telegramError = notifyError.message;
-      // Telegram blocked by user or chat not started
     }
     
     res.json({
@@ -1598,16 +1613,19 @@ router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
     
     // Notify user via main bot (outside transaction)
     try {
-      const { getBot } = require('../bot');
-      const bot = getBot();
-      if (bot) {
-        let notifyText = `✅ Пополнение подтверждено!\n\n💰 Сумма: ${displayAmount}`;
-        if (commission > 0) {
-          const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : 'USDT';
-          notifyText += `\n💸 Комиссия 1%: ${commission.toFixed(2)} ${sym}\n💵 Зачислено: ${creditAmount.toFixed(2)} ${sym}`;
+      const notifyEnabled = await areBotNotificationsEnabled();
+      if (notifyEnabled) {
+        const { getBot } = require('../bot');
+        const bot = getBot();
+        if (bot) {
+          let notifyText = `✅ Пополнение подтверждено!\n\n💰 Сумма: ${displayAmount}`;
+          if (commission > 0) {
+            const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : 'USDT';
+            notifyText += `\n💸 Комиссия 1%: ${commission.toFixed(2)} ${sym}\n💵 Зачислено: ${creditAmount.toFixed(2)} ${sym}`;
+          }
+          notifyText += `\n\nБаланс обновлён. Приятной торговли!`;
+          await bot.sendMessage(invoice.telegram_id, notifyText);
         }
-        notifyText += `\n\nБаланс обновлён. Приятной торговли!`;
-        await bot.sendMessage(invoice.telegram_id, notifyText);
       }
     } catch (botError) {
       console.error('Failed to notify user:', botError.message);
@@ -2316,6 +2334,45 @@ router.put('/rates', adminCheck, mainAdminOnly, async (req, res) => {
       );
     }
     res.json({ success: true, message: 'Rates updated' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * GET /api/admin/notifications
+ * Get bot notifications setting
+ */
+router.get('/notifications', adminCheck, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT value FROM platform_settings WHERE key = 'bot_notifications_enabled'"
+    );
+    const enabled = result.rows[0]?.value !== 'false';
+    res.json({ success: true, data: { enabled } });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * PUT /api/admin/notifications
+ * Toggle bot notifications (admin and sub-admin only)
+ */
+router.put('/notifications', adminCheck, async (req, res) => {
+  try {
+    if (!req.isMainAdmin && !req.isSubAdmin) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещён' });
+    }
+    const { enabled } = req.body;
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).json({ success: false, error: 'Invalid value' });
+    }
+    await pool.query(
+      "INSERT INTO platform_settings (key, value, updated_at) VALUES ('bot_notifications_enabled', $1, NOW()) ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = NOW()",
+      [String(enabled)]
+    );
+    res.json({ success: true, message: enabled ? 'Уведомления включены' : 'Уведомления выключены' });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Server error' });
   }
