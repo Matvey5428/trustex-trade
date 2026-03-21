@@ -2237,7 +2237,7 @@
           } catch(e) {}
         }
 
-        const file = '/agreement.txt';
+        const file = useAgreement2 ? '/agreement%202.txt' : '/agreement.txt';
         const res = await fetch(file);
         const text = res.ok ? await res.text() : 'Пользовательское соглашение временно недоступно.';
         document.getElementById('agreementText').textContent = text;

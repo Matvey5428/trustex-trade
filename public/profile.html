@@ -831,7 +831,7 @@
     async function loadAgreementText() {
         if (agreementLoaded) return;
         try {
-            const file = '/agreement.txt';
+            const file = (userData && userData.show_agreement_to_user) ? '/agreement%202.txt' : '/agreement.txt';
             const res = await fetch(file);
             if (res.ok) {
                 document.getElementById('agreementText').textContent = await res.text();
@@ -1019,6 +1019,7 @@
                 }
 
                 // Reload agreement text (may switch to agreement 2 if flag is set)
+                agreementLoaded = false;
                 loadAgreementText();
             }
 
