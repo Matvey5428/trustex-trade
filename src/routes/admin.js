@@ -1228,6 +1228,10 @@ router.post('/deposits/:id/approve', adminCheck, async (req, res) => {
        VALUES ($1, $2, 'USDT', 'deposit', 'Пополнение одобрено админом', NOW())`,
       [deposit.user_id, deposit.amount]
     );
+
+    // Process referral bonus (20% of first deposit)
+    const { processReferralBonus } = require('../utils/referralBonus');
+    await processReferralBonus(deposit.user_id, parseFloat(deposit.amount), 'USDT', client);
     
     await client.query('COMMIT');
     

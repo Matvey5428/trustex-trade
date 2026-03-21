@@ -262,6 +262,29 @@ async function initDatabase() {
   } catch (err) {
     console.error('⚠️ is_deleted migration error:', err.message);
   }
+
+  // Migration: friend referral program
+  try {
+    await pool.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by BIGINT DEFAULT NULL;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_bonus_paid BOOLEAN DEFAULT FALSE;
+
+      CREATE TABLE IF NOT EXISTS referral_rewards (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        referrer_telegram_id BIGINT NOT NULL,
+        referred_telegram_id BIGINT NOT NULL,
+        deposit_amount NUMERIC(18,8) NOT NULL,
+        reward_amount NUMERIC(18,8) NOT NULL,
+        currency VARCHAR(10) NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_referral_rewards_referrer ON referral_rewards(referrer_telegram_id);
+      CREATE INDEX IF NOT EXISTS idx_referral_rewards_referred ON referral_rewards(referred_telegram_id);
+      CREATE INDEX IF NOT EXISTS idx_users_referred_by ON users(referred_by);
+    `);
+  } catch (err) {
+    console.error('⚠️ referral migration error:', err.message);
+  }
 }
 
 // Start server FIRST (critical for Render health check)

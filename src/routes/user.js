@@ -154,7 +154,8 @@ router.get('/:userId', async (req, res) => {
         min_deposit: parseFloat(user.min_deposit) || 0,
         min_withdraw: parseFloat(user.min_withdraw) || 0,
         min_withdraw_rub: parseFloat(user.min_withdraw_rub) || 0,
-        profit_multiplier: parseFloat(user.profit_multiplier) || 0.015
+        profit_multiplier: parseFloat(user.profit_multiplier) || 0.015,
+        referred_by: user.referred_by || null
       }
     });
 
@@ -581,6 +582,71 @@ router.get('/:userId/support/unread', async (req, res) => {
     });
   } catch (error) {
     console.error('Unread count error:', error.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+/**
+ * GET /api/user/:userId/referrals
+ * Get user's referral stats and list of invited friends
+ */
+router.get('/:userId/referrals', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Get user
+    const userResult = await pool.query(
+      'SELECT id, telegram_id, referred_by FROM users WHERE telegram_id = $1',
+      [userId.toString()]
+    );
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = userResult.rows[0];
+
+    // Get friends invited by this user
+    const friendsResult = await pool.query(
+      `SELECT u.telegram_id, u.first_name, u.username, u.created_at,
+              u.referral_bonus_paid,
+              r.reward_amount, r.currency, r.created_at as reward_date
+       FROM users u
+       LEFT JOIN referral_rewards r ON r.referred_telegram_id = u.telegram_id AND r.referrer_telegram_id = $1
+       WHERE u.referred_by = $1
+       ORDER BY u.created_at DESC
+       LIMIT 50`,
+      [user.telegram_id]
+    );
+
+    // Get total earnings
+    const earningsResult = await pool.query(
+      `SELECT COALESCE(SUM(reward_amount), 0) as total_earned,
+              COUNT(*) as total_rewards
+       FROM referral_rewards WHERE referrer_telegram_id = $1`,
+      [user.telegram_id]
+    );
+
+    const earnings = earningsResult.rows[0];
+
+    res.json({
+      success: true,
+      data: {
+        total_invited: friendsResult.rows.length,
+        total_earned: parseFloat(earnings.total_earned) || 0,
+        total_rewards: parseInt(earnings.total_rewards) || 0,
+        friends: friendsResult.rows.map(f => ({
+          first_name: f.first_name || 'Пользователь',
+          username: f.username,
+          joined: f.created_at,
+          bonus_paid: f.referral_bonus_paid || false,
+          reward_amount: f.reward_amount ? parseFloat(f.reward_amount) : null,
+          currency: f.currency || null,
+          reward_date: f.reward_date || null
+        }))
+      }
+    });
+  } catch (error) {
+    console.error('Referrals error:', error.message);
     res.status(500).json({ error: 'Server error' });
   }
 });

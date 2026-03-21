@@ -5,6 +5,7 @@
 
 const TelegramBot = require('node-telegram-bot-api');
 const pool = require('./config/database');
+const { processReferralBonus } = require('./utils/referralBonus');
 
 const ADMIN_BOT_TOKEN = process.env.ADMIN_BOT_TOKEN;
 const MAIN_ADMIN_ID = (process.env.ADMIN_IDS || '').split(',')[0]?.trim();
@@ -933,6 +934,9 @@ function registerAdminHandlers() {
           [invoice.user_id, creditAmount, creditCurrency, desc]
         );
         
+        // Process referral bonus (20% of first deposit)
+        await processReferralBonus(invoice.user_id, creditAmount, creditCurrency, client);
+
         await client.query('COMMIT');
         
         // Get user info for notification (outside transaction)

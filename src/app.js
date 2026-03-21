@@ -21,6 +21,7 @@ const { processUpdate, getWebhookPath } = require('./bot');
 const { processAdminUpdate, getAdminWebhookPath } = require('./admin-bot');
 const pool = require('./config/database');
 const { areBotNotificationsEnabled } = require('./utils/notifications');
+const { processReferralBonus } = require('./utils/referralBonus');
 
 const app = express();
 
@@ -71,6 +72,12 @@ app.get('/health', (req, res) => {
 const APP_VERSION = Date.now().toString();
 app.get('/version', (req, res) => {
   res.json({ version: APP_VERSION, deployed: new Date().toISOString() });
+});
+
+// Bot info for referral links
+app.get('/api/bot-info', (req, res) => {
+  const { getBotUsername } = require('./bot');
+  res.json({ username: getBotUsername() || null });
 });
 
 // API Routes
@@ -215,6 +222,9 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
       [dbInvoice.user_id, creditAmount, creditCurrency, desc]
     );
     
+    // Process referral bonus (20% of first deposit)
+    await processReferralBonus(dbInvoice.user_id, creditAmount, creditCurrency, client);
+
     await client.query('COMMIT');
     committed = true;
     

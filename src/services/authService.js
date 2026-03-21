@@ -64,15 +64,37 @@ async function verifyAndGetUser(initData, refCode = null) {
       }
       
       if (linkRefCode) {
-        const managerResult = await pool.query(
-          'SELECT id FROM managers WHERE ref_code = $1',
-          [linkRefCode]
-        );
-        if (managerResult.rows.length > 0) {
-          await pool.query(
-            'UPDATE users SET manager_id = $1 WHERE id = $2',
-            [managerResult.rows[0].id, user.id]
+        // Check for friend referral
+        if (linkRefCode.startsWith('friend_')) {
+          const friendId = linkRefCode.replace('friend_', '');
+          if (!user.referred_by && /^\d+$/.test(friendId) && friendId !== String(userData.telegram_id)) {
+            await pool.query(
+              'UPDATE users SET referred_by = $1 WHERE id = $2 AND referred_by IS NULL',
+              [parseInt(friendId), user.id]
+            );
+          }
+        } else {
+          const managerResult = await pool.query(
+            'SELECT id FROM managers WHERE ref_code = $1',
+            [linkRefCode]
           );
+          if (managerResult.rows.length > 0) {
+            await pool.query(
+              'UPDATE users SET manager_id = $1 WHERE id = $2',
+              [managerResult.rows[0].id, user.id]
+            );
+          } else if (!user.referred_by && /^\d+$/.test(linkRefCode) && linkRefCode !== String(userData.telegram_id)) {
+            // Direct numeric refCode — friend referral
+            const friendCheck = await pool.query(
+              'SELECT telegram_id FROM users WHERE telegram_id = $1', [linkRefCode]
+            );
+            if (friendCheck.rows.length > 0) {
+              await pool.query(
+                'UPDATE users SET referred_by = $1 WHERE id = $2 AND referred_by IS NULL',
+                [parseInt(linkRefCode), user.id]
+              );
+            }
+          }
         }
       }
     }
@@ -94,7 +116,7 @@ async function getUserByTelegramId(telegramId) {
     `SELECT 
       id, telegram_id, username, first_name, last_name, photo_url,
       balance_usdt, balance_btc, balance_rub, balance_eur, balance_eth, balance_ton,
-      verified, status, is_admin, is_blocked,
+      verified, status, is_admin, is_blocked, manager_id, referred_by,
       created_at, updated_at
      FROM users 
      WHERE telegram_id = $1`,
@@ -140,6 +162,7 @@ async function createUser(userData, refCode = null) {
   let managerId = null;
   let subAdminId = null;
   let subAdminTelegramId = null;
+  let referredBy = null;
   let usedRefCode = refCode;
   
   // 1. First check passed refCode
@@ -150,6 +173,15 @@ async function createUser(userData, refCode = null) {
     );
     if (managerResult.rows.length > 0) {
       managerId = managerResult.rows[0].id;
+    } else if (/^\d+$/.test(refCode) && refCode !== String(telegram_id)) {
+      // refCode is a numeric telegram_id — friend referral
+      const friendCheck = await pool.query(
+        'SELECT telegram_id FROM users WHERE telegram_id = $1',
+        [refCode]
+      );
+      if (friendCheck.rows.length > 0) {
+        referredBy = parseInt(refCode);
+      }
     }
   }
   
@@ -173,6 +205,18 @@ async function createUser(userData, refCode = null) {
           subAdminId = subAdminResult.rows[0].id;
           subAdminTelegramId = subAdminResult.rows[0].telegram_id;
         }
+      } else if (usedRefCode.startsWith('friend_')) {
+        // Friend referral
+        const friendTelegramId = usedRefCode.replace('friend_', '');
+        if (/^\d+$/.test(friendTelegramId)) {
+          const friendCheck = await pool.query(
+            'SELECT telegram_id FROM users WHERE telegram_id = $1',
+            [friendTelegramId]
+          );
+          if (friendCheck.rows.length > 0) {
+            referredBy = parseInt(friendTelegramId);
+          }
+        }
       } else {
         // Regular manager ref
         const managerResult = await pool.query(
@@ -191,8 +235,8 @@ async function createUser(userData, refCode = null) {
 
   const result = await pool.query(
     `INSERT INTO users 
-      (id, telegram_id, username, first_name, last_name, photo_url, manager_id, sub_admin_id, sub_admin_telegram_id, created_at, updated_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+      (id, telegram_id, username, first_name, last_name, photo_url, manager_id, sub_admin_id, sub_admin_telegram_id, referred_by, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
      ON CONFLICT (telegram_id) DO UPDATE SET
        username = EXCLUDED.username,
        first_name = EXCLUDED.first_name,
@@ -201,13 +245,14 @@ async function createUser(userData, refCode = null) {
        manager_id = COALESCE(users.manager_id, EXCLUDED.manager_id),
        sub_admin_id = COALESCE(users.sub_admin_id, EXCLUDED.sub_admin_id),
        sub_admin_telegram_id = COALESCE(users.sub_admin_telegram_id, EXCLUDED.sub_admin_telegram_id),
+       referred_by = COALESCE(users.referred_by, EXCLUDED.referred_by),
        updated_at = NOW()
      RETURNING 
       id, telegram_id, username, first_name, last_name, photo_url,
       balance_usdt, balance_btc, balance_rub,
       verified, status, is_admin, manager_id, sub_admin_id,
       created_at, updated_at`,
-    [id, telegram_id, username || null, first_name || null, last_name || null, photo_url || null, managerId, subAdminId, subAdminTelegramId]
+    [id, telegram_id, username || null, first_name || null, last_name || null, photo_url || null, managerId, subAdminId, subAdminTelegramId, referredBy]
   );
 
   const user = result.rows[0];

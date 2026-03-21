@@ -422,6 +422,88 @@
             font-size: 13px;
         }
 
+        /* Referral Program */
+        .ref-link-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 16px 12px;
+            background: var(--bg-elevated);
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+        .ref-link-box input {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 12px;
+            font-family: 'Inter', monospace;
+            outline: none;
+            min-width: 0;
+        }
+        .ref-copy-btn {
+            background: var(--accent);
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: #000;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: opacity 0.2s;
+        }
+        .ref-copy-btn:active { opacity: 0.7; }
+        .ref-stats {
+            display: flex;
+            gap: 8px;
+            padding: 0 16px;
+            margin-bottom: 12px;
+        }
+        .ref-stat-item {
+            flex: 1;
+            background: var(--bg-elevated);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+        }
+        .ref-stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 2px;
+        }
+        .ref-stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .ref-friend {
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            border-top: 1px solid var(--border);
+            gap: 10px;
+        }
+        .ref-friend-icon {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: var(--bg-elevated);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; flex-shrink: 0;
+        }
+        .ref-friend-info { flex: 1; min-width: 0; }
+        .ref-friend-name { font-size: 13px; font-weight: 600; }
+        .ref-friend-date { font-size: 11px; color: var(--text-muted); }
+        .ref-friend-status {
+            font-size: 12px;
+            font-weight: 600;
+            text-align: right;
+            white-space: nowrap;
+        }
+        .ref-friend-status.earned { color: var(--green); }
+        .ref-friend-status.waiting { color: var(--text-muted); }
+
         /* Settings */
         .settings-item {
             display: flex;
@@ -743,6 +825,32 @@
         <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
         <span data-i18n="profileSupport">Связаться с поддержкой</span>
     </a>
+
+    <!-- Referral Program -->
+    <div class="section-card" id="referralSection">
+        <div class="section-card-title">
+            <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+            <span>🎁 Реферальная программа</span>
+        </div>
+        <div style="padding: 8px 16px 4px; font-size: 12.5px; color: var(--text-secondary); line-height: 1.5;">
+            Приглашайте друзей и получайте <b style="color: var(--accent);">20%</b> с их первого депозита!
+        </div>
+        <div class="ref-link-box">
+            <input type="text" id="refLinkInput" readonly value="">
+            <button class="ref-copy-btn" onclick="copyRefLink()">📋 Копировать</button>
+        </div>
+        <div class="ref-stats">
+            <div class="ref-stat-item">
+                <div class="ref-stat-value" id="refInvited">0</div>
+                <div class="ref-stat-label">Приглашено</div>
+            </div>
+            <div class="ref-stat-item">
+                <div class="ref-stat-value" id="refEarned">0</div>
+                <div class="ref-stat-label">Заработано USDT</div>
+            </div>
+        </div>
+        <div id="refFriendsList"></div>
+    </div>
 </div>
 
 <!-- Bottom Navigation Bar -->
@@ -1060,7 +1168,7 @@
 
     initSettings();
     // Load main data and security settings in parallel
-    Promise.all([loadData(), initSecuritySettings()]);
+    Promise.all([loadData(), initSecuritySettings(), loadReferrals()]);
 
     // Auto-refresh data every 10 seconds
     setInterval(loadData, 10000);
@@ -1069,6 +1177,88 @@
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) loadData();
     });
+
+    // Referral program
+    async function initRefLink() {
+        const telegramId = getTelegramId();
+        if (!telegramId) return;
+        try {
+            const res = await fetch('/api/bot-info');
+            const data = await res.json();
+            if (!data.username) return;
+            const refLink = `https://t.me/${data.username}/app?startapp=ref_${telegramId}`;
+            const input = document.getElementById('refLinkInput');
+            if (input) input.value = refLink;
+        } catch (e) { /* silent */ }
+    }
+    initRefLink();
+
+    function copyRefLink() {
+        const input = document.getElementById('refLinkInput');
+        if (!input || !input.value) return;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(input.value).then(() => {
+                showCopyFeedback();
+            });
+        } else {
+            input.select();
+            document.execCommand('copy');
+            showCopyFeedback();
+        }
+    }
+
+    function showCopyFeedback() {
+        const btn = document.querySelector('.ref-copy-btn');
+        if (!btn) return;
+        const orig = btn.textContent;
+        btn.textContent = '\u2705 Скопировано';
+        setTimeout(() => { btn.textContent = orig; }, 1500);
+    }
+
+    async function loadReferrals() {
+        const telegramId = getTelegramId();
+        if (!telegramId) return;
+        try {
+            const res = await fetch(`/api/user/${telegramId}/referrals`);
+            if (!res.ok) return;
+            const json = await res.json();
+            const d = json.data;
+            if (!d) return;
+
+            document.getElementById('refInvited').textContent = d.total_invited || 0;
+            document.getElementById('refEarned').textContent = (d.total_earned || 0).toFixed(2);
+
+            const list = document.getElementById('refFriendsList');
+            if (!list) return;
+
+            if (!d.friends || d.friends.length === 0) {
+                list.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px;">Пока нет приглашённых друзей</div>';
+                return;
+            }
+
+            list.innerHTML = d.friends.map(f => {
+                const date = new Date(f.joined).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                const name = f.first_name || 'Пользователь';
+                let statusHtml;
+                if (f.reward_amount) {
+                    const sym = f.currency === 'RUB' ? '\u20BD' : f.currency === 'EUR' ? '\u20AC' : '$';
+                    statusHtml = `<div class="ref-friend-status earned">+${sym}${parseFloat(f.reward_amount).toFixed(2)}</div>`;
+                } else if (f.bonus_paid) {
+                    statusHtml = '<div class="ref-friend-status earned">\u2705</div>';
+                } else {
+                    statusHtml = '<div class="ref-friend-status waiting">\u23F3 ждёт депозит</div>';
+                }
+                return `<div class="ref-friend">
+                    <div class="ref-friend-icon">${name.charAt(0).toUpperCase()}</div>
+                    <div class="ref-friend-info">
+                        <div class="ref-friend-name">${name}</div>
+                        <div class="ref-friend-date">${date}</div>
+                    </div>
+                    ${statusHtml}
+                </div>`;
+            }).join('');
+        } catch (e) { /* silent */ }
+    }
 </script>
 </body>
 </html>

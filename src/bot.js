@@ -15,6 +15,7 @@ const WEBHOOK_URL = process.env.WEBHOOK_URL || WEB_APP_URL;
 
 let bot = null;
 let isProduction = false;
+let botUsername = null;
 
 /**
  * Инициализация бота
@@ -49,6 +50,7 @@ function initBot() {
 
     // Успешный запуск
     bot.getMe().then((info) => {
+      botUsername = info.username;
       console.log(`✅ Bot started: @${info.username} (${info.id})`);
     }).catch((err) => {
       console.error('❌ Failed to get bot info:', err.message);
@@ -246,6 +248,36 @@ function registerHandlers() {
                 'UPDATE users SET sub_admin_id = $1, sub_admin_telegram_id = $2 WHERE telegram_id = $3',
                 [subAdmin.id, subAdmin.telegram_id, user.id.toString()]
               );
+            }
+          } else {
+            // Not a manager or sub-admin ref — check if it's a friend referral (telegram_id)
+            const friendRefId = refCode;
+            if (/^\d+$/.test(friendRefId) && friendRefId !== user.id.toString()) {
+              // Check if referrer exists as a user
+              const referrerCheck = await pool.query(
+                'SELECT telegram_id FROM users WHERE telegram_id = $1',
+                [friendRefId]
+              );
+              if (referrerCheck.rows.length > 0) {
+                // Save to pending_refs with 'friend_' prefix
+                await pool.query(`
+                  INSERT INTO pending_refs (telegram_id, ref_code, created_at)
+                  VALUES ($1, $2, NOW())
+                  ON CONFLICT (telegram_id) DO UPDATE SET ref_code = $2, created_at = NOW()
+                `, [user.id.toString(), `friend_${friendRefId}`]);
+
+                // Check if user already exists and link directly
+                const existingUser = await pool.query(
+                  'SELECT id, referred_by FROM users WHERE telegram_id = $1',
+                  [user.id.toString()]
+                );
+                if (existingUser.rows.length > 0 && !existingUser.rows[0].referred_by) {
+                  await pool.query(
+                    'UPDATE users SET referred_by = $1 WHERE telegram_id = $2 AND referred_by IS NULL',
+                    [parseInt(friendRefId), user.id.toString()]
+                  );
+                }
+              }
             }
           }
         }
@@ -453,6 +485,7 @@ module.exports = {
   initBot,
   stopBot,
   getBot: () => bot,
+  getBotUsername: () => botUsername,
   processUpdate,
   getWebhookPath
 };
