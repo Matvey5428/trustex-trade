@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Exchange - TrustEx</title>
     <link rel="preconnect" href="https://trustex-trade.onrender.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
     <script src="js/auth.js?v=2" defer></script>
     <script src="js/api.js" defer></script>
     <script src="js/balance.js" defer></script>
@@ -1195,6 +1197,9 @@ function getClientTelegramId() {
 }
 
 async function resolveUserId() {
+    // Return cached userId if available (avoids POST on every page load)
+    const cached = sessionStorage.getItem('nexo_user_id');
+    if (cached) return cached;
     const telegramId = getClientTelegramId();
     const res = await fetch('/api/user', {
         method: 'POST',
@@ -1203,7 +1208,9 @@ async function resolveUserId() {
     });
     const payload = await res.json();
     if (!res.ok || !payload?.data?.telegram_id) throw new Error(payload?.error || 'Failed');
-    return payload.data.telegram_id;
+    const id = payload.data.telegram_id;
+    sessionStorage.setItem('nexo_user_id', id);
+    return id;
 }
 
 function showAlert(msg, success = false) {
@@ -1442,24 +1449,45 @@ async function loadExchangeHistory() {
     } catch (e) { /* silent */ }
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+// Instant display: load cached rates synchronously before any network call
+(function showCachedInstantly() {
     try {
-        // Load rates from server — the ONLY source of truth for exchange rates
-        // This ensures display rates match exact rates used by backend during exchange
-        const rateRes = await fetch('/api/exchange/rate');
-        if (rateRes.ok) {
-            const rateData = await rateRes.json();
-            if (rateData?.data?.rates) {
-                Object.assign(rates, rateData.data.rates);
-            } else if (rateData?.data) {
-                rates.RUB = rateData.data.rub_to_usdt || rates.RUB;
-                rates.EUR = rateData.data.eur_to_usdt || rates.EUR;
+        const cached = JSON.parse(localStorage.getItem('nexo_exchange_rates') || 'null');
+        if (cached && cached.rub_to_usdt) {
+            rates.RUB = cached.rub_to_usdt;
+            rates.EUR = cached.eur_to_usdt || rates.EUR;
+            if (cached.rates) Object.assign(rates, cached.rates);
+            else {
+                if (cached.BTC) rates.BTC = cached.BTC;
+                if (cached.ETH) rates.ETH = cached.ETH;
+                if (cached.TON) rates.TON = cached.TON;
             }
         }
+    } catch(e) {}
+    updateDisplay();
+})();
 
-        userId = await resolveUserId();
-        await loadData();
-        await loadExchangeHistory();
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Step 1: Fetch rates + resolve userId in parallel (independent)
+        const [rateResult] = await Promise.all([
+            fetch('/api/exchange/rate').then(r => r.ok ? r.json() : null).catch(() => null),
+            resolveUserId().then(id => { userId = id; }).catch(() => {})
+        ]);
+
+        // Apply fresh rates
+        if (rateResult?.data?.rates) {
+            Object.assign(rates, rateResult.data.rates);
+        } else if (rateResult?.data) {
+            rates.RUB = rateResult.data.rub_to_usdt || rates.RUB;
+            rates.EUR = rateResult.data.eur_to_usdt || rates.EUR;
+        }
+        updateDisplay();
+
+        // Step 2: Load profile + history in parallel (both depend on userId)
+        if (userId) {
+            await Promise.all([loadData(), loadExchangeHistory()]);
+        }
     } catch (e) { /* silent */ }
 });
 </script>
