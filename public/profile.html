@@ -789,19 +789,59 @@
     let userData = null;
     let allTransactions = [];
     let currentFilter = 'all';
+    let agreementLoaded = false;
 
-    // Agreement modal
+    function getTelegramId() {
+        let id = sessionStorage.getItem('nexo_user_id');
+        if (!id) {
+            id = tg?.initDataUnsafe?.user?.id || localStorage.getItem('nexo_guest_telegram_id');
+            if (id) sessionStorage.setItem('nexo_user_id', id);
+        }
+        return id;
+    }
+
+    // Show cached user data instantly before API
+    (function showCachedInstantly() {
+        const cached = window.CURRENT_USER || window.USER_BALANCES;
+        if (cached) {
+            userData = cached;
+            fillProfile(cached);
+        }
+        // Also show name from Telegram instantly
+        const tgUser = tg?.initDataUnsafe?.user;
+        if (tgUser) {
+            const name = tgUser.first_name || 'User';
+            document.getElementById('avatarInitial').textContent = name.charAt(0).toUpperCase();
+            document.getElementById('userName').textContent = name + (tgUser.last_name ? ' ' + tgUser.last_name : '');
+        }
+    })();
+
+    function fillProfile(data) {
+        if (!data) return;
+        const b = (f) => parseFloat(data['balance_' + f] ?? data[f]) || 0;
+        document.getElementById('balUsdt').textContent = formatBalance(b('usdt'));
+        document.getElementById('balBtc').textContent = formatBalance(b('btc'), 8);
+        document.getElementById('balEth').textContent = formatBalance(b('eth'), 8);
+        document.getElementById('balTon').textContent = formatBalance(b('ton'), 4);
+        document.getElementById('balRub').textContent = formatBalance(b('rub'));
+        document.getElementById('balEur').textContent = formatBalance(b('eur'));
+    }
+
+    // Agreement modal — lazy loaded on open
     async function loadAgreementText() {
+        if (agreementLoaded) return;
         try {
             const file = '/agreement.txt';
             const res = await fetch(file);
             if (res.ok) {
                 document.getElementById('agreementText').textContent = await res.text();
+                agreementLoaded = true;
             }
         } catch (e) { /* silent */ }
     }
 
     function openAgreementModal() {
+        loadAgreementText();
         document.getElementById('agreementModal').style.display = 'flex';
     }
 
@@ -876,7 +916,7 @@
 
     // Security PIN setup
     async function initSecuritySettings() {
-        const telegramId = tg?.initDataUnsafe?.user?.id || localStorage.getItem('nexo_guest_telegram_id');
+        const telegramId = getTelegramId();
         if (!telegramId) return;
         try {
             const res = await fetch(`/api/security/status/${telegramId}`);
@@ -920,7 +960,7 @@
 
     // Load data
     async function loadData() {
-        const telegramId = tg?.initDataUnsafe?.user?.id || localStorage.getItem('nexo_guest_telegram_id');
+        const telegramId = getTelegramId();
         if (!telegramId) return;
 
         try {
@@ -948,12 +988,7 @@
                 document.getElementById('volumeValue').textContent = parseFloat(userData.total_volume || 0).toFixed(2) + ' USDT';
 
                 // Balances
-                document.getElementById('balUsdt').textContent = formatBalance(userData.usdt);
-                document.getElementById('balBtc').textContent = formatBalance(userData.btc, 8);
-                document.getElementById('balEth').textContent = formatBalance(userData.eth, 8);
-                document.getElementById('balTon').textContent = formatBalance(userData.ton, 4);
-                document.getElementById('balRub').textContent = formatBalance(userData.rub);
-                document.getElementById('balEur').textContent = formatBalance(userData.eur);
+                fillProfile(userData);
 
                 // Verification
                 const badge = document.getElementById('verificationBadge');
@@ -1023,9 +1058,8 @@
     }
 
     initSettings();
-    initSecuritySettings();
-    loadAgreementText();
-    loadData();
+    // Load main data and security settings in parallel
+    Promise.all([loadData(), initSecuritySettings()]);
 
     // Auto-refresh data every 10 seconds
     setInterval(loadData, 10000);
