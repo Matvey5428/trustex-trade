@@ -193,6 +193,12 @@
             color: var(--text-secondary);
         }
 
+        .cur-tab.disabled {
+            opacity: 0.3;
+            pointer-events: none;
+            cursor: default;
+        }
+
         .tabs-label {
             font-size: 11px;
             color: var(--text-muted);
@@ -1078,24 +1084,17 @@ let selectedFrom = 'RUB';
 let selectedTo = 'USDT';
 
 function setFromCurrency(cur) {
-    if (cur === selectedTo) {
-        // Swap them
-        selectedTo = selectedFrom;
-        updateTabsUI('toTabs', selectedTo);
-    }
+    if (cur === selectedTo) return;
     selectedFrom = cur;
-    updateTabsUI('fromTabs', selectedFrom);
+    updateAllTabs();
     amountInput.value = '';
     updateDisplay();
 }
 
 function setToCurrency(cur) {
-    if (cur === selectedFrom) {
-        selectedFrom = selectedTo;
-        updateTabsUI('fromTabs', selectedFrom);
-    }
+    if (cur === selectedFrom) return;
     selectedTo = cur;
-    updateTabsUI('toTabs', selectedTo);
+    updateAllTabs();
     amountInput.value = '';
     updateDisplay();
 }
@@ -1104,6 +1103,19 @@ function updateTabsUI(containerId, activeCur) {
     const tabs = document.getElementById(containerId).querySelectorAll('.cur-tab');
     tabs.forEach(tab => {
         tab.classList.toggle('active', tab.dataset.cur === activeCur);
+    });
+}
+
+function updateAllTabs() {
+    // Highlight active tabs
+    updateTabsUI('fromTabs', selectedFrom);
+    updateTabsUI('toTabs', selectedTo);
+    // Disable the occupied currency in the opposite row
+    document.getElementById('fromTabs').querySelectorAll('.cur-tab').forEach(tab => {
+        tab.classList.toggle('disabled', tab.dataset.cur === selectedTo);
+    });
+    document.getElementById('toTabs').querySelectorAll('.cur-tab').forEach(tab => {
+        tab.classList.toggle('disabled', tab.dataset.cur === selectedFrom);
     });
 }
 
@@ -1222,8 +1234,7 @@ swapBtn.addEventListener('click', () => {
     const tmp = selectedFrom;
     selectedFrom = selectedTo;
     selectedTo = tmp;
-    updateTabsUI('fromTabs', selectedFrom);
-    updateTabsUI('toTabs', selectedTo);
+    updateAllTabs();
     amountInput.value = '';
     updateDisplay();
 });
@@ -1393,6 +1404,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
         userId = await resolveUserId();
+        updateAllTabs();
         await loadData();
         await loadExchangeHistory();
     } catch (e) { /* silent */ }
