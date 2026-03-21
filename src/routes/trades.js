@@ -629,7 +629,8 @@ router.get('/stats/:userId', async (req, res) => {
       `SELECT 
         COUNT(*) FILTER (WHERE status = 'closed') as total,
         COUNT(*) FILTER (WHERE result = 'win') as wins,
-        COUNT(*) FILTER (WHERE result = 'loss') as losses
+        COUNT(*) FILTER (WHERE result = 'loss') as losses,
+        COUNT(*) FILTER (WHERE status = 'active') as active
        FROM orders 
        WHERE user_id = $1`,
       [internalUserId]
@@ -642,7 +643,8 @@ router.get('/stats/:userId', async (req, res) => {
       data: {
         total: parseInt(stats.total) || 0,
         wins: parseInt(stats.wins) || 0,
-        losses: parseInt(stats.losses) || 0
+        losses: parseInt(stats.losses) || 0,
+        active: parseInt(stats.active) || 0
       }
     });
 
