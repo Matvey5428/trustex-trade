@@ -123,89 +123,115 @@
             cursor: pointer;
         }
 
-        /* Currency Tabs */
-        .currency-tabs {
+        /* Currency Selector Dropdown */
+        .currency-selector {
             display: flex;
-            gap: 6px;
-            margin-bottom: 16px;
-            background: rgba(255,255,255,0.03);
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+            position: relative;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .dropdown-arrow {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-left: 2px;
+            transition: transform 0.2s ease;
+        }
+
+        .currency-selector.open .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .currency-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
             border: 1px solid var(--border);
             border-radius: 14px;
-            padding: 4px;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
+            padding: 6px;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+            animation: dropdownIn 0.15s ease;
         }
-        .currency-tabs::-webkit-scrollbar { display: none; }
 
-        .cur-tab {
-            flex: 0 0 auto;
+        .currency-dropdown.visible {
+            display: block;
+        }
+
+        @keyframes dropdownIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dropdown-item {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 6px;
-            padding: 9px 14px;
-            border-radius: 11px;
-            border: none;
-            background: transparent;
-            color: var(--text-muted);
-            font-size: 13px;
-            font-weight: 600;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
             cursor: pointer;
-            transition: all 0.25s ease;
-            font-family: 'Inter', sans-serif;
-            white-space: nowrap;
+            transition: background 0.15s;
         }
 
-        .cur-tab .tab-icon {
-            width: 20px;
-            height: 20px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            font-weight: 800;
-            transition: all 0.25s ease;
+        .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.06);
         }
 
-        .cur-tab.active {
-            color: var(--text-primary);
-        }
-        .cur-tab.active .tab-icon {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-        .cur-tab.active[data-cur="USDT"] { background: rgba(38,161,123,0.12); color: #26a17b; }
-        .cur-tab.active[data-cur="USDT"] .tab-icon { background: var(--usdt-gradient); color: #fff; }
-        .cur-tab.active[data-cur="BTC"] { background: rgba(247,147,26,0.12); color: #f7931a; }
-        .cur-tab.active[data-cur="BTC"] .tab-icon { background: linear-gradient(135deg, #f7931a, #e8850f); color: #fff; }
-        .cur-tab.active[data-cur="ETH"] { background: rgba(98,126,234,0.12); color: #627eea; }
-        .cur-tab.active[data-cur="ETH"] .tab-icon { background: linear-gradient(135deg, #627eea, #4a6cd4); color: #fff; }
-        .cur-tab.active[data-cur="TON"] { background: rgba(0,136,204,0.12); color: #0088cc; }
-        .cur-tab.active[data-cur="TON"] .tab-icon { background: linear-gradient(135deg, #0088cc, #0070aa); color: #fff; }
-        .cur-tab.active[data-cur="RUB"] { background: rgba(251,191,36,0.12); color: #fbbf24; }
-        .cur-tab.active[data-cur="RUB"] .tab-icon { background: var(--rub-gradient); color: #000; }
-        .cur-tab.active[data-cur="EUR"] { background: rgba(59,130,246,0.12); color: #3b82f6; }
-        .cur-tab.active[data-cur="EUR"] .tab-icon { background: var(--eur-gradient); color: #fff; }
-
-        .cur-tab:not(.active):hover {
-            background: rgba(255,255,255,0.04);
-            color: var(--text-secondary);
+        .dropdown-item.active {
+            background: rgba(0, 212, 170, 0.1);
         }
 
-        .cur-tab.disabled {
+        .dropdown-item.disabled {
             opacity: 0.3;
             pointer-events: none;
-            cursor: default;
         }
 
-        .tabs-label {
-            font-size: 11px;
+        .dropdown-item-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .dropdown-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .dropdown-item-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .dropdown-item-balance {
+            font-size: 12px;
             color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 6px;
-            padding-left: 4px;
+            margin-top: 1px;
+        }
+
+        .dropdown-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 99;
+            display: none;
+        }
+
+        .dropdown-overlay.visible {
+            display: block;
         }
 
         /* Quick Amount Buttons */
@@ -291,7 +317,7 @@
             border-radius: 24px;
             padding: 24px;
             position: relative;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .exchange-card::before {
@@ -301,6 +327,7 @@
             left: 0;
             right: 0;
             height: 3px;
+            border-radius: 24px 24px 0 0;
             background: linear-gradient(90deg, var(--accent), #3b82f6, var(--accent));
             background-size: 200% 100%;
             animation: shimmer 3s infinite linear;
@@ -897,6 +924,7 @@
 <body>
 
 <div id="topAlert"></div>
+<div class="dropdown-overlay" id="dropdownOverlay" onclick="closeAllDropdowns()"></div>
 
 <div class="app-container">
     <div class="page-header">
@@ -913,28 +941,6 @@
             <span class="rate-label" data-i18n="onlineRate">Курс онлайн</span>
         </div>
         <span class="rate-value" id="liveRate">1 RUB = 0.012642 USDT</span>
-    </div>
-
-    <!-- From Currency Tabs -->
-    <div class="tabs-label" data-i18n="youGive">Отдаёте</div>
-    <div class="currency-tabs" id="fromTabs">
-        <button class="cur-tab active" data-cur="RUB" onclick="setFromCurrency('RUB')"><span class="tab-icon">₽</span> RUB</button>
-        <button class="cur-tab" data-cur="EUR" onclick="setFromCurrency('EUR')"><span class="tab-icon">€</span> EUR</button>
-        <button class="cur-tab" data-cur="USDT" onclick="setFromCurrency('USDT')"><span class="tab-icon">₮</span> USDT</button>
-        <button class="cur-tab" data-cur="BTC" onclick="setFromCurrency('BTC')"><span class="tab-icon">₿</span> BTC</button>
-        <button class="cur-tab" data-cur="ETH" onclick="setFromCurrency('ETH')"><span class="tab-icon">Ξ</span> ETH</button>
-        <button class="cur-tab" data-cur="TON" onclick="setFromCurrency('TON')"><span class="tab-icon">💎</span> TON</button>
-    </div>
-
-    <!-- To Currency Tabs -->
-    <div class="tabs-label" data-i18n="youReceive">Получаете</div>
-    <div class="currency-tabs" id="toTabs">
-        <button class="cur-tab active" data-cur="USDT" onclick="setToCurrency('USDT')"><span class="tab-icon">₮</span> USDT</button>
-        <button class="cur-tab" data-cur="RUB" onclick="setToCurrency('RUB')"><span class="tab-icon">₽</span> RUB</button>
-        <button class="cur-tab" data-cur="EUR" onclick="setToCurrency('EUR')"><span class="tab-icon">€</span> EUR</button>
-        <button class="cur-tab" data-cur="BTC" onclick="setToCurrency('BTC')"><span class="tab-icon">₿</span> BTC</button>
-        <button class="cur-tab" data-cur="ETH" onclick="setToCurrency('ETH')"><span class="tab-icon">Ξ</span> ETH</button>
-        <button class="cur-tab" data-cur="TON" onclick="setToCurrency('TON')"><span class="tab-icon">💎</span> TON</button>
     </div>
 
     <!-- Main Exchange Card -->
@@ -954,12 +960,13 @@
                         <span class="max-label">MAX</span>
                     </div>
                 </div>
-                <div class="currency-main">
+                <div class="currency-selector" id="fromSelector" onclick="toggleDropdown('from')">
                     <div class="currency-icon icon-rub" id="fromIcon">₽</div>
                     <div class="currency-input-wrap">
-                        <div class="currency-name" id="fromName" data-i18n="rub">Российский рубль</div>
-                        <input type="number" class="amount-input" id="amountInput" placeholder="0.00" inputmode="decimal">
+                        <div class="currency-name" id="fromName" data-i18n="rub">Российский рубль <span class="dropdown-arrow">▼</span></div>
+                        <input type="number" class="amount-input" id="amountInput" placeholder="0.00" inputmode="decimal" onclick="event.stopPropagation()">
                     </div>
+                    <div class="currency-dropdown" id="fromDropdown"></div>
                 </div>
                 <div class="quick-amounts">
                     <button class="quick-amt-btn" onclick="setPercent(25)">25%</button>
@@ -984,12 +991,13 @@
                         <span><span data-i18n="balanceLabel">Баланс</span>: <span id="toBalanceValue">0.00</span></span>
                     </div>
                 </div>
-                <div class="currency-main">
+                <div class="currency-selector" id="toSelector" onclick="toggleDropdown('to')">
                     <div class="currency-icon icon-usdt" id="toIcon">₮</div>
                     <div class="currency-input-wrap">
-                        <div class="currency-name" id="toName">Tether USDT</div>
+                        <div class="currency-name" id="toName">Tether USDT <span class="dropdown-arrow">▼</span></div>
                         <div class="amount-input" id="resultAmount" style="color: var(--accent);">0.00</div>
                     </div>
+                    <div class="currency-dropdown" id="toDropdown"></div>
                 </div>
             </div>
         </div>
@@ -1086,7 +1094,6 @@ let selectedTo = 'USDT';
 function setFromCurrency(cur) {
     if (cur === selectedTo) return;
     selectedFrom = cur;
-    updateAllTabs();
     amountInput.value = '';
     updateDisplay();
 }
@@ -1094,29 +1101,74 @@ function setFromCurrency(cur) {
 function setToCurrency(cur) {
     if (cur === selectedFrom) return;
     selectedTo = cur;
-    updateAllTabs();
     amountInput.value = '';
     updateDisplay();
 }
 
-function updateTabsUI(containerId, activeCur) {
-    const tabs = document.getElementById(containerId).querySelectorAll('.cur-tab');
-    tabs.forEach(tab => {
-        tab.classList.toggle('active', tab.dataset.cur === activeCur);
-    });
+function buildDropdownItems(type) {
+    const dropdown = document.getElementById(type + 'Dropdown');
+    const activeCur = type === 'from' ? selectedFrom : selectedTo;
+    const disabledCur = type === 'from' ? selectedTo : selectedFrom;
+    let html = '';
+    for (const cur of Object.keys(CUR_META)) {
+        const m = CUR_META[cur];
+        const bal = (balances[cur] || 0).toFixed(m.decimals);
+        const isActive = cur === activeCur;
+        const isDisabled = cur === disabledCur;
+        let cls = 'dropdown-item';
+        if (isActive) cls += ' active';
+        if (isDisabled) cls += ' disabled';
+        html += `<div class="${cls}" onclick="event.stopPropagation(); selectDropdownCurrency('${type}', '${cur}')">
+            <div class="dropdown-item-icon ${m.icon}">${m.char}</div>
+            <div class="dropdown-item-info">
+                <div class="dropdown-item-name">${cur}</div>
+                <div class="dropdown-item-balance">${bal} ${cur}</div>
+            </div>
+        </div>`;
+    }
+    dropdown.innerHTML = html;
 }
 
-function updateAllTabs() {
-    // Highlight active tabs
-    updateTabsUI('fromTabs', selectedFrom);
-    updateTabsUI('toTabs', selectedTo);
-    // Disable the occupied currency in the opposite row
-    document.getElementById('fromTabs').querySelectorAll('.cur-tab').forEach(tab => {
-        tab.classList.toggle('disabled', tab.dataset.cur === selectedTo);
-    });
-    document.getElementById('toTabs').querySelectorAll('.cur-tab').forEach(tab => {
-        tab.classList.toggle('disabled', tab.dataset.cur === selectedFrom);
-    });
+function toggleDropdown(type) {
+    const selector = document.getElementById(type + 'Selector');
+    const dropdown = document.getElementById(type + 'Dropdown');
+    const overlay = document.getElementById('dropdownOverlay');
+    const otherType = type === 'from' ? 'to' : 'from';
+    const otherDropdown = document.getElementById(otherType + 'Dropdown');
+    const otherSelector = document.getElementById(otherType + 'Selector');
+
+    // Close the other dropdown if open
+    otherDropdown.classList.remove('visible');
+    otherSelector.classList.remove('open');
+
+    const isOpen = dropdown.classList.contains('visible');
+    if (isOpen) {
+        dropdown.classList.remove('visible');
+        selector.classList.remove('open');
+        overlay.classList.remove('visible');
+    } else {
+        buildDropdownItems(type);
+        dropdown.classList.add('visible');
+        selector.classList.add('open');
+        overlay.classList.add('visible');
+    }
+}
+
+function selectDropdownCurrency(type, cur) {
+    if (type === 'from') {
+        setFromCurrency(cur);
+    } else {
+        setToCurrency(cur);
+    }
+    closeAllDropdowns();
+}
+
+function closeAllDropdowns() {
+    document.getElementById('fromDropdown').classList.remove('visible');
+    document.getElementById('toDropdown').classList.remove('visible');
+    document.getElementById('fromSelector').classList.remove('open');
+    document.getElementById('toSelector').classList.remove('open');
+    document.getElementById('dropdownOverlay').classList.remove('visible');
 }
 
 function setPercent(pct) {
@@ -1220,13 +1272,13 @@ function updateDisplay() {
     // From block
     fromIcon.className = 'currency-icon ' + fm.icon;
     fromIcon.innerText = fm.char;
-    fromName.innerText = fm.name;
+    fromName.innerHTML = fm.name + ' <span class="dropdown-arrow">▼</span>';
     fromBalanceValue.innerText = (balances[selectedFrom] || 0).toFixed(fm.decimals) + ' ' + selectedFrom;
 
     // To block
     toIcon.className = 'currency-icon ' + tm.icon;
     toIcon.innerText = tm.char;
-    toName.innerText = tm.name;
+    toName.innerHTML = tm.name + ' <span class="dropdown-arrow">▼</span>';
     toBalanceValue.innerText = (balances[selectedTo] || 0).toFixed(tm.decimals) + ' ' + selectedTo;
 }
 
@@ -1234,7 +1286,7 @@ swapBtn.addEventListener('click', () => {
     const tmp = selectedFrom;
     selectedFrom = selectedTo;
     selectedTo = tmp;
-    updateAllTabs();
+    closeAllDropdowns();
     amountInput.value = '';
     updateDisplay();
 });
@@ -1334,7 +1386,7 @@ refreshBtn.onclick = loadData;
 function handleTapToDismiss(e) {
     const activeEl = document.activeElement;
     if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
-        if (!e.target.closest('input, textarea, button, .btn, select, .quick-amount')) {
+        if (!e.target.closest('input, textarea, button, .btn, select, .quick-amount, .currency-selector')) {
             activeEl.blur();
         }
     }
@@ -1419,7 +1471,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         userId = await resolveUserId();
-        updateAllTabs();
         await loadData();
         await loadExchangeHistory();
     } catch (e) { /* silent */ }

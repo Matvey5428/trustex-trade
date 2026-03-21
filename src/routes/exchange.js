@@ -18,6 +18,10 @@ const BALANCE_FIELD = {
 const DEFAULT_RUB_PER_USDT = 1 / 0.012;   // ~83
 const DEFAULT_EUR_PER_USDT = 1 / 1.089;   // ~0.918
 
+// Hardcoded fallback crypto rates (1 unit = X USDT) — updated periodically
+// Used ONLY when all APIs are unreachable
+const DEFAULT_CRYPTO_RATES = { BTC: 84000, ETH: 3200, TON: 3.5 };
+
 // Fiat-only currencies (don't need Binance for exchange between these)
 const FIAT_CURRENCIES = ['USDT', 'RUB', 'EUR'];
 
@@ -25,7 +29,8 @@ const FIAT_CURRENCIES = ['USDT', 'RUB', 'EUR'];
 let cachedCryptoRates = null;   // { BTC, ETH, TON }
 let cachedCryptoTime = 0;
 const CRYPTO_CACHE_TTL = 60_000;       // 1 min — prefer fresh
-const CRYPTO_STALE_TTL = 30 * 60_000;  // 30 min — allow stale for exchange
+const CRYPTO_STALE_TTL = 60 * 60_000;  // 60 min — allow stale for exchange
+let ratesAreFallback = false;          // true when using hardcoded defaults
 
 /**
  * Fetch crypto prices from Binance (with fallback endpoints), server-side cached.
@@ -37,7 +42,7 @@ async function fetchCryptoPrices() {
   }
 
   // Try multiple Binance endpoints
-  const endpoints = [
+  const binanceEndpoints = [
     'https://api.binance.com/api/v3/ticker/price?symbols=["BTCUSDT","ETHUSDT","TONUSDT"]',
     'https://api1.binance.com/api/v3/ticker/price?symbols=["BTCUSDT","ETHUSDT","TONUSDT"]',
     'https://api2.binance.com/api/v3/ticker/price?symbols=["BTCUSDT","ETHUSDT","TONUSDT"]',
@@ -45,7 +50,7 @@ async function fetchCryptoPrices() {
     'https://api4.binance.com/api/v3/ticker/price?symbols=["BTCUSDT","ETHUSDT","TONUSDT"]'
   ];
 
-  for (const url of endpoints) {
+  for (const url of binanceEndpoints) {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
@@ -61,6 +66,7 @@ async function fetchCryptoPrices() {
       if (prices.BTC && prices.ETH && prices.TON) {
         cachedCryptoRates = prices;
         cachedCryptoTime = Date.now();
+        ratesAreFallback = false;
         return prices;
       }
     } catch (e) {
@@ -68,12 +74,65 @@ async function fetchCryptoPrices() {
     }
   }
 
+  // Fallback: CoinGecko
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(
+      'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,the-open-network&vs_currencies=usd',
+      { signal: controller.signal }
+    );
+    clearTimeout(timeout);
+    const data = await res.json();
+    const prices = {};
+    if (data.bitcoin?.usd) prices.BTC = data.bitcoin.usd;
+    if (data.ethereum?.usd) prices.ETH = data.ethereum.usd;
+    if (data['the-open-network']?.usd) prices.TON = data['the-open-network'].usd;
+    if (prices.BTC && prices.ETH && prices.TON) {
+      cachedCryptoRates = prices;
+      cachedCryptoTime = Date.now();
+      ratesAreFallback = false;
+      console.log('✅ Crypto rates from CoinGecko:', prices);
+      return prices;
+    }
+  } catch (e) { /* next fallback */ }
+
+  // Fallback: CoinCap
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(
+      'https://api.coincap.io/v2/assets?ids=bitcoin,ethereum,toncoin',
+      { signal: controller.signal }
+    );
+    clearTimeout(timeout);
+    const data = await res.json();
+    const prices = {};
+    for (const asset of (data.data || [])) {
+      if (asset.id === 'bitcoin') prices.BTC = parseFloat(asset.priceUsd);
+      if (asset.id === 'ethereum') prices.ETH = parseFloat(asset.priceUsd);
+      if (asset.id === 'toncoin') prices.TON = parseFloat(asset.priceUsd);
+    }
+    if (prices.BTC && prices.ETH && prices.TON) {
+      cachedCryptoRates = prices;
+      cachedCryptoTime = Date.now();
+      ratesAreFallback = false;
+      console.log('✅ Crypto rates from CoinCap:', prices);
+      return prices;
+    }
+  } catch (e) { /* next fallback */ }
+
   // Return stale cache if within extended TTL
   if (cachedCryptoRates && Date.now() - cachedCryptoTime < CRYPTO_STALE_TTL) {
     return cachedCryptoRates;
   }
 
-  return null;
+  // Absolute last resort: hardcoded defaults
+  console.warn('⚠️ All crypto APIs failed, using hardcoded fallback rates');
+  cachedCryptoRates = { ...DEFAULT_CRYPTO_RATES };
+  cachedCryptoTime = Date.now();
+  ratesAreFallback = true;
+  return cachedCryptoRates;
 }
 
 /**
@@ -101,10 +160,9 @@ async function getFiatRates(client) {
 
 /**
  * Get all rates expressed in USDT (1 unit = X USDT)
- * @param {object} client - DB client (optional)
- * @param {boolean} requireCrypto - if false, returns partial rates without crypto
+ * Always returns rates — uses fallback chain if APIs are down.
  */
-async function getAllRatesInUsdt(client, requireCrypto = true) {
+async function getAllRatesInUsdt(client) {
   const rates = await getFiatRates(client);
 
   const crypto = await fetchCryptoPrices();
@@ -112,8 +170,6 @@ async function getAllRatesInUsdt(client, requireCrypto = true) {
     rates.BTC = crypto.BTC;
     rates.ETH = crypto.ETH;
     rates.TON = crypto.TON;
-  } else if (requireCrypto) {
-    return null;
   }
 
   return rates;
@@ -150,13 +206,7 @@ router.post('/', async (req, res) => {
 
     await client.query('BEGIN');
 
-    // Only require crypto rates if the exchange involves a crypto currency
-    const needsCrypto = !FIAT_CURRENCIES.includes(from) || !FIAT_CURRENCIES.includes(to);
-    const rates = await getAllRatesInUsdt(client, needsCrypto);
-    if (!rates) {
-      await client.query('ROLLBACK');
-      return res.status(503).json({ error: 'Не удалось получить актуальные курсы. Попробуйте через несколько секунд.' });
-    }
+    const rates = await getAllRatesInUsdt(client);
 
     // Get user with lock
     const userResult = await client.query('SELECT * FROM users WHERE telegram_id = $1 FOR UPDATE', [user_id.toString()]);
@@ -263,11 +313,7 @@ router.get('/history/:telegramId', async (req, res) => {
  * Get all exchange rates (each currency in USDT)
  */
 router.get('/rate', async (req, res) => {
-  // Return whatever rates we can get — don't fail if crypto is temporarily unavailable
-  const rates = await getAllRatesInUsdt(null, false);
-  if (!rates) {
-    return res.status(503).json({ error: 'Rates temporarily unavailable' });
-  }
+  const rates = await getAllRatesInUsdt(null);
   res.json({
     success: true,
     data: {
@@ -277,7 +323,8 @@ router.get('/rate', async (req, res) => {
       eur_to_usdt: rates.EUR,
       usdt_to_eur: 1 / rates.EUR,
       // All rates (1 unit = X USDT)
-      rates
+      rates,
+      fallback: ratesAreFallback
     }
   });
 });
