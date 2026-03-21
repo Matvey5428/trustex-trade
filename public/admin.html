@@ -115,6 +115,14 @@
     .user-card:hover {
       background: rgba(255,255,255,0.08);
     }
+
+    .user-card.deleted {
+      background: rgba(128,128,128,0.08);
+      opacity: 0.55;
+    }
+    .user-card.deleted:hover {
+      opacity: 0.75;
+    }
     
     .user-info {
       display: flex;
@@ -728,6 +736,9 @@
         <div style="margin-top: 10px;" id="blockUserBtnContainer">
           <button class="btn-primary" id="btnBlockUser" onclick="toggleBlockUser()" style="width: 100%; background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);">⛔ Заблокировать</button>
         </div>
+        <div style="margin-top: 8px; display: none;" id="deleteUserBtnContainer">
+          <button class="btn-primary" id="btnDeleteUser" onclick="deleteUser()" style="width: 100%; background: linear-gradient(135deg, #666 0%, #333 100%);">🗑️ Удалить пользователя</button>
+        </div>
         
         <!-- User Activity History -->
         <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
@@ -997,10 +1008,10 @@
       }
       
       list.innerHTML = users.map(user => `
-        <div class="user-card" onclick="openUser('${user.telegram_id}')">
+        <div class="user-card${user.is_deleted ? ' deleted' : ''}" onclick="openUser('${user.telegram_id}')">
           <div class="user-info">
-            <div class="user-name">${user.first_name || user.username || '🧪 Гость (тест)'}</div>
-            <div class="user-id">ID: ${user.telegram_id}</div>
+            <div class="user-name">${user.is_deleted ? '🗑️ ' : ''}${user.first_name || user.username || '🧪 Гость (тест)'}</div>
+            <div class="user-id">ID: ${user.telegram_id}${user.is_deleted ? ' • Удалён' : ''}</div>
           </div>
           <div class="user-balance">
             <div class="amount">${formatMoney(user.balance_usdt)} $ | ${formatMoney(user.balance_rub || 0)} ₽</div>
@@ -1049,10 +1060,20 @@
             </div>
             <div class="user-detail-row">
               <span class="user-detail-label">Статус аккаунта</span>
-              <span class="user-detail-value" style="color: ${currentUser.is_blocked ? '#ff4444' : '#00ff88'};">
-                ${currentUser.is_blocked ? '⛔ Заблокирован' : '✅ Активен'}
+              <span class="user-detail-value" style="color: ${currentUser.is_deleted ? '#888' : currentUser.is_blocked ? '#ff4444' : '#00ff88'};">
+                ${currentUser.is_deleted ? '🗑️ Удалён' : currentUser.is_blocked ? '⛔ Заблокирован' : '✅ Активен'}
               </span>
-            </div>
+            </div>${currentUser.is_deleted && currentUser.deletion_snapshot ? `
+            <div style="margin-top:10px;padding:10px;background:rgba(128,128,128,0.1);border-radius:8px;border:1px solid rgba(128,128,128,0.2);">
+              <div style="font-size:12px;color:#888;margin-bottom:6px;">📋 Снэпшот на момент удаления (${formatDate(currentUser.deleted_at)}):</div>
+              <div style="font-size:12px;color:#aaa;line-height:1.6;">
+                💰 ${formatMoney(currentUser.deletion_snapshot.balances?.usdt)} USDT | ${formatMoney(currentUser.deletion_snapshot.balances?.rub)} ₽ | ${formatMoney(currentUser.deletion_snapshot.balances?.eur)} €<br>
+                ₿ ${currentUser.deletion_snapshot.balances?.btc || 0} BTC | Ξ ${currentUser.deletion_snapshot.balances?.eth || 0} ETH | ◈ ${currentUser.deletion_snapshot.balances?.ton || 0} TON<br>
+                📊 Сделок: ${currentUser.deletion_snapshot.trades?.total || 0} (✅${currentUser.deletion_snapshot.trades?.wins || 0} / ❌${currentUser.deletion_snapshot.trades?.losses || 0})<br>
+                📝 Транзакций: ${currentUser.deletion_snapshot.transactions?.total || 0}<br>
+                💬 Сообщений: ${currentUser.deletion_snapshot.support_messages || 0}
+              </div>
+            </div>` : ''}
             <div class="user-detail-row">
               <span class="user-detail-label">Баланс USDT</span>
               <span class="user-detail-value">${formatMoney(currentUser.balance_usdt)} USDT</span>
@@ -1139,7 +1160,7 @@
           // Show block button for admin and subadmin, update its state
           const blockContainer = document.getElementById('blockUserBtnContainer');
           const blockBtn = document.getElementById('btnBlockUser');
-          blockContainer.style.display = (userRole === 'admin' || userRole === 'subadmin') ? 'block' : 'none';
+          blockContainer.style.display = (userRole === 'admin' || userRole === 'subadmin') && !currentUser.is_deleted ? 'block' : 'none';
           if (currentUser.is_blocked) {
             blockBtn.textContent = '✅ Разблокировать';
             blockBtn.style.background = 'linear-gradient(135deg, #00ff88 0%, #00cc6a 100%)';
@@ -1147,6 +1168,18 @@
             blockBtn.textContent = '⛔ Заблокировать';
             blockBtn.style.background = 'linear-gradient(135deg, #ff4444 0%, #cc0000 100%)';
           }
+
+          // Show delete button only for main admin, hide if already deleted
+          const deleteContainer = document.getElementById('deleteUserBtnContainer');
+          deleteContainer.style.display = userRole === 'admin' && !currentUser.is_deleted ? 'block' : 'none';
+
+          // Disable editing controls for deleted users
+          const isDeleted = currentUser.is_deleted;
+          document.getElementById('btnSaveUser').style.display = isDeleted ? 'none' : 'block';
+          ['newBalance','newBalanceRub','newBalanceEur','minDeposit','minWithdraw','minWithdrawRub','profitMultiplier'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.disabled = isDeleted;
+          });
           
           document.getElementById('userModal').classList.add('active');
           
@@ -1734,6 +1767,30 @@
         }
       } catch (e) {
         showToast('❌ Ошибка', 'error');
+      }
+    }
+
+    async function deleteUser() {
+      if (!currentUser) return;
+      const name = currentUser.first_name || currentUser.username || 'пользователя';
+      if (!confirm(`⚠️ Удалить ${name}?\n\nВсе данные (балансы, сделки, транзакции, сообщения) будут стёрты.\nСнэпшот будет сохранён.\nПри повторном входе пользователь начнёт с нуля.`)) return;
+      if (!confirm(`❗ Подтвердите удаление ${name} (telegram_id: ${currentUser.telegram_id})`)) return;
+      try {
+        const res = await fetch(`${API_BASE}/user/${currentUser.telegram_id}/delete?adminId=${adminId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('🗑️ ' + data.message, 'success');
+          openUser(currentUser.telegram_id);
+          loadUsers();
+        } else {
+          showToast('❌ ' + data.error, 'error');
+        }
+      } catch (e) {
+        showToast('❌ Ошибка удаления', 'error');
       }
     }
     

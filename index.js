@@ -251,6 +251,17 @@ async function initDatabase() {
   } catch (err) {
     console.error('⚠️ verification_rejected migration error:', err.message);
   }
+
+  // Migration: soft-delete columns for user deletion feature
+  try {
+    await pool.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT FALSE;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP DEFAULT NULL;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS deletion_snapshot JSONB DEFAULT NULL;
+    `);
+  } catch (err) {
+    console.error('⚠️ is_deleted migration error:', err.message);
+  }
 }
 
 // Start server FIRST (critical for Render health check)

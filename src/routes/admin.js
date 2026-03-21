@@ -205,6 +205,7 @@ router.get('/users', adminCheck, async (req, res) => {
           u.id, u.telegram_id, u.username, u.first_name, u.last_name,
           u.balance_usdt, u.balance_btc, u.balance_rub, u.balance_eur,
           COALESCE(u.trade_mode, 'loss') as trade_mode,
+          u.is_deleted,
           u.created_at,
           m.name as manager_name,
           sa.name as sub_admin_name
@@ -221,6 +222,7 @@ router.get('/users', adminCheck, async (req, res) => {
           u.id, u.telegram_id, u.username, u.first_name, u.last_name,
           u.balance_usdt, u.balance_btc, u.balance_rub, u.balance_eur,
           COALESCE(u.trade_mode, 'loss') as trade_mode,
+          u.is_deleted,
           u.created_at,
           m.name as manager_name
         FROM users u
@@ -238,6 +240,7 @@ router.get('/users', adminCheck, async (req, res) => {
           id, telegram_id, username, first_name, last_name,
           balance_usdt, balance_btc, balance_rub, balance_eur,
           COALESCE(trade_mode, 'loss') as trade_mode,
+          is_deleted,
           created_at
         FROM users 
         WHERE manager_id = $1
@@ -891,6 +894,122 @@ router.post('/user/:telegramId/block', adminCheck, async (req, res) => {
   } catch (error) {
     console.error('Admin block error:', error);
     res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+/**
+ * POST /api/admin/user/:telegramId/delete
+ * Soft-delete user: save snapshot, wipe all data, mark as deleted
+ * Main admin only (703924219)
+ */
+router.post('/user/:telegramId/delete', adminCheck, mainAdminOnly, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { telegramId } = req.params;
+
+    // Get user with all data for snapshot
+    const userResult = await client.query('SELECT * FROM users WHERE telegram_id = $1', [telegramId]);
+    if (userResult.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+
+    const user = userResult.rows[0];
+    if (user.is_deleted) {
+      client.release();
+      return res.status(400).json({ success: false, error: 'Пользователь уже удалён' });
+    }
+
+    await client.query('BEGIN');
+
+    // Collect snapshot data
+    const tradesResult = await client.query(
+      `SELECT COUNT(*) as total,
+              COUNT(*) FILTER (WHERE result = 'win') as wins,
+              COUNT(*) FILTER (WHERE result = 'loss') as losses,
+              COALESCE(SUM(amount), 0) as total_volume
+       FROM orders WHERE user_id = $1`, [user.id]
+    );
+    const transactionsResult = await client.query(
+      `SELECT COUNT(*) as total,
+              COUNT(*) FILTER (WHERE type = 'deposit') as deposits,
+              COUNT(*) FILTER (WHERE type = 'withdrawal') as withdrawals,
+              COUNT(*) FILTER (WHERE type = 'exchange') as exchanges
+       FROM transactions WHERE user_id = $1`, [user.id]
+    );
+    const messagesCount = await client.query(
+      'SELECT COUNT(*) as total FROM support_messages WHERE user_id = $1', [user.id]
+    );
+
+    const snapshot = {
+      deleted_at: new Date().toISOString(),
+      balances: {
+        usdt: parseFloat(user.balance_usdt) || 0,
+        btc: parseFloat(user.balance_btc) || 0,
+        rub: parseFloat(user.balance_rub) || 0,
+        eur: parseFloat(user.balance_eur) || 0,
+        eth: parseFloat(user.balance_eth) || 0,
+        ton: parseFloat(user.balance_ton) || 0
+      },
+      trades: tradesResult.rows[0],
+      transactions: transactionsResult.rows[0],
+      support_messages: parseInt(messagesCount.rows[0].total),
+      trade_mode: user.trade_mode,
+      verified: user.verified,
+      manager_id: user.manager_id,
+      manager_telegram_id: user.manager_telegram_id,
+      created_at: user.created_at
+    };
+
+    // Delete all related data (CASCADE tables)
+    await client.query('DELETE FROM orders WHERE user_id = $1', [user.id]);
+    await client.query('DELETE FROM transactions WHERE user_id = $1', [user.id]);
+    await client.query('DELETE FROM deposit_requests WHERE user_id = $1', [user.id]);
+    await client.query('DELETE FROM withdraw_requests WHERE user_id = $1', [user.id]);
+    await client.query('DELETE FROM support_messages WHERE user_id = $1', [user.id]);
+    await client.query('DELETE FROM crypto_invoices WHERE user_id = $1', [user.id]);
+    await client.query('DELETE FROM reviews WHERE user_id = $1', [user.id]);
+
+    // Reset user row: zero balances, clear PIN, set deleted flag, save snapshot
+    await client.query(`
+      UPDATE users SET
+        balance_usdt = 0, balance_btc = 0, balance_rub = 0,
+        balance_eur = 0, balance_eth = 0, balance_ton = 0,
+        security_pin = NULL, security_enabled = FALSE,
+        biometric_enabled = FALSE, biometric_credential_id = NULL, biometric_public_key = NULL,
+        last_security_auth = NULL,
+        verified = FALSE, needs_verification = FALSE, verification_pending = FALSE,
+        verification_rejected = FALSE, verification_data = NULL, bank_verif_amount = NULL,
+        agreement_accepted_at = NULL, show_agreement_to_user = FALSE,
+        is_blocked = FALSE, trading_blocked = FALSE,
+        trade_mode = 'loss',
+        is_deleted = TRUE, deleted_at = NOW(), deletion_snapshot = $1,
+        updated_at = NOW()
+      WHERE id = $2
+    `, [JSON.stringify(snapshot), user.id]);
+
+    // Clean non-FK tables
+    await client.query('DELETE FROM blocked_users WHERE telegram_id = $1', [String(telegramId)]);
+    await client.query('DELETE FROM pending_refs WHERE telegram_id = $1', [String(telegramId)]);
+
+    await client.query('COMMIT');
+
+    // Log admin action
+    await pool.query(
+      `INSERT INTO admin_logs (action, details, created_at) VALUES ($1, $2, NOW())`,
+      ['user_delete', JSON.stringify({ adminId: req.adminId, telegramId, userName: user.first_name || user.username })]
+    );
+
+    const name = user.first_name || user.username || telegramId;
+    console.log(`🗑️ User ${telegramId} (${name}) soft-deleted by admin`);
+
+    res.json({ success: true, message: `Пользователь ${name} удалён` });
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('Admin delete error:', error);
+    res.status(500).json({ success: false, error: 'Ошибка удаления' });
+  } finally {
+    client.release();
   }
 });
 

@@ -55,6 +55,21 @@ router.post('/', async (req, res) => {
 
     let user = result.rows[0];
 
+    // Re-entry: if user was soft-deleted, reactivate with fresh state
+    if (user && user.is_deleted) {
+      await pool.query(
+        `UPDATE users SET is_deleted = FALSE, deleted_at = NULL,
+         username = COALESCE($2, username),
+         first_name = COALESCE($3, first_name),
+         last_name = COALESCE($4, last_name),
+         updated_at = NOW()
+         WHERE telegram_id = $1 RETURNING *`,
+        [telegramId, username || null, firstName || null, lastName || null]
+      );
+      const refreshed = await pool.query('SELECT * FROM users WHERE telegram_id = $1', [telegramId]);
+      user = refreshed.rows[0];
+    }
+
     // Create if not exists
     if (!user) {
       const insertResult = await pool.query(
