@@ -1392,17 +1392,32 @@ async function loadExchangeHistory() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        // Load rates from server (same source exchange backend uses)
         const rateRes = await fetch('/api/exchange/rate');
         if (rateRes.ok) {
             const rateData = await rateRes.json();
             if (rateData?.data?.rates) {
-                rates = rateData.data.rates;
+                // Merge server rates into local rates (server may not have crypto if Binance is down)
+                Object.assign(rates, rateData.data.rates);
             } else if (rateData?.data) {
-                // Legacy fallback
                 rates.RUB = rateData.data.rub_to_usdt || rates.RUB;
                 rates.EUR = rateData.data.eur_to_usdt || rates.EUR;
             }
         }
+
+        // If crypto rates missing, fetch directly from Binance as fallback
+        if (!rates.BTC || !rates.ETH || !rates.TON) {
+            try {
+                const binRes = await fetch('https://api.binance.com/api/v3/ticker/price?symbols=["BTCUSDT","ETHUSDT","TONUSDT"]');
+                const binData = await binRes.json();
+                for (const item of binData) {
+                    if (item.symbol === 'BTCUSDT' && !rates.BTC) rates.BTC = parseFloat(item.price);
+                    if (item.symbol === 'ETHUSDT' && !rates.ETH) rates.ETH = parseFloat(item.price);
+                    if (item.symbol === 'TONUSDT' && !rates.TON) rates.TON = parseFloat(item.price);
+                }
+            } catch (e) { /* silent */ }
+        }
+
         userId = await resolveUserId();
         updateAllTabs();
         await loadData();
