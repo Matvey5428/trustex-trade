@@ -982,7 +982,7 @@
   try {
     if (localStorage.getItem('trustex_needs_security') !== 'true') return;
     var s = JSON.parse(sessionStorage.getItem('trustex_security_session'));
-    if (s && s.timestamp && (Date.now() - s.timestamp) < 15 * 60 * 1000) return;
+    if (s && s.timestamp) return; // session exists — no overlay (cleared on app close)
     document.getElementById('securityLoadingOverlay').style.display = 'flex';
   } catch(e) {}
 })();
