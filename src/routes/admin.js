@@ -739,6 +739,12 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
 
     await client.query('COMMIT');
     
+    // Strip sensitive fields before sending response
+    const userData = result.rows[0];
+    delete userData.security_pin;
+    delete userData.biometric_credential_id;
+    delete userData.biometric_public_key;
+
     // Log generic admin action (outside transaction, non-critical)
     await pool.query(
       `INSERT INTO admin_logs (action, details, created_at) VALUES ($1, $2, NOW())`,
@@ -790,14 +796,14 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
     
     res.json({
       success: true,
-      data: result.rows[0],
+      data: userData,
       tradeModeImpact,
       message: 'User updated successfully'
     });
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
     console.error('Admin update error:', error.message, error.stack);
-    res.status(500).json({ success: false, error: 'Ошибка сохранения: ' + error.message });
+    res.status(500).json({ success: false, error: 'Ошибка сохранения' });
   } finally {
     client.release();
   }
@@ -884,7 +890,7 @@ router.post('/user/:telegramId/block', adminCheck, async (req, res) => {
     });
   } catch (error) {
     console.error('Admin block error:', error);
-    res.status(500).json({ success: false, error: 'Server error: ' + error.message });
+    res.status(500).json({ success: false, error: 'Server error' });
   }
 });
 
@@ -928,7 +934,7 @@ router.post('/create-user', adminCheck, async (req, res) => {
     });
   } catch (error) {
     console.error('Admin create-user error:', error);
-    res.status(500).json({ success: false, error: 'Server error: ' + error.message });
+    res.status(500).json({ success: false, error: 'Server error' });
   }
 });
 

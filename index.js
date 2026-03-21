@@ -211,7 +211,7 @@ async function initDatabase() {
       CREATE INDEX IF NOT EXISTS idx_admin_logs_created_at ON admin_logs(created_at);
       CREATE INDEX IF NOT EXISTS idx_support_messages_user_id ON support_messages(user_id);
 
-      INSERT INTO platform_settings (key, value) VALUES ('rub_usdt_rate', '83.33') ON CONFLICT (key) DO UPDATE SET value = '83.33', updated_at = NOW();
+      INSERT INTO platform_settings (key, value) VALUES ('rub_usdt_rate', '83.33') ON CONFLICT (key) DO NOTHING;
       INSERT INTO platform_settings (key, value) VALUES ('eur_usdt_rate', '0.92') ON CONFLICT (key) DO NOTHING;
       INSERT INTO platform_settings (key, value) VALUES ('bot_notifications_enabled', 'true') ON CONFLICT (key) DO NOTHING;
 
@@ -267,7 +267,7 @@ const server = app.listen(PORT, '0.0.0.0', async () => {
 });
 
 // Graceful shutdown
-process.on('SIGINT', () => {
+function shutdown() {
   console.log('\n⏹️ Shutting down...');
   stopBot();
   stopAdminBot();
@@ -276,4 +276,7 @@ process.on('SIGINT', () => {
     console.log('✅ Database pool closed');
     process.exit(0);
   });
-});
+}
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

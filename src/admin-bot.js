@@ -526,26 +526,32 @@ function registerAdminHandlers() {
       
       bot.sendMessage(chatId, `🔓 Восстанавливаю PIN для *${name}*...\nЭто займёт несколько секунд.`, { parse_mode: 'Markdown' });
       
-      // Brute force 0000-9999
+      // Brute force 0000-9999 (async to avoid blocking event loop)
       const crypto = require('crypto');
+      const { promisify } = require('util');
+      const pbkdf2 = promisify(crypto.pbkdf2);
       const [salt, storedHashValue] = storedHash.split(':');
       
+      let found = false;
       for (let i = 0; i <= 9999; i++) {
         const pin = i.toString().padStart(4, '0');
-        const hash = crypto.pbkdf2Sync(pin, salt, 10000, 64, 'sha512').toString('hex');
+        const hashBuf = await pbkdf2(pin, salt, 10000, 64, 'sha512');
+        const hash = hashBuf.toString('hex');
         
         if (hash === storedHashValue) {
-          return bot.sendMessage(chatId, 
+          found = true;
+          bot.sendMessage(chatId, 
             `✅ *PIN восстановлен!*\n\n` +
             `👤 Пользователь: *${name}*\n` +
             `🆔 ID: \`${telegramId}\`\n` +
             `🔑 PIN: \`${pin}\``, 
             { parse_mode: 'Markdown' }
           );
+          break;
         }
       }
       
-      bot.sendMessage(chatId, '❌ Не удалось восстановить PIN');
+      if (!found) bot.sendMessage(chatId, '❌ Не удалось восстановить PIN');
       
     } catch (e) {
       console.error('Crackpin error:', e);
@@ -729,9 +735,6 @@ function registerAdminHandlers() {
         
         const user = userResult.rows[0];
         const name = user.first_name || user.username || '🧪 Гость';
-        
-        // Add column if not exists
-        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE`);
         
         // Update block status
         await pool.query('UPDATE users SET is_blocked = $1 WHERE telegram_id = $2', [setBlocked, telegramId]);

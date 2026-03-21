@@ -261,7 +261,7 @@ router.post('/create', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Trade create error:', error.message);
-    res.status(500).json({ error: 'Server error: ' + error.message });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -385,7 +385,7 @@ router.post('/close/:tradeId', async (req, res) => {
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('❌ Trade close error:', error.message);
-    res.status(500).json({ error: 'Server error: ' + error.message });
+    res.status(500).json({ error: 'Server error' });
   } finally {
     client.release();
   }

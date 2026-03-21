@@ -117,8 +117,11 @@ router.post('/pin/setup', async (req, res) => {
     
     const user = userResult.rows[0];
     
-    // If PIN already exists, verify current PIN
-    if (user.security_pin && currentPin) {
+    // If PIN already exists, require and verify current PIN
+    if (user.security_pin) {
+      if (!currentPin) {
+        return res.status(403).json({ success: false, error: 'Current PIN is required to change PIN' });
+      }
       if (!verifyPin(currentPin, user.security_pin)) {
         return res.status(403).json({ success: false, error: 'Current PIN is incorrect' });
       }

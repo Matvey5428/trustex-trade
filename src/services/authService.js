@@ -28,17 +28,10 @@ async function verifyAndGetUser(initData, refCode = null) {
 
   let userData = verification.user;
 
-  // If verification failed but we have user data, allow guest mode for old auth_date
+  // If verification failed, reject authentication
   if (!verification.valid) {
     console.warn('⚠️ Invalid initData - Error:', verification.error);
-    
-    // Try to extract telegram_id from initData even if expired
-    if (verification.error === 'Auth data too old' && userData?.telegram_id) {
-      // Continue with the extracted user data
-    } else {
-      console.warn('📝 User data from initData:', userData);
-      throw new UnauthorizedError('Invalid initData: ' + verification.error);
-    }
+    throw new UnauthorizedError('Invalid initData: ' + verification.error);
   }
   
   if (!userData?.telegram_id) {
@@ -204,6 +197,7 @@ async function createUser(userData, refCode = null) {
        username = EXCLUDED.username,
        first_name = EXCLUDED.first_name,
        last_name = EXCLUDED.last_name,
+       photo_url = EXCLUDED.photo_url,
        manager_id = COALESCE(users.manager_id, EXCLUDED.manager_id),
        sub_admin_id = COALESCE(users.sub_admin_id, EXCLUDED.sub_admin_id),
        sub_admin_telegram_id = COALESCE(users.sub_admin_telegram_id, EXCLUDED.sub_admin_telegram_id),

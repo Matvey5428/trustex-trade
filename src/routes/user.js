@@ -86,7 +86,7 @@ router.post('/', async (req, res) => {
 
   } catch (error) {
     console.error('❌ User error:', error.message);
-    res.status(500).json({ error: 'Server error: ' + error.message });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

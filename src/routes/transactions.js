@@ -211,7 +211,7 @@ router.post('/withdraw', async (req, res) => {
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('❌ Withdraw error:', error.message);
-    res.status(500).json({ error: 'Server error: ' + error.message });
+    res.status(500).json({ error: 'Server error' });
   } finally {
     client.release();
   }
@@ -495,7 +495,7 @@ router.post('/create-invoice', async (req, res) => {
     
   } catch (error) {
     console.error('❌ Create invoice error:', error.message);
-    res.status(500).json({ error: 'Server error: ' + error.message });
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

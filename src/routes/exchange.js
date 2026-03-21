@@ -223,6 +223,10 @@ router.post('/', async (req, res) => {
 
     // Convert: from → USDT → to
     const fromInUsdt = amount * rates[from];
+    if (!rates[to] || !Number.isFinite(fromInUsdt) || fromInUsdt <= 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Exchange rate unavailable, try again later' });
+    }
     const exchangedAmount = fromInUsdt / rates[to];
 
     const fromField = BALANCE_FIELD[from];
@@ -267,7 +271,7 @@ router.post('/', async (req, res) => {
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('❌ Exchange error:', error.message);
-    res.status(500).json({ error: 'Server error: ' + error.message });
+    res.status(500).json({ error: 'Server error' });
   } finally {
     client.release();
   }

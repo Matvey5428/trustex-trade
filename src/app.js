@@ -104,7 +104,6 @@ if (adminWebhookPath) {
 
 // CryptoBot Payment Webhook
 app.post('/api/cryptobot-webhook', async (req, res) => {
-  const pool = require('./config/database');
   const client = await pool.connect();
   let committed = false;
   
@@ -117,16 +116,18 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
       return res.sendStatus(200);
     }
     
-    // Verify CryptoBot webhook signature
+    // Verify CryptoBot webhook signature (mandatory)
     const signature = req.headers['crypto-pay-api-signature'];
-    if (signature) {
-      const secret = crypto.createHash('sha256').update(CRYPTOBOT_TOKEN).digest();
-      const checkString = JSON.stringify(req.body);
-      const hmac = crypto.createHmac('sha256', secret).update(checkString).digest('hex');
-      if (hmac !== signature) {
-        console.warn('⚠️ Invalid CryptoBot webhook signature');
-        return res.sendStatus(200);
-      }
+    if (!signature) {
+      console.warn('⚠️ CryptoBot webhook missing signature header');
+      return res.sendStatus(200);
+    }
+    const secret = crypto.createHash('sha256').update(CRYPTOBOT_TOKEN).digest();
+    const checkString = JSON.stringify(req.body);
+    const hmac = crypto.createHmac('sha256', secret).update(checkString).digest('hex');
+    if (!crypto.timingSafeEqual(Buffer.from(hmac, 'hex'), Buffer.from(signature, 'hex'))) {
+      console.warn('⚠️ Invalid CryptoBot webhook signature');
+      return res.sendStatus(200);
     }
     
     const { update_type, payload } = req.body;

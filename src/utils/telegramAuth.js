@@ -46,8 +46,10 @@ function verifyInitData(initData, botToken) {
       .update(sortedParams)
       .digest('hex');
 
-    // Verify signature
-    const isValid = hash === signature;
+    // Verify signature (timing-safe)
+    const hashBuf = Buffer.from(hash, 'hex');
+    const sigBuf = Buffer.from(signature, 'hex');
+    const isValid = hashBuf.length === sigBuf.length && crypto.timingSafeEqual(hashBuf, sigBuf);
 
     if (!isValid) {
       return { valid: false, error: 'Invalid signature' };

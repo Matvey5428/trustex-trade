@@ -95,7 +95,7 @@ async function closeTrade(trade) {
     await client.query('COMMIT');
 
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query('ROLLBACK').catch(() => {});
     console.error(`❌ Error closing trade ${trade.id}:`, error.message);
   } finally {
     client.release();
