@@ -831,6 +831,20 @@
     }
 
     async function loadPrices() {
+        // Use server exchange rates (same source as exchange backend) for consistency
+        try {
+            const rateRes = await fetch('/api/exchange/rate');
+            if (rateRes.ok) {
+                const rateData = await rateRes.json();
+                if (rateData?.data?.rates) {
+                    prices.btc = rateData.data.rates.BTC || prices.btc;
+                    prices.eth = rateData.data.rates.ETH || prices.eth;
+                    prices.ton = rateData.data.rates.TON || prices.ton;
+                    return;
+                }
+            }
+        } catch (e) { /* fall through to Binance */ }
+        // Fallback: direct Binance
         try {
             const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbols=["BTCUSDT","ETHUSDT","TONUSDT"]');
             const data = await res.json();
@@ -839,9 +853,7 @@
                 if (item.symbol === 'ETHUSDT') prices.eth = parseFloat(item.price);
                 if (item.symbol === 'TONUSDT') prices.ton = parseFloat(item.price);
             });
-        } catch (e) {
-            /* silent */
-        }
+        } catch (e) { /* silent */ }
     }
 
     async function loadData() {
@@ -850,20 +862,22 @@
         
         try {
             // Load prices and user data in parallel
-            const [pricesRes, userRes, tradesRes] = await Promise.all([
-                fetch('https://api.binance.com/api/v3/ticker/price?symbols=["BTCUSDT","ETHUSDT","TONUSDT"]'),
+            const [rateRes, userRes, tradesRes] = await Promise.all([
+                fetch('/api/exchange/rate'),
                 fetch(`/api/profile/${telegramId}`),
                 fetch(`/api/trades/history/${telegramId}?limit=100`)
             ]);
             
-            // Process prices
-            if (pricesRes.ok) {
-                const data = await pricesRes.json();
-                data.forEach(item => {
-                    if (item.symbol === 'BTCUSDT') prices.btc = parseFloat(item.price);
-                    if (item.symbol === 'ETHUSDT') prices.eth = parseFloat(item.price);
-                    if (item.symbol === 'TONUSDT') prices.ton = parseFloat(item.price);
-                });
+            // Process prices from server exchange rates (consistent with exchange backend)
+            if (rateRes.ok) {
+                try {
+                    const rateData = await rateRes.json();
+                    if (rateData?.data?.rates) {
+                        prices.btc = rateData.data.rates.BTC || prices.btc;
+                        prices.eth = rateData.data.rates.ETH || prices.eth;
+                        prices.ton = rateData.data.rates.TON || prices.ton;
+                    }
+                } catch (e) { /* silent */ }
             }
             
             // Process user data

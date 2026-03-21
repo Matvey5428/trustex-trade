@@ -1614,12 +1614,27 @@
 
   async function updateMarketPrices() {
     try {
-        const symbols = ["BTCUSDT", "ETHUSDT", "TONUSDT"];
-        const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbols=${JSON.stringify(symbols)}`);
-        const prices = await res.json();
-        
-        const priceMap = {};
-        prices.forEach(p => priceMap[p.symbol] = parseFloat(p.price));
+        // Use server exchange rates as single source of truth (same rates exchange backend uses)
+        let priceMap = null;
+        try {
+          const rateRes = await fetch('/api/exchange/rate');
+          if (rateRes.ok) {
+            const rateData = await rateRes.json();
+            if (rateData?.data?.rates) {
+              const r = rateData.data.rates;
+              priceMap = { 'BTCUSDT': r.BTC, 'ETHUSDT': r.ETH, 'TONUSDT': r.TON };
+            }
+          }
+        } catch (e) { /* fall through to Binance direct */ }
+
+        // Fallback: direct Binance (only if server rates unavailable)
+        if (!priceMap) {
+          const symbols = ["BTCUSDT", "ETHUSDT", "TONUSDT"];
+          const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbols=${JSON.stringify(symbols)}`);
+          const prices = await res.json();
+          priceMap = {};
+          prices.forEach(p => priceMap[p.symbol] = parseFloat(p.price));
+        }
 
         // Курс RUB из серверных данных BalanceManager
         const rubPriceText = (typeof BalanceManager !== 'undefined' && BalanceManager.getRates())
