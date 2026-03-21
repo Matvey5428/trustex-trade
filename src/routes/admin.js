@@ -900,7 +900,7 @@ router.post('/user/:telegramId/block', adminCheck, async (req, res) => {
 /**
  * POST /api/admin/user/:telegramId/delete
  * Soft-delete user: save snapshot, wipe all data, mark as deleted
- * Main admin only (703924219)
+ * Main admin only
  */
 router.post('/user/:telegramId/delete', adminCheck, mainAdminOnly, async (req, res) => {
   const client = await pool.connect();
