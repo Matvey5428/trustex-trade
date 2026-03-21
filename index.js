@@ -227,7 +227,14 @@ async function initDatabase() {
       CREATE INDEX IF NOT EXISTS idx_users_sub_admin_id ON users(sub_admin_id);
       CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
       CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+      CREATE INDEX IF NOT EXISTS idx_orders_user_status ON orders(user_id, status);
+      CREATE INDEX IF NOT EXISTS idx_orders_status_expires ON orders(status, expires_at);
       CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
+      CREATE INDEX IF NOT EXISTS idx_transactions_user_type ON transactions(user_id, type);
+      CREATE INDEX IF NOT EXISTS idx_withdraw_requests_user_id ON withdraw_requests(user_id);
+      CREATE INDEX IF NOT EXISTS idx_withdraw_requests_status ON withdraw_requests(status);
+      CREATE INDEX IF NOT EXISTS idx_deposit_requests_status ON deposit_requests(status);
+      CREATE INDEX IF NOT EXISTS idx_support_messages_user_read ON support_messages(user_id, sender, is_read);
       CREATE INDEX IF NOT EXISTS idx_managers_ref_code ON managers(ref_code);
       CREATE INDEX IF NOT EXISTS idx_managers_sub_admin_id ON managers(sub_admin_id);
       CREATE INDEX IF NOT EXISTS idx_sub_admins_ref_code ON sub_admins(ref_code);

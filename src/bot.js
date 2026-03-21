@@ -6,21 +6,7 @@
 
 const TelegramBot = require('node-telegram-bot-api');
 const pool = require('./config/database');
-
-// Check if bot notifications are enabled (global + per-user)
-async function areBotNotificationsEnabled(telegramId) {
-  try {
-    const result = await pool.query("SELECT value FROM platform_settings WHERE key = 'bot_notifications_enabled'");
-    if (result.rows[0]?.value === 'false') return false;
-    if (telegramId) {
-      const userResult = await pool.query('SELECT notifications_enabled FROM users WHERE telegram_id = $1', [String(telegramId)]);
-      if (userResult.rows[0]?.notifications_enabled === false) return false;
-    }
-    return true;
-  } catch (e) {
-    return true;
-  }
-}
+const { areBotNotificationsEnabled } = require('./utils/notifications');
 
 // Получаем токен из переменных окружения
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -146,7 +132,7 @@ function registerHandlers() {
     const firstName = user.first_name || 'Пользователь';
     const startParam = match[1]; // ref_CODE или undefined
 
-    console.log(`📨 /start from ${user.id}${startParam ? ` ref: ${startParam}` : ''}`);
+    // /start command received
 
     // Check if user is blocked
     try {

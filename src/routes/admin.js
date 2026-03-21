@@ -6,21 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
-
-// Check if bot notifications are enabled (global + per-user)
-async function areBotNotificationsEnabled(telegramId) {
-  try {
-    const result = await pool.query("SELECT value FROM platform_settings WHERE key = 'bot_notifications_enabled'");
-    if (result.rows[0]?.value === 'false') return false;
-    if (telegramId) {
-      const userResult = await pool.query('SELECT notifications_enabled FROM users WHERE telegram_id = $1', [String(telegramId)]);
-      if (userResult.rows[0]?.notifications_enabled === false) return false;
-    }
-    return true;
-  } catch (e) {
-    return true;
-  }
-}
+const { areBotNotificationsEnabled } = require('../utils/notifications');
 
 // Main Admin ID from environment (single admin)
 const MAIN_ADMIN_ID = (process.env.ADMIN_IDS || '').split(',')[0]?.trim();
@@ -409,41 +395,39 @@ router.get('/user/:telegramId/history', adminCheck, async (req, res) => {
     
     const userId = userResult.rows[0].id;
     
-    // Get deposits (crypto_invoices)
-    const depositsResult = await pool.query(
-      `SELECT 'deposit' as type, invoice_id as id, amount, asset, status, created_at, paid_at as completed_at
-       FROM crypto_invoices
-       WHERE user_id = $1
-       ORDER BY created_at DESC
-       LIMIT 200`,
-      [userId]
-    );
-    
-    // Get withdrawals
-    const withdrawalsResult = await pool.query(
-      `SELECT 'withdrawal' as type, id, amount,
-              CASE 
-                WHEN UPPER(wallet) LIKE 'RUB%' THEN 'RUB'
-                WHEN UPPER(wallet) LIKE 'EUR%' THEN 'EUR'
-                ELSE 'USDT'
-              END as asset,
-              status, wallet, created_at, NULL as completed_at
-       FROM withdraw_requests
-       WHERE user_id = $1
-       ORDER BY created_at DESC
-       LIMIT 200`,
-      [userId]
-    );
-    
-    // Get trades (orders)
-    const tradesResult = await pool.query(
-      `SELECT 'trade' as type, id, amount, symbol as asset, status, direction, result, profit, duration, created_at, NULL as completed_at
-       FROM orders
-       WHERE user_id = $1
-       ORDER BY created_at DESC
-       LIMIT 200`,
-      [userId]
-    );
+    // Parallelize all three history queries
+    const [depositsResult, withdrawalsResult, tradesResult] = await Promise.all([
+      pool.query(
+        `SELECT 'deposit' as type, invoice_id as id, amount, asset, status, created_at, paid_at as completed_at
+         FROM crypto_invoices
+         WHERE user_id = $1
+         ORDER BY created_at DESC
+         LIMIT 200`,
+        [userId]
+      ),
+      pool.query(
+        `SELECT 'withdrawal' as type, id, amount,
+                CASE 
+                  WHEN UPPER(wallet) LIKE 'RUB%' THEN 'RUB'
+                  WHEN UPPER(wallet) LIKE 'EUR%' THEN 'EUR'
+                  ELSE 'USDT'
+                END as asset,
+                status, wallet, created_at, NULL as completed_at
+         FROM withdraw_requests
+         WHERE user_id = $1
+         ORDER BY created_at DESC
+         LIMIT 200`,
+        [userId]
+      ),
+      pool.query(
+        `SELECT 'trade' as type, id, amount, symbol as asset, status, direction, result, profit, duration, created_at, NULL as completed_at
+         FROM orders
+         WHERE user_id = $1
+         ORDER BY created_at DESC
+         LIMIT 200`,
+        [userId]
+      )
+    ]);
     
     // Combine and sort by date
     const allHistory = [
@@ -1816,7 +1800,7 @@ router.post('/managers', adminCheck, async (req, res) => {
           'UPDATE managers SET sub_admin_id = $1, name = COALESCE($2, name) WHERE id = $3 RETURNING *',
           [req.subAdminId, name, existingManager.id]
         );
-        console.log(`✅ Manager ${telegram_id} assigned to sub-admin`);
+        // Manager created
         return res.json({
           success: true,
           data: updated.rows[0],

@@ -92,7 +92,6 @@ async function fetchCryptoPrices() {
       cachedCryptoRates = prices;
       cachedCryptoTime = Date.now();
       ratesAreFallback = false;
-      console.log('✅ Crypto rates from CoinGecko:', prices);
       return prices;
     }
   } catch (e) { /* next fallback */ }
@@ -117,7 +116,6 @@ async function fetchCryptoPrices() {
       cachedCryptoRates = prices;
       cachedCryptoTime = Date.now();
       ratesAreFallback = false;
-      console.log('✅ Crypto rates from CoinCap:', prices);
       return prices;
     }
   } catch (e) { /* next fallback */ }
@@ -284,21 +282,14 @@ router.get('/history/:telegramId', async (req, res) => {
     const { telegramId } = req.params;
     const limit = Math.min(parseInt(req.query.limit) || 10, 50);
 
-    const userResult = await pool.query(
-      'SELECT id FROM users WHERE telegram_id = $1',
-      [telegramId.toString()]
-    );
-    if (userResult.rows.length === 0) {
-      return res.json({ success: true, data: [] });
-    }
-
     const result = await pool.query(
-      `SELECT amount, currency, description, created_at
-       FROM transactions
-       WHERE user_id = $1 AND type = 'exchange'
-       ORDER BY created_at DESC
+      `SELECT t.amount, t.currency, t.description, t.created_at
+       FROM transactions t
+       JOIN users u ON u.id = t.user_id
+       WHERE u.telegram_id = $1 AND t.type = 'exchange'
+       ORDER BY t.created_at DESC
        LIMIT $2`,
-      [userResult.rows[0].id, limit]
+      [telegramId.toString(), limit]
     );
 
     res.json({ success: true, data: result.rows });

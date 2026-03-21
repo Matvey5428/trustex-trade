@@ -770,7 +770,7 @@ function registerAdminHandlers() {
         );
         
         bot.answerCallbackQuery(query.id, { text: setBlocked ? '⛔ Заблокирован' : '✅ Разблокирован' });
-        console.log(`User ${telegramId} ${setBlocked ? 'blocked' : 'unblocked'}`);
+        // notification failed
         
       } catch (e) {
         console.error('Block user error:', e);

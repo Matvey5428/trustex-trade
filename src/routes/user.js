@@ -64,7 +64,6 @@ router.post('/', async (req, res) => {
         [telegramId, username || null, firstName || null, lastName || null]
       );
       user = insertResult.rows[0];
-      console.log(`✅ Created new user: ${telegramId}`);
     }
 
     res.json({
@@ -100,7 +99,12 @@ router.get('/:userId', async (req, res) => {
     const { userId } = req.params;
 
     const result = await pool.query(
-      'SELECT * FROM users WHERE telegram_id = $1',
+      `SELECT u.*, COALESCE(v.total_volume, 0) as total_volume
+       FROM users u
+       LEFT JOIN LATERAL (
+         SELECT SUM(amount) as total_volume FROM orders WHERE user_id = u.id
+       ) v ON true
+       WHERE u.telegram_id = $1`,
       [userId.toString()]
     );
 
@@ -109,13 +113,7 @@ router.get('/:userId', async (req, res) => {
     }
 
     const user = result.rows[0];
-
-    // Calculate total trading volume from orders
-    const volumeResult = await pool.query(
-      'SELECT COALESCE(SUM(amount), 0) as total_volume FROM orders WHERE user_id = $1',
-      [user.id]
-    );
-    const totalVolume = parseFloat(volumeResult.rows[0].total_volume) || 0;
+    const totalVolume = parseFloat(user.total_volume) || 0;
 
     res.json({
       success: true,

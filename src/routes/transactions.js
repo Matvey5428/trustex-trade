@@ -7,20 +7,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 const { getAdminBot } = require('../admin-bot');
-
-async function areBotNotificationsEnabled(telegramId) {
-  try {
-    const result = await pool.query("SELECT value FROM platform_settings WHERE key = 'bot_notifications_enabled'");
-    if (result.rows[0]?.value === 'false') return false;
-    if (telegramId) {
-      const userResult = await pool.query('SELECT notifications_enabled FROM users WHERE telegram_id = $1', [String(telegramId)]);
-      if (userResult.rows[0]?.notifications_enabled === false) return false;
-    }
-    return true;
-  } catch (e) {
-    return true;
-  }
-}
+const { areBotNotificationsEnabled } = require('../utils/notifications');
 
 /**
  * GET /api/transactions/rates
@@ -287,23 +274,18 @@ router.get('/history/:userId', async (req, res) => {
     const { userId } = req.params;
     const limit = Math.min(parseInt(req.query.limit) || 50, 200);
 
-    // First get user by telegram_id
-    const userResult = await pool.query(
-      'SELECT id FROM users WHERE telegram_id = $1',
-      [userId.toString()]
+    const result = await pool.query(
+      `SELECT t.* FROM transactions t
+       JOIN users u ON u.id = t.user_id
+       WHERE u.telegram_id = $1 AND t.type IN ('deposit', 'withdraw')
+       ORDER BY t.created_at DESC
+       LIMIT $2`,
+      [userId.toString(), limit]
     );
 
-    if (userResult.rows.length === 0) {
+    if (result.rows.length === 0 && !(await pool.query('SELECT 1 FROM users WHERE telegram_id = $1', [userId.toString()])).rows.length) {
       return res.status(404).json({ error: 'User not found' });
     }
-
-    const result = await pool.query(
-      `SELECT * FROM transactions 
-       WHERE user_id = $1 AND type IN ('deposit', 'withdraw')
-       ORDER BY created_at DESC 
-       LIMIT $2`,
-      [userResult.rows[0].id, limit]
-    );
 
     res.json({
       success: true,
@@ -427,8 +409,6 @@ router.post('/create-invoice', async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
       [user.id, invoice.invoice_id.toString(), usdtAmount, 'USDT', 'pending', invoice.pay_url, originalCurrency, originalAmount]
     );
-    
-    console.log(`💰 Invoice created: ${invoice.invoice_id} for user ${userId}, ${displayAmount}`);
     
     // Notify admins and manager about new deposit request
     try {

@@ -20,20 +20,7 @@ const securityRoutes = require('./routes/security');
 const { processUpdate, getWebhookPath } = require('./bot');
 const { processAdminUpdate, getAdminWebhookPath } = require('./admin-bot');
 const pool = require('./config/database');
-
-async function areBotNotificationsEnabled(telegramId) {
-  try {
-    const result = await pool.query("SELECT value FROM platform_settings WHERE key = 'bot_notifications_enabled'");
-    if (result.rows[0]?.value === 'false') return false;
-    if (telegramId) {
-      const userResult = await pool.query('SELECT notifications_enabled FROM users WHERE telegram_id = $1', [String(telegramId)]);
-      if (userResult.rows[0]?.notifications_enabled === false) return false;
-    }
-    return true;
-  } catch (e) {
-    return true;
-  }
-}
+const { areBotNotificationsEnabled } = require('./utils/notifications');
 
 const app = express();
 
@@ -73,15 +60,7 @@ app.use(express.static(path.join(__dirname, '../public'), {
   }
 }));
 
-// Request logging (only in development)
-if (process.env.NODE_ENV !== 'production') {
-  app.use((req, res, next) => {
-    if (req.path.startsWith('/api')) {
-      console.log(`📨 ${req.method} ${req.path}`);
-    }
-    next();
-  });
-}
+
 
 // Health check
 app.get('/health', (req, res) => {
