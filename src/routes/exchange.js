@@ -1,74 +1,99 @@
 /**
  * src/routes/exchange.js
- * Currency exchange functionality
+ * Currency exchange functionality — supports all 6 currencies
  */
 
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 
-// Fallback exchange rates (used if DB rates unavailable)
-const DEFAULT_RUB_TO_USDT_RATE = 0.012;
-const DEFAULT_EUR_TO_USDT_RATE = 1.089;
+// All supported currencies and their balance fields
+const CURRENCIES = ['USDT', 'BTC', 'ETH', 'TON', 'RUB', 'EUR'];
+const BALANCE_FIELD = {
+  USDT: 'balance_usdt', BTC: 'balance_btc', ETH: 'balance_eth',
+  TON: 'balance_ton', RUB: 'balance_rub', EUR: 'balance_eur'
+};
+
+// Fallback fiat rates (per 1 USDT)
+const DEFAULT_RUB_PER_USDT = 1 / 0.012;   // ~83
+const DEFAULT_EUR_PER_USDT = 1 / 1.089;   // ~0.918
 
 /**
- * Get exchange rates from database, falling back to defaults
+ * Get all rates expressed in USDT (1 unit = X USDT)
+ * Fetches Binance for crypto, DB for fiat
  */
-async function getRates(client) {
+async function getAllRatesInUsdt(client) {
+  const rates = { USDT: 1 };
+
+  // Crypto from Binance
+  try {
+    const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbols=["BTCUSDT","ETHUSDT","TONUSDT"]');
+    const data = await res.json();
+    for (const item of data) {
+      if (item.symbol === 'BTCUSDT') rates.BTC = parseFloat(item.price);
+      if (item.symbol === 'ETHUSDT') rates.ETH = parseFloat(item.price);
+      if (item.symbol === 'TONUSDT') rates.TON = parseFloat(item.price);
+    }
+  } catch (e) {
+    rates.BTC = rates.BTC || 60000;
+    rates.ETH = rates.ETH || 3000;
+    rates.TON = rates.TON || 5;
+  }
+
+  // Fiat from DB
   try {
     const queryTarget = client || pool;
     const result = await queryTarget.query(
       "SELECT key, value FROM platform_settings WHERE key IN ('rub_usdt_rate', 'eur_usdt_rate')"
     );
-    const rates = {};
-    result.rows.forEach(r => { rates[r.key] = parseFloat(r.value); });
-    
-    // rub_usdt_rate in DB = how many RUB per 1 USDT (e.g. 92)
-    // We need RUB_TO_USDT = 1 / rub_usdt_rate
-    const rubPerUsdt = rates.rub_usdt_rate || (1 / DEFAULT_RUB_TO_USDT_RATE);
-    const eurPerUsdt = rates.eur_usdt_rate || (1 / DEFAULT_EUR_TO_USDT_RATE);
-    
-    return {
-      RUB_TO_USDT: 1 / rubPerUsdt,
-      EUR_TO_USDT: 1 / eurPerUsdt
-    };
+    const dbRates = {};
+    result.rows.forEach(r => { dbRates[r.key] = parseFloat(r.value); });
+    const rubPerUsdt = dbRates.rub_usdt_rate || DEFAULT_RUB_PER_USDT;
+    const eurPerUsdt = dbRates.eur_usdt_rate || DEFAULT_EUR_PER_USDT;
+    rates.RUB = 1 / rubPerUsdt;   // 1 RUB = X USDT
+    rates.EUR = 1 / eurPerUsdt;   // 1 EUR = X USDT
   } catch (e) {
-    return {
-      RUB_TO_USDT: DEFAULT_RUB_TO_USDT_RATE,
-      EUR_TO_USDT: DEFAULT_EUR_TO_USDT_RATE
-    };
+    rates.RUB = 0.012;
+    rates.EUR = 1.089;
   }
+
+  return rates;
 }
 
 /**
  * POST /api/exchange
- * Exchange between RUB/EUR and USDT
+ * Exchange between any two currencies
+ * Body: { user_id, amount, from, to } OR legacy { user_id, amount, side }
  */
 router.post('/', async (req, res) => {
   const client = await pool.connect();
   try {
-    const { user_id, side } = req.body;
+    const { user_id } = req.body;
     const amount = parseFloat(req.body.amount);
 
-    // Validate
-    if (!user_id) {
-      return res.status(400).json({ error: 'user_id is required' });
+    // Support legacy side param
+    let from = (req.body.from || '').toUpperCase();
+    let to = (req.body.to || '').toUpperCase();
+    if (!from && req.body.side) {
+      const sideMap = {
+        rub_to_usdt: ['RUB', 'USDT'], usdt_to_rub: ['USDT', 'RUB'],
+        eur_to_usdt: ['EUR', 'USDT'], usdt_to_eur: ['USDT', 'EUR']
+      };
+      const mapped = sideMap[req.body.side];
+      if (mapped) { from = mapped[0]; to = mapped[1]; }
     }
-    if (!Number.isFinite(amount) || amount <= 0) {
-      return res.status(400).json({ error: 'Invalid amount' });
-    }
-    if (!side || !['rub_to_usdt', 'usdt_to_rub', 'eur_to_usdt', 'usdt_to_eur'].includes(side)) {
-      return res.status(400).json({ error: 'Invalid side' });
+
+    if (!user_id) return res.status(400).json({ error: 'user_id is required' });
+    if (!Number.isFinite(amount) || amount <= 0) return res.status(400).json({ error: 'Invalid amount' });
+    if (!CURRENCIES.includes(from) || !CURRENCIES.includes(to) || from === to) {
+      return res.status(400).json({ error: 'Invalid currency pair' });
     }
 
     await client.query('BEGIN');
 
-    // Fetch rates from DB inside transaction for consistency
-    const rates = await getRates(client);
-    const RUB_TO_USDT_RATE = rates.RUB_TO_USDT;
-    const EUR_TO_USDT_RATE = rates.EUR_TO_USDT;
+    const rates = await getAllRatesInUsdt(client);
 
-    // Get user by telegram_id WITH LOCK to prevent race condition
+    // Get user with lock
     const userResult = await client.query('SELECT * FROM users WHERE telegram_id = $1 FOR UPDATE', [user_id.toString()]);
     if (userResult.rows.length === 0) {
       await client.query('ROLLBACK');
@@ -76,64 +101,34 @@ router.post('/', async (req, res) => {
     }
 
     const user = userResult.rows[0];
-    const rubBalance = parseFloat(user.balance_rub) || 0;
-    const eurBalance = parseFloat(user.balance_eur) || 0;
-    const usdtBalance = parseFloat(user.balance_usdt) || 0;
+    const fromBalance = parseFloat(user[BALANCE_FIELD[from]]) || 0;
 
-    let fromField, toField, deductAmount, addAmount, exchangedAmount;
-
-    if (side === 'rub_to_usdt') {
-      if (amount > rubBalance) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Insufficient RUB balance' });
-      }
-      exchangedAmount = amount * RUB_TO_USDT_RATE;
-      fromField = 'balance_rub'; toField = 'balance_usdt';
-      deductAmount = amount; addAmount = exchangedAmount;
-    } else if (side === 'usdt_to_rub') {
-      if (amount > usdtBalance) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Insufficient USDT balance' });
-      }
-      exchangedAmount = amount / RUB_TO_USDT_RATE;
-      fromField = 'balance_usdt'; toField = 'balance_rub';
-      deductAmount = amount; addAmount = exchangedAmount;
-    } else if (side === 'eur_to_usdt') {
-      if (amount > eurBalance) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Insufficient EUR balance' });
-      }
-      exchangedAmount = amount * EUR_TO_USDT_RATE;
-      fromField = 'balance_eur'; toField = 'balance_usdt';
-      deductAmount = amount; addAmount = exchangedAmount;
-    } else {
-      // usdt_to_eur
-      if (amount > usdtBalance) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Insufficient USDT balance' });
-      }
-      exchangedAmount = amount / EUR_TO_USDT_RATE;
-      fromField = 'balance_usdt'; toField = 'balance_eur';
-      deductAmount = amount; addAmount = exchangedAmount;
+    if (amount > fromBalance) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: `Insufficient ${from} balance` });
     }
 
-    // Atomic balance update — deduct source, add target
+    // Convert: from → USDT → to
+    const fromInUsdt = amount * rates[from];
+    const exchangedAmount = fromInUsdt / rates[to];
+
+    const fromField = BALANCE_FIELD[from];
+    const toField = BALANCE_FIELD[to];
+
     const updateResult = await client.query(
-      `UPDATE users SET ${fromField} = ${fromField} - $1, ${toField} = ${toField} + $2, updated_at = NOW() WHERE id = $3 RETURNING balance_rub, balance_eur, balance_usdt`,
-      [deductAmount, addAmount, user.id]
+      `UPDATE users SET ${fromField} = ${fromField} - $1, ${toField} = ${toField} + $2, updated_at = NOW()
+       WHERE id = $3
+       RETURNING balance_rub, balance_eur, balance_usdt, balance_btc, balance_eth, balance_ton`,
+      [amount, exchangedAmount, user.id]
     );
 
-    const newBalances = updateResult.rows[0];
-
-    // Build description
-    const fromLabel = side.startsWith('rub') ? 'RUB' : side.startsWith('eur') ? 'EUR' : 'USDT';
-    const toLabel   = side.endsWith('rub') ? 'RUB' : side.endsWith('eur') ? 'EUR' : 'USDT';
-    const description = `Обмен ${amount.toFixed(2)} ${fromLabel} → ${exchangedAmount.toFixed(2)} ${toLabel}`;
+    const nb = updateResult.rows[0];
+    const description = `Обмен ${amount.toFixed(from === 'BTC' || from === 'ETH' ? 8 : 2)} ${from} → ${exchangedAmount.toFixed(to === 'BTC' || to === 'ETH' ? 8 : to === 'TON' ? 4 : 2)} ${to}`;
 
     await client.query(
       `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
        VALUES ($1, $2, $3, 'exchange', $4, NOW())`,
-      [user.id, amount, fromLabel, description]
+      [user.id, amount, from, description]
     );
 
     await client.query('COMMIT');
@@ -142,13 +137,16 @@ router.post('/', async (req, res) => {
       success: true,
       message: 'Обмен выполнен успешно!',
       data: {
-        side,
+        from, to,
         fromAmount: amount,
         toAmount: exchangedAmount,
         newBalances: {
-          rub: parseFloat(newBalances.balance_rub) || 0,
-          eur: parseFloat(newBalances.balance_eur) || 0,
-          usdt: parseFloat(newBalances.balance_usdt) || 0
+          rub: parseFloat(nb.balance_rub) || 0,
+          eur: parseFloat(nb.balance_eur) || 0,
+          usdt: parseFloat(nb.balance_usdt) || 0,
+          btc: parseFloat(nb.balance_btc) || 0,
+          eth: parseFloat(nb.balance_eth) || 0,
+          ton: parseFloat(nb.balance_ton) || 0
         }
       }
     });
@@ -197,17 +195,20 @@ router.get('/history/:telegramId', async (req, res) => {
 
 /**
  * GET /api/exchange/rate
- * Get current exchange rate (from database)
+ * Get all exchange rates (each currency in USDT)
  */
 router.get('/rate', async (req, res) => {
-  const rates = await getRates();
+  const rates = await getAllRatesInUsdt();
   res.json({
     success: true,
     data: {
-      rub_to_usdt: rates.RUB_TO_USDT,
-      usdt_to_rub: 1 / rates.RUB_TO_USDT,
-      eur_to_usdt: rates.EUR_TO_USDT,
-      usdt_to_eur: 1 / rates.EUR_TO_USDT
+      // Legacy fields for backward compat
+      rub_to_usdt: rates.RUB,
+      usdt_to_rub: 1 / rates.RUB,
+      eur_to_usdt: rates.EUR,
+      usdt_to_eur: 1 / rates.EUR,
+      // All rates (1 unit = X USDT)
+      rates
     }
   });
 });

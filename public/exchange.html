@@ -123,72 +123,83 @@
             cursor: pointer;
         }
 
-        /* Fiat Tabs */
-        .fiat-tabs {
+        /* Currency Tabs */
+        .currency-tabs {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             margin-bottom: 16px;
             background: rgba(255,255,255,0.03);
             border: 1px solid var(--border);
             border-radius: 14px;
             padding: 4px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
         }
+        .currency-tabs::-webkit-scrollbar { display: none; }
 
-        .fiat-tab {
-            flex: 1;
+        .cur-tab {
+            flex: 0 0 auto;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            padding: 11px 16px;
+            gap: 6px;
+            padding: 9px 14px;
             border-radius: 11px;
             border: none;
             background: transparent;
             color: var(--text-muted);
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.25s ease;
             font-family: 'Inter', sans-serif;
+            white-space: nowrap;
         }
 
-        .fiat-tab .tab-icon {
-            width: 22px;
-            height: 22px;
+        .cur-tab .tab-icon {
+            width: 20px;
+            height: 20px;
             border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 800;
             transition: all 0.25s ease;
         }
 
-        .fiat-tab.active-rub {
-            background: rgba(251,191,36,0.12);
-            color: #fbbf24;
+        .cur-tab.active {
+            color: var(--text-primary);
         }
-
-        .fiat-tab.active-rub .tab-icon {
-            background: var(--rub-gradient);
-            color: #000;
-            box-shadow: 0 4px 12px rgba(251,191,36,0.3);
+        .cur-tab.active .tab-icon {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
+        .cur-tab.active[data-cur="USDT"] { background: rgba(38,161,123,0.12); color: #26a17b; }
+        .cur-tab.active[data-cur="USDT"] .tab-icon { background: var(--usdt-gradient); color: #fff; }
+        .cur-tab.active[data-cur="BTC"] { background: rgba(247,147,26,0.12); color: #f7931a; }
+        .cur-tab.active[data-cur="BTC"] .tab-icon { background: linear-gradient(135deg, #f7931a, #e8850f); color: #fff; }
+        .cur-tab.active[data-cur="ETH"] { background: rgba(98,126,234,0.12); color: #627eea; }
+        .cur-tab.active[data-cur="ETH"] .tab-icon { background: linear-gradient(135deg, #627eea, #4a6cd4); color: #fff; }
+        .cur-tab.active[data-cur="TON"] { background: rgba(0,136,204,0.12); color: #0088cc; }
+        .cur-tab.active[data-cur="TON"] .tab-icon { background: linear-gradient(135deg, #0088cc, #0070aa); color: #fff; }
+        .cur-tab.active[data-cur="RUB"] { background: rgba(251,191,36,0.12); color: #fbbf24; }
+        .cur-tab.active[data-cur="RUB"] .tab-icon { background: var(--rub-gradient); color: #000; }
+        .cur-tab.active[data-cur="EUR"] { background: rgba(59,130,246,0.12); color: #3b82f6; }
+        .cur-tab.active[data-cur="EUR"] .tab-icon { background: var(--eur-gradient); color: #fff; }
 
-        .fiat-tab.active-eur {
-            background: rgba(59,130,246,0.12);
-            color: #3b82f6;
-        }
-
-        .fiat-tab.active-eur .tab-icon {
-            background: var(--eur-gradient);
-            color: #fff;
-            box-shadow: 0 4px 12px rgba(59,130,246,0.3);
-        }
-
-        .fiat-tab:not([class*='active-']):hover {
+        .cur-tab:not(.active):hover {
             background: rgba(255,255,255,0.04);
             color: var(--text-secondary);
+        }
+
+        .tabs-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            padding-left: 4px;
         }
 
         /* Quick Amount Buttons */
@@ -414,6 +425,24 @@
             background: var(--usdt-gradient);
             color: #fff;
             box-shadow: 0 8px 24px rgba(38, 161, 123, 0.25);
+        }
+
+        .icon-btc {
+            background: linear-gradient(135deg, #f7931a 0%, #e8850f 100%);
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(247, 147, 26, 0.25);
+        }
+
+        .icon-eth {
+            background: linear-gradient(135deg, #627eea 0%, #4a6cd4 100%);
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(98, 126, 234, 0.25);
+        }
+
+        .icon-ton {
+            background: linear-gradient(135deg, #0088cc 0%, #0070aa 100%);
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(0, 136, 204, 0.25);
         }
 
         .currency-input-wrap {
@@ -880,14 +909,26 @@
         <span class="rate-value" id="liveRate">1 RUB = 0.012642 USDT</span>
     </div>
 
-    <!-- Fiat Currency Tabs -->
-    <div class="fiat-tabs">
-        <button class="fiat-tab active-rub" id="btnFiatRub" onclick="setFiatCurrency('RUB')">
-            <span class="tab-icon">₽</span> Рубль
-        </button>
-        <button class="fiat-tab" id="btnFiatEur" onclick="setFiatCurrency('EUR')">
-            <span class="tab-icon">€</span> Евро
-        </button>
+    <!-- From Currency Tabs -->
+    <div class="tabs-label" data-i18n="youGive">Отдаёте</div>
+    <div class="currency-tabs" id="fromTabs">
+        <button class="cur-tab active" data-cur="RUB" onclick="setFromCurrency('RUB')"><span class="tab-icon">₽</span> RUB</button>
+        <button class="cur-tab" data-cur="EUR" onclick="setFromCurrency('EUR')"><span class="tab-icon">€</span> EUR</button>
+        <button class="cur-tab" data-cur="USDT" onclick="setFromCurrency('USDT')"><span class="tab-icon">₮</span> USDT</button>
+        <button class="cur-tab" data-cur="BTC" onclick="setFromCurrency('BTC')"><span class="tab-icon">₿</span> BTC</button>
+        <button class="cur-tab" data-cur="ETH" onclick="setFromCurrency('ETH')"><span class="tab-icon">Ξ</span> ETH</button>
+        <button class="cur-tab" data-cur="TON" onclick="setFromCurrency('TON')"><span class="tab-icon">💎</span> TON</button>
+    </div>
+
+    <!-- To Currency Tabs -->
+    <div class="tabs-label" data-i18n="youReceive">Получаете</div>
+    <div class="currency-tabs" id="toTabs">
+        <button class="cur-tab active" data-cur="USDT" onclick="setToCurrency('USDT')"><span class="tab-icon">₮</span> USDT</button>
+        <button class="cur-tab" data-cur="RUB" onclick="setToCurrency('RUB')"><span class="tab-icon">₽</span> RUB</button>
+        <button class="cur-tab" data-cur="EUR" onclick="setToCurrency('EUR')"><span class="tab-icon">€</span> EUR</button>
+        <button class="cur-tab" data-cur="BTC" onclick="setToCurrency('BTC')"><span class="tab-icon">₿</span> BTC</button>
+        <button class="cur-tab" data-cur="ETH" onclick="setToCurrency('ETH')"><span class="tab-icon">Ξ</span> ETH</button>
+        <button class="cur-tab" data-cur="TON" onclick="setToCurrency('TON')"><span class="tab-icon">💎</span> TON</button>
     </div>
 
     <!-- Main Exchange Card -->
@@ -1019,35 +1060,62 @@ const fromBalanceValue = document.getElementById('fromBalanceValue');
 const toIcon = document.getElementById('toIcon');
 const toName = document.getElementById('toName');
 const toBalanceValue = document.getElementById('toBalanceValue');
-const fromLabel = document.getElementById('fromLabel');
-const toLabel = document.getElementById('toLabel');
-const youGetLabel = document.getElementById('youGetLabel');
 
-let rubBalance = 0;
-let eurBalance = 0;
-let usdtBalance = 0;
-let rate = 0.012642;   // RUB ↔ USDT
-let eurRate = 1.089;   // EUR ↔ USDT
-let isSwapped = false;
-let selectedFiat = 'RUB'; // 'RUB' or 'EUR'
+// Currency metadata
+const CUR_META = {
+    USDT: { symbol: '₮', name: 'Tether USDT',       icon: 'icon-usdt', char: '₮', decimals: 2 },
+    BTC:  { symbol: '₿', name: 'Bitcoin',            icon: 'icon-btc',  char: '₿', decimals: 8 },
+    ETH:  { symbol: 'Ξ', name: 'Ethereum',           icon: 'icon-eth',  char: 'Ξ', decimals: 8 },
+    TON:  { symbol: '💎', name: 'Toncoin',           icon: 'icon-ton',  char: '💎', decimals: 4 },
+    RUB:  { symbol: '₽', name: 'Российский рубль',   icon: 'icon-rub',  char: '₽', decimals: 2 },
+    EUR:  { symbol: '€', name: 'Euro',                icon: 'icon-eur',  char: '€', decimals: 2 }
+};
 
-function setFiatCurrency(fiat) {
-    selectedFiat = fiat;
-    isSwapped = false;
+// State
+let balances = { USDT: 0, BTC: 0, ETH: 0, TON: 0, RUB: 0, EUR: 0 };
+let rates = { USDT: 1, BTC: 60000, ETH: 3000, TON: 5, RUB: 0.012, EUR: 1.089 };
+let selectedFrom = 'RUB';
+let selectedTo = 'USDT';
+
+function setFromCurrency(cur) {
+    if (cur === selectedTo) {
+        // Swap them
+        selectedTo = selectedFrom;
+        updateTabsUI('toTabs', selectedTo);
+    }
+    selectedFrom = cur;
+    updateTabsUI('fromTabs', selectedFrom);
     amountInput.value = '';
-
-    const rubBtn = document.getElementById('btnFiatRub');
-    const eurBtn = document.getElementById('btnFiatEur');
-    rubBtn.className = 'fiat-tab' + (fiat === 'RUB' ? ' active-rub' : '');
-    eurBtn.className = 'fiat-tab' + (fiat === 'EUR' ? ' active-eur' : '');
     updateDisplay();
 }
 
+function setToCurrency(cur) {
+    if (cur === selectedFrom) {
+        selectedFrom = selectedTo;
+        updateTabsUI('fromTabs', selectedFrom);
+    }
+    selectedTo = cur;
+    updateTabsUI('toTabs', selectedTo);
+    amountInput.value = '';
+    updateDisplay();
+}
+
+function updateTabsUI(containerId, activeCur) {
+    const tabs = document.getElementById(containerId).querySelectorAll('.cur-tab');
+    tabs.forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.cur === activeCur);
+    });
+}
+
 function setPercent(pct) {
-    const isEur = selectedFiat === 'EUR';
-    const bal = isSwapped ? usdtBalance : (isEur ? eurBalance : rubBalance);
-    const val = (bal * pct / 100);
-    amountInput.value = val > 0 ? parseFloat(val.toFixed(2)) : '';
+    const bal = balances[selectedFrom] || 0;
+    const val = bal * pct / 100;
+    amountInput.value = val > 0 ? parseFloat(val.toFixed(CUR_META[selectedFrom].decimals)) : '';
+    updateDisplay();
+}
+
+function selectAll() {
+    amountInput.value = balances[selectedFrom] || 0;
     updateDisplay();
 }
 
@@ -1088,12 +1156,10 @@ function showAlert(msg, success = false) {
     topAlert.className = success ? 'success' : 'error';
     topAlert.classList.add('show');
     
-    // Swipe up to dismiss
     let startY = 0, currentY = 0, timeout, isDragging = false;
     topAlert.ontouchstart = e => { e.preventDefault(); e.stopPropagation(); startY = e.touches[0].clientY; isDragging = true; clearTimeout(timeout); topAlert.style.transition = 'none'; };
     topAlert.ontouchmove = e => {
-      e.preventDefault();
-      e.stopPropagation();
+      e.preventDefault(); e.stopPropagation();
       if (!isDragging) return;
       currentY = e.touches[0].clientY - startY;
       if (currentY < 0) {
@@ -1107,87 +1173,57 @@ function showAlert(msg, success = false) {
       if (currentY < -50) {
         topAlert.style.transform = 'translateX(-50%) translateY(-120px)';
         topAlert.style.opacity = '0';
-        setTimeout(() => {
-          topAlert.classList.remove('show');
-          topAlert.style.transform = '';
-          topAlert.style.opacity = '';
-        }, 250);
+        setTimeout(() => { topAlert.classList.remove('show'); topAlert.style.transform = ''; topAlert.style.opacity = ''; }, 250);
       } else {
-        topAlert.style.transform = '';
-        topAlert.style.opacity = '';
+        topAlert.style.transform = ''; topAlert.style.opacity = '';
         timeout = setTimeout(() => topAlert.classList.remove('show'), 3000);
       }
       currentY = 0;
     };
-    
     timeout = setTimeout(() => topAlert.classList.remove('show'), 3000);
 }
 
 function updateDisplay() {
     const val = parseFloat(amountInput.value) || 0;
+    const fm = CUR_META[selectedFrom];
+    const tm = CUR_META[selectedTo];
 
-    const isEur = selectedFiat === 'EUR';
-    const activeFiatBalance = isEur ? eurBalance : rubBalance;
-    const activeRate     = isEur ? eurRate : rate;
-    const fiatSymbol     = isEur ? '€' : '₽';
-    const fiatCode       = isEur ? 'EUR' : 'RUB';
-    const fiatIconClass  = isEur ? 'currency-icon icon-eur' : 'currency-icon icon-rub';
-    const fiatIconChar   = isEur ? '€' : '₽';
-    const fiatName       = isEur ? 'Euro' : (typeof t === 'function' ? t('rub') : 'Российский рубль');
-    const ratePrecision  = isEur ? 4 : 6;
+    // Compute rate: 1 FROM = X TO
+    const fromUsdt = rates[selectedFrom] || 1;
+    const toUsdt = rates[selectedTo] || 1;
+    const pairRate = fromUsdt / toUsdt;
+    const result = val * pairRate;
 
-    if (isSwapped) {
-        // USDT → fiat
-        exchangePair.innerText = `USDT → ${fiatCode}`;
-        const reverseRate = 1 / activeRate;
-        const result = val * reverseRate;
+    // Exchange pair header
+    exchangePair.innerText = `${selectedFrom} → ${selectedTo}`;
 
-        liveRate.innerText = `1 USDT = ${reverseRate.toFixed(2)} ${fiatCode}`;
-        resultAmount.innerText = result.toFixed(2);
-        resultPreview.innerText = result.toFixed(2) + ' ' + fiatSymbol;
+    // Live rate
+    const ratePrecision = pairRate >= 1000 ? 2 : pairRate >= 1 ? 4 : pairRate >= 0.001 ? 6 : 8;
+    liveRate.innerText = `1 ${selectedFrom} = ${pairRate.toFixed(ratePrecision)} ${selectedTo}`;
 
-        fromIcon.className = 'currency-icon icon-usdt';
-        fromIcon.innerText = '₮';
-        fromName.innerText = 'Tether USDT';
-        fromBalanceValue.innerText = usdtBalance.toFixed(2);
+    // Result
+    resultAmount.innerText = result.toFixed(tm.decimals);
+    resultPreview.innerText = `${result.toFixed(tm.decimals)} ${selectedTo}`;
 
-        toIcon.className = fiatIconClass;
-        toIcon.innerText = fiatIconChar;
-        toName.innerText = fiatName;
-        toBalanceValue.innerText = activeFiatBalance.toFixed(2);
+    // From block
+    fromIcon.className = 'currency-icon ' + fm.icon;
+    fromIcon.innerText = fm.char;
+    fromName.innerText = fm.name;
+    fromBalanceValue.innerText = (balances[selectedFrom] || 0).toFixed(fm.decimals);
 
-        swapBtn.classList.add('rotated');
-    } else {
-        // fiat → USDT
-        exchangePair.innerText = `${fiatCode} → USDT`;
-        const result = val * activeRate;
-
-        liveRate.innerText = `1 ${fiatCode} = ${activeRate.toFixed(ratePrecision)} USDT`;
-        resultAmount.innerText = result.toFixed(2);
-        resultPreview.innerText = result.toFixed(2) + ' USDT';
-
-        fromIcon.className = fiatIconClass;
-        fromIcon.innerText = fiatIconChar;
-        fromName.innerText = fiatName;
-        fromBalanceValue.innerText = activeFiatBalance.toFixed(2);
-
-        toIcon.className = 'currency-icon icon-usdt';
-        toIcon.innerText = '₮';
-        toName.innerText = 'Tether USDT';
-        toBalanceValue.innerText = usdtBalance.toFixed(2);
-
-        swapBtn.classList.remove('rotated');
-    }
-}
-
-function selectAll() {
-    const isEur = selectedFiat === 'EUR';
-    amountInput.value = isSwapped ? usdtBalance : (isEur ? eurBalance : rubBalance);
-    updateDisplay();
+    // To block
+    toIcon.className = 'currency-icon ' + tm.icon;
+    toIcon.innerText = tm.char;
+    toName.innerText = tm.name;
+    toBalanceValue.innerText = (balances[selectedTo] || 0).toFixed(tm.decimals);
 }
 
 swapBtn.addEventListener('click', () => {
-    isSwapped = !isSwapped;
+    const tmp = selectedFrom;
+    selectedFrom = selectedTo;
+    selectedTo = tmp;
+    updateTabsUI('fromTabs', selectedFrom);
+    updateTabsUI('toTabs', selectedTo);
     amountInput.value = '';
     updateDisplay();
 });
@@ -1197,25 +1233,23 @@ async function loadData() {
     try {
         refreshBtn.style.transform = 'rotate(360deg)';
 
-        // Show cached values instantly
-        if (window.USER_BALANCES) {
-            rubBalance  = window.USER_BALANCES.rub  || 0;
-            eurBalance  = window.USER_BALANCES.eur  || 0;
-            usdtBalance = window.USER_BALANCES.usdt || 0;
-            updateDisplay();
-        }
-        // Always fetch fresh data to get accurate EUR balance
         const response = await fetch(`/api/profile/${userId}?t=${Date.now()}`);
-        const payload  = await response.json();
-        const data     = payload?.data || {};
+        const payload = await response.json();
+        const data = payload?.data || {};
         if (!payload.error) {
-            rubBalance  = parseFloat(data.rub)  || 0;
-            eurBalance  = parseFloat(data.eur)  || 0;
-            usdtBalance = parseFloat(data.usdt) || 0;
+            balances.RUB  = parseFloat(data.rub)  || 0;
+            balances.EUR  = parseFloat(data.eur)  || 0;
+            balances.USDT = parseFloat(data.usdt) || 0;
+            balances.BTC  = parseFloat(data.btc)  || 0;
+            balances.ETH  = parseFloat(data.eth)  || 0;
+            balances.TON  = parseFloat(data.ton)  || 0;
             if (window.USER_BALANCES) {
-                window.USER_BALANCES.rub  = rubBalance;
-                window.USER_BALANCES.eur  = eurBalance;
-                window.USER_BALANCES.usdt = usdtBalance;
+                window.USER_BALANCES.rub  = balances.RUB;
+                window.USER_BALANCES.eur  = balances.EUR;
+                window.USER_BALANCES.usdt = balances.USDT;
+                window.USER_BALANCES.btc  = balances.BTC;
+                window.USER_BALANCES.eth  = balances.ETH;
+                window.USER_BALANCES.ton  = balances.TON;
             }
         }
     } catch (e) { /* silent */ }
@@ -1228,15 +1262,8 @@ async function loadData() {
 exchangeBtn.onclick = async function() {
     const amount = parseFloat(amountInput.value) || 0;
     if (amount <= 0) return showAlert("Введите сумму для обмена");
-
-    const isEur = selectedFiat === 'EUR';
-    const side  = isSwapped
-        ? (isEur ? 'usdt_to_eur' : 'usdt_to_rub')
-        : (isEur ? 'eur_to_usdt' : 'rub_to_usdt');
-
-    let currentBalance;
-    currentBalance = isSwapped ? usdtBalance : (isEur ? eurBalance : rubBalance);
-    if (amount > currentBalance) return showAlert("Недостаточно средств");
+    if (selectedFrom === selectedTo) return showAlert("Выберите разные валюты");
+    if (amount > (balances[selectedFrom] || 0)) return showAlert("Недостаточно средств");
 
     try {
         exchangeBtn.disabled = true;
@@ -1245,29 +1272,38 @@ exchangeBtn.onclick = async function() {
         const response = await fetch('/api/exchange', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId, amount, side })
+            body: JSON.stringify({ user_id: userId, amount, from: selectedFrom, to: selectedTo })
         });
         const result = await response.json();
 
         if (response.ok) {
-            showAlert("✅ Обмен выполнен успешно!", true);
+            showAlert("Обмен выполнен успешно!", true);
             amountInput.value = "";
             if (result.data?.newBalances) {
-                rubBalance  = result.data.newBalances.rub  ?? rubBalance;
-                eurBalance  = result.data.newBalances.eur  ?? eurBalance;
-                usdtBalance = result.data.newBalances.usdt ?? usdtBalance;
+                const nb = result.data.newBalances;
+                balances.RUB  = nb.rub  ?? balances.RUB;
+                balances.EUR  = nb.eur  ?? balances.EUR;
+                balances.USDT = nb.usdt ?? balances.USDT;
+                balances.BTC  = nb.btc  ?? balances.BTC;
+                balances.ETH  = nb.eth  ?? balances.ETH;
+                balances.TON  = nb.ton  ?? balances.TON;
                 if (window.USER_BALANCES) {
-                    window.USER_BALANCES.rub  = rubBalance;
-                    window.USER_BALANCES.eur  = eurBalance;
-                    window.USER_BALANCES.usdt = usdtBalance;
+                    window.USER_BALANCES.rub  = balances.RUB;
+                    window.USER_BALANCES.eur  = balances.EUR;
+                    window.USER_BALANCES.usdt = balances.USDT;
+                    window.USER_BALANCES.btc  = balances.BTC;
+                    window.USER_BALANCES.eth  = balances.ETH;
+                    window.USER_BALANCES.ton  = balances.TON;
                 }
             }
             if (typeof BalanceManager !== 'undefined') await BalanceManager.refresh();
-            // Re-sync local vars after balance.js refresh to stay accurate
             if (window.USER_BALANCES) {
-                rubBalance  = window.USER_BALANCES.rub  || rubBalance;
-                eurBalance  = window.USER_BALANCES.eur  || eurBalance;
-                usdtBalance = window.USER_BALANCES.usdt || usdtBalance;
+                balances.RUB  = window.USER_BALANCES.rub  || balances.RUB;
+                balances.EUR  = window.USER_BALANCES.eur  || balances.EUR;
+                balances.USDT = window.USER_BALANCES.usdt || balances.USDT;
+                balances.BTC  = window.USER_BALANCES.btc  || balances.BTC;
+                balances.ETH  = window.USER_BALANCES.eth  || balances.ETH;
+                balances.TON  = window.USER_BALANCES.ton  || balances.TON;
             }
             updateDisplay();
             loadExchangeHistory();
@@ -1284,7 +1320,6 @@ exchangeBtn.onclick = async function() {
 amountInput.addEventListener('input', updateDisplay);
 refreshBtn.onclick = loadData;
 
-// Tap anywhere to dismiss keyboard (use touchend for mobile)
 function handleTapToDismiss(e) {
     const activeEl = document.activeElement;
     if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
@@ -1328,7 +1363,6 @@ async function loadExchangeHistory() {
         badge.textContent = items.length + ' посл.';
 
         list.innerHTML = items.map(tx => {
-            // description format: "Обмен 1000.00 RUB → 12.64 USDT"
             const desc = tx.description || '';
             const parts = desc.match(/→\s*([\d.]+)\s*(\S+)/);
             const toAmount = parts ? parts[1] : '';
@@ -1347,13 +1381,15 @@ async function loadExchangeHistory() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        // Fetch live rates from server
         const rateRes = await fetch('/api/exchange/rate');
         if (rateRes.ok) {
             const rateData = await rateRes.json();
-            if (rateData?.data) {
-                rate = rateData.data.rub_to_usdt || rate;
-                eurRate = rateData.data.eur_to_usdt || eurRate;
+            if (rateData?.data?.rates) {
+                rates = rateData.data.rates;
+            } else if (rateData?.data) {
+                // Legacy fallback
+                rates.RUB = rateData.data.rub_to_usdt || rates.RUB;
+                rates.EUR = rateData.data.eur_to_usdt || rates.EUR;
             }
         }
         userId = await resolveUserId();
