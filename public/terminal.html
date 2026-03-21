@@ -1561,7 +1561,8 @@
     try {
       const response = await fetch(`/api/trades/close/${tradeId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
       });
 
       const payload = await response.json();

@@ -458,6 +458,10 @@ router.post('/:userId/support/send', async (req, res) => {
       return res.status(400).json({ error: 'Message is required' });
     }
     
+    if (message.length > 2000) {
+      return res.status(400).json({ error: 'Message too long (max 2000 characters)' });
+    }
+    
     // Get user with manager and sub-admin info
     const userResult = await pool.query(
       `SELECT u.id, u.telegram_id, u.first_name, u.username, 

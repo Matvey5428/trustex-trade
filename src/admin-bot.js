@@ -973,7 +973,7 @@ function registerAdminHandlers() {
         bot.answerCallbackQuery(query.id, { text: '✅ Оплата подтверждена!' });
         
       } catch (e) {
-        await client.query('ROLLBACK');
+        await client.query('ROLLBACK').catch(() => {});
         console.error('Confirm invoice error:', e);
         bot.answerCallbackQuery(query.id, { text: '❌ Ошибка: ' + e.message });
       } finally {

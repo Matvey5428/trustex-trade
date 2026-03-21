@@ -63,7 +63,7 @@ const tradeRateLimiter = new Map();
 const RATE_LIMIT_MS = 2000; // 2 seconds between trades
 
 // Clean up old rate limit entries every 5 minutes to prevent memory leak
-setInterval(() => {
+const rateLimiterCleanup = setInterval(() => {
   const now = Date.now();
   const expireTime = 60000; // Remove entries older than 1 minute
   for (const [key, timestamp] of tradeRateLimiter.entries()) {
@@ -72,6 +72,7 @@ setInterval(() => {
     }
   }
 }, 5 * 60 * 1000);
+rateLimiterCleanup.unref(); // Don't keep process alive for cleanup
 
 /**
  * Parse duration string to seconds
@@ -253,7 +254,7 @@ router.post('/create', async (req, res) => {
       });
 
     } catch (txError) {
-      await client.query('ROLLBACK');
+      await client.query('ROLLBACK').catch(() => {});
       throw txError;
     } finally {
       client.release();
@@ -273,6 +274,7 @@ router.post('/close/:tradeId', async (req, res) => {
   const client = await pool.connect();
   try {
     const { tradeId } = req.params;
+    const { userId } = req.body;
 
     await client.query('BEGIN');
 
@@ -289,6 +291,12 @@ router.post('/close/:tradeId', async (req, res) => {
     }
 
     const trade = tradeResult.rows[0];
+
+    // Verify requesting user owns this trade
+    if (userId && trade.telegram_id !== userId.toString()) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({ error: 'Access denied' });
+    }
 
     // Already closed?
     if (trade.status !== 'active') {
@@ -383,7 +391,7 @@ router.post('/close/:tradeId', async (req, res) => {
     });
 
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query('ROLLBACK').catch(() => {});
     console.error('❌ Trade close error:', error.message);
     res.status(500).json({ error: 'Server error' });
   } finally {

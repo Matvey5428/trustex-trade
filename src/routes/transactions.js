@@ -209,7 +209,7 @@ router.post('/withdraw', async (req, res) => {
     });
 
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query('ROLLBACK').catch(() => {});
     console.error('❌ Withdraw error:', error.message);
     res.status(500).json({ error: 'Server error' });
   } finally {

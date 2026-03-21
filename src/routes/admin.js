@@ -540,7 +540,7 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
       currency
     });
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query('ROLLBACK').catch(() => {});
     console.error('Return withdrawal error:', error);
     res.status(500).json({ success: false, error: 'Server error' });
   } finally {
@@ -1117,7 +1117,7 @@ router.post('/deposits/:id/approve', adminCheck, async (req, res) => {
       message: 'Deposit approved'
     });
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query('ROLLBACK').catch(() => {});
     console.error('Approve deposit error:', error);
     res.status(500).json({ success: false, error: 'Server error' });
   } finally {
@@ -1636,7 +1636,7 @@ router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
       message: 'Оплата подтверждена'
     });
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query('ROLLBACK').catch(() => {});
     console.error('Confirm invoice error:', error);
     res.status(500).json({ success: false, error: 'Server error' });
   } finally {
