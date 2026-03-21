@@ -1209,13 +1209,13 @@ function updateDisplay() {
     fromIcon.className = 'currency-icon ' + fm.icon;
     fromIcon.innerText = fm.char;
     fromName.innerText = fm.name;
-    fromBalanceValue.innerText = (balances[selectedFrom] || 0).toFixed(fm.decimals);
+    fromBalanceValue.innerText = (balances[selectedFrom] || 0).toFixed(fm.decimals) + ' ' + selectedFrom;
 
     // To block
     toIcon.className = 'currency-icon ' + tm.icon;
     toIcon.innerText = tm.char;
     toName.innerText = tm.name;
-    toBalanceValue.innerText = (balances[selectedTo] || 0).toFixed(tm.decimals);
+    toBalanceValue.innerText = (balances[selectedTo] || 0).toFixed(tm.decimals) + ' ' + selectedTo;
 }
 
 swapBtn.addEventListener('click', () => {
