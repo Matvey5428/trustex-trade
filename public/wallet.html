@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Кошелек - TrustEx</title>
-    <link rel="preconnect" href="https://api.binance.com">
     <link rel="preconnect" href="https://trustex-trade.onrender.com">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
@@ -831,7 +830,7 @@
     }
 
     async function loadPrices() {
-        // Use server exchange rates (same source as exchange backend) for consistency
+        // Use server exchange rates ONLY (same source as exchange backend) for consistency
         try {
             const rateRes = await fetch('/api/exchange/rate');
             if (rateRes.ok) {
@@ -843,17 +842,16 @@
                     return;
                 }
             }
-        } catch (e) { /* fall through to Binance */ }
-        // Fallback: direct Binance
-        try {
-            const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbols=["BTCUSDT","ETHUSDT","TONUSDT"]');
-            const data = await res.json();
-            data.forEach(item => {
-                if (item.symbol === 'BTCUSDT') prices.btc = parseFloat(item.price);
-                if (item.symbol === 'ETHUSDT') prices.eth = parseFloat(item.price);
-                if (item.symbol === 'TONUSDT') prices.ton = parseFloat(item.price);
-            });
-        } catch (e) { /* silent */ }
+        } catch (e) { /* use BalanceManager cache */ }
+        // Fallback: use BalanceManager cached rates (from same server source)
+        if (typeof BalanceManager !== 'undefined') {
+            const r = BalanceManager.getRates();
+            if (r) {
+                prices.btc = r.BTC || prices.btc;
+                prices.eth = r.ETH || prices.eth;
+                prices.ton = r.TON || prices.ton;
+            }
+        }
     }
 
     async function loadData() {

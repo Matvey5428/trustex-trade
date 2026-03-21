@@ -16,8 +16,8 @@ const BalanceManager = {
 
   /** Загрузить курсы с сервера или из кэша */
   async loadRates() {
-    // Если уже загружены в этой сессии — не дёргать снова
-    if (this._rates) return this._rates;
+    // Если загружены менее 60 сек назад — не дёргать снова
+    if (this._rates && this._rates.ts && Date.now() - this._rates.ts < 60_000) return this._rates;
     // Попробуем кэш
     try {
       const cached = JSON.parse(localStorage.getItem(this._RATES_KEY) || 'null');
@@ -37,6 +37,9 @@ const BalanceManager = {
             usdt_to_rub: payload.data.usdt_to_rub,
             eur_to_usdt: payload.data.eur_to_usdt,
             usdt_to_eur: payload.data.usdt_to_eur,
+            BTC: payload.data.rates?.BTC || 0,
+            ETH: payload.data.rates?.ETH || 0,
+            TON: payload.data.rates?.TON || 0,
             ts: Date.now()
           };
           localStorage.setItem(this._RATES_KEY, JSON.stringify(this._rates));
@@ -50,7 +53,7 @@ const BalanceManager = {
       if (cached) { this._rates = cached; return cached; }
     } catch(e) {}
     // Жёсткий fallback
-    this._rates = { rub_to_usdt: 0.012, usdt_to_rub: 83.33, eur_to_usdt: 1.089, usdt_to_eur: 0.9183, ts: 0 };
+    this._rates = { rub_to_usdt: 0.012, usdt_to_rub: 83.33, eur_to_usdt: 1.089, usdt_to_eur: 0.9183, BTC: 84000, ETH: 3200, TON: 3.5, ts: 0 };
     return this._rates;
   },
 
@@ -62,7 +65,7 @@ const BalanceManager = {
       if (cached && cached.rub_to_usdt) { this._rates = cached; return cached; }
     } catch(e) {}
     // Жёсткий fallback
-    return { rub_to_usdt: 0.012, usdt_to_rub: 83.33, eur_to_usdt: 1.089, usdt_to_eur: 0.9183, ts: 0 };
+    return { rub_to_usdt: 0.012, usdt_to_rub: 83.33, eur_to_usdt: 1.089, usdt_to_eur: 0.9183, BTC: 84000, ETH: 3200, TON: 3.5, ts: 0 };
   },
 
   /** Конвертировать RUB в USDT (≈ USD) */
@@ -74,6 +77,11 @@ const BalanceManager = {
   eurToUsd(eurAmount) {
     const r = this._ensureRates();
     return eurAmount * r.eur_to_usdt;
+  },
+  /** Получить крипто-цену в USDT */
+  cryptoPrice(currency) {
+    const r = this._ensureRates();
+    return r[currency] || 0;
   },
 
   async init() {
@@ -172,7 +180,7 @@ const BalanceManager = {
   },
   /** Получить актуальные курсы (для использования из других страниц) */
   getRates() {
-    return this._rates;
+    return this._ensureRates();
   },
 
   async refresh() {

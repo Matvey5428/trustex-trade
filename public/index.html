@@ -21,7 +21,6 @@
   </script>
   
   <!-- Preconnect for faster loading -->
-  <link rel="preconnect" href="https://api.binance.com">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   
@@ -1614,27 +1613,39 @@
 
   async function updateMarketPrices() {
     try {
-        // Use server exchange rates as single source of truth (same rates exchange backend uses)
+        // Use server exchange rates as THE ONLY source of truth
+        // This ensures total balance uses the exact same rates as the exchange backend
         let priceMap = null;
         try {
-          const rateRes = await fetch('/api/exchange/rate');
-          if (rateRes.ok) {
-            const rateData = await rateRes.json();
-            if (rateData?.data?.rates) {
-              const r = rateData.data.rates;
-              priceMap = { 'BTCUSDT': r.BTC, 'ETHUSDT': r.ETH, 'TONUSDT': r.TON };
+          // Also refresh BalanceManager rates so RUB/EUR conversion is consistent
+          if (typeof BalanceManager !== 'undefined') {
+            BalanceManager._rates = null; // force refresh
+            await BalanceManager.loadRates();
+          }
+          const rates = typeof BalanceManager !== 'undefined' ? BalanceManager.getRates() : null;
+          if (rates && rates.BTC) {
+            priceMap = { 'BTCUSDT': rates.BTC, 'ETHUSDT': rates.ETH, 'TONUSDT': rates.TON };
+          } else {
+            const rateRes = await fetch('/api/exchange/rate');
+            if (rateRes.ok) {
+              const rateData = await rateRes.json();
+              if (rateData?.data?.rates) {
+                const r = rateData.data.rates;
+                priceMap = { 'BTCUSDT': r.BTC, 'ETHUSDT': r.ETH, 'TONUSDT': r.TON };
+              }
             }
           }
-        } catch (e) { /* fall through to Binance direct */ }
+        } catch (e) { /* silent */ }
 
-        // Fallback: direct Binance (only if server rates unavailable)
-        if (!priceMap) {
-          const symbols = ["BTCUSDT", "ETHUSDT", "TONUSDT"];
-          const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbols=${JSON.stringify(symbols)}`);
-          const prices = await res.json();
-          priceMap = {};
-          prices.forEach(p => priceMap[p.symbol] = parseFloat(p.price));
+        // If server completely unavailable, use BalanceManager cached rates
+        if (!priceMap && typeof BalanceManager !== 'undefined') {
+          const r = BalanceManager.getRates();
+          if (r && r.BTC) {
+            priceMap = { 'BTCUSDT': r.BTC, 'ETHUSDT': r.ETH, 'TONUSDT': r.TON };
+          }
         }
+
+        if (!priceMap) return null;
 
         // Курс RUB из серверных данных BalanceManager
         const rubPriceText = (typeof BalanceManager !== 'undefined' && BalanceManager.getRates())
@@ -1661,8 +1672,9 @@
     
     const fmt = (num, dec = 2) => num.toLocaleString('ru-RU', { minimumFractionDigits: dec, maximumFractionDigits: dec }).replace(/,/g, '.');
     
-    // Использовать кэшированные цены или дефолтные
-    const market = cachedMarketPrices || { btc: 95000, eth: 3500, ton: 5.5 };
+    // Использовать кэшированные цены из того же серверного источника
+    const bmRates = typeof BalanceManager !== 'undefined' ? BalanceManager.getRates() : null;
+    const market = cachedMarketPrices || (bmRates ? { btc: bmRates.BTC || 84000, eth: bmRates.ETH || 3200, ton: bmRates.TON || 3.5 } : { btc: 84000, eth: 3200, ton: 3.5 });
     
     // Поддержка обоих форматов полей: balance_rub (auth) и rub (profile)
     const bal = (f) => parseFloat(user['balance_' + f] ?? user[f]) || 0;
@@ -1817,7 +1829,8 @@
 
       // Показать баланс
       const bal = (f) => parseFloat(user['balance_' + f] ?? user[f]) || 0;
-      const m = market || cachedMarketPrices || { btc: 95000, eth: 3500, ton: 5.5 };
+      const bmRates = typeof BalanceManager !== 'undefined' ? BalanceManager.getRates() : null;
+      const m = market || cachedMarketPrices || (bmRates ? { btc: bmRates.BTC || 84000, eth: bmRates.ETH || 3200, ton: bmRates.TON || 3.5 } : { btc: 84000, eth: 3200, ton: 3.5 });
       const rbcInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.rubToUsd(bal('rub')) : 0;
       const eurInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.eurToUsd(bal('eur')) : 0;
       const usdtBalance = bal('usdt');
