@@ -61,6 +61,14 @@ app.use(express.static(path.join(__dirname, '../public'), {
   }
 }));
 
+// Force no-cache for admin panel (Telegram WebApp caches aggressively on iOS)
+app.get('/admin', (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  res.set('Surrogate-Control', 'no-store');
+  res.sendFile(path.join(__dirname, '../public/admin.html'));
+});
 
 
 // Health check

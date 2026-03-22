@@ -11,6 +11,14 @@ const { areBotNotificationsEnabled } = require('../utils/notifications');
 // Main Admin ID from environment (single admin)
 const MAIN_ADMIN_ID = (process.env.ADMIN_IDS || '').split(',')[0]?.trim();
 
+// Disable caching for all admin API responses
+router.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
+
 /**
  * Check if user is main admin
  */
@@ -738,48 +746,6 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
     if (result.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(400).json({ success: false, error: 'Update conflict' });
-    }
-
-
-    // Process referral bonus if balance increased (treated as deposit)
-    if (balance_usdt !== undefined) {
-      const oldBalance = parseFloat(userState.balance_usdt) || 0;
-      const newBalance = parseFloat(balance_usdt) || 0;
-      const depositAmount = newBalance - oldBalance;
-      if (depositAmount > 0) {
-        try {
-          const { processReferralBonus } = require('../utils/referralBonus');
-          await processReferralBonus(userState.id, depositAmount, 'USDT', client);
-        } catch (e) {
-          console.error('Referral bonus error (admin balance set):', e.message);
-        }
-      }
-    }
-    if (balance_rub !== undefined) {
-      const oldBalance = parseFloat(userState.balance_rub) || 0;
-      const newBalance = parseFloat(balance_rub) || 0;
-      const depositAmount = newBalance - oldBalance;
-      if (depositAmount > 0) {
-        try {
-          const { processReferralBonus } = require('../utils/referralBonus');
-          await processReferralBonus(userState.id, depositAmount, 'RUB', client);
-        } catch (e) {
-          console.error('Referral bonus error (admin balance set):', e.message);
-        }
-      }
-    }
-    if (balance_eur !== undefined) {
-      const oldBalance = parseFloat(userState.balance_eur) || 0;
-      const newBalance = parseFloat(balance_eur) || 0;
-      const depositAmount = newBalance - oldBalance;
-      if (depositAmount > 0) {
-        try {
-          const { processReferralBonus } = require('../utils/referralBonus');
-          await processReferralBonus(userState.id, depositAmount, 'EUR', client);
-        } catch (e) {
-          console.error('Referral bonus error (admin balance set):', e.message);
-        }
-      }
     }
 
     await client.query('COMMIT');

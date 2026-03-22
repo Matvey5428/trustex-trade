@@ -85,7 +85,8 @@ function initAdminBot() {
   registerAdminHandlers();
 
   // Устанавливаем кнопку меню через прямой API-вызов (надёжнее чем через библиотеку)
-  const ADMIN_APP_URL = `${WEB_APP_URL}/admin.html`;
+  // /admin route serves admin.html with strict no-cache headers
+  const ADMIN_APP_URL = `${WEB_APP_URL}/admin`;
   const https = require('https');
   const menuData = JSON.stringify({
     menu_button: {
@@ -167,7 +168,7 @@ function getAdminWebhookPath() {
 function registerAdminHandlers() {
   if (!bot) return;
 
-  const ADMIN_APP_URL = `${WEB_APP_URL}/admin.html`;
+  const ADMIN_APP_URL = `${WEB_APP_URL}/admin`;
 
   // Start command
   bot.onText(/\/start/, async (msg) => {

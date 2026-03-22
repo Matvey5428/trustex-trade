@@ -3,9 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>TrustEx Admin</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
+    // Force reload if served from Telegram cache (version check)
+    (function() {
+      var BUILD_VERSION = '20260322b';
+      var lastVer = localStorage.getItem('trustex_admin_ver');
+      if (lastVer !== BUILD_VERSION) {
+        localStorage.setItem('trustex_admin_ver', BUILD_VERSION);
+        if (lastVer) {
+          // Had old version cached — force reload from server
+          location.reload(true);
+          return;
+        }
+      }
+    })();
+    
     // If returning from chat with ?user= param, cover page with opaque overlay instantly
     if (new URLSearchParams(window.location.search).get('user')) {
       document.write('<div id="chatReturnOverlay" style="position:fixed;inset:0;background:#0a0e1a;z-index:9999;display:flex;align-items:center;justify-content:center"><div style="width:40px;height:40px;border:3px solid rgba(252,213,53,0.3);border-top-color:#fcd535;border-radius:50%;animation:spin 0.8s linear infinite"></div></div>');
