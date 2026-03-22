@@ -896,23 +896,36 @@
     if (onUnlockCallback) onUnlockCallback();
   }
 
-  // Save session to localStorage with timestamp (persists across WebView recreations)
+  // Save session to localStorage (persists during page navigation)
   function saveSession() {
     const session = {
       userId: currentUserId,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      active: true
     };
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   }
 
-  // Check if session is valid (24 hour timeout)
+  // Invalidate session when app goes to background (minimized/switched away)
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+      // App minimized/hidden - mark session inactive so PIN is required on return
+      try {
+        const session = JSON.parse(localStorage.getItem(SESSION_KEY));
+        if (session) {
+          session.active = false;
+          localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+        }
+      } catch (e) {}
+    }
+  });
+
+  // Check if session is valid (must be active - not minimized since last PIN entry)
   function isSessionValid() {
     try {
       const session = JSON.parse(localStorage.getItem(SESSION_KEY));
       if (!session || session.userId !== currentUserId) return false;
-      // 24 hours session
-      const SESSION_TIMEOUT = 24 * 60 * 60 * 1000;
-      return (Date.now() - session.timestamp) < SESSION_TIMEOUT;
+      return session.active === true;
     } catch (e) {
       return false;
     }
