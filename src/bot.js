@@ -27,10 +27,11 @@ function initBot() {
   }
 
   isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
+  const useWebhook = isProduction && WEBHOOK_URL.startsWith('https://');
 
   try {
-    if (isProduction) {
-      // Production: webhook режим (без polling)
+    if (useWebhook) {
+      // Production + HTTPS: webhook режим
       bot = new TelegramBot(BOT_TOKEN, { polling: false });
       console.log('🤖 Telegram bot initialized (webhook mode)');
       
@@ -90,7 +91,7 @@ function initBot() {
  * Установка webhook для production
  */
 async function setupWebhook() {
-  if (!bot || !isProduction) return;
+  if (!bot || !isProduction || !WEBHOOK_URL.startsWith('https://')) return;
 
   const webhookPath = `/bot${BOT_TOKEN}`;
   const fullWebhookUrl = `${WEBHOOK_URL}${webhookPath}`;

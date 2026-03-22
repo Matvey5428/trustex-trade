@@ -68,9 +68,10 @@ function initAdminBot() {
   }
 
   isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
+  const useWebhook = isProduction && WEB_APP_URL.startsWith('https://');
 
-  if (isProduction) {
-    // Production: webhook режим
+  if (useWebhook) {
+    // Production + HTTPS: webhook режим
     bot = new TelegramBot(ADMIN_BOT_TOKEN, { polling: false });
     console.log('🤖 Admin bot initialized (webhook mode)');
     setupAdminWebhook();
@@ -138,7 +139,7 @@ function initAdminBot() {
 }
 
 async function setupAdminWebhook() {
-  if (!bot || !isProduction) return;
+  if (!bot || !isProduction || !WEB_APP_URL.startsWith('https://')) return;
 
   const webhookPath = `/adminbot${ADMIN_BOT_TOKEN}`;
   const fullWebhookUrl = `${WEB_APP_URL}${webhookPath}`;
