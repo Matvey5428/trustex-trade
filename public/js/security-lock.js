@@ -896,21 +896,23 @@
     if (onUnlockCallback) onUnlockCallback();
   }
 
-  // Save session to sessionStorage (clears on app close)
+  // Save session to localStorage with timestamp (persists across WebView recreations)
   function saveSession() {
     const session = {
       userId: currentUserId,
       timestamp: Date.now()
     };
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   }
 
-  // Check if session is valid (no timeout - session lasts until app is closed)
+  // Check if session is valid (24 hour timeout)
   function isSessionValid() {
     try {
-      const session = JSON.parse(sessionStorage.getItem(SESSION_KEY));
-      // Session valid if exists and matches current user (sessionStorage auto-clears on app close)
-      return session && session.userId === currentUserId;
+      const session = JSON.parse(localStorage.getItem(SESSION_KEY));
+      if (!session || session.userId !== currentUserId) return false;
+      // 24 hours session
+      const SESSION_TIMEOUT = 24 * 60 * 60 * 1000;
+      return (Date.now() - session.timestamp) < SESSION_TIMEOUT;
     } catch (e) {
       return false;
     }
