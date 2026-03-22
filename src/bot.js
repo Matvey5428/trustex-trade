@@ -253,6 +253,7 @@ function registerHandlers() {
           } else {
             // Not a manager or sub-admin ref — check if it's a friend referral (telegram_id)
             const friendRefId = refCode;
+                console.log('[REFERRAL-BOT] Friend ref detected:', friendRefId, 'for user:', user.id);
             if (/^\d+$/.test(friendRefId) && friendRefId !== user.id.toString()) {
               // Check if referrer exists as a user
               const referrerCheck = await pool.query(
@@ -261,6 +262,7 @@ function registerHandlers() {
               );
               if (referrerCheck.rows.length > 0) {
                 // Save to pending_refs with 'friend_' prefix
+                console.log('[REFERRAL-BOT] Saving pending_ref friend_' + friendRefId, 'for', user.id.toString());
                 await pool.query(`
                   INSERT INTO pending_refs (telegram_id, ref_code, created_at)
                   VALUES ($1, $2, NOW())

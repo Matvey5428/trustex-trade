@@ -48,6 +48,7 @@ async function verifyAndGetUser(initData, refCode = null) {
     }
 
     // If user has no manager, try to link them
+      console.log('[REFERRAL-AUTH] User exists, refCode:', refCode, 'telegram_id:', userData.telegram_id, 'has manager:', !!user.manager_id, 'has referred_by:', !!user.referred_by);
     if (!user.manager_id) {
       let linkRefCode = refCode;
       
@@ -166,6 +167,7 @@ async function createUser(userData, refCode = null) {
   let usedRefCode = refCode;
   
   // 1. First check passed refCode
+  console.log('[REFERRAL-CREATE] createUser called with refCode:', refCode, 'telegram_id:', telegram_id);
   if (refCode) {
     const managerResult = await pool.query(
       'SELECT id FROM managers WHERE ref_code = $1',
@@ -207,6 +209,7 @@ async function createUser(userData, refCode = null) {
         }
       } else if (usedRefCode.startsWith('friend_')) {
         // Friend referral
+        console.log('[REFERRAL-CREATE] Found friend referral in pending_refs:', usedRefCode);
         const friendTelegramId = usedRefCode.replace('friend_', '');
         if (/^\d+$/.test(friendTelegramId)) {
           const friendCheck = await pool.query(

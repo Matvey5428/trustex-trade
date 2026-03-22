@@ -1186,7 +1186,7 @@
             const res = await fetch('/api/bot-info');
             const data = await res.json();
             if (!data.username) return;
-            const refLink = `https://t.me/${data.username}/app?startapp=ref_${telegramId}`;
+            const refLink = `https://t.me/${data.username}?start=ref_${telegramId}`;
             const input = document.getElementById('refLinkInput');
             if (input) input.value = refLink;
         } catch (e) { /* silent */ }
