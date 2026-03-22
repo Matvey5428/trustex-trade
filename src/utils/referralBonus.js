@@ -1,16 +1,16 @@
 /**
  * src/utils/referralBonus.js
- * Shared logic for awarding referral bonus (20% of first deposit)
+ * Shared logic for awarding referral bonus (5% of first deposit)
  */
 
 const pool = require('../config/database');
 const { areBotNotificationsEnabled } = require('./notifications');
 
-const REFERRAL_BONUS_PERCENT = 0.20; // 20%
+const REFERRAL_BONUS_PERCENT = 0.05; // 5%
 
 /**
  * Process referral bonus after a deposit is credited.
- * Awards 20% of the deposit to the referrer (same currency).
+ * Awards 5% of the deposit to the referrer (same currency).
  * Only triggers on the user's FIRST deposit.
  * 
  * @param {string} userId - UUID of the user who deposited
@@ -77,7 +77,7 @@ async function processReferralBonus(userId, depositAmount, currency, client = nu
     await db.query(
       `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
        VALUES ($1, $2, $3, 'deposit', $4, NOW())`,
-      [referrer.id, bonusAmount, currency, `Реферальный бонус 20%: +${bonusAmount} ${sym}`]
+      [referrer.id, bonusAmount, currency, `Реферальный бонус 5%: +${bonusAmount} ${sym}`]
     );
 
     // Notify referrer via Telegram (async, non-blocking)
