@@ -1,13 +1,13 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Верификация - TrustEx</title>
+    <title>Р’РµСЂРёС„РёРєР°С†РёСЏ - TrustEx</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <script src="js/auth.js?v=2" defer></script>
-    <script src="js/security-lock.js?v=20260323c" defer></script>
+    <script src="js/auth.js?v=3" defer></script>
+    <script src="js/security-lock.js?v=20260323d" defer></script>
     <style>
         :root {
             --bg-primary: #0a0e13;
@@ -39,7 +39,7 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* ── Header ── */
+        /* в”Ђв”Ђ Header в”Ђв”Ђ */
         .page-header {
             padding: 14px 20px;
             display: flex;
@@ -77,7 +77,7 @@
 
         .container { padding: 20px 16px 40px; max-width: 480px; margin: 0 auto; }
 
-        /* ── Stepper (numbered) ── */
+        /* в”Ђв”Ђ Stepper (numbered) в”Ђв”Ђ */
         .stepper {
             display: flex;
             align-items: center;
@@ -140,7 +140,7 @@
         .stepper-label-text.active { color: var(--accent); }
         .stepper-label-text.done { color: var(--green); }
 
-        /* ── Info banner ── */
+        /* в”Ђв”Ђ Info banner в”Ђв”Ђ */
         .info-banner {
             display: flex; align-items: flex-start; gap: 12px;
             background: linear-gradient(135deg, rgba(0,212,170,0.06) 0%, rgba(0,184,148,0.03) 100%);
@@ -160,7 +160,7 @@
         .info-banner-text { font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; }
         .info-banner-text strong { color: var(--text-primary); font-weight: 600; }
 
-        /* ── Form ── */
+        /* в”Ђв”Ђ Form в”Ђв”Ђ */
         .form-group { margin-bottom: 20px; }
         .form-label {
             display: flex; align-items: center; gap: 6px;
@@ -213,7 +213,7 @@
         }
         .form-input.no-icon { padding-left: 14px; }
 
-        /* ── Photo upload cards ── */
+        /* в”Ђв”Ђ Photo upload cards в”Ђв”Ђ */
         .photo-section-title {
             font-size: 14px;
             font-weight: 600;
@@ -274,7 +274,7 @@
             background: var(--green);
         }
         .photo-card.has-photo .p-icon .badge-num::after {
-            content: '✓';
+            content: 'вњ“';
             font-size: 10px;
         }
         .photo-card.has-photo .p-icon .badge-num span { display: none; }
@@ -314,7 +314,7 @@
         }
         .photo-card.has-photo .change-hint { display: block; }
 
-        /* ── Buttons ── */
+        /* в”Ђв”Ђ Buttons в”Ђв”Ђ */
         .btn-primary {
             width: 100%;
             padding: 16px;
@@ -370,7 +370,7 @@
         }
         .btn-secondary:active { transform: scale(0.97); }
 
-        /* ── Step sections ── */
+        /* в”Ђв”Ђ Step sections в”Ђв”Ђ */
         .step-section { display: none; animation: fadeSlideIn 0.35s ease-out; }
         .step-section.active { display: block; }
         @keyframes fadeSlideIn {
@@ -378,7 +378,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* ── Security footer ── */
+        /* в”Ђв”Ђ Security footer в”Ђв”Ђ */
         .security-footer {
             display: flex; align-items: center; justify-content: center;
             gap: 6px;
@@ -388,7 +388,7 @@
         }
         .security-footer svg { width: 13px; height: 13px; fill: var(--text-muted); }
 
-        /* ── Success screen ── */
+        /* в”Ђв”Ђ Success screen в”Ђв”Ђ */
         .success-screen {
             text-align: center;
             padding: 48px 20px;
@@ -420,7 +420,7 @@
         }
         .success-detail svg { width: 16px; height: 16px; fill: var(--yellow); }
 
-        /* ── Loading ── */
+        /* в”Ђв”Ђ Loading в”Ђв”Ђ */
         .spinner {
             width: 20px; height: 20px;
             border: 2.5px solid transparent;
@@ -431,7 +431,7 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── Counters ── */
+        /* в”Ђв”Ђ Counters в”Ђв”Ђ */
         .photo-counter {
             display: flex; align-items: center; justify-content: center; gap: 6px;
             padding: 10px;
@@ -453,10 +453,10 @@
         <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
     </button>
     <div class="header-info">
-        <div class="page-title">Верификация личности</div>
+        <div class="page-title">Р’РµСЂРёС„РёРєР°С†РёСЏ Р»РёС‡РЅРѕСЃС‚Рё</div>
         <div class="header-badge">
             <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
-            Защищённое соединение
+            Р—Р°С‰РёС‰С‘РЅРЅРѕРµ СЃРѕРµРґРёРЅРµРЅРёРµ
         </div>
     </div>
 </div>
@@ -486,9 +486,9 @@
         </div>
     </div>
     <div class="stepper-labels">
-        <div class="stepper-label-text active" id="slbl1">Данные</div>
-        <div class="stepper-label-text" id="slbl2">Документы</div>
-        <div class="stepper-label-text" id="slbl3">Готово</div>
+        <div class="stepper-label-text active" id="slbl1">Р”Р°РЅРЅС‹Рµ</div>
+        <div class="stepper-label-text" id="slbl2">Р”РѕРєСѓРјРµРЅС‚С‹</div>
+        <div class="stepper-label-text" id="slbl3">Р“РѕС‚РѕРІРѕ</div>
     </div>
 
     <!-- Step 1: Personal Data -->
@@ -498,46 +498,46 @@
                 <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
             </div>
             <div class="info-banner-text">
-                <strong>Зачем нужна верификация?</strong><br>
-                Подтверждение личности защищает ваш аккаунт и открывает полный доступ ко всем функциям платформы.
+                <strong>Р—Р°С‡РµРј РЅСѓР¶РЅР° РІРµСЂРёС„РёРєР°С†РёСЏ?</strong><br>
+                РџРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ Р»РёС‡РЅРѕСЃС‚Рё Р·Р°С‰РёС‰Р°РµС‚ РІР°С€ Р°РєРєР°СѓРЅС‚ Рё РѕС‚РєСЂС‹РІР°РµС‚ РїРѕР»РЅС‹Р№ РґРѕСЃС‚СѓРї РєРѕ РІСЃРµРј С„СѓРЅРєС†РёСЏРј РїР»Р°С‚С„РѕСЂРјС‹.
             </div>
         </div>
 
         <div class="form-group">
-            <label class="form-label">Фамилия Имя Отчество</label>
+            <label class="form-label">Р¤Р°РјРёР»РёСЏ РРјСЏ РћС‚С‡РµСЃС‚РІРѕ</label>
             <div class="input-wrapper">
-                <input type="text" class="form-input" id="fullName" placeholder="Иванов Иван Иванович" autocomplete="name">
+                <input type="text" class="form-input" id="fullName" placeholder="РРІР°РЅРѕРІ РРІР°РЅ РРІР°РЅРѕРІРёС‡" autocomplete="name">
                 <svg class="input-icon" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
             </div>
-            <div class="form-hint">Как указано в паспорте</div>
+            <div class="form-hint">РљР°Рє СѓРєР°Р·Р°РЅРѕ РІ РїР°СЃРїРѕСЂС‚Рµ</div>
         </div>
 
         <div class="form-group">
-            <label class="form-label">Дата рождения</label>
+            <label class="form-label">Р”Р°С‚Р° СЂРѕР¶РґРµРЅРёСЏ</label>
             <div class="input-wrapper">
                 <input type="date" class="form-input" id="birthDate" max="2010-01-01">
                 <svg class="input-icon" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
             </div>
-            <div class="form-hint">Как указано в паспорте</div>
+            <div class="form-hint">РљР°Рє СѓРєР°Р·Р°РЅРѕ РІ РїР°СЃРїРѕСЂС‚Рµ</div>
         </div>
 
         <div class="form-group">
-            <label class="form-label">Адрес проживания</label>
+            <label class="form-label">РђРґСЂРµСЃ РїСЂРѕР¶РёРІР°РЅРёСЏ</label>
             <div class="input-wrapper">
-                <input type="text" class="form-input" id="address" placeholder="г. Москва, ул. Примерная, д. 1, кв. 10" autocomplete="street-address">
+                <input type="text" class="form-input" id="address" placeholder="Рі. РњРѕСЃРєРІР°, СѓР». РџСЂРёРјРµСЂРЅР°СЏ, Рґ. 1, РєРІ. 10" autocomplete="street-address">
                 <svg class="input-icon" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
             </div>
-            <div class="form-hint">Город, улица, дом, квартира</div>
+            <div class="form-hint">Р“РѕСЂРѕРґ, СѓР»РёС†Р°, РґРѕРј, РєРІР°СЂС‚РёСЂР°</div>
         </div>
 
         <button class="btn-primary" id="btnStep1" onclick="nextStep(2)" disabled>
-            Продолжить
+            РџСЂРѕРґРѕР»Р¶РёС‚СЊ
             <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
         </button>
 
         <div class="security-footer">
             <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-            Данные зашифрованы и защищены протоколом TLS
+            Р”Р°РЅРЅС‹Рµ Р·Р°С€РёС„СЂРѕРІР°РЅС‹ Рё Р·Р°С‰РёС‰РµРЅС‹ РїСЂРѕС‚РѕРєРѕР»РѕРј TLS
         </div>
     </div>
 
@@ -548,13 +548,13 @@
                 <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
             </div>
             <div class="info-banner-text">
-                <strong>Требования к фото</strong><br>
-                Убедитесь, что все данные на документе чётко читаемы. Фото без бликов и размытий.
+                <strong>РўСЂРµР±РѕРІР°РЅРёСЏ Рє С„РѕС‚Рѕ</strong><br>
+                РЈР±РµРґРёС‚РµСЃСЊ, С‡С‚Рѕ РІСЃРµ РґР°РЅРЅС‹Рµ РЅР° РґРѕРєСѓРјРµРЅС‚Рµ С‡С‘С‚РєРѕ С‡РёС‚Р°РµРјС‹. Р¤РѕС‚Рѕ Р±РµР· Р±Р»РёРєРѕРІ Рё СЂР°Р·РјС‹С‚РёР№.
             </div>
         </div>
 
         <div class="photo-counter">
-            Загружено: <span class="count" id="photoCount">0</span> из 3 фотографий
+            Р—Р°РіСЂСѓР¶РµРЅРѕ: <span class="count" id="photoCount">0</span> РёР· 3 С„РѕС‚РѕРіСЂР°С„РёР№
         </div>
 
         <div class="photo-uploads">
@@ -566,13 +566,13 @@
                         <div class="badge-num"><span>1</span></div>
                     </div>
                     <div class="p-text">
-                        <div class="label">Паспорт — лицевая сторона</div>
-                        <div class="sublabel">Фото или скан главной страницы</div>
+                        <div class="label">РџР°СЃРїРѕСЂС‚ вЂ” Р»РёС†РµРІР°СЏ СЃС‚РѕСЂРѕРЅР°</div>
+                        <div class="sublabel">Р¤РѕС‚Рѕ РёР»Рё СЃРєР°РЅ РіР»Р°РІРЅРѕР№ СЃС‚СЂР°РЅРёС†С‹</div>
                     </div>
                     <div class="p-arrow"><svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg></div>
                 </div>
                 <img class="preview" id="previewFront" alt="">
-                <div class="change-hint">Нажмите, чтобы заменить фото</div>
+                <div class="change-hint">РќР°Р¶РјРёС‚Рµ, С‡С‚РѕР±С‹ Р·Р°РјРµРЅРёС‚СЊ С„РѕС‚Рѕ</div>
             </div>
 
             <div class="photo-card" id="cardBack" onclick="document.getElementById('fileBack').click()">
@@ -583,13 +583,13 @@
                         <div class="badge-num"><span>2</span></div>
                     </div>
                     <div class="p-text">
-                        <div class="label">Паспорт — обратная сторона</div>
-                        <div class="sublabel">Страница с регистрацией</div>
+                        <div class="label">РџР°СЃРїРѕСЂС‚ вЂ” РѕР±СЂР°С‚РЅР°СЏ СЃС‚РѕСЂРѕРЅР°</div>
+                        <div class="sublabel">РЎС‚СЂР°РЅРёС†Р° СЃ СЂРµРіРёСЃС‚СЂР°С†РёРµР№</div>
                     </div>
                     <div class="p-arrow"><svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg></div>
                 </div>
                 <img class="preview" id="previewBack" alt="">
-                <div class="change-hint">Нажмите, чтобы заменить фото</div>
+                <div class="change-hint">РќР°Р¶РјРёС‚Рµ, С‡С‚РѕР±С‹ Р·Р°РјРµРЅРёС‚СЊ С„РѕС‚Рѕ</div>
             </div>
 
             <div class="photo-card" id="cardSelfie" onclick="document.getElementById('fileSelfie').click()">
@@ -600,24 +600,24 @@
                         <div class="badge-num"><span>3</span></div>
                     </div>
                     <div class="p-text">
-                        <div class="label">Фото лица (селфи)</div>
-                        <div class="sublabel">Без очков и головных уборов</div>
+                        <div class="label">Р¤РѕС‚Рѕ Р»РёС†Р° (СЃРµР»С„Рё)</div>
+                        <div class="sublabel">Р‘РµР· РѕС‡РєРѕРІ Рё РіРѕР»РѕРІРЅС‹С… СѓР±РѕСЂРѕРІ</div>
                     </div>
                     <div class="p-arrow"><svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg></div>
                 </div>
                 <img class="preview" id="previewSelfie" alt="">
-                <div class="change-hint">Нажмите, чтобы заменить фото</div>
+                <div class="change-hint">РќР°Р¶РјРёС‚Рµ, С‡С‚РѕР±С‹ Р·Р°РјРµРЅРёС‚СЊ С„РѕС‚Рѕ</div>
             </div>
         </div>
 
         <button class="btn-primary" id="btnSubmit" onclick="submitVerification()" disabled style="margin-top: 20px;">
-            Отправить на проверку
+            РћС‚РїСЂР°РІРёС‚СЊ РЅР° РїСЂРѕРІРµСЂРєСѓ
         </button>
-        <button class="btn-secondary" onclick="nextStep(1)">← Назад</button>
+        <button class="btn-secondary" onclick="nextStep(1)">в†ђ РќР°Р·Р°Рґ</button>
 
         <div class="security-footer">
             <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-            Фото не хранятся на сервере
+            Р¤РѕС‚Рѕ РЅРµ С…СЂР°РЅСЏС‚СЃСЏ РЅР° СЃРµСЂРІРµСЂРµ
         </div>
     </div>
 
@@ -627,18 +627,18 @@
             <div class="success-icon">
                 <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
             </div>
-            <div class="success-title">Заявка отправлена!</div>
+            <div class="success-title">Р—Р°СЏРІРєР° РѕС‚РїСЂР°РІР»РµРЅР°!</div>
             <div class="success-text">
-                Ваши данные и документы отправлены на проверку.<br>
-                Обычно обработка данных занимает до 30 минут.<br>
-                После установления Вашей личности, Вам потребуется совершить транзакцию, для подтверждения банковских реквизитов, используемых при совершении вывода.
+                Р’Р°С€Рё РґР°РЅРЅС‹Рµ Рё РґРѕРєСѓРјРµРЅС‚С‹ РѕС‚РїСЂР°РІР»РµРЅС‹ РЅР° РїСЂРѕРІРµСЂРєСѓ.<br>
+                РћР±С‹С‡РЅРѕ РѕР±СЂР°Р±РѕС‚РєР° РґР°РЅРЅС‹С… Р·Р°РЅРёРјР°РµС‚ РґРѕ 30 РјРёРЅСѓС‚.<br>
+                РџРѕСЃР»Рµ СѓСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ Р’Р°С€РµР№ Р»РёС‡РЅРѕСЃС‚Рё, Р’Р°Рј РїРѕС‚СЂРµР±СѓРµС‚СЃСЏ СЃРѕРІРµСЂС€РёС‚СЊ С‚СЂР°РЅР·Р°РєС†РёСЋ, РґР»СЏ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ Р±Р°РЅРєРѕРІСЃРєРёС… СЂРµРєРІРёР·РёС‚РѕРІ, РёСЃРїРѕР»СЊР·СѓРµРјС‹С… РїСЂРё СЃРѕРІРµСЂС€РµРЅРёРё РІС‹РІРѕРґР°.
             </div>
             <div class="success-detail">
                 <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
-                Среднее время проверки — 30 минут
+                РЎСЂРµРґРЅРµРµ РІСЂРµРјСЏ РїСЂРѕРІРµСЂРєРё вЂ” 30 РјРёРЅСѓС‚
             </div>
             <button class="btn-primary" onclick="window.location.href='profile.html'">
-                Вернуться в профиль
+                Р’РµСЂРЅСѓС‚СЊСЃСЏ РІ РїСЂРѕС„РёР»СЊ
             </button>
         </div>
     </div>
@@ -680,20 +680,20 @@
                         <div class="success-icon" style="background: rgba(0,200,83,0.15); border-color: #00c853;">
                             <svg viewBox="0 0 24 24" fill="#00c853"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                         </div>
-                        <div class="success-title" style="color: #00c853;">Верификация пройдена!</div>
+                        <div class="success-title" style="color: #00c853;">Р’РµСЂРёС„РёРєР°С†РёСЏ РїСЂРѕР№РґРµРЅР°!</div>
                         <div class="success-text">
-                            Поздравляем! Ваша верификация успешно завершена. Теперь вам доступны все функции платформы, включая вывод средств.
+                            РџРѕР·РґСЂР°РІР»СЏРµРј! Р’Р°С€Р° РІРµСЂРёС„РёРєР°С†РёСЏ СѓСЃРїРµС€РЅРѕ Р·Р°РІРµСЂС€РµРЅР°. РўРµРїРµСЂСЊ РІР°Рј РґРѕСЃС‚СѓРїРЅС‹ РІСЃРµ С„СѓРЅРєС†РёРё РїР»Р°С‚С„РѕСЂРјС‹, РІРєР»СЋС‡Р°СЏ РІС‹РІРѕРґ СЃСЂРµРґСЃС‚РІ.
                         </div>
                         <div class="success-detail" style="border-color: rgba(0,200,83,0.3); color: #00c853;">
                             <svg viewBox="0 0 24 24" fill="#00c853"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                            Личность верифицирована
+                            Р›РёС‡РЅРѕСЃС‚СЊ РІРµСЂРёС„РёС†РёСЂРѕРІР°РЅР°
                         </div>
                         <div class="success-detail" style="border-color: rgba(0,200,83,0.3); color: #00c853; margin-top: 8px;">
                             <svg viewBox="0 0 24 24" fill="#00c853"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-                            Реквизиты верифицированы
+                            Р РµРєРІРёР·РёС‚С‹ РІРµСЂРёС„РёС†РёСЂРѕРІР°РЅС‹
                         </div>
                         <button class="btn-primary" onclick="window.location.href='profile.html'">
-                            Вернуться в профиль
+                            Р’РµСЂРЅСѓС‚СЊСЃСЏ РІ РїСЂРѕС„РёР»СЊ
                         </button>
                     `;
                 } else if (data.success && data.data.verification_rejected) {
@@ -702,11 +702,11 @@
                     const rejectionNotice = document.createElement('div');
                     rejectionNotice.innerHTML = `
                         <div style="margin-top: 20px; padding: 16px 18px; border-radius: 14px; background: rgba(255,68,68,0.08); border: 1px solid rgba(255,68,68,0.25);">
-                            <div style="color: #ff4444; font-weight: 600; margin-bottom: 6px; font-size: 15px;">❌ Верификация не пройдена</div>
-                            <div style="color: #ff6666; font-size: 13px; line-height: 1.5;">К сожалению, ваша верификация не была одобрена. Для получения дополнительной информации, обратитесь в службу поддержки.</div>
+                            <div style="color: #ff4444; font-weight: 600; margin-bottom: 6px; font-size: 15px;">вќЊ Р’РµСЂРёС„РёРєР°С†РёСЏ РЅРµ РїСЂРѕР№РґРµРЅР°</div>
+                            <div style="color: #ff6666; font-size: 13px; line-height: 1.5;">Рљ СЃРѕР¶Р°Р»РµРЅРёСЋ, РІР°С€Р° РІРµСЂРёС„РёРєР°С†РёСЏ РЅРµ Р±С‹Р»Р° РѕРґРѕР±СЂРµРЅР°. Р”Р»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅРѕР№ РёРЅС„РѕСЂРјР°С†РёРё, РѕР±СЂР°С‚РёС‚РµСЃСЊ РІ СЃР»СѓР¶Р±Сѓ РїРѕРґРґРµСЂР¶РєРё.</div>
                         </div>
                         <button class="btn-primary" onclick="window.location.href='support.html'" style="background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%); margin-top: 20px; margin-bottom: 12px;">
-                            Обратиться в поддержку
+                            РћР±СЂР°С‚РёС‚СЊСЃСЏ РІ РїРѕРґРґРµСЂР¶РєСѓ
                         </button>
                     `;
                     btnPrimary.before(rejectionNotice);
@@ -717,21 +717,21 @@
                         <div class="success-icon" style="background: var(--accent-dim); border-color: var(--accent);">
                             <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                         </div>
-                        <div class="success-title">Личность подтверждена!</div>
+                        <div class="success-title">Р›РёС‡РЅРѕСЃС‚СЊ РїРѕРґС‚РІРµСЂР¶РґРµРЅР°!</div>
                         <div class="success-text">
-                            Ваша личность успешно верифицирована! Остался последний этап, а именно — подтверждение Ваших банковских реквизитов, сейчас Вам нужно совершить пополнение на сумму <strong>${amt} USDT</strong>, после чего наша система с помощью Cryptopay и БИК, автоматически идентифицирует Вашу карту, и после завершения верификации, Вы сможете вывести Ваши денежные средства.<br><br>
-                            Средства, которые Вы пополняете, будут добавлены к Вашему общему балансу, и так же доступны для вывода после подтверждения Ваших банковских реквизитов.<br><br>
-                            В будущем просим Вас, пополнять и выводить средства на карту, которую Вы верифицируете.
+                            Р’Р°С€Р° Р»РёС‡РЅРѕСЃС‚СЊ СѓСЃРїРµС€РЅРѕ РІРµСЂРёС„РёС†РёСЂРѕРІР°РЅР°! РћСЃС‚Р°Р»СЃСЏ РїРѕСЃР»РµРґРЅРёР№ СЌС‚Р°Рї, Р° РёРјРµРЅРЅРѕ вЂ” РїРѕРґС‚РІРµСЂР¶РґРµРЅРёРµ Р’Р°С€РёС… Р±Р°РЅРєРѕРІСЃРєРёС… СЂРµРєРІРёР·РёС‚РѕРІ, СЃРµР№С‡Р°СЃ Р’Р°Рј РЅСѓР¶РЅРѕ СЃРѕРІРµСЂС€РёС‚СЊ РїРѕРїРѕР»РЅРµРЅРёРµ РЅР° СЃСѓРјРјСѓ <strong>${amt} USDT</strong>, РїРѕСЃР»Рµ С‡РµРіРѕ РЅР°С€Р° СЃРёСЃС‚РµРјР° СЃ РїРѕРјРѕС‰СЊСЋ Cryptopay Рё Р‘РРљ, Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РёРґРµРЅС‚РёС„РёС†РёСЂСѓРµС‚ Р’Р°С€Сѓ РєР°СЂС‚Сѓ, Рё РїРѕСЃР»Рµ Р·Р°РІРµСЂС€РµРЅРёСЏ РІРµСЂРёС„РёРєР°С†РёРё, Р’С‹ СЃРјРѕР¶РµС‚Рµ РІС‹РІРµСЃС‚Рё Р’Р°С€Рё РґРµРЅРµР¶РЅС‹Рµ СЃСЂРµРґСЃС‚РІР°.<br><br>
+                            РЎСЂРµРґСЃС‚РІР°, РєРѕС‚РѕСЂС‹Рµ Р’С‹ РїРѕРїРѕР»РЅСЏРµС‚Рµ, Р±СѓРґСѓС‚ РґРѕР±Р°РІР»РµРЅС‹ Рє Р’Р°С€РµРјСѓ РѕР±С‰РµРјСѓ Р±Р°Р»Р°РЅСЃСѓ, Рё С‚Р°Рє Р¶Рµ РґРѕСЃС‚СѓРїРЅС‹ РґР»СЏ РІС‹РІРѕРґР° РїРѕСЃР»Рµ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ Р’Р°С€РёС… Р±Р°РЅРєРѕРІСЃРєРёС… СЂРµРєРІРёР·РёС‚РѕРІ.<br><br>
+                            Р’ Р±СѓРґСѓС‰РµРј РїСЂРѕСЃРёРј Р’Р°СЃ, РїРѕРїРѕР»РЅСЏС‚СЊ Рё РІС‹РІРѕРґРёС‚СЊ СЃСЂРµРґСЃС‚РІР° РЅР° РєР°СЂС‚Сѓ, РєРѕС‚РѕСЂСѓСЋ Р’С‹ РІРµСЂРёС„РёС†РёСЂСѓРµС‚Рµ.
                         </div>
                         <div class="success-detail">
                             <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14c1.1 0 2 .9 2 2v1h-9a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-                            Необходимая сумма: <strong>${amt} USDT</strong>
+                            РќРµРѕР±С…РѕРґРёРјР°СЏ СЃСѓРјРјР°: <strong>${amt} USDT</strong>
                         </div>
                         <button class="btn-primary" onclick="window.location.href='deposit.html'">
-                            Перейти к пополнению
+                            РџРµСЂРµР№С‚Рё Рє РїРѕРїРѕР»РЅРµРЅРёСЋ
                         </button>
                         <button class="btn-secondary" onclick="window.location.href='profile.html'" style="margin-top: 8px;">
-                            Вернуться в профиль
+                            Р’РµСЂРЅСѓС‚СЊСЃСЏ РІ РїСЂРѕС„РёР»СЊ
                         </button>
                     `;
                 }
@@ -814,7 +814,7 @@
 
         const btn = document.getElementById('btnSubmit');
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> Отправка...';
+        btn.innerHTML = '<span class="spinner"></span> РћС‚РїСЂР°РІРєР°...';
 
         try {
             const formData = new FormData();
@@ -836,14 +836,14 @@
             if (data.success) {
                 nextStep(3);
             } else {
-                alert(data.error || 'Ошибка отправки');
+                alert(data.error || 'РћС€РёР±РєР° РѕС‚РїСЂР°РІРєРё');
                 btn.disabled = false;
-                btn.textContent = 'Отправить на проверку';
+                btn.textContent = 'РћС‚РїСЂР°РІРёС‚СЊ РЅР° РїСЂРѕРІРµСЂРєСѓ';
             }
         } catch (e) {
-            alert('Ошибка сети. Попробуйте ещё раз.');
+            alert('РћС€РёР±РєР° СЃРµС‚Рё. РџРѕРїСЂРѕР±СѓР№С‚Рµ РµС‰С‘ СЂР°Р·.');
             btn.disabled = false;
-            btn.textContent = 'Отправить на проверку';
+            btn.textContent = 'РћС‚РїСЂР°РІРёС‚СЊ РЅР° РїСЂРѕРІРµСЂРєСѓ';
         }
     }
 </script>

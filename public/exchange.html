@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -9,8 +9,8 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
-    <script src="js/auth.js?v=2" defer></script>
-    <script src="js/balance.js" defer></script>
+    <script src="js/auth.js?v=3" defer></script>
+    <script src="js/balance.js?v=2" defer></script>
     <script src="js/prefetch.js" defer></script>
     <script src="js/i18n.js" defer></script>
     <script src="js/keyboard-nav.js" defer></script>
@@ -936,9 +936,9 @@
 
 <div class="app-container">
     <div class="page-header">
-        <button class="back-btn" onclick="history.back()">← <span data-i18n="back">Назад</span></button>
+        <button class="back-btn" onclick="history.back()">в†ђ <span data-i18n="back">РќР°Р·Р°Рґ</span></button>
         <div class="header-right">
-            <button class="refresh-btn" id="refreshBtn" title="Обновить"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg></button>
+            <button class="refresh-btn" id="refreshBtn" title="РћР±РЅРѕРІРёС‚СЊ"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg></button>
         </div>
     </div>
 
@@ -946,7 +946,7 @@
     <div class="rate-banner">
         <div class="rate-banner-left">
             <div class="rate-live-dot"></div>
-            <span class="rate-label" data-i18n="onlineRate">Курс онлайн</span>
+            <span class="rate-label" data-i18n="onlineRate">РљСѓСЂСЃ РѕРЅР»Р°Р№РЅ</span>
         </div>
         <span class="rate-value" id="liveRate">1 RUB = 0.012642 USDT</span>
     </div>
@@ -954,24 +954,24 @@
     <!-- Main Exchange Card -->
     <div class="exchange-card">
         <div class="exchange-header">
-            <div class="exchange-title" data-i18n="instantExchange">Мгновенный обмен</div>
-            <div class="exchange-pair" id="exchangePair">RUB → USDT</div>
+            <div class="exchange-title" data-i18n="instantExchange">РњРіРЅРѕРІРµРЅРЅС‹Р№ РѕР±РјРµРЅ</div>
+            <div class="exchange-pair" id="exchangePair">RUB в†’ USDT</div>
         </div>
 
         <div class="currency-section">
             <!-- From Currency -->
             <div class="currency-block" id="fromBlock">
                 <div class="currency-block-header">
-                    <span class="currency-label" id="fromLabel" data-i18n="youGive">Отдаёте</span>
+                    <span class="currency-label" id="fromLabel" data-i18n="youGive">РћС‚РґР°С‘С‚Рµ</span>
                     <div class="balance-badge" id="fromBalance" onclick="selectAll()">
-                        <span><span data-i18n="balanceLabel">Баланс</span>: <span id="fromBalanceValue">0.00</span></span>
+                        <span><span data-i18n="balanceLabel">Р‘Р°Р»Р°РЅСЃ</span>: <span id="fromBalanceValue">0.00</span></span>
                         <span class="max-label">MAX</span>
                     </div>
                 </div>
                 <div class="currency-selector" id="fromSelector" onclick="toggleDropdown('from')">
-                    <div class="currency-icon icon-rub" id="fromIcon">₽</div>
+                    <div class="currency-icon icon-rub" id="fromIcon">в‚Ѕ</div>
                     <div class="currency-input-wrap">
-                        <div class="currency-name" id="fromName" data-i18n="rub">Российский рубль <span class="dropdown-arrow">▼</span></div>
+                        <div class="currency-name" id="fromName" data-i18n="rub">Р РѕСЃСЃРёР№СЃРєРёР№ СЂСѓР±Р»СЊ <span class="dropdown-arrow">в–ј</span></div>
                         <input type="number" class="amount-input" id="amountInput" placeholder="0.00" inputmode="decimal" onclick="event.stopPropagation()">
                     </div>
                     <div class="currency-dropdown" id="fromDropdown"></div>
@@ -994,15 +994,15 @@
             <!-- To Currency -->
             <div class="currency-block" id="toBlock">
                 <div class="currency-block-header">
-                    <span class="currency-label" id="toLabel" data-i18n="youReceive">Получаете</span>
+                    <span class="currency-label" id="toLabel" data-i18n="youReceive">РџРѕР»СѓС‡Р°РµС‚Рµ</span>
                     <div class="balance-badge" style="cursor: default; background: transparent;">
-                        <span><span data-i18n="balanceLabel">Баланс</span>: <span id="toBalanceValue">0.00</span></span>
+                        <span><span data-i18n="balanceLabel">Р‘Р°Р»Р°РЅСЃ</span>: <span id="toBalanceValue">0.00</span></span>
                     </div>
                 </div>
                 <div class="currency-selector" id="toSelector" onclick="toggleDropdown('to')">
-                    <div class="currency-icon icon-usdt" id="toIcon">₮</div>
+                    <div class="currency-icon icon-usdt" id="toIcon">в‚®</div>
                     <div class="currency-input-wrap">
-                        <div class="currency-name" id="toName">Tether USDT <span class="dropdown-arrow">▼</span></div>
+                        <div class="currency-name" id="toName">Tether USDT <span class="dropdown-arrow">в–ј</span></div>
                         <div class="amount-input" id="resultAmount" style="color: var(--accent);">0.00</div>
                     </div>
                     <div class="currency-dropdown" id="toDropdown"></div>
@@ -1013,16 +1013,16 @@
         <!-- Exchange Details -->
         <div class="exchange-details">
             <div class="detail-row">
-                <span class="detail-label" data-i18n="commission">Комиссия</span>
+                <span class="detail-label" data-i18n="commission">РљРѕРјРёСЃСЃРёСЏ</span>
                 <span class="detail-value" style="color: var(--success);">0%</span>
             </div>
             <div class="detail-row">
-                <span class="detail-label" data-i18n="exchangeTime">Время обмена</span>
-                <span class="detail-value">~1 <span data-i18n="sec">сек</span></span>
+                <span class="detail-label" data-i18n="exchangeTime">Р’СЂРµРјСЏ РѕР±РјРµРЅР°</span>
+                <span class="detail-value">~1 <span data-i18n="sec">СЃРµРє</span></span>
             </div>
             <div class="detail-divider"></div>
             <div class="detail-row">
-                <span class="detail-label" id="youGetLabel" data-i18n="youWillGet">Вы получите</span>
+                <span class="detail-label" id="youGetLabel" data-i18n="youWillGet">Р’С‹ РїРѕР»СѓС‡РёС‚Рµ</span>
                 <span class="detail-value accent" id="resultPreview">0.00 USDT</span>
             </div>
         </div>
@@ -1030,22 +1030,22 @@
         <!-- Exchange Button -->
         <button class="exchange-btn" id="exchangeBtn">
             <span class="exchange-btn-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="#000"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></span>
-            <span data-i18n="exchangeBtn">Обменять</span>
+            <span data-i18n="exchangeBtn">РћР±РјРµРЅСЏС‚СЊ</span>
         </button>
 
         <!-- Features -->
         <div class="features-row">
             <div class="feature-chip">
                 <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
-                <span data-i18n="secure">Безопасно</span>
+                <span data-i18n="secure">Р‘РµР·РѕРїР°СЃРЅРѕ</span>
             </div>
             <div class="feature-chip">
                 <svg viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
-                <span data-i18n="instant">Мгновенно</span>
+                <span data-i18n="instant">РњРіРЅРѕРІРµРЅРЅРѕ</span>
             </div>
             <div class="feature-chip">
                 <svg viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>
-                <span data-i18n="bestRate">Лучший курс</span>
+                <span data-i18n="bestRate">Р›СѓС‡С€РёР№ РєСѓСЂСЃ</span>
             </div>
         </div>
     </div>
@@ -1053,7 +1053,7 @@
     <!-- Exchange History -->
     <div class="history-section" id="historySection" style="display:none">
         <div class="history-header">
-            <span class="history-title" data-i18n="exchangeHistory">История обменов</span>
+            <span class="history-title" data-i18n="exchangeHistory">РСЃС‚РѕСЂРёСЏ РѕР±РјРµРЅРѕРІ</span>
             <span class="history-badge" id="historyCount"></span>
         </div>
         <div class="history-list" id="historyList"></div>
@@ -1085,13 +1085,13 @@ const toBalanceValue = document.getElementById('toBalanceValue');
 
 // Currency metadata
 const CUR_META = {
-    USDT: { symbol: '₮', name: 'Tether USDT',       icon: 'icon-usdt', char: '₮', decimals: 2 },
-    BTC:  { symbol: '₿', name: 'Bitcoin',            icon: 'icon-btc',  char: '₿', decimals: 8 },
-    ETH:  { symbol: 'Ξ', name: 'Ethereum',           icon: 'icon-eth',  char: 'Ξ', decimals: 8 },
-    TON:  { symbol: '💎', name: 'Toncoin',           icon: 'icon-ton',  char: '💎', decimals: 4 },
-    RUB:  { symbol: '₽', name: 'Российский рубль',   icon: 'icon-rub',  char: '₽', decimals: 2 },
-    EUR:  { symbol: '€', name: 'Euro',                icon: 'icon-eur',  char: '€', decimals: 2 },
-    BYN:  { symbol: 'Br', name: 'Белорусский рубль', icon: 'icon-byn',  char: 'Br', decimals: 2 }
+    USDT: { symbol: 'в‚®', name: 'Tether USDT',       icon: 'icon-usdt', char: 'в‚®', decimals: 2 },
+    BTC:  { symbol: 'в‚ї', name: 'Bitcoin',            icon: 'icon-btc',  char: 'в‚ї', decimals: 8 },
+    ETH:  { symbol: 'Оћ', name: 'Ethereum',           icon: 'icon-eth',  char: 'Оћ', decimals: 8 },
+    TON:  { symbol: 'рџ’Ћ', name: 'Toncoin',           icon: 'icon-ton',  char: 'рџ’Ћ', decimals: 4 },
+    RUB:  { symbol: 'в‚Ѕ', name: 'Р РѕСЃСЃРёР№СЃРєРёР№ СЂСѓР±Р»СЊ',   icon: 'icon-rub',  char: 'в‚Ѕ', decimals: 2 },
+    EUR:  { symbol: 'в‚¬', name: 'Euro',                icon: 'icon-eur',  char: 'в‚¬', decimals: 2 },
+    BYN:  { symbol: 'Br', name: 'Р‘РµР»РѕСЂСѓСЃСЃРєРёР№ СЂСѓР±Р»СЊ', icon: 'icon-byn',  char: 'Br', decimals: 2 }
 };
 
 // State
@@ -1233,7 +1233,7 @@ function showAlert(msg, success = false) {
         success: '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>',
         error: '<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>'
     };
-    const cleanMsg = msg.replace(/^[✅❌⚠️🎉\s]+/, '');
+    const cleanMsg = msg.replace(/^[вњ…вќЊвљ пёЏрџЋ‰\s]+/, '');
     
     topAlert.innerHTML = `
         <div class="notif-icon">${success ? icons.success : icons.error}</div>
@@ -1281,7 +1281,7 @@ function updateDisplay() {
     const result = val * pairRate;
 
     // Exchange pair header
-    exchangePair.innerText = `${selectedFrom} → ${selectedTo}`;
+    exchangePair.innerText = `${selectedFrom} в†’ ${selectedTo}`;
 
     // Live rate
     const ratePrecision = pairRate >= 1000 ? 2 : pairRate >= 1 ? 4 : pairRate >= 0.001 ? 6 : 8;
@@ -1294,13 +1294,13 @@ function updateDisplay() {
     // From block
     fromIcon.className = 'currency-icon ' + fm.icon;
     fromIcon.innerText = fm.char;
-    fromName.innerHTML = fm.name + ' <span class="dropdown-arrow">▼</span>';
+    fromName.innerHTML = fm.name + ' <span class="dropdown-arrow">в–ј</span>';
     fromBalanceValue.innerText = (balances[selectedFrom] || 0).toFixed(fm.decimals) + ' ' + selectedFrom;
 
     // To block
     toIcon.className = 'currency-icon ' + tm.icon;
     toIcon.innerText = tm.char;
-    toName.innerHTML = tm.name + ' <span class="dropdown-arrow">▼</span>';
+    toName.innerHTML = tm.name + ' <span class="dropdown-arrow">в–ј</span>';
     toBalanceValue.innerText = (balances[selectedTo] || 0).toFixed(tm.decimals) + ' ' + selectedTo;
 }
 
@@ -1348,13 +1348,13 @@ async function loadData() {
 
 exchangeBtn.onclick = async function() {
     const amount = parseFloat(amountInput.value) || 0;
-    if (amount <= 0) return showAlert("Введите сумму для обмена");
-    if (selectedFrom === selectedTo) return showAlert("Выберите разные валюты");
-    if (amount > (balances[selectedFrom] || 0)) return showAlert("Недостаточно средств");
+    if (amount <= 0) return showAlert("Р’РІРµРґРёС‚Рµ СЃСѓРјРјСѓ РґР»СЏ РѕР±РјРµРЅР°");
+    if (selectedFrom === selectedTo) return showAlert("Р’С‹Р±РµСЂРёС‚Рµ СЂР°Р·РЅС‹Рµ РІР°Р»СЋС‚С‹");
+    if (amount > (balances[selectedFrom] || 0)) return showAlert("РќРµРґРѕСЃС‚Р°С‚РѕС‡РЅРѕ СЃСЂРµРґСЃС‚РІ");
 
     try {
         exchangeBtn.disabled = true;
-        exchangeBtn.innerHTML = '<span class="exchange-btn-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="#000" style="animation:spin 1s linear infinite"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg></span> Обработка...';
+        exchangeBtn.innerHTML = '<span class="exchange-btn-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="#000" style="animation:spin 1s linear infinite"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg></span> РћР±СЂР°Р±РѕС‚РєР°...';
 
         const response = await fetch('/api/exchange', {
             method: 'POST',
@@ -1364,7 +1364,7 @@ exchangeBtn.onclick = async function() {
         const result = await response.json();
 
         if (response.ok) {
-            showAlert("Обмен выполнен успешно!", true);
+            showAlert("РћР±РјРµРЅ РІС‹РїРѕР»РЅРµРЅ СѓСЃРїРµС€РЅРѕ!", true);
             amountInput.value = "";
             if (result.data?.newBalances) {
                 const nb = result.data.newBalances;
@@ -1398,12 +1398,12 @@ exchangeBtn.onclick = async function() {
             updateDisplay();
             loadExchangeHistory();
         } else {
-            showAlert(result.error || "Ошибка обмена");
+            showAlert(result.error || "РћС€РёР±РєР° РѕР±РјРµРЅР°");
         }
-    } catch (err) { showAlert("Ошибка соединения с сервером"); }
+    } catch (err) { showAlert("РћС€РёР±РєР° СЃРѕРµРґРёРЅРµРЅРёСЏ СЃ СЃРµСЂРІРµСЂРѕРј"); }
     finally {
         exchangeBtn.disabled = false;
-        exchangeBtn.innerHTML = '<span class="exchange-btn-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="#000"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></span> Обменять';
+        exchangeBtn.innerHTML = '<span class="exchange-btn-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="#000"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></span> РћР±РјРµРЅСЏС‚СЊ';
     }
 };
 
@@ -1425,9 +1425,9 @@ function formatHistoryDate(dateStr) {
     const d = new Date(dateStr);
     const now = new Date();
     const diff = now - d;
-    if (diff < 60000) return 'Только что';
-    if (diff < 3600000) return Math.floor(diff / 60000) + ' мин. назад';
-    if (diff < 86400000) return Math.floor(diff / 3600000) + ' ч. назад';
+    if (diff < 60000) return 'РўРѕР»СЊРєРѕ С‡С‚Рѕ';
+    if (diff < 3600000) return Math.floor(diff / 60000) + ' РјРёРЅ. РЅР°Р·Р°Рґ';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + ' С‡. РЅР°Р·Р°Рґ';
     return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
@@ -1445,22 +1445,22 @@ async function loadExchangeHistory() {
         if (items.length === 0) {
             section.style.display = '';
             badge.textContent = '';
-            list.innerHTML = '<div class="history-empty">Нет обменов — совершите первый!</div>';
+            list.innerHTML = '<div class="history-empty">РќРµС‚ РѕР±РјРµРЅРѕРІ вЂ” СЃРѕРІРµСЂС€РёС‚Рµ РїРµСЂРІС‹Р№!</div>';
             return;
         }
 
         section.style.display = '';
-        badge.textContent = items.length + ' посл.';
+        badge.textContent = items.length + ' РїРѕСЃР».';
 
         list.innerHTML = items.map(tx => {
             const desc = tx.description || '';
-            const parts = desc.match(/→\s*([\d.]+)\s*(\S+)/);
+            const parts = desc.match(/в†’\s*([\d.]+)\s*(\S+)/);
             const toAmount = parts ? parts[1] : '';
             const toCurrency = parts ? parts[2] : '';
             return `<div class="history-item">
                 <div class="history-icon"><svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></div>
                 <div class="history-info">
-                    <div class="history-desc">${desc.replace('Обмен ', '')}</div>
+                    <div class="history-desc">${desc.replace('РћР±РјРµРЅ ', '')}</div>
                     <div class="history-date">${formatHistoryDate(tx.created_at)}</div>
                 </div>
                 <div class="history-amount">+${toAmount} ${toCurrency}</div>
@@ -1518,23 +1518,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 <nav class="bottom-nav">
     <a href="index.html" class="nav-item">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span>
-        <span class="nav-label" data-i18n="home">Главная</span>
+        <span class="nav-label" data-i18n="home">Р“Р»Р°РІРЅР°СЏ</span>
     </a>
     <a href="trading.html" class="nav-item">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg></span>
-        <span class="nav-label" data-i18n="markets">Рынки</span>
+        <span class="nav-label" data-i18n="markets">Р С‹РЅРєРё</span>
     </a>
     <a href="exchange.html" class="nav-item active">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></span>
-        <span class="nav-label" data-i18n="exchange">Обмен</span>
+        <span class="nav-label" data-i18n="exchange">РћР±РјРµРЅ</span>
     </a>
     <a href="wallet.html" class="nav-item">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span>
-        <span class="nav-label" data-i18n="wallet">Кошелек</span>
+        <span class="nav-label" data-i18n="wallet">РљРѕС€РµР»РµРє</span>
     </a>
     <a href="profile.html" class="nav-item">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></span>
-        <span class="nav-label" data-i18n="profile">Профиль</span>
+        <span class="nav-label" data-i18n="profile">РџСЂРѕС„РёР»СЊ</span>
     </a>
 </nav>
 </body>

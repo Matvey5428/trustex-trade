@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Поддержка — TrustEx</title>
+  <title>РџРѕРґРґРµСЂР¶РєР° вЂ” TrustEx</title>
   <link rel="preconnect" href="https://trustex-trade.onrender.com">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="js/auth.js"></script>
@@ -206,30 +206,30 @@
 </head>
 <body>
   <div class="header">
-    <button class="back-btn" onclick="goBack()">←</button>
+    <button class="back-btn" onclick="goBack()">в†ђ</button>
     <div>
-      <div class="header-title">💬 Поддержка</div>
-      <div class="header-subtitle">Онлайн</div>
+      <div class="header-title">рџ’¬ РџРѕРґРґРµСЂР¶РєР°</div>
+      <div class="header-subtitle">РћРЅР»Р°Р№РЅ</div>
     </div>
   </div>
   
   <div class="chat-container" id="chatContainer">
-    <div class="loading">Загрузка...</div>
+    <div class="loading">Р—Р°РіСЂСѓР·РєР°...</div>
   </div>
   
   <div class="typing-indicator" id="typingIndicator">
-    Поддержка печатает...
+    РџРѕРґРґРµСЂР¶РєР° РїРµС‡Р°С‚Р°РµС‚...
   </div>
   
   <div class="input-container">
     <textarea 
       class="message-input" 
       id="messageInput" 
-      placeholder="Напишите сообщение..."
+      placeholder="РќР°РїРёС€РёС‚Рµ СЃРѕРѕР±С‰РµРЅРёРµ..."
       rows="1"
       onkeydown="handleKeyDown(event)"
     ></textarea>
-    <button class="send-btn" id="sendBtn">➤</button>
+    <button class="send-btn" id="sendBtn">вћ¤</button>
   </div>
   
   <script>
@@ -283,7 +283,7 @@
     async function loadMessages() {
       if (!userId) {
         document.getElementById('chatContainer').innerHTML = 
-          '<div class="empty-chat"><div class="empty-chat-icon">⚠️</div><div class="empty-chat-title">Ошибка</div><div class="empty-chat-text">Откройте приложение через Telegram</div></div>';
+          '<div class="empty-chat"><div class="empty-chat-icon">вљ пёЏ</div><div class="empty-chat-title">РћС€РёР±РєР°</div><div class="empty-chat-text">РћС‚РєСЂРѕР№С‚Рµ РїСЂРёР»РѕР¶РµРЅРёРµ С‡РµСЂРµР· Telegram</div></div>';
         return;
       }
       
@@ -297,7 +297,7 @@
         }
       } catch (e) {
         document.getElementById('chatContainer').innerHTML = 
-          '<div class="empty-chat"><div class="empty-chat-icon">❌</div><div class="empty-chat-title">Ошибка загрузки</div></div>';
+          '<div class="empty-chat"><div class="empty-chat-icon">вќЊ</div><div class="empty-chat-title">РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё</div></div>';
       }
     }
     
@@ -307,11 +307,11 @@
       if (messages.length === 0) {
         container.innerHTML = `
           <div class="empty-chat">
-            <div class="empty-chat-icon">💬</div>
-            <div class="empty-chat-title">Чат с поддержкой</div>
+            <div class="empty-chat-icon">рџ’¬</div>
+            <div class="empty-chat-title">Р§Р°С‚ СЃ РїРѕРґРґРµСЂР¶РєРѕР№</div>
             <div class="empty-chat-text">
-              Здесь вы можете задать любой вопрос.<br>
-              Мы ответим как можно скорее!
+              Р—РґРµСЃСЊ РІС‹ РјРѕР¶РµС‚Рµ Р·Р°РґР°С‚СЊ Р»СЋР±РѕР№ РІРѕРїСЂРѕСЃ.<br>
+              РњС‹ РѕС‚РІРµС‚РёРј РєР°Рє РјРѕР¶РЅРѕ СЃРєРѕСЂРµРµ!
             </div>
           </div>
         `;
@@ -342,12 +342,12 @@
       
       if (!message || !userId) return;
       
-      // Очищаем поле сразу
+      // РћС‡РёС‰Р°РµРј РїРѕР»Рµ СЃСЂР°Р·Сѓ
       input.value = '';
       input.style.height = 'auto';
       input.focus();
       
-      // Оптимистичное обновление - сразу показываем сообщение
+      // РћРїС‚РёРјРёСЃС‚РёС‡РЅРѕРµ РѕР±РЅРѕРІР»РµРЅРёРµ - СЃСЂР°Р·Сѓ РїРѕРєР°Р·С‹РІР°РµРј СЃРѕРѕР±С‰РµРЅРёРµ
       const tempId = 'temp_' + Date.now();
       const tempMessage = {
         id: tempId,
@@ -359,7 +359,7 @@
       messages.push(tempMessage);
       renderMessages();
       
-      // Отправляем в фоне
+      // РћС‚РїСЂР°РІР»СЏРµРј РІ С„РѕРЅРµ
       try {
         const res = await fetch(`/api/user/${userId}/support/send`, {
           method: 'POST',
@@ -370,19 +370,19 @@
         const data = await res.json();
         
         if (data.success) {
-          // Заменяем временное сообщение на реальное
+          // Р—Р°РјРµРЅСЏРµРј РІСЂРµРјРµРЅРЅРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ РЅР° СЂРµР°Р»СЊРЅРѕРµ
           const idx = messages.findIndex(m => m.id === tempId);
           if (idx !== -1) messages[idx] = data.data;
         } else {
-          // Убираем временное сообщение при ошибке
+          // РЈР±РёСЂР°РµРј РІСЂРµРјРµРЅРЅРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ РїСЂРё РѕС€РёР±РєРµ
           messages = messages.filter(m => m.id !== tempId);
           renderMessages();
-          showNotification('Ошибка отправки', 'error');
+          showNotification('РћС€РёР±РєР° РѕС‚РїСЂР°РІРєРё', 'error');
         }
       } catch (e) {
         messages = messages.filter(m => m.id !== tempId);
         renderMessages();
-        showNotification('Ошибка сети', 'error');
+        showNotification('РћС€РёР±РєР° СЃРµС‚Рё', 'error');
       }
     }
     

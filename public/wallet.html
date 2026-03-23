@@ -1,19 +1,19 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Кошелек - TrustEx</title>
+    <title>РљРѕС€РµР»РµРє - TrustEx</title>
     <link rel="preconnect" href="https://trustex-trade.onrender.com">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <script src="js/i18n.js" defer></script>
     <script src="js/keyboard-nav.js" defer></script>
-    <script src="js/auth.js?v=2" defer></script>
-    <script src="js/balance.js" defer></script>
+    <script src="js/auth.js?v=3" defer></script>
+    <script src="js/balance.js?v=2" defer></script>
     <script src="js/prefetch.js" defer></script>
-    <script src="js/security-lock.js?v=20260323c" defer></script>
+    <script src="js/security-lock.js?v=20260323d" defer></script>
     <style>body { opacity: 1; }</style>
     <script>(function() { var lang = localStorage.getItem('nexo_lang') || 'ru'; document.documentElement.lang = lang; })();</script>
     <style>
@@ -501,12 +501,12 @@
     <!-- Header -->
     <div class="wallet-header">
         <div class="header-top">
-            <span class="header-title" data-i18n="wallet">Кошелек</span>
+            <span class="header-title" data-i18n="wallet">РљРѕС€РµР»РµРє</span>
             <div class="header-actions">
-                <a href="index.html" class="header-btn" title="На главную">
+                <a href="index.html" class="header-btn" title="РќР° РіР»Р°РІРЅСѓСЋ">
                     <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
                 </a>
-                <a href="support.html" class="header-btn" title="Поддержка">
+                <a href="support.html" class="header-btn" title="РџРѕРґРґРµСЂР¶РєР°">
                     <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
                 </a>
             </div>
@@ -514,8 +514,8 @@
 
         <div class="balance-section">
             <div class="balance-label">
-                <span data-i18n="totalBalance">Общий баланс</span>
-                <button class="eye-btn" id="toggleBalance" title="Скрыть баланс">
+                <span data-i18n="totalBalance">РћР±С‰РёР№ Р±Р°Р»Р°РЅСЃ</span>
+                <button class="eye-btn" id="toggleBalance" title="РЎРєСЂС‹С‚СЊ Р±Р°Р»Р°РЅСЃ">
                     <svg viewBox="0 0 24 24" id="eyeIcon"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                 </button>
             </div>
@@ -534,30 +534,30 @@
             <div class="action-icon">
                 <svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
             </div>
-            <span class="action-text" data-i18n="deposit">Пополнить</span>
+            <span class="action-text" data-i18n="deposit">РџРѕРїРѕР»РЅРёС‚СЊ</span>
         </a>
         <a href="withdraw.html" class="action-btn withdraw">
             <div class="action-icon">
                 <svg viewBox="0 0 24 24"><path d="M12 4l1.41 1.41L7.83 11H20v2H7.83l5.58 5.59L12 20l-8-8z"/></svg>
             </div>
-            <span class="action-text" data-i18n="withdraw">Вывести</span>
+            <span class="action-text" data-i18n="withdraw">Р’С‹РІРµСЃС‚Рё</span>
         </a>
         <a href="trading.html" class="action-btn trade">
             <div class="action-icon">
                 <svg viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg>
             </div>
-            <span class="action-text" data-i18n="trading">Торговля</span>
+            <span class="action-text" data-i18n="trading">РўРѕСЂРіРѕРІР»СЏ</span>
         </a>
     </div>
 
     <!-- Quick Info -->
     <div class="quick-info">
         <div class="info-card">
-            <div class="info-label" data-i18n="availableWithdraw">Доступно для вывода</div>
+            <div class="info-label" data-i18n="availableWithdraw">Р”РѕСЃС‚СѓРїРЅРѕ РґР»СЏ РІС‹РІРѕРґР°</div>
             <div class="info-value" id="availableBalance">$0.00</div>
         </div>
         <div class="info-card">
-            <div class="info-label" data-i18n="activeTrades">Активные сделки</div>
+            <div class="info-label" data-i18n="activeTrades">РђРєС‚РёРІРЅС‹Рµ СЃРґРµР»РєРё</div>
             <div class="info-value green" id="activeTrades">0</div>
         </div>
     </div>
@@ -565,12 +565,12 @@
     <!-- Portfolio Chart -->
     <div class="section" id="chartSection" style="display:none;">
         <div class="section-header">
-            <span class="section-title" data-i18n="portfolio">Портфель</span>
+            <span class="section-title" data-i18n="portfolio">РџРѕСЂС‚С„РµР»СЊ</span>
         </div>
         <div class="chart-container">
             <canvas id="portfolioChart"></canvas>
             <div class="chart-center" id="chartCenter">
-                <div class="chart-total-label" data-i18n="totalValue">Всего</div>
+                <div class="chart-total-label" data-i18n="totalValue">Р’СЃРµРіРѕ</div>
                 <div class="chart-total-value" id="chartTotalValue">$0.00</div>
             </div>
         </div>
@@ -580,84 +580,84 @@
     <!-- Assets -->
     <div class="section">
         <div class="section-header">
-            <span class="section-title" data-i18n="assets">Активы</span>
+            <span class="section-title" data-i18n="assets">РђРєС‚РёРІС‹</span>
         </div>
         <div class="asset-list" id="assetList">
             <div class="asset-item">
-                <div class="asset-icon usdt">₮</div>
+                <div class="asset-icon usdt">в‚®</div>
                 <div class="asset-info">
                     <div class="asset-name">USDT</div>
                     <div class="asset-fullname">Tether</div>
                 </div>
                 <div class="asset-balance">
                     <div class="asset-amount" id="usdtBalance">0.00</div>
-                    <div class="asset-value" id="usdtValue">≈ $0.00</div>
+                    <div class="asset-value" id="usdtValue">в‰€ $0.00</div>
                 </div>
             </div>
             <div class="asset-item">
-                <div class="asset-icon btc">₿</div>
+                <div class="asset-icon btc">в‚ї</div>
                 <div class="asset-info">
                     <div class="asset-name">BTC</div>
                     <div class="asset-fullname">Bitcoin</div>
                 </div>
                 <div class="asset-balance">
                     <div class="asset-amount" id="btcBalance">0.00000000</div>
-                    <div class="asset-value" id="btcValue">≈ $0.00</div>
+                    <div class="asset-value" id="btcValue">в‰€ $0.00</div>
                 </div>
             </div>
             <div class="asset-item">
-                <div class="asset-icon eth">Ξ</div>
+                <div class="asset-icon eth">Оћ</div>
                 <div class="asset-info">
                     <div class="asset-name">ETH</div>
                     <div class="asset-fullname">Ethereum</div>
                 </div>
                 <div class="asset-balance">
                     <div class="asset-amount" id="ethBalance">0.00000000</div>
-                    <div class="asset-value" id="ethValue">≈ $0.00</div>
+                    <div class="asset-value" id="ethValue">в‰€ $0.00</div>
                 </div>
             </div>
             <div class="asset-item">
-                <div class="asset-icon ton">◊</div>
+                <div class="asset-icon ton">в—Љ</div>
                 <div class="asset-info">
                     <div class="asset-name">TON</div>
                     <div class="asset-fullname">Toncoin</div>
                 </div>
                 <div class="asset-balance">
                     <div class="asset-amount" id="tonBalance">0.00</div>
-                    <div class="asset-value" id="tonValue">≈ $0.00</div>
+                    <div class="asset-value" id="tonValue">в‰€ $0.00</div>
                 </div>
             </div>
             <div class="asset-item">
-                <div class="asset-icon rub">₽</div>
+                <div class="asset-icon rub">в‚Ѕ</div>
                 <div class="asset-info">
                     <div class="asset-name">RUB</div>
-                    <div class="asset-fullname">Российский рубль</div>
+                    <div class="asset-fullname">Р РѕСЃСЃРёР№СЃРєРёР№ СЂСѓР±Р»СЊ</div>
                 </div>
                 <div class="asset-balance">
                     <div class="asset-amount" id="rubBalance">0.00</div>
-                    <div class="asset-value" id="rubValue">≈ $0.00</div>
+                    <div class="asset-value" id="rubValue">в‰€ $0.00</div>
                 </div>
             </div>
             <div class="asset-item">
-                <div class="asset-icon eur">€</div>
+                <div class="asset-icon eur">в‚¬</div>
                 <div class="asset-info">
                     <div class="asset-name">EUR</div>
-                    <div class="asset-fullname">Евро</div>
+                    <div class="asset-fullname">Р•РІСЂРѕ</div>
                 </div>
                 <div class="asset-balance">
                     <div class="asset-amount" id="eurBalance">0.00</div>
-                    <div class="asset-value" id="eurValue">≈ $0.00</div>
+                    <div class="asset-value" id="eurValue">в‰€ $0.00</div>
                 </div>
             </div>
             <div class="asset-item">
                 <div class="asset-icon byn">Br</div>
                 <div class="asset-info">
                     <div class="asset-name">BYN</div>
-                    <div class="asset-fullname">Белорусский рубль</div>
+                    <div class="asset-fullname">Р‘РµР»РѕСЂСѓСЃСЃРєРёР№ СЂСѓР±Р»СЊ</div>
                 </div>
                 <div class="asset-balance">
                     <div class="asset-amount" id="bynBalance">0.00</div>
-                    <div class="asset-value" id="bynValue">≈ $0.00</div>
+                    <div class="asset-value" id="bynValue">в‰€ $0.00</div>
                 </div>
             </div>
         </div>
@@ -669,23 +669,23 @@
 <nav class="bottom-nav">
     <a href="index.html" class="nav-item">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span>
-        <span class="nav-label" data-i18n="home">Главная</span>
+        <span class="nav-label" data-i18n="home">Р“Р»Р°РІРЅР°СЏ</span>
     </a>
     <a href="trading.html" class="nav-item">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg></span>
-        <span class="nav-label" data-i18n="markets">Рынки</span>
+        <span class="nav-label" data-i18n="markets">Р С‹РЅРєРё</span>
     </a>
     <a href="exchange.html" class="nav-item">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></span>
-        <span class="nav-label" data-i18n="exchange">Обмен</span>
+        <span class="nav-label" data-i18n="exchange">РћР±РјРµРЅ</span>
     </a>
     <a href="wallet.html" class="nav-item active">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span>
-        <span class="nav-label" data-i18n="wallet">Кошелек</span>
+        <span class="nav-label" data-i18n="wallet">РљРѕС€РµР»РµРє</span>
     </a>
     <a href="profile.html" class="nav-item">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></span>
-        <span class="nav-label" data-i18n="profile">Профиль</span>
+        <span class="nav-label" data-i18n="profile">РџСЂРѕС„РёР»СЊ</span>
     </a>
 </nav>
 
@@ -745,7 +745,7 @@
 
     function setAsset(id, amount, valueText) {
         const el = document.getElementById(id);
-        if (el) el.textContent = balanceHidden ? '••••••' : amount;
+        if (el) el.textContent = balanceHidden ? 'вЂўвЂўвЂўвЂўвЂўвЂў' : amount;
         const valEl = document.getElementById(id.replace('Balance', 'Value'));
         if (valEl) valEl.textContent = balanceHidden ? '' : valueText;
     }
@@ -771,24 +771,24 @@
         const totalUsd = usdt + btcValue + ethValue + tonValue + rubValue + eurValue + bynValue;
 
         document.getElementById('totalBalance').innerHTML = balanceHidden 
-            ? '••••••' 
+            ? 'вЂўвЂўвЂўвЂўвЂўвЂў' 
             : `$${formatNumber(totalUsd)}`;
 
         document.getElementById('balanceChange').innerHTML = balanceHidden 
             ? '' 
-            : `<span class="balance-usd">≈ ${formatNumber(totalUsd)} USDT</span>`;
+            : `<span class="balance-usd">в‰€ ${formatNumber(totalUsd)} USDT</span>`;
 
         document.getElementById('availableBalance').textContent = balanceHidden 
-            ? '••••••' 
+            ? 'вЂўвЂўвЂўвЂўвЂўвЂў' 
             : `$${formatNumber(usdt)}`;
 
-        setAsset('usdtBalance', formatNumber(usdt), `≈ $${formatNumber(usdt)}`);
-        setAsset('btcBalance', formatNumber(btc, 8), `≈ $${formatNumber(btcValue)}`);
-        setAsset('ethBalance', formatNumber(eth, 8), `≈ $${formatNumber(ethValue)}`);
-        setAsset('tonBalance', formatNumber(ton, 4), `≈ $${formatNumber(tonValue)}`);
-        setAsset('rubBalance', formatNumber(rub, 2), `≈ $${formatNumber(rubValue)}`);
-        setAsset('eurBalance', formatNumber(eur, 2), `≈ $${formatNumber(eurValue)}`);
-        setAsset('bynBalance', formatNumber(byn, 2), `≈ $${formatNumber(bynValue)}`);
+        setAsset('usdtBalance', formatNumber(usdt), `в‰€ $${formatNumber(usdt)}`);
+        setAsset('btcBalance', formatNumber(btc, 8), `в‰€ $${formatNumber(btcValue)}`);
+        setAsset('ethBalance', formatNumber(eth, 8), `в‰€ $${formatNumber(ethValue)}`);
+        setAsset('tonBalance', formatNumber(ton, 4), `в‰€ $${formatNumber(tonValue)}`);
+        setAsset('rubBalance', formatNumber(rub, 2), `в‰€ $${formatNumber(rubValue)}`);
+        setAsset('eurBalance', formatNumber(eur, 2), `в‰€ $${formatNumber(eurValue)}`);
+        setAsset('bynBalance', formatNumber(byn, 2), `в‰€ $${formatNumber(bynValue)}`);
 
         document.getElementById('eyeIcon').innerHTML = balanceHidden 
             ? '<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>'

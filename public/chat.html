@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
@@ -506,45 +506,45 @@
 </head>
 <body>
   <div class="header">
-    <button class="back-btn" onclick="goBack()">←</button>
+    <button class="back-btn" onclick="goBack()">в†ђ</button>
     <div class="user-info">
-      <div class="user-name" id="userName">Загрузка...</div>
+      <div class="user-name" id="userName">Р—Р°РіСЂСѓР·РєР°...</div>
       <div class="user-status" id="userStatus">ID: -</div>
     </div>
   </div>
   
   <div class="messages-container" id="messagesContainer">
-    <div class="loading">Загрузка сообщений...</div>
+    <div class="loading">Р—Р°РіСЂСѓР·РєР° СЃРѕРѕР±С‰РµРЅРёР№...</div>
   </div>
   
   <div class="input-container">
-    <button class="template-btn" onclick="openTemplates()" title="Шаблоны">📋</button>
-    <input type="text" class="message-input" id="messageInput" placeholder="Написать сообщение..." autocomplete="off">
-    <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+    <button class="template-btn" onclick="openTemplates()" title="РЁР°Р±Р»РѕРЅС‹">рџ“‹</button>
+    <input type="text" class="message-input" id="messageInput" placeholder="РќР°РїРёСЃР°С‚СЊ СЃРѕРѕР±С‰РµРЅРёРµ..." autocomplete="off">
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">вћ¤</button>
   </div>
   
   <!-- Templates Modal -->
   <div class="modal-overlay" id="templatesModal">
     <div class="modal">
       <div class="modal-header">
-        <div class="modal-title">📋 Шаблоны</div>
-        <button class="modal-close" onclick="closeTemplates()">×</button>
+        <div class="modal-title">рџ“‹ РЁР°Р±Р»РѕРЅС‹</div>
+        <button class="modal-close" onclick="closeTemplates()">Г—</button>
       </div>
       <div class="modal-body">
         <div class="template-list" id="templateList">
-          <div class="template-empty">Загрузка...</div>
+          <div class="template-empty">Р—Р°РіСЂСѓР·РєР°...</div>
         </div>
         
         <div class="add-template-form">
           <div class="form-group">
-            <label class="form-label">Название шаблона</label>
-            <input type="text" class="form-input" id="newTemplateTitle" placeholder="Например: Приветствие">
+            <label class="form-label">РќР°Р·РІР°РЅРёРµ С€Р°Р±Р»РѕРЅР°</label>
+            <input type="text" class="form-input" id="newTemplateTitle" placeholder="РќР°РїСЂРёРјРµСЂ: РџСЂРёРІРµС‚СЃС‚РІРёРµ">
           </div>
           <div class="form-group">
-            <label class="form-label">Текст сообщения</label>
-            <textarea class="form-input form-textarea" id="newTemplateMessage" placeholder="Текст шаблона..."></textarea>
+            <label class="form-label">РўРµРєСЃС‚ СЃРѕРѕР±С‰РµРЅРёСЏ</label>
+            <textarea class="form-input form-textarea" id="newTemplateMessage" placeholder="РўРµРєСЃС‚ С€Р°Р±Р»РѕРЅР°..."></textarea>
           </div>
-          <button class="add-template-btn" onclick="addTemplate()">+ Добавить шаблон</button>
+          <button class="add-template-btn" onclick="addTemplate()">+ Р”РѕР±Р°РІРёС‚СЊ С€Р°Р±Р»РѕРЅ</button>
         </div>
       </div>
     </div>
@@ -554,15 +554,15 @@
   <div class="modal-overlay" id="editModal">
     <div class="modal">
       <div class="modal-header">
-        <div class="modal-title">✏️ Редактировать сообщение</div>
-        <button class="modal-close" onclick="closeEditModal()">×</button>
+        <div class="modal-title">вњЏпёЏ Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ СЃРѕРѕР±С‰РµРЅРёРµ</div>
+        <button class="modal-close" onclick="closeEditModal()">Г—</button>
       </div>
       <div class="modal-body">
         <div class="edit-modal-content">
-          <textarea class="edit-textarea" id="editMessageText" placeholder="Текст сообщения..."></textarea>
+          <textarea class="edit-textarea" id="editMessageText" placeholder="РўРµРєСЃС‚ СЃРѕРѕР±С‰РµРЅРёСЏ..."></textarea>
           <div class="edit-buttons">
-            <button class="cancel-edit-btn" onclick="closeEditModal()">Отмена</button>
-            <button class="save-edit-btn" id="saveEditBtn" onclick="saveEditedMessage()">Сохранить</button>
+            <button class="cancel-edit-btn" onclick="closeEditModal()">РћС‚РјРµРЅР°</button>
+            <button class="save-edit-btn" id="saveEditBtn" onclick="saveEditedMessage()">РЎРѕС…СЂР°РЅРёС‚СЊ</button>
           </div>
         </div>
       </div>
@@ -599,7 +599,7 @@
     
     if (!targetUserId) {
       document.getElementById('messagesContainer').innerHTML = 
-        '<div class="empty-state">Пользователь не выбран</div>';
+        '<div class="empty-state">РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ РЅРµ РІС‹Р±СЂР°РЅ</div>';
     } else {
       loadChat();
       // Auto-refresh every 3 seconds
@@ -677,7 +677,7 @@
       const container = document.getElementById('messagesContainer');
       
       if (messages.length === 0) {
-        container.innerHTML = '<div class="empty-state">Начните диалог с пользователем</div>';
+        container.innerHTML = '<div class="empty-state">РќР°С‡РЅРёС‚Рµ РґРёР°Р»РѕРі СЃ РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј</div>';
         return;
       }
       
@@ -702,7 +702,7 @@
           html += `
             <div class="message-wrapper admin">
               <div class="message-actions">
-                <button class="edit-btn" onclick="openEditModal('${msg.id}', \`${escapeHtml(msg.message).replace(/`/g, '\\`')}\`)" title="Редактировать">✏️</button>
+                <button class="edit-btn" onclick="openEditModal('${msg.id}', \`${escapeHtml(msg.message).replace(/`/g, '\\`')}\`)" title="Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ">вњЏпёЏ</button>
               </div>
               <div class="message admin">
                 ${escapeHtml(msg.message)}
@@ -738,11 +738,11 @@
       
       if (!message) return;
       
-      // Очищаем поле сразу
+      // РћС‡РёС‰Р°РµРј РїРѕР»Рµ СЃСЂР°Р·Сѓ
       input.value = '';
       input.focus();
       
-      // Оптимистичное обновление - сразу показываем сообщение
+      // РћРїС‚РёРјРёСЃС‚РёС‡РЅРѕРµ РѕР±РЅРѕРІР»РµРЅРёРµ - СЃСЂР°Р·Сѓ РїРѕРєР°Р·С‹РІР°РµРј СЃРѕРѕР±С‰РµРЅРёРµ
       const tempId = 'temp_' + Date.now();
       const tempMessage = {
         id: tempId,
@@ -753,7 +753,7 @@
       chatMessages.push(tempMessage);
       renderMessages(chatMessages);
       
-      // Отправляем в фоне
+      // РћС‚РїСЂР°РІР»СЏРµРј РІ С„РѕРЅРµ
       try {
         const res = await fetch(`${API_BASE}/chat/${targetUserId}`, {
           method: 'POST',
@@ -766,15 +766,15 @@
         if (!data.success) {
           chatMessages = chatMessages.filter(m => m.id !== tempId);
           renderMessages(chatMessages);
-          showNotification('Ошибка отправки', 'error');
+          showNotification('РћС€РёР±РєР° РѕС‚РїСЂР°РІРєРё', 'error');
         } else if (!data.telegram_sent) {
-          // Сообщение сохранено, но не доставлено в Telegram
-          showNotification('⚠️ Пользователь заблокировал бота', 'warning');
+          // РЎРѕРѕР±С‰РµРЅРёРµ СЃРѕС…СЂР°РЅРµРЅРѕ, РЅРѕ РЅРµ РґРѕСЃС‚Р°РІР»РµРЅРѕ РІ Telegram
+          showNotification('вљ пёЏ РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ Р·Р°Р±Р»РѕРєРёСЂРѕРІР°Р» Р±РѕС‚Р°', 'warning');
         }
       } catch (e) {
         chatMessages = chatMessages.filter(m => m.id !== tempId);
         renderMessages(chatMessages);
-        showNotification('Ошибка сети', 'error');
+        showNotification('РћС€РёР±РєР° СЃРµС‚Рё', 'error');
       }
     }
     
@@ -865,7 +865,7 @@
       const container = document.getElementById('templateList');
       
       if (templates.length === 0) {
-        container.innerHTML = '<div class="template-empty">Нет сохранённых шаблонов</div>';
+        container.innerHTML = '<div class="template-empty">РќРµС‚ СЃРѕС…СЂР°РЅС‘РЅРЅС‹С… С€Р°Р±Р»РѕРЅРѕРІ</div>';
         return;
       }
       
@@ -873,8 +873,8 @@
         const isGlobal = t.is_global;
         const canDelete = isMainAdminUser || !isGlobal;
         const badge = isGlobal 
-          ? '<span class="template-badge global">общий</span>' 
-          : '<span class="template-badge personal">личный</span>';
+          ? '<span class="template-badge global">РѕР±С‰РёР№</span>' 
+          : '<span class="template-badge personal">Р»РёС‡РЅС‹Р№</span>';
         
         return `
           <div class="template-item" onclick="useTemplate('${t.id}')">
@@ -882,7 +882,7 @@
               <div class="template-title">${escapeHtml(t.title)} ${badge}</div>
               <div class="template-preview">${escapeHtml(t.message.substring(0, 50))}${t.message.length > 50 ? '...' : ''}</div>
             </div>
-            ${canDelete ? `<button class="template-delete" onclick="event.stopPropagation(); deleteTemplate('${t.id}')" title="Удалить">🗑</button>` : ''}
+            ${canDelete ? `<button class="template-delete" onclick="event.stopPropagation(); deleteTemplate('${t.id}')" title="РЈРґР°Р»РёС‚СЊ">рџ—‘</button>` : ''}
           </div>
         `;
       }).join('');
@@ -904,7 +904,7 @@
       const message = messageInput.value.trim();
       
       if (!title || !message) {
-        showNotification('Заполните название и текст шаблона', 'error');
+        showNotification('Р—Р°РїРѕР»РЅРёС‚Рµ РЅР°Р·РІР°РЅРёРµ Рё С‚РµРєСЃС‚ С€Р°Р±Р»РѕРЅР°', 'error');
         return;
       }
       
@@ -922,15 +922,15 @@
           messageInput.value = '';
           loadTemplates();
         } else {
-          showNotification('Ошибка: ' + data.error, 'error');
+          showNotification('РћС€РёР±РєР°: ' + data.error, 'error');
         }
       } catch (e) {
-        showNotification('Ошибка сохранения', 'error');
+        showNotification('РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ', 'error');
       }
     }
     
     async function deleteTemplate(templateId) {
-      if (!confirm('Удалить этот шаблон?')) return;
+      if (!confirm('РЈРґР°Р»РёС‚СЊ СЌС‚РѕС‚ С€Р°Р±Р»РѕРЅ?')) return;
       
       try {
         const res = await fetch(`${API_BASE}/templates/${templateId}?adminId=${adminId}`, {
@@ -942,10 +942,10 @@
         if (data.success) {
           loadTemplates();
         } else {
-          showNotification(data.error || 'Ошибка удаления', 'error');
+          showNotification(data.error || 'РћС€РёР±РєР° СѓРґР°Р»РµРЅРёСЏ', 'error');
         }
       } catch (e) {
-        showNotification('Ошибка удаления', 'error');
+        showNotification('РћС€РёР±РєР° СѓРґР°Р»РµРЅРёСЏ', 'error');
       }
     }
     
@@ -981,7 +981,7 @@
       
       const saveBtn = document.getElementById('saveEditBtn');
       saveBtn.disabled = true;
-      saveBtn.textContent = 'Сохранение...';
+      saveBtn.textContent = 'РЎРѕС…СЂР°РЅРµРЅРёРµ...';
       
       try {
         const res = await fetch(`${API_BASE}/chat/message/${editingMessageId}`, {
@@ -1001,15 +1001,15 @@
           }
           renderMessages(chatMessages);
           closeEditModal();
-          showNotification('Сообщение изменено', 'success');
+          showNotification('РЎРѕРѕР±С‰РµРЅРёРµ РёР·РјРµРЅРµРЅРѕ', 'success');
         } else {
-          showNotification(data.error || 'Ошибка редактирования', 'error');
+          showNotification(data.error || 'РћС€РёР±РєР° СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ', 'error');
         }
       } catch (e) {
-        showNotification('Ошибка сети', 'error');
+        showNotification('РћС€РёР±РєР° СЃРµС‚Рё', 'error');
       } finally {
         saveBtn.disabled = false;
-        saveBtn.textContent = 'Сохранить';
+        saveBtn.textContent = 'РЎРѕС…СЂР°РЅРёС‚СЊ';
       }
     }
     

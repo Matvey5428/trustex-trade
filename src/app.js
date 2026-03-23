@@ -54,7 +54,7 @@ app.use(express.static(path.join(__dirname, '../public'), {
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
     } else if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
-      res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minutes
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate'); // Always revalidate JS/CSS
     } else if (filePath.match(/\.(png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot)$/)) {
       res.setHeader('Cache-Control', 'public, max-age=604800'); // 7 days
     }

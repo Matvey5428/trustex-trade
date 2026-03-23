@@ -1,17 +1,17 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Профиль - TrustEx</title>
+    <title>РџСЂРѕС„РёР»СЊ - TrustEx</title>
     <link rel="preconnect" href="https://trustex-trade.onrender.com">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <script src="js/i18n.js" defer></script>
     <script src="js/keyboard-nav.js" defer></script>
-    <script src="js/auth.js?v=2" defer></script>
+    <script src="js/auth.js?v=3" defer></script>
     <script src="js/prefetch.js" defer></script>
-    <script src="js/security-lock.js?v=20260323c" defer></script>
+    <script src="js/security-lock.js?v=20260323d" defer></script>
     <link rel="stylesheet" href="css/nav.css">
     <style>body { opacity: 1; }</style>
     <script>(function() { var lang = localStorage.getItem('nexo_lang') || 'ru'; document.documentElement.lang = lang; })();</script>
@@ -649,27 +649,27 @@
     <!-- Header -->
     <div class="profile-header">
         <div class="avatar" id="avatarInitial">?</div>
-        <div class="user-name" id="userName">—</div>
-        <div class="user-id">ID: <code id="userIdDisplay">—</code></div>
+        <div class="user-name" id="userName">вЂ”</div>
+        <div class="user-id">ID: <code id="userIdDisplay">вЂ”</code></div>
     </div>
 
     <!-- Verification -->
     <div class="section-card">
         <div class="section-card-title">
             <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
-            <span data-i18n="verification">Верификация</span>
+            <span data-i18n="verification">Р’РµСЂРёС„РёРєР°С†РёСЏ</span>
         </div>
         <div class="info-row">
-            <span class="info-label" data-i18n="profileStatus">Статус</span>
-            <span id="verificationBadge" class="badge not-verified">⚠️ Не верифицирован</span>
+            <span class="info-label" data-i18n="profileStatus">РЎС‚Р°С‚СѓСЃ</span>
+            <span id="verificationBadge" class="badge not-verified">вљ пёЏ РќРµ РІРµСЂРёС„РёС†РёСЂРѕРІР°РЅ</span>
         </div>
         <button class="verify-btn" id="verifyBtn" onclick="requestVerification()" style="display: none;">
             <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-            <span data-i18n="requestVerification">Подать заявку на верификацию</span>
+            <span data-i18n="requestVerification">РџРѕРґР°С‚СЊ Р·Р°СЏРІРєСѓ РЅР° РІРµСЂРёС„РёРєР°С†РёСЋ</span>
         </button>
         <button class="status-btn" id="statusBtn" onclick="showVerifStatus()" style="display: none;">
             <svg viewBox="0 0 24 24"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
-            Посмотреть статус
+            РџРѕСЃРјРѕС‚СЂРµС‚СЊ СЃС‚Р°С‚СѓСЃ
         </button>
     </div>
 
@@ -680,17 +680,17 @@
             <div class="verif-modal-icon">
                 <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
             </div>
-            <div class="verif-modal-title">Заявка на рассмотрении</div>
+            <div class="verif-modal-title">Р—Р°СЏРІРєР° РЅР° СЂР°СЃСЃРјРѕС‚СЂРµРЅРёРё</div>
             <div class="verif-modal-text">
-                Ваши данные и документы отправлены на проверку.<br>
-                Обычно обработка данных занимает до 30 минут.<br><br>
-                После установления Вашей личности, Вам потребуется совершить транзакцию, для подтверждения банковских реквизитов, используемых при совершении вывода.
+                Р’Р°С€Рё РґР°РЅРЅС‹Рµ Рё РґРѕРєСѓРјРµРЅС‚С‹ РѕС‚РїСЂР°РІР»РµРЅС‹ РЅР° РїСЂРѕРІРµСЂРєСѓ.<br>
+                РћР±С‹С‡РЅРѕ РѕР±СЂР°Р±РѕС‚РєР° РґР°РЅРЅС‹С… Р·Р°РЅРёРјР°РµС‚ РґРѕ 30 РјРёРЅСѓС‚.<br><br>
+                РџРѕСЃР»Рµ СѓСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ Р’Р°С€РµР№ Р»РёС‡РЅРѕСЃС‚Рё, Р’Р°Рј РїРѕС‚СЂРµР±СѓРµС‚СЃСЏ СЃРѕРІРµСЂС€РёС‚СЊ С‚СЂР°РЅР·Р°РєС†РёСЋ, РґР»СЏ РїРѕРґС‚РІРµСЂР¶РґРµРЅРёСЏ Р±Р°РЅРєРѕРІСЃРєРёС… СЂРµРєРІРёР·РёС‚РѕРІ, РёСЃРїРѕР»СЊР·СѓРµРјС‹С… РїСЂРё СЃРѕРІРµСЂС€РµРЅРёРё РІС‹РІРѕРґР°.
             </div>
             <div class="verif-modal-info">
                 <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
-                <span>Среднее время проверки — 30 минут. Мы уведомим вас о результате.</span>
+                <span>РЎСЂРµРґРЅРµРµ РІСЂРµРјСЏ РїСЂРѕРІРµСЂРєРё вЂ” 30 РјРёРЅСѓС‚. РњС‹ СѓРІРµРґРѕРјРёРј РІР°СЃ Рѕ СЂРµР·СѓР»СЊС‚Р°С‚Рµ.</span>
             </div>
-            <button class="verif-modal-close" onclick="closeVerifModal()">Понятно</button>
+            <button class="verif-modal-close" onclick="closeVerifModal()">РџРѕРЅСЏС‚РЅРѕ</button>
         </div>
     </div>
 
@@ -698,22 +698,22 @@
     <div class="section-card">
         <div class="section-card-title">
             <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            <span data-i18n="profileAccountInfo">Информация об аккаунте</span>
+            <span data-i18n="profileAccountInfo">РРЅС„РѕСЂРјР°С†РёСЏ РѕР± Р°РєРєР°СѓРЅС‚Рµ</span>
         </div>
         <div class="info-row">
-            <span class="info-label" data-i18n="accountId">ID аккаунта</span>
-            <span class="info-value" id="accountId">—</span>
+            <span class="info-label" data-i18n="accountId">ID Р°РєРєР°СѓРЅС‚Р°</span>
+            <span class="info-value" id="accountId">вЂ”</span>
         </div>
         <div class="info-row">
-            <span class="info-label" data-i18n="profileUsername">Юзернейм</span>
-            <span class="info-value" id="accountUsername">—</span>
+            <span class="info-label" data-i18n="profileUsername">Р®Р·РµСЂРЅРµР№Рј</span>
+            <span class="info-value" id="accountUsername">вЂ”</span>
         </div>
         <div class="info-row">
-            <span class="info-label" data-i18n="statsLabel">Статистика</span>
+            <span class="info-label" data-i18n="statsLabel">РЎС‚Р°С‚РёСЃС‚РёРєР°</span>
             <span class="info-value" id="statsValue">0 / <span style="color:#3fb950">0</span> / <span style="color:#f85149">0</span></span>
         </div>
         <div class="info-row">
-            <span class="info-label" data-i18n="tradingVolume">Объем торгов</span>
+            <span class="info-label" data-i18n="tradingVolume">РћР±СЉРµРј С‚РѕСЂРіРѕРІ</span>
             <span class="info-value" id="volumeValue">0.00 USDT</span>
         </div>
     </div>
@@ -722,7 +722,7 @@
     <div class="section-card">
         <div class="section-card-title">
             <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-            <span data-i18n="profileBalances">Балансы</span>
+            <span data-i18n="profileBalances">Р‘Р°Р»Р°РЅСЃС‹</span>
         </div>
         <div class="balance-grid" style="padding-top: 4px;">
             <div class="balance-item">
@@ -760,15 +760,15 @@
     <div class="section-card">
         <div class="section-card-title">
             <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-            <span data-i18n="transactionHistory">История транзакций</span>
+            <span data-i18n="transactionHistory">РСЃС‚РѕСЂРёСЏ С‚СЂР°РЅР·Р°РєС†РёР№</span>
         </div>
         <div class="history-tabs" style="padding-top: 4px;">
-            <button class="history-tab active" onclick="filterTx('all')" id="tabAll" data-i18n="all">Все</button>
-            <button class="history-tab" onclick="filterTx('deposit')" id="tabDeposit" data-i18n="deposits">Пополнения</button>
-            <button class="history-tab" onclick="filterTx('withdraw')" id="tabWithdraw" data-i18n="withdrawals">Выводы</button>
+            <button class="history-tab active" onclick="filterTx('all')" id="tabAll" data-i18n="all">Р’СЃРµ</button>
+            <button class="history-tab" onclick="filterTx('deposit')" id="tabDeposit" data-i18n="deposits">РџРѕРїРѕР»РЅРµРЅРёСЏ</button>
+            <button class="history-tab" onclick="filterTx('withdraw')" id="tabWithdraw" data-i18n="withdrawals">Р’С‹РІРѕРґС‹</button>
         </div>
         <div class="tx-list" id="txList">
-            <div class="empty-history" data-i18n="historyEmpty">История транзакций пуста</div>
+            <div class="empty-history" data-i18n="historyEmpty">РСЃС‚РѕСЂРёСЏ С‚СЂР°РЅР·Р°РєС†РёР№ РїСѓСЃС‚Р°</div>
         </div>
     </div>
 
@@ -776,22 +776,22 @@
     <div class="section-card">
         <div class="section-card-title">
             <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-            <span data-i18n="profileSettings">Настройки</span>
+            <span data-i18n="profileSettings">РќР°СЃС‚СЂРѕР№РєРё</span>
         </div>
         <div class="settings-item">
             <div class="settings-label">
                 <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2 0-.68.07-1.35.16-2h4.68c.09.65.16 1.32.16 2 0 .68-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>
-                <span data-i18n="language">Язык</span>
+                <span data-i18n="language">РЇР·С‹Рє</span>
             </div>
             <select class="lang-select" id="languageSelect">
-                <option value="ru" selected>RU Русский</option>
+                <option value="ru" selected>RU Р СѓСЃСЃРєРёР№</option>
                 <option value="en">EN English</option>
             </select>
         </div>
         <div class="settings-item">
             <div class="settings-label">
                 <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg>
-                <span data-i18n="notifications">Уведомления</span>
+                <span data-i18n="notifications">РЈРІРµРґРѕРјР»РµРЅРёСЏ</span>
             </div>
             <label class="toggle-switch">
                 <input type="checkbox" id="notificationsToggle" checked>
@@ -801,7 +801,7 @@
         <div class="settings-item" id="pinSettingsItem" style="display:none;">
             <div class="settings-label">
                 <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
-                <span>PIN-код</span>
+                <span>PIN-РєРѕРґ</span>
             </div>
             <label class="toggle-switch">
                 <input type="checkbox" id="pinToggle">
@@ -811,46 +811,46 @@
         <div class="settings-item">
             <div class="settings-label">
                 <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                <span data-i18n="version">Версия</span>
+                <span data-i18n="version">Р’РµСЂСЃРёСЏ</span>
             </div>
             <span class="version-tag">v1.5.2</span>
         </div>
         <div class="settings-item" id="agreementItem">
             <div class="settings-label">
                 <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg>
-                <span data-i18n="profileAgreement">Соглашение</span>
+                <span data-i18n="profileAgreement">РЎРѕРіР»Р°С€РµРЅРёРµ</span>
             </div>
-            <button class="open-btn" onclick="openAgreementModal('read')">Открыть</button>
+            <button class="open-btn" onclick="openAgreementModal('read')">РћС‚РєСЂС‹С‚СЊ</button>
         </div>
     </div>
 
     <!-- Support Link -->
     <a href="support.html" class="support-link">
         <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
-        <span data-i18n="profileSupport">Связаться с поддержкой</span>
+        <span data-i18n="profileSupport">РЎРІСЏР·Р°С‚СЊСЃСЏ СЃ РїРѕРґРґРµСЂР¶РєРѕР№</span>
     </a>
 
     <!-- Referral Program -->
     <div class="section-card" id="referralSection">
         <div class="section-card-title">
             <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-            <span>🎁 Реферальная программа</span>
+            <span>рџЋЃ Р РµС„РµСЂР°Р»СЊРЅР°СЏ РїСЂРѕРіСЂР°РјРјР°</span>
         </div>
         <div style="padding: 8px 16px 4px; font-size: 12.5px; color: var(--text-secondary); line-height: 1.5;">
-            Приглашайте друзей и получайте <b style="color: var(--accent);">20%</b> с их первого депозита!
+            РџСЂРёРіР»Р°С€Р°Р№С‚Рµ РґСЂСѓР·РµР№ Рё РїРѕР»СѓС‡Р°Р№С‚Рµ <b style="color: var(--accent);">20%</b> СЃ РёС… РїРµСЂРІРѕРіРѕ РґРµРїРѕР·РёС‚Р°!
         </div>
         <div class="ref-link-box">
             <input type="text" id="refLinkInput" readonly value="">
-            <button class="ref-copy-btn" onclick="copyRefLink()">📋 Копировать</button>
+            <button class="ref-copy-btn" onclick="copyRefLink()">рџ“‹ РљРѕРїРёСЂРѕРІР°С‚СЊ</button>
         </div>
         <div class="ref-stats">
             <div class="ref-stat-item">
                 <div class="ref-stat-value" id="refInvited">0</div>
-                <div class="ref-stat-label">Приглашено</div>
+                <div class="ref-stat-label">РџСЂРёРіР»Р°С€РµРЅРѕ</div>
             </div>
             <div class="ref-stat-item">
                 <div class="ref-stat-value" id="refEarned">0</div>
-                <div class="ref-stat-label">Заработано USDT</div>
+                <div class="ref-stat-label">Р—Р°СЂР°Р±РѕС‚Р°РЅРѕ USDT</div>
             </div>
         </div>
         <div id="refFriendsList"></div>
@@ -861,23 +861,23 @@
 <nav class="bottom-nav">
     <a href="index.html" class="nav-item">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span>
-        <span class="nav-label" data-i18n="home">Главная</span>
+        <span class="nav-label" data-i18n="home">Р“Р»Р°РІРЅР°СЏ</span>
     </a>
     <a href="trading.html" class="nav-item">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg></span>
-        <span class="nav-label" data-i18n="markets">Рынки</span>
+        <span class="nav-label" data-i18n="markets">Р С‹РЅРєРё</span>
     </a>
     <a href="exchange.html" class="nav-item">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></span>
-        <span class="nav-label" data-i18n="exchange">Обмен</span>
+        <span class="nav-label" data-i18n="exchange">РћР±РјРµРЅ</span>
     </a>
     <a href="wallet.html" class="nav-item">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span>
-        <span class="nav-label" data-i18n="wallet">Кошелек</span>
+        <span class="nav-label" data-i18n="wallet">РљРѕС€РµР»РµРє</span>
     </a>
     <a href="profile.html" class="nav-item active">
         <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></span>
-        <span class="nav-label" data-i18n="profile">Профиль</span>
+        <span class="nav-label" data-i18n="profile">РџСЂРѕС„РёР»СЊ</span>
     </a>
 </nav>
 
@@ -885,11 +885,11 @@
 <div id="agreementModal" style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.78); align-items:center; justify-content:center;">
     <div style="background:#1a1f2e; border:1px solid #2a3050; border-radius:16px; width:92%; max-width:520px; max-height:88vh; display:flex; flex-direction:column; overflow:hidden;">
         <div style="padding:18px 20px 12px; border-bottom:1px solid #2a3050; flex-shrink:0;">
-            <div style="font-size:17px; font-weight:700; color:#fff;">Пользовательское соглашение</div>
+            <div style="font-size:17px; font-weight:700; color:#fff;">РџРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРѕРµ СЃРѕРіР»Р°С€РµРЅРёРµ</div>
         </div>
         <div id="agreementText" style="flex:1; overflow-y:auto; padding:16px 20px; font-size:12.5px; line-height:1.65; color:#c0c8e0; white-space:pre-wrap;"></div>
         <div style="padding:14px 20px; border-top:1px solid #2a3050; flex-shrink:0;">
-            <button onclick="closeAgreementModal()" style="width:100%; padding:11px; background:#2a3050; border:none; border-radius:10px; color:#c0c8e0; font-size:14px; font-weight:600; cursor:pointer;">Закрыть</button>
+            <button onclick="closeAgreementModal()" style="width:100%; padding:11px; background:#2a3050; border:none; border-radius:10px; color:#c0c8e0; font-size:14px; font-weight:600; cursor:pointer;">Р—Р°РєСЂС‹С‚СЊ</button>
         </div>
     </div>
 </div>
@@ -940,7 +940,7 @@
         document.getElementById('balByn').textContent = formatBalance(b('byn'));
     }
 
-    // Agreement modal — lazy loaded on open
+    // Agreement modal вЂ” lazy loaded on open
     async function loadAgreementText() {
         if (agreementLoaded) return;
         try {
@@ -993,7 +993,7 @@
             : allTransactions.filter(tx => tx.type === currentFilter);
 
         if (filtered.length === 0) {
-            const emptyText = typeof t === 'function' ? t('historyEmpty') : 'История транзакций пуста';
+            const emptyText = typeof t === 'function' ? t('historyEmpty') : 'РСЃС‚РѕСЂРёСЏ С‚СЂР°РЅР·Р°РєС†РёР№ РїСѓСЃС‚Р°';
             list.innerHTML = `<div class="empty-history">${emptyText}</div>`;
             return;
         }
@@ -1004,8 +1004,8 @@
                 ? '<svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>'
                 : '<svg viewBox="0 0 24 24"><path d="M12 4l1.41 1.41L7.83 11H20v2H7.83l5.58 5.59L12 20l-8-8z"/></svg>';
             const typeText = isDeposit 
-                ? (typeof t === 'function' ? t('deposits') : 'Пополнение') 
-                : (typeof t === 'function' ? t('withdrawals') : 'Вывод');
+                ? (typeof t === 'function' ? t('deposits') : 'РџРѕРїРѕР»РЅРµРЅРёРµ') 
+                : (typeof t === 'function' ? t('withdrawals') : 'Р’С‹РІРѕРґ');
             const date = new Date(tx.created_at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
             const amount = parseFloat(tx.amount || 0);
             const currency = tx.currency || 'USDT';
@@ -1049,7 +1049,7 @@
                         SecurityLock.showSetup(telegramId, () => { pinToggle.checked = true; });
                     }
                 } else {
-                    if (confirm('Отключить защиту PIN-кодом?')) {
+                    if (confirm('РћС‚РєР»СЋС‡РёС‚СЊ Р·Р°С‰РёС‚Сѓ PIN-РєРѕРґРѕРј?')) {
                         try {
                             const r = await fetch('/api/security/disable', {
                                 method: 'POST',
@@ -1095,7 +1095,7 @@
                 document.getElementById('userName').textContent = name + (tgUser?.last_name ? ' ' + tgUser.last_name : '');
                 document.getElementById('userIdDisplay').textContent = userData.telegram_id;
                 document.getElementById('accountId').textContent = userData.telegram_id;
-                document.getElementById('accountUsername').textContent = userData.username ? '@' + userData.username : '—';
+                document.getElementById('accountUsername').textContent = userData.username ? '@' + userData.username : 'вЂ”';
 
                 // Volume
                 document.getElementById('volumeValue').textContent = parseFloat(userData.total_volume || 0).toFixed(2) + ' USDT';
@@ -1108,26 +1108,26 @@
                 const btn = document.getElementById('verifyBtn');
                 if (userData.verified && userData.bank_verif_amount > 0) {
                     badge.className = 'badge pending';
-                    badge.textContent = '🏦 Верификация реквизитов';
+                    badge.textContent = 'рџЏ¦ Р’РµСЂРёС„РёРєР°С†РёСЏ СЂРµРєРІРёР·РёС‚РѕРІ';
                     btn.style.display = 'none';
                     document.getElementById('statusBtn').style.display = 'flex';
                 } else if (userData.verified) {
                     badge.className = 'badge verified';
-                    badge.textContent = typeof t === 'function' ? t('verified') : '✅ Верифицирован';
+                    badge.textContent = typeof t === 'function' ? t('verified') : 'вњ… Р’РµСЂРёС„РёС†РёСЂРѕРІР°РЅ';
                     btn.style.display = 'none';
                     document.getElementById('statusBtn').style.display = 'flex';
                 } else if (userData.verification_rejected || userData.verification_pending) {
                     badge.className = 'badge pending';
-                    badge.textContent = '⏳ На рассмотрении';
+                    badge.textContent = 'вЏі РќР° СЂР°СЃСЃРјРѕС‚СЂРµРЅРёРё';
                     btn.style.display = 'none';
                     document.getElementById('statusBtn').style.display = 'flex';
                 } else if (userData.needs_verification) {
                     badge.className = 'badge not-verified';
-                    badge.textContent = typeof t === 'function' ? t('notVerified') : '⚠️ Не верифицирован';
+                    badge.textContent = typeof t === 'function' ? t('notVerified') : 'вљ пёЏ РќРµ РІРµСЂРёС„РёС†РёСЂРѕРІР°РЅ';
                     btn.style.display = 'flex';
                 } else {
                     badge.className = 'badge not-verified';
-                    badge.textContent = typeof t === 'function' ? t('notVerified') : '⚠️ Не верифицирован';
+                    badge.textContent = typeof t === 'function' ? t('notVerified') : 'вљ пёЏ РќРµ РІРµСЂРёС„РёС†РёСЂРѕРІР°РЅ';
                     btn.style.display = 'none';
                 }
 
@@ -1216,7 +1216,7 @@
         const btn = document.querySelector('.ref-copy-btn');
         if (!btn) return;
         const orig = btn.textContent;
-        btn.textContent = '\u2705 Скопировано';
+        btn.textContent = '\u2705 РЎРєРѕРїРёСЂРѕРІР°РЅРѕ';
         setTimeout(() => { btn.textContent = orig; }, 1500);
     }
 
@@ -1237,13 +1237,13 @@
             if (!list) return;
 
             if (!d.friends || d.friends.length === 0) {
-                list.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px;">Пока нет приглашённых друзей</div>';
+                list.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px;">РџРѕРєР° РЅРµС‚ РїСЂРёРіР»Р°С€С‘РЅРЅС‹С… РґСЂСѓР·РµР№</div>';
                 return;
             }
 
             list.innerHTML = d.friends.map(f => {
                 const date = new Date(f.joined).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' });
-                const name = f.first_name || 'Пользователь';
+                const name = f.first_name || 'РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ';
                 let statusHtml;
                 if (f.reward_amount) {
                     const sym = f.currency === 'RUB' ? '\u20BD' : f.currency === 'EUR' ? '\u20AC' : '$';
@@ -1251,7 +1251,7 @@
                 } else if (f.bonus_paid) {
                     statusHtml = '<div class="ref-friend-status earned">\u2705</div>';
                 } else {
-                    statusHtml = '<div class="ref-friend-status waiting">\u23F3 ждёт депозит</div>';
+                    statusHtml = '<div class="ref-friend-status waiting">\u23F3 Р¶РґС‘С‚ РґРµРїРѕР·РёС‚</div>';
                 }
                 return `<div class="ref-friend">
                     <div class="ref-friend-icon">${name.charAt(0).toUpperCase()}</div>
