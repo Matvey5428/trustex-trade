@@ -13,20 +13,27 @@
   const NAV_THRESHOLD = 5000; // 5 seconds - if page loaded within 5s of previous unload, it's navigation
   const PIN_LENGTH = 4;
 
-  // Mark page unloads so we can distinguish navigation from fresh app open
-  // pagehide is reliable on iOS/Telegram WebApp, beforeunload is not
+  // Mark ONLY explicit page navigations (link clicks/button clicks), NOT app close
+  // This ensures closing the app doesn't create a false navigation marker
   function setNavMarker() {
     localStorage.setItem(NAV_MARKER_KEY, String(Date.now()));
   }
-  window.addEventListener('pagehide', setNavMarker);
-  window.addEventListener('beforeunload', setNavMarker);
-  // Also catch link clicks directly (most reliable on mobile)
   document.addEventListener('click', (e) => {
+    // Catch <a> link clicks
     const link = e.target.closest('a[href]');
     if (link && link.href && link.href.startsWith(window.location.origin)) {
       setNavMarker();
+      return;
     }
-  });
+    // Catch buttons/elements with onclick that navigates (window.location.href = '...')
+    const clickable = e.target.closest('[onclick]');
+    if (clickable) {
+      const handler = clickable.getAttribute('onclick') || '';
+      if (handler.includes('location') && handler.includes('.html')) {
+        setNavMarker();
+      }
+    }
+  }, true); // capture phase to fire before onclick handlers
 
   // State
   let currentUserId = null;
