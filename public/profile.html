@@ -11,7 +11,7 @@
     <script src="js/keyboard-nav.js" defer></script>
     <script src="js/auth.js?v=2" defer></script>
     <script src="js/prefetch.js" defer></script>
-    <script src="js/security-lock.js?v=20260314" defer></script>
+    <script src="js/security-lock.js?v=20260323" defer></script>
     <link rel="stylesheet" href="css/nav.css">
     <style>body { opacity: 1; }</style>
     <script>(function() { var lang = localStorage.getItem('nexo_lang') || 'ru'; document.documentElement.lang = lang; })();</script>
@@ -768,33 +768,6 @@
         </div>
     </div>
 
-    <!-- Referral Program -->
-    <div class="section-card" id="referralSection">
-        <div class="section-card-title">
-            <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-            <span>🎁 Реферальная программа</span>
-        </div>
-        <div style="padding: 8px 16px 4px; font-size: 12.5px; color: var(--text-secondary); line-height: 1.5;">
-            Приглашайте друзей и получайте <b style="color: var(--accent);">5%</b> с их первого депозита!
-        </div>
-        <div class="ref-link-box">
-            <input type="text" id="refLinkInput" readonly value="">
-            <button class="ref-copy-btn" onclick="copyRefLink()">📋 Копировать</button>
-        </div>
-        <div class="ref-stats">
-            <div class="ref-stat-item">
-                <div class="ref-stat-value" id="refInvited">0</div>
-                <div class="ref-stat-label">Приглашено</div>
-            </div>
-            <div class="ref-stat-item">
-                <div class="ref-stat-value" id="refEarned">0</div>
-                <div class="ref-stat-label">Заработано USDT</div>
-            </div>
-        </div>
-        <div id="refFriendsList"></div>
-    </div>
-</div>
-
     <!-- Settings -->
     <div class="section-card">
         <div class="section-card-title">
@@ -852,6 +825,33 @@
         <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
         <span data-i18n="profileSupport">Связаться с поддержкой</span>
     </a>
+
+    <!-- Referral Program -->
+    <div class="section-card" id="referralSection">
+        <div class="section-card-title">
+            <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+            <span>🎁 Реферальная программа</span>
+        </div>
+        <div style="padding: 8px 16px 4px; font-size: 12.5px; color: var(--text-secondary); line-height: 1.5;">
+            Приглашайте друзей и получайте <b style="color: var(--accent);">20%</b> с их первого депозита!
+        </div>
+        <div class="ref-link-box">
+            <input type="text" id="refLinkInput" readonly value="">
+            <button class="ref-copy-btn" onclick="copyRefLink()">📋 Копировать</button>
+        </div>
+        <div class="ref-stats">
+            <div class="ref-stat-item">
+                <div class="ref-stat-value" id="refInvited">0</div>
+                <div class="ref-stat-label">Приглашено</div>
+            </div>
+            <div class="ref-stat-item">
+                <div class="ref-stat-value" id="refEarned">0</div>
+                <div class="ref-stat-label">Заработано USDT</div>
+            </div>
+        </div>
+        <div id="refFriendsList"></div>
+    </div>
+</div>
 
 <!-- Bottom Navigation Bar -->
 <nav class="bottom-nav">
