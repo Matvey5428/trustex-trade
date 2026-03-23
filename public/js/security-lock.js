@@ -896,36 +896,30 @@
     if (onUnlockCallback) onUnlockCallback();
   }
 
-  // Save session to localStorage (persists during page navigation)
+  // Save session to localStorage (persists across page navigations)
   function saveSession() {
     const session = {
       userId: currentUserId,
-      timestamp: Date.now(),
-      active: true
+      timestamp: Date.now()
     };
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   }
 
-  // Invalidate session when app goes to background (minimized/switched away)
-  document.addEventListener('visibilitychange', function() {
-    if (document.hidden) {
-      // App minimized/hidden - mark session inactive so PIN is required on return
-      try {
-        const session = JSON.parse(localStorage.getItem(SESSION_KEY));
-        if (session) {
-          session.active = false;
-          localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-        }
-      } catch (e) {}
-    }
-  });
-
-  // Check if session is valid (must be active - not minimized since last PIN entry)
+  // Check if session is valid (expires after 30 min of inactivity)
+  const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
   function isSessionValid() {
     try {
       const session = JSON.parse(localStorage.getItem(SESSION_KEY));
       if (!session || session.userId !== currentUserId) return false;
-      return session.active === true;
+      // Expire after 30 min of inactivity (simulates "app closed")
+      if (Date.now() - session.timestamp > SESSION_TIMEOUT) {
+        localStorage.removeItem(SESSION_KEY);
+        return false;
+      }
+      // Refresh timestamp on valid check (activity keeps session alive)
+      session.timestamp = Date.now();
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      return true;
     } catch (e) {
       return false;
     }
