@@ -1154,6 +1154,16 @@
           <div class="asset-equiv" id="eurEquiv">≈ $0.00</div>
         </div>
       </div>
+      <div class="asset-item">
+        <div class="asset-left">
+          <div class="coin" style="background:linear-gradient(135deg,#e53935,#b71c1c);color:#fff;">Br</div>
+          <div class="asset-info"><div class="asset-name" data-i18n="byn">Белорусский рубль</div><div class="asset-price">BYN</div></div>
+        </div>
+        <div class="asset-right">
+          <div class="asset-balance skeleton" id="bynBalance">0.00</div>
+          <div class="asset-equiv" id="bynEquiv">≈ $0.00</div>
+        </div>
+      </div>
     </div>
 
     <!-- Crypto -->
@@ -1380,6 +1390,7 @@
       fiatAccounts: 'Валютные счета',
       crypto: 'Криптовалюты',
       rub: 'Российский рубль',
+      byn: 'Белорусский рубль',
       reviews: 'Отзывы клиентов',
       reviewsSubtitle: 'Что говорят пользователи о платформе',
       allReviews: 'Все отзывы',
@@ -1435,6 +1446,7 @@
       fiatAccounts: 'Fiat Accounts',
       crypto: 'Cryptocurrencies',
       rub: 'Russian Ruble',
+      byn: 'Belarusian Ruble',
       reviews: 'Customer Reviews',
       reviewsSubtitle: 'What users say about the platform',
       allReviews: 'All Reviews',
@@ -1682,11 +1694,12 @@
     const bal = (f) => parseFloat(user['balance_' + f] ?? user[f]) || 0;
     const rbcInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.rubToUsd(bal('rub')) : 0;
     const eurInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.eurToUsd(bal('eur')) : 0;
+    const bynInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.bynToUsd(bal('byn')) : 0;
     const usdtBalance = bal('usdt');
     const btcInUsd = bal('btc') * market.btc;
     const ethInUsd = bal('eth') * market.eth;
     const tonInUsd = bal('ton') * market.ton;
-    const totalBalanceUsd = rbcInUsd + eurInUsd + usdtBalance + btcInUsd + ethInUsd + tonInUsd;
+    const totalBalanceUsd = rbcInUsd + eurInUsd + bynInUsd + usdtBalance + btcInUsd + ethInUsd + tonInUsd;
     
     const formattedBalance = totalBalanceUsd.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/,/g, '.');
     setRealBalance(`$${formattedBalance}`);
@@ -1719,6 +1732,9 @@
     
     if (eurEl) { eurEl.textContent = `${fmt(eurAmount)} €`; eurEl.classList.remove('skeleton'); }
     if (eurEq) { eurEq.textContent = `≈ $${fmt(eurInUsd)}`; }
+    
+    if (bynEl) { bynEl.textContent = `${fmt(bynAmount)} Br`; bynEl.classList.remove('skeleton'); }
+    if (bynEq) { bynEq.textContent = `≈ $${fmt(bynInUsd)}`; }
     
     if (btcEl) { btcEl.textContent = `${btcAmount.toFixed(6)} BTC`; btcEl.classList.remove('skeleton'); }
     if (btcEq) { btcEq.textContent = `≈ $${fmt(btcInUsd)}`; }
@@ -1807,6 +1823,7 @@
             user.balance_btc = p.btc;
             user.balance_rub = p.rub;
             user.balance_eur = p.eur;
+            user.balance_byn = p.byn;
             user.balance_eth = p.eth;
             user.balance_ton = p.ton;
             // Обновить глобальный кэш

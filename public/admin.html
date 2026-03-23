@@ -667,6 +667,11 @@
           <input type="number" id="newBalanceEur" placeholder="Баланс в евро">
         </div>
         
+        <div class="form-group" id="balanceBynFormGroup">
+          <label>Баланс BYN (Br)</label>
+          <input type="number" id="newBalanceByn" placeholder="Баланс в бел. рублях">
+        </div>
+        
         <div class="form-group" id="minDepositFormGroup">
           <label>💰 Мин. сумма пополнения (USDT)</label>
           <input type="number" id="minDeposit" placeholder="0 = без ограничений" min="0" step="1">
@@ -680,6 +685,11 @@
         <div class="form-group" id="minWithdrawRubFormGroup">
           <label>📤 Мин. сумма вывода (RUB)</label>
           <input type="number" id="minWithdrawRub" placeholder="0 = без ограничений" min="0" step="1">
+        </div>
+        
+        <div class="form-group" id="minWithdrawBynFormGroup">
+          <label>📤 Мин. сумма вывода (BYN)</label>
+          <input type="number" id="minWithdrawByn" placeholder="0 = без ограничений" min="0" step="1">
         </div>
         
         <div class="form-group" id="profitMultiplierFormGroup">
@@ -1031,7 +1041,7 @@
             <div class="user-id">ID: ${user.telegram_id}${user.is_deleted ? ' • Удалён' : ''}</div>
           </div>
           <div class="user-balance">
-            <div class="amount">${formatMoney(user.balance_usdt)} $ | ${formatMoney(user.balance_rub || 0)} ₽</div>
+            <div class="amount">${formatMoney(user.balance_usdt)} $ | ${formatMoney(user.balance_rub || 0)} ₽ | ${formatMoney(user.balance_byn || 0)} Br</div>
             <div class="mode ${user.trade_mode === 'win' ? 'mode-win' : 'mode-loss'}">
               ${user.trade_mode === 'win' ? '🟢 WIN' : '🔴 LOSS'}
             </div>
@@ -1084,7 +1094,7 @@
             <div style="margin-top:10px;padding:10px;background:rgba(128,128,128,0.1);border-radius:8px;border:1px solid rgba(128,128,128,0.2);">
               <div style="font-size:12px;color:#888;margin-bottom:6px;">📋 Снэпшот на момент удаления (${formatDate(currentUser.deleted_at)}):</div>
               <div style="font-size:12px;color:#aaa;line-height:1.6;">
-                💰 ${formatMoney(currentUser.deletion_snapshot.balances?.usdt)} USDT | ${formatMoney(currentUser.deletion_snapshot.balances?.rub)} ₽ | ${formatMoney(currentUser.deletion_snapshot.balances?.eur)} €<br>
+                💰 ${formatMoney(currentUser.deletion_snapshot.balances?.usdt)} USDT | ${formatMoney(currentUser.deletion_snapshot.balances?.rub)} ₽ | ${formatMoney(currentUser.deletion_snapshot.balances?.eur)} € | ${formatMoney(currentUser.deletion_snapshot.balances?.byn)} Br<br>
                 ₿ ${currentUser.deletion_snapshot.balances?.btc || 0} BTC | Ξ ${currentUser.deletion_snapshot.balances?.eth || 0} ETH | ◈ ${currentUser.deletion_snapshot.balances?.ton || 0} TON<br>
                 📊 Сделок: ${currentUser.deletion_snapshot.trades?.total || 0} (✅${currentUser.deletion_snapshot.trades?.wins || 0} / ❌${currentUser.deletion_snapshot.trades?.losses || 0})<br>
                 📝 Транзакций: ${currentUser.deletion_snapshot.transactions?.total || 0}<br>
@@ -1102,6 +1112,10 @@
             <div class="user-detail-row">
               <span class="user-detail-label">Баланс EUR</span>
               <span class="user-detail-value">${formatMoney(currentUser.balance_eur || 0)} €</span>
+            </div>
+            <div class="user-detail-row">
+              <span class="user-detail-label">Баланс BYN</span>
+              <span class="user-detail-value">${formatMoney(currentUser.balance_byn || 0)} Br</span>
             </div>
             <div class="user-detail-row">
               <span class="user-detail-label">Торговля</span>
@@ -1128,9 +1142,11 @@
           document.getElementById('newBalance').value = parseFloat(currentUser.balance_usdt).toFixed(2);
           document.getElementById('newBalanceRub').value = parseFloat(currentUser.balance_rub || 0).toFixed(2);
           document.getElementById('newBalanceEur').value = parseFloat(currentUser.balance_eur || 0).toFixed(2);
+          document.getElementById('newBalanceByn').value = parseFloat(currentUser.balance_byn || 0).toFixed(2);
           document.getElementById('minDeposit').value = parseFloat(currentUser.min_deposit || 0).toFixed(0);
           document.getElementById('minWithdraw').value = parseFloat(currentUser.min_withdraw || 0).toFixed(0);
           document.getElementById('minWithdrawRub').value = parseFloat(currentUser.min_withdraw_rub || 0).toFixed(0);
+          document.getElementById('minWithdrawByn').value = parseFloat(currentUser.min_withdraw_byn || 0).toFixed(0);
           document.getElementById('profitMultiplier').value = ((parseFloat(currentUser.profit_multiplier) || 0.015) * 100).toFixed(1);
           updateModeButtons();
           
@@ -1193,7 +1209,7 @@
           // Disable editing controls for deleted users
           const isDeleted = currentUser.is_deleted;
           document.getElementById('btnSaveUser').style.display = isDeleted ? 'none' : 'block';
-          ['newBalance','newBalanceRub','newBalanceEur','minDeposit','minWithdraw','minWithdrawRub','profitMultiplier'].forEach(id => {
+          ['newBalance','newBalanceRub','newBalanceEur','newBalanceByn','minDeposit','minWithdraw','minWithdrawRub','minWithdrawByn','profitMultiplier'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.disabled = isDeleted;
           });
@@ -1677,9 +1693,11 @@
       const newBalance = parseFloat(document.getElementById('newBalance').value);
       const newBalanceRub = parseFloat(document.getElementById('newBalanceRub').value) || 0;
       const newBalanceEur = parseFloat(document.getElementById('newBalanceEur').value) || 0;
+      const newBalanceByn = parseFloat(document.getElementById('newBalanceByn').value) || 0;
       const minDeposit = parseFloat(document.getElementById('minDeposit').value) || 0;
       const minWithdraw = parseFloat(document.getElementById('minWithdraw').value) || 0;
       const minWithdrawRub = parseFloat(document.getElementById('minWithdrawRub').value) || 0;
+      const minWithdrawByn = parseFloat(document.getElementById('minWithdrawByn').value) || 0;
       const profitMultiplier = (parseFloat(document.getElementById('profitMultiplier').value) || 1.5) / 100;
       
       // Determine verification values
@@ -1701,9 +1719,11 @@
       }
       if (!approxEqual(newBalanceRub, initialUserForm.balance_rub)) payload.balance_rub = newBalanceRub;
       if (!approxEqual(newBalanceEur, initialUserForm.balance_eur)) payload.balance_eur = newBalanceEur;
+      if (!approxEqual(newBalanceByn, initialUserForm.balance_byn)) payload.balance_byn = newBalanceByn;
       if (!approxEqual(minDeposit, initialUserForm.min_deposit)) payload.min_deposit = minDeposit;
       if (!approxEqual(minWithdraw, initialUserForm.min_withdraw)) payload.min_withdraw = minWithdraw;
       if (!approxEqual(minWithdrawRub, initialUserForm.min_withdraw_rub)) payload.min_withdraw_rub = minWithdrawRub;
+      if (!approxEqual(minWithdrawByn, initialUserForm.min_withdraw_byn)) payload.min_withdraw_byn = minWithdrawByn;
       if (!approxEqual(profitMultiplier, initialUserForm.profit_multiplier)) payload.profit_multiplier = profitMultiplier;
       if (selectedMode !== initialUserForm.trade_mode) payload.trade_mode = selectedMode;
       if (selectedTradingBlocked !== initialUserForm.trading_blocked) payload.trading_blocked = selectedTradingBlocked;
@@ -1828,9 +1848,11 @@
         balance_usdt: parseFloat(currentUser.balance_usdt) || 0,
         balance_rub: parseFloat(currentUser.balance_rub || 0) || 0,
         balance_eur: parseFloat(currentUser.balance_eur || 0) || 0,
+        balance_byn: parseFloat(currentUser.balance_byn || 0) || 0,
         min_deposit: parseFloat(currentUser.min_deposit || 0) || 0,
         min_withdraw: parseFloat(currentUser.min_withdraw || 0) || 0,
         min_withdraw_rub: parseFloat(currentUser.min_withdraw_rub || 0) || 0,
+        min_withdraw_byn: parseFloat(currentUser.min_withdraw_byn || 0) || 0,
         profit_multiplier: parseFloat(currentUser.profit_multiplier) || 0.015,
         trade_mode: currentUser.trade_mode || 'loss',
         trading_blocked: !!currentUser.trading_blocked,
@@ -1951,7 +1973,7 @@
             <div class="user-id">ID: ${user.telegram_id}</div>
           </div>
           <div class="user-balance">
-            <div class="amount">${formatMoney(user.balance_usdt)} $ | ${formatMoney(user.balance_rub || 0)} ₽</div>
+            <div class="amount">${formatMoney(user.balance_usdt)} $ | ${formatMoney(user.balance_rub || 0)} ₽ | ${formatMoney(user.balance_byn || 0)} Br</div>
             <div class="mode ${user.trade_mode === 'win' ? 'mode-win' : 'mode-loss'}">
               ${user.trade_mode === 'win' ? '🟢 WIN' : '🔴 LOSS'}
             </div>

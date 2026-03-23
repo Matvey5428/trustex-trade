@@ -749,6 +749,10 @@
                 <div class="currency">EUR</div>
                 <div class="amount" id="balEur">0.00</div>
             </div>
+            <div class="balance-item">
+                <div class="currency">BYN</div>
+                <div class="amount" id="balByn">0.00</div>
+            </div>
         </div>
     </div>
 
@@ -933,6 +937,7 @@
         document.getElementById('balTon').textContent = formatBalance(b('ton'), 4);
         document.getElementById('balRub').textContent = formatBalance(b('rub'));
         document.getElementById('balEur').textContent = formatBalance(b('eur'));
+        document.getElementById('balByn').textContent = formatBalance(b('byn'));
     }
 
     // Agreement modal — lazy loaded on open

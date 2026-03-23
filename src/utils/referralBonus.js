@@ -56,7 +56,7 @@ async function processReferralBonus(userId, depositAmount, currency, client = nu
     if (bonusAmount <= 0) return;
 
     // Determine balance field
-    const BALANCE_FIELDS = { 'RUB': 'balance_rub', 'EUR': 'balance_eur', 'USDT': 'balance_usdt' };
+    const BALANCE_FIELDS = { 'RUB': 'balance_rub', 'EUR': 'balance_eur', 'USDT': 'balance_usdt', 'BYN': 'balance_byn' };
     const balanceField = BALANCE_FIELDS[currency] || 'balance_usdt';
 
     // Credit referrer's balance
@@ -73,7 +73,7 @@ async function processReferralBonus(userId, depositAmount, currency, client = nu
     );
 
     // Create transaction record for referrer
-    const sym = currency === 'RUB' ? '₽' : currency === 'EUR' ? '€' : 'USDT';
+    const sym = currency === 'RUB' ? '₽' : currency === 'EUR' ? '€' : currency === 'BYN' ? 'Br' : 'USDT';
     await db.query(
       `INSERT INTO transactions (user_id, amount, currency, type, description, created_at)
        VALUES ($1, $2, $3, 'deposit', $4, NOW())`,
@@ -101,7 +101,7 @@ async function notifyReferrer(referrerTelegramId, bonusAmount, currency, referre
     const bot = getBot();
     if (!bot) return;
 
-    const sym = currency === 'RUB' ? '₽' : currency === 'EUR' ? '€' : '$';
+    const sym = currency === 'RUB' ? '₽' : currency === 'EUR' ? '€' : currency === 'BYN' ? 'Br' : '$';
     const message = `🎁 <b>Реферальный бонус!</b>\n\n` +
       `Ваш друг совершил первый депозит.\n` +
       `💰 Вам начислено: <b>${sym}${bonusAmount.toFixed(2)} ${currency}</b>\n\n` +

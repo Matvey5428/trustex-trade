@@ -201,6 +201,11 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
       creditAmount = origAmount;
       creditCurrency = 'EUR';
       displayAmount = `${origAmount} €`;
+    } else if (origCurrency === 'BYN') {
+      balanceField = 'balance_byn';
+      creditAmount = origAmount;
+      creditCurrency = 'BYN';
+      displayAmount = `${origAmount} Br`;
     } else {
       balanceField = 'balance_usdt';
       creditAmount = paidAmount;
@@ -221,7 +226,7 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
     // Create transaction record
     let desc = `Пополнение через CryptoBot: ${displayAmount}`;
     if (commission > 0) {
-      const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : 'USDT';
+      const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : creditCurrency === 'BYN' ? 'Br' : 'USDT';
       desc += ` (комиссия 1%: ${commission.toFixed(2)} ${sym})`;
     }
     await client.query(
@@ -250,7 +255,7 @@ app.post('/api/cryptobot-webhook', async (req, res) => {
           if (bot) {
             let notifyText = `✅ Пополнение успешно!\n\n💰 Сумма: ${displayAmount}`;
             if (commission > 0) {
-              const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : 'USDT';
+              const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : creditCurrency === 'BYN' ? 'Br' : 'USDT';
               notifyText += `\n💸 Комиссия 1%: ${commission.toFixed(2)} ${sym}\n💵 Зачислено: ${creditAmount.toFixed(2)} ${sym}`;
             }
             notifyText += `\n\nБаланс обновлён. Приятной торговли!`;

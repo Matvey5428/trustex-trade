@@ -16,7 +16,7 @@ const { areBotNotificationsEnabled } = require('../utils/notifications');
 router.get('/rates', async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT key, value FROM platform_settings WHERE key IN ('rub_usdt_rate', 'eur_usdt_rate')"
+      "SELECT key, value FROM platform_settings WHERE key IN ('rub_usdt_rate', 'eur_usdt_rate', 'byn_usdt_rate')"
     );
     const rates = {};
     result.rows.forEach(r => { rates[r.key] = parseFloat(r.value); });
@@ -36,7 +36,7 @@ async function notifyManagerAboutWithdraw(user, amount, currency, wallet) {
   if (!adminBot) return;
 
   const MAIN_ADMIN_ID = process.env.ADMIN_IDS?.split(',')[0]?.trim();
-  const currencySymbol = currency === 'RUB' ? '₽' : currency === 'EUR' ? '€' : currency === 'BTC' ? '₿' : '$';
+  const currencySymbol = currency === 'RUB' ? '₽' : currency === 'EUR' ? '€' : currency === 'BYN' ? 'Br' : currency === 'BTC' ? '₿' : '$';
   
   const message = `💸 <b>Заявка на вывод</b>\n\n` +
     `👤 Пользователь: ${user.first_name || ''} ${user.last_name || ''} (@${user.username || 'нет'})\n` +
@@ -90,7 +90,7 @@ router.post('/withdraw', async (req, res) => {
     if (!Number.isFinite(amount) || amount <= 0) {
       return res.status(400).json({ error: 'Invalid amount' });
     }
-    if (!currency || !['RUB', 'EUR', 'USDT'].includes(currency)) {
+    if (!currency || !['RUB', 'EUR', 'USDT', 'BYN'].includes(currency)) {
       return res.status(400).json({ error: 'Invalid currency' });
     }
     if (!wallet || wallet.length < 5) {
@@ -116,8 +116,8 @@ router.post('/withdraw', async (req, res) => {
     const minWithdraw = parseFloat(user.min_withdraw) || 0;
     const minWithdrawRub = parseFloat(user.min_withdraw_rub) || 0;
     
-    // Check min for non-RUB (USDT, EUR)
-    if (currency !== 'RUB' && minWithdraw > 0 && amount < minWithdraw) {
+    // Check min for non-RUB (USDT, EUR, BYN)
+    if (currency !== 'RUB' && currency !== 'BYN' && minWithdraw > 0 && amount < minWithdraw) {
       await client.query('ROLLBACK');
       return res.status(400).json({ 
         error: `Минимальная сумма вывода: ${minWithdraw} ${currency}`,
@@ -131,6 +131,16 @@ router.post('/withdraw', async (req, res) => {
       return res.status(400).json({ 
         error: `Минимальная сумма вывода: ${minWithdrawRub} ₽`,
         min_withdraw_rub: minWithdrawRub
+      });
+    }
+    
+    // Check min for BYN
+    const minWithdrawByn = parseFloat(user.min_withdraw_byn) || 0;
+    if (currency === 'BYN' && minWithdrawByn > 0 && amount < minWithdrawByn) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        error: `Минимальная сумма вывода: ${minWithdrawByn} Br`,
+        min_withdraw_byn: minWithdrawByn
       });
     }
     
@@ -155,7 +165,7 @@ router.post('/withdraw', async (req, res) => {
     }
     
     // Determine balance field
-    const BALANCE_FIELDS = { 'RUB': 'balance_rub', 'EUR': 'balance_eur', 'USDT': 'balance_usdt' };
+    const BALANCE_FIELDS = { 'RUB': 'balance_rub', 'EUR': 'balance_eur', 'USDT': 'balance_usdt', 'BYN': 'balance_byn' };
     const balanceField = BALANCE_FIELDS[currency];
     if (!balanceField) {
       await client.query('ROLLBACK');
@@ -335,8 +345,8 @@ router.post('/create-invoice', async (req, res) => {
     let originalCurrency = null;
     let originalAmount = null;
     
-    if (depositCurrency === 'RUB' || depositCurrency === 'EUR') {
-      const rateKey = depositCurrency === 'RUB' ? 'rub_usdt_rate' : 'eur_usdt_rate';
+    if (depositCurrency === 'RUB' || depositCurrency === 'EUR' || depositCurrency === 'BYN') {
+      const rateKey = depositCurrency === 'RUB' ? 'rub_usdt_rate' : depositCurrency === 'BYN' ? 'byn_usdt_rate' : 'eur_usdt_rate';
       const rateResult = await pool.query(
         'SELECT value FROM platform_settings WHERE key = $1', [rateKey]
       );
@@ -347,6 +357,9 @@ router.post('/create-invoice', async (req, res) => {
       if (depositCurrency === 'RUB') {
         // rate = how many RUB per 1 USDT
         usdtAmount = parseFloat((amount / rate).toFixed(2));
+      } else if (depositCurrency === 'BYN') {
+        // rate = how many BYN per 1 USDT
+        usdtAmount = parseFloat((amount / rate).toFixed(2));
       } else {
         // rate = how many EUR per 1 USDT
         usdtAmount = parseFloat((amount / rate).toFixed(2));
@@ -355,7 +368,7 @@ router.post('/create-invoice', async (req, res) => {
       originalAmount = amount;
       
       if (usdtAmount < 1) {
-        return res.status(400).json({ error: `Слишком маленькая сумма. Минимум: ${depositCurrency === 'RUB' ? Math.ceil(rate) + ' ₽' : rate.toFixed(2) + ' €'}` });
+        return res.status(400).json({ error: `Слишком маленькая сумма. Минимум: ${depositCurrency === 'RUB' ? Math.ceil(rate) + ' ₽' : depositCurrency === 'BYN' ? rate.toFixed(2) + ' Br' : rate.toFixed(2) + ' €'}` });
       }
     } else {
       // USDT direct — check min deposit
