@@ -9,7 +9,14 @@
   // Configuration
   const API_BASE = window.location.origin + '/api/security';
   const SESSION_KEY = 'trustex_security_session';
+  const NAV_MARKER_KEY = 'trustex_nav_ts';
+  const NAV_THRESHOLD = 5000; // 5 seconds - if page loaded within 5s of previous unload, it's navigation
   const PIN_LENGTH = 4;
+
+  // Mark page unloads so we can distinguish navigation from fresh app open
+  window.addEventListener('beforeunload', () => {
+    localStorage.setItem(NAV_MARKER_KEY, String(Date.now()));
+  });
 
   // State
   let currentUserId = null;
@@ -896,7 +903,7 @@
     if (onUnlockCallback) onUnlockCallback();
   }
 
-  // Save session to localStorage (persists across page navigations)
+  // Save session to localStorage
   function saveSession() {
     const session = {
       userId: currentUserId,
@@ -905,21 +912,20 @@
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   }
 
-  // Check if session is valid (expires after 30 min of inactivity)
-  const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+  // Check if session is valid (only valid if this is a page navigation, not a fresh app open)
   function isSessionValid() {
     try {
       const session = JSON.parse(localStorage.getItem(SESSION_KEY));
       if (!session || session.userId !== currentUserId) return false;
-      // Expire after 30 min of inactivity (simulates "app closed")
-      if (Date.now() - session.timestamp > SESSION_TIMEOUT) {
-        localStorage.removeItem(SESSION_KEY);
-        return false;
+      // Check if this page load is a navigation from another page (beforeunload fired recently)
+      const navTs = parseInt(localStorage.getItem(NAV_MARKER_KEY));
+      localStorage.removeItem(NAV_MARKER_KEY);
+      if (navTs && (Date.now() - navTs < NAV_THRESHOLD)) {
+        return true; // Page navigation — skip PIN
       }
-      // Refresh timestamp on valid check (activity keeps session alive)
-      session.timestamp = Date.now();
-      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-      return true;
+      // No recent navigation marker — this is a fresh app open
+      localStorage.removeItem(SESSION_KEY);
+      return false;
     } catch (e) {
       return false;
     }
