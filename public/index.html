@@ -1706,6 +1706,7 @@
     
     const rubEl = document.getElementById('rubBalance');
     const eurEl = document.getElementById('eurBalance');
+    const bynEl = document.getElementById('bynBalance');
     const btcEl = document.getElementById('btcBalance');
     const tonEl = document.getElementById('tonBalance');
     const ethEl = document.getElementById('ethBalance');
@@ -1714,6 +1715,7 @@
     // Эквиваленты
     const rubEq = document.getElementById('rubEquiv');
     const eurEq = document.getElementById('eurEquiv');
+    const bynEq = document.getElementById('bynEquiv');
     const btcEq = document.getElementById('btcEquiv');
     const tonEq = document.getElementById('tonEquiv');
     const ethEq = document.getElementById('ethEquiv');
@@ -1722,6 +1724,7 @@
     // Количество монет
     const rubAmount = bal('rub');
     const eurAmount = bal('eur');
+    const bynAmount = bal('byn');
     const btcAmount = bal('btc');
     const tonAmount = bal('ton');
     const ethAmount = bal('eth');
@@ -1852,11 +1855,12 @@
       const m = market || cachedMarketPrices || (bmRates ? { btc: bmRates.BTC || 84000, eth: bmRates.ETH || 3200, ton: bmRates.TON || 3.5 } : { btc: 84000, eth: 3200, ton: 3.5 });
       const rbcInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.rubToUsd(bal('rub')) : 0;
       const eurInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.eurToUsd(bal('eur')) : 0;
+      const bynInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.bynToUsd(bal('byn')) : 0;
       const usdtBalance = bal('usdt');
       const btcInUsd = bal('btc') * m.btc;
       const ethInUsd = bal('eth') * m.eth;
       const tonInUsd = bal('ton') * m.ton;
-      const totalBalanceUsd = rbcInUsd + eurInUsd + usdtBalance + btcInUsd + ethInUsd + tonInUsd;
+      const totalBalanceUsd = rbcInUsd + eurInUsd + bynInUsd + usdtBalance + btcInUsd + ethInUsd + tonInUsd;
       
       const formattedBalance = totalBalanceUsd.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/,/g, '.');
       setRealBalance(`$${formattedBalance}`);
@@ -1865,6 +1869,7 @@
       
       const rubEl = document.getElementById('rubBalance');
       const eurEl = document.getElementById('eurBalance');
+      const bynEl = document.getElementById('bynBalance');
       const btcEl = document.getElementById('btcBalance');
       const tonEl = document.getElementById('tonBalance');
       const ethEl = document.getElementById('ethBalance');
@@ -1873,6 +1878,7 @@
       // Эквиваленты
       const rubEq = document.getElementById('rubEquiv');
       const eurEq = document.getElementById('eurEquiv');
+      const bynEq = document.getElementById('bynEquiv');
       const btcEq = document.getElementById('btcEquiv');
       const tonEq = document.getElementById('tonEquiv');
       const ethEq = document.getElementById('ethEquiv');
@@ -1881,6 +1887,7 @@
       // Количество монет
       const rubAmount = bal('rub');
       const eurAmount = bal('eur');
+      const bynAmount = bal('byn');
       const btcAmount = bal('btc');
       const tonAmount = bal('ton');
       const ethAmount = bal('eth');
@@ -1891,6 +1898,9 @@
       
       if (eurEl) { eurEl.textContent = `${fmt(eurAmount)} €`; eurEl.classList.remove('skeleton'); }
       if (eurEq) { eurEq.textContent = `≈ $${fmt(eurInUsd)}`; }
+      
+      if (bynEl) { bynEl.textContent = `${fmt(bynAmount)} Br`; bynEl.classList.remove('skeleton'); }
+      if (bynEq) { bynEq.textContent = `≈ $${fmt(bynInUsd)}`; }
       
       if (btcEl) { btcEl.textContent = `${btcAmount.toFixed(6)} BTC`; btcEl.classList.remove('skeleton'); }
       if (btcEq) { btcEq.textContent = `≈ $${fmt(btcInUsd)}`; }

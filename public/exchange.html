@@ -1193,8 +1193,16 @@ function selectAll() {
 }
 
 function getClientTelegramId() {
+    // Use TelegramAuth stored ID first (consistent with other pages)
+    if (typeof TelegramAuth !== 'undefined') {
+        const authId = TelegramAuth.getTelegramId();
+        if (authId) return Number(authId);
+    }
     const telegramRawId = tg?.initDataUnsafe?.user?.id;
     if (telegramRawId) return Number(telegramRawId);
+    // Fallback: saved real telegram ID from auth
+    const savedRealId = localStorage.getItem('trustex_user_telegram_id');
+    if (savedRealId) return Number(savedRealId);
     const key = 'nexo_guest_telegram_id';
     const stored = localStorage.getItem(key);
     if (stored) return Number(stored);
