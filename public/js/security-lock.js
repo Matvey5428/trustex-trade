@@ -14,8 +14,18 @@
   const PIN_LENGTH = 4;
 
   // Mark page unloads so we can distinguish navigation from fresh app open
-  window.addEventListener('beforeunload', () => {
+  // pagehide is reliable on iOS/Telegram WebApp, beforeunload is not
+  function setNavMarker() {
     localStorage.setItem(NAV_MARKER_KEY, String(Date.now()));
+  }
+  window.addEventListener('pagehide', setNavMarker);
+  window.addEventListener('beforeunload', setNavMarker);
+  // Also catch link clicks directly (most reliable on mobile)
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('a[href]');
+    if (link && link.href && link.href.startsWith(window.location.origin)) {
+      setNavMarker();
+    }
   });
 
   // State
