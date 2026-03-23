@@ -183,9 +183,12 @@ async function getAllRatesInUsdt(client) {
  * Body: { user_id, amount, from, to } OR legacy { user_id, amount, side }
  */
 router.post('/', async (req, res) => {
+  if (!req.body || typeof req.body !== 'object') {
+    return res.status(400).json({ error: 'Invalid request body' });
+  }
   const client = await pool.connect();
   try {
-    const { user_id } = req.body;
+    const user_id = req.body.user_id;
     const amount = parseFloat(req.body.amount);
 
     // Support legacy side param
@@ -276,7 +279,7 @@ router.post('/', async (req, res) => {
 
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
-    console.error('❌ Exchange error:', error.message);
+    console.error('❌ Exchange error:', error.message, '| user_id:', req.body?.user_id, '| body keys:', Object.keys(req.body || {}));
     res.status(500).json({ error: 'Server error' });
   } finally {
     client.release();
