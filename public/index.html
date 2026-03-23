@@ -1916,7 +1916,7 @@
       
       log('✅ User data loaded:', user);
     } catch (e) {
-      document.getElementById('userIdDisplay').textContent = '❌ Ошибка';
+      if (!userId) document.getElementById('userIdDisplay').textContent = '❌ Ошибка';
     }
   }
 

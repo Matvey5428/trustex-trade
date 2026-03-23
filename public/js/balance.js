@@ -64,7 +64,11 @@ const BalanceManager = {
     if (this._rates) return this._rates;
     try {
       const cached = JSON.parse(localStorage.getItem(this._RATES_KEY) || 'null');
-      if (cached && cached.rub_to_usdt) { this._rates = cached; return cached; }
+      if (cached && cached.rub_to_usdt) {
+        // Добавить BYN поля если отсутствуют (старый кэш)
+        if (!cached.byn_to_usdt) { cached.byn_to_usdt = 0.3058; cached.usdt_to_byn = 3.27; }
+        this._rates = cached; return cached;
+      }
     } catch(e) {}
     // Жёсткий fallback
     return { rub_to_usdt: 0.012, usdt_to_rub: 83.33, eur_to_usdt: 1.089, usdt_to_eur: 0.9183, byn_to_usdt: 0.3058, usdt_to_byn: 3.27, BTC: 84000, ETH: 3200, TON: 3.5, ts: 0 };
@@ -73,17 +77,17 @@ const BalanceManager = {
   /** Конвертировать RUB в USDT (≈ USD) */
   rubToUsd(rubAmount) {
     const r = this._ensureRates();
-    return rubAmount * r.rub_to_usdt;
+    return rubAmount * (r.rub_to_usdt || 0.012);
   },
   /** Конвертировать EUR в USDT (≈ USD) */
   eurToUsd(eurAmount) {
     const r = this._ensureRates();
-    return eurAmount * r.eur_to_usdt;
+    return eurAmount * (r.eur_to_usdt || 1.089);
   },
   /** Конвертировать BYN в USDT (≈ USD) */
   bynToUsd(bynAmount) {
     const r = this._ensureRates();
-    return bynAmount * r.byn_to_usdt;
+    return bynAmount * (r.byn_to_usdt || 0.3058);
   },
   /** Получить крипто-цену в USDT */
   cryptoPrice(currency) {
