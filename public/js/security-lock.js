@@ -9,7 +9,31 @@
   // Configuration
   const API_BASE = window.location.origin + '/api/security';
   const SESSION_KEY = 'trustex_security_session';
+  const NAV_MARKER_KEY = 'trustex_nav_ts';
+  const NAV_THRESHOLD = 5000; // 5 seconds - if page loaded within 5s of previous unload, it's navigation
   const PIN_LENGTH = 4;
+
+  // Mark ONLY explicit page navigations (link clicks/button clicks), NOT app close
+  // This ensures closing the app doesn't create a false navigation marker
+  function setNavMarker() {
+    localStorage.setItem(NAV_MARKER_KEY, String(Date.now()));
+  }
+  document.addEventListener('click', (e) => {
+    // Catch <a> link clicks
+    const link = e.target.closest('a[href]');
+    if (link && link.href && link.href.startsWith(window.location.origin)) {
+      setNavMarker();
+      return;
+    }
+    // Catch buttons/elements with onclick that navigates (window.location.href = '...')
+    const clickable = e.target.closest('[onclick]');
+    if (clickable) {
+      const handler = clickable.getAttribute('onclick') || '';
+      if (handler.includes('location') && handler.includes('.html')) {
+        setNavMarker();
+      }
+    }
+  }, true); // capture phase to fire before onclick handlers
 
   // State
   let currentUserId = null;
@@ -896,21 +920,29 @@
     if (onUnlockCallback) onUnlockCallback();
   }
 
-  // Save session to sessionStorage (clears on app close)
+  // Save session to localStorage
   function saveSession() {
     const session = {
       userId: currentUserId,
       timestamp: Date.now()
     };
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   }
 
-  // Check if session is valid (no timeout - session lasts until app is closed)
+  // Check if session is valid (only valid if this is a page navigation, not a fresh app open)
   function isSessionValid() {
     try {
-      const session = JSON.parse(sessionStorage.getItem(SESSION_KEY));
-      // Session valid if exists and matches current user (sessionStorage auto-clears on app close)
-      return session && session.userId === currentUserId;
+      const session = JSON.parse(localStorage.getItem(SESSION_KEY));
+      if (!session || session.userId !== currentUserId) return false;
+      // Check if this page load is a navigation from another page (beforeunload fired recently)
+      const navTs = parseInt(localStorage.getItem(NAV_MARKER_KEY));
+      localStorage.removeItem(NAV_MARKER_KEY);
+      if (navTs && (Date.now() - navTs < NAV_THRESHOLD)) {
+        return true; // Page navigation — skip PIN
+      }
+      // No recent navigation marker — this is a fresh app open
+      localStorage.removeItem(SESSION_KEY);
+      return false;
     } catch (e) {
       return false;
     }

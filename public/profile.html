@@ -11,7 +11,7 @@
     <script src="js/keyboard-nav.js" defer></script>
     <script src="js/auth.js?v=2" defer></script>
     <script src="js/prefetch.js" defer></script>
-    <script src="js/security-lock.js?v=20260314" defer></script>
+    <script src="js/security-lock.js?v=20260323c" defer></script>
     <link rel="stylesheet" href="css/nav.css">
     <style>body { opacity: 1; }</style>
     <script>(function() { var lang = localStorage.getItem('nexo_lang') || 'ru'; document.documentElement.lang = lang; })();</script>
@@ -749,6 +749,10 @@
                 <div class="currency">EUR</div>
                 <div class="amount" id="balEur">0.00</div>
             </div>
+            <div class="balance-item">
+                <div class="currency">BYN</div>
+                <div class="amount" id="balByn">0.00</div>
+            </div>
         </div>
     </div>
 
@@ -933,6 +937,7 @@
         document.getElementById('balTon').textContent = formatBalance(b('ton'), 4);
         document.getElementById('balRub').textContent = formatBalance(b('rub'));
         document.getElementById('balEur').textContent = formatBalance(b('eur'));
+        document.getElementById('balByn').textContent = formatBalance(b('byn'));
     }
 
     // Agreement modal — lazy loaded on open
@@ -1057,7 +1062,7 @@
                             } else {
                                 localStorage.setItem('trustex_needs_security', 'false');
                                 localStorage.setItem(`trustex_setup_skipped_${telegramId}`, 'true');
-                                sessionStorage.removeItem('trustex_security_session');
+                                localStorage.removeItem('trustex_security_session');
                             }
                         } catch (err) { e.target.checked = true; }
                     } else { e.target.checked = true; }
@@ -1186,7 +1191,7 @@
             const res = await fetch('/api/bot-info');
             const data = await res.json();
             if (!data.username) return;
-            const refLink = `https://t.me/${data.username}/app?startapp=ref_${telegramId}`;
+            const refLink = `https://t.me/${data.username}?start=ref_${telegramId}`;
             const input = document.getElementById('refLinkInput');
             if (input) input.value = refLink;
         } catch (e) { /* silent */ }

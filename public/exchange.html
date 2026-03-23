@@ -34,6 +34,7 @@
             --gold: #fbbf24;
             --rub-gradient: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
             --eur-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            --byn-gradient: linear-gradient(135deg, #e53935 0%, #b71c1c 100%);
             --usdt-gradient: linear-gradient(135deg, #26a17b 0%, #1a8c6a 100%);
         }
 
@@ -453,6 +454,12 @@
             background: var(--eur-gradient);
             color: #fff;
             box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25);
+        }
+
+        .icon-byn {
+            background: var(--byn-gradient);
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(229, 57, 53, 0.25);
         }
 
         .icon-usdt {
@@ -1083,12 +1090,13 @@ const CUR_META = {
     ETH:  { symbol: 'Ξ', name: 'Ethereum',           icon: 'icon-eth',  char: 'Ξ', decimals: 8 },
     TON:  { symbol: '💎', name: 'Toncoin',           icon: 'icon-ton',  char: '💎', decimals: 4 },
     RUB:  { symbol: '₽', name: 'Российский рубль',   icon: 'icon-rub',  char: '₽', decimals: 2 },
-    EUR:  { symbol: '€', name: 'Euro',                icon: 'icon-eur',  char: '€', decimals: 2 }
+    EUR:  { symbol: '€', name: 'Euro',                icon: 'icon-eur',  char: '€', decimals: 2 },
+    BYN:  { symbol: 'Br', name: 'Белорусский рубль', icon: 'icon-byn',  char: 'Br', decimals: 2 }
 };
 
 // State
-let balances = { USDT: 0, BTC: 0, ETH: 0, TON: 0, RUB: 0, EUR: 0 };
-let rates = { USDT: 1, BTC: 60000, ETH: 3000, TON: 5, RUB: 0.012, EUR: 1.089 };
+let balances = { USDT: 0, BTC: 0, ETH: 0, TON: 0, RUB: 0, EUR: 0, BYN: 0 };
+let rates = { USDT: 1, BTC: 60000, ETH: 3000, TON: 5, RUB: 0.012, EUR: 1.089, BYN: 0.3058 };
 let selectedFrom = 'RUB';
 let selectedTo = 'USDT';
 
@@ -1308,6 +1316,7 @@ async function loadData() {
         if (!payload.error) {
             balances.RUB  = parseFloat(data.rub)  || 0;
             balances.EUR  = parseFloat(data.eur)  || 0;
+            balances.BYN  = parseFloat(data.byn)  || 0;
             balances.USDT = parseFloat(data.usdt) || 0;
             balances.BTC  = parseFloat(data.btc)  || 0;
             balances.ETH  = parseFloat(data.eth)  || 0;
@@ -1315,6 +1324,7 @@ async function loadData() {
             if (window.USER_BALANCES) {
                 window.USER_BALANCES.rub  = balances.RUB;
                 window.USER_BALANCES.eur  = balances.EUR;
+                window.USER_BALANCES.byn  = balances.BYN;
                 window.USER_BALANCES.usdt = balances.USDT;
                 window.USER_BALANCES.btc  = balances.BTC;
                 window.USER_BALANCES.eth  = balances.ETH;
@@ -1352,6 +1362,7 @@ exchangeBtn.onclick = async function() {
                 const nb = result.data.newBalances;
                 balances.RUB  = nb.rub  ?? balances.RUB;
                 balances.EUR  = nb.eur  ?? balances.EUR;
+                balances.BYN  = nb.byn  ?? balances.BYN;
                 balances.USDT = nb.usdt ?? balances.USDT;
                 balances.BTC  = nb.btc  ?? balances.BTC;
                 balances.ETH  = nb.eth  ?? balances.ETH;
@@ -1359,6 +1370,7 @@ exchangeBtn.onclick = async function() {
                 if (window.USER_BALANCES) {
                     window.USER_BALANCES.rub  = balances.RUB;
                     window.USER_BALANCES.eur  = balances.EUR;
+                    window.USER_BALANCES.byn  = balances.BYN;
                     window.USER_BALANCES.usdt = balances.USDT;
                     window.USER_BALANCES.btc  = balances.BTC;
                     window.USER_BALANCES.eth  = balances.ETH;
@@ -1369,6 +1381,7 @@ exchangeBtn.onclick = async function() {
             if (window.USER_BALANCES) {
                 balances.RUB  = window.USER_BALANCES.rub  || balances.RUB;
                 balances.EUR  = window.USER_BALANCES.eur  || balances.EUR;
+                balances.BYN  = window.USER_BALANCES.byn  || balances.BYN;
                 balances.USDT = window.USER_BALANCES.usdt || balances.USDT;
                 balances.BTC  = window.USER_BALANCES.btc  || balances.BTC;
                 balances.ETH  = window.USER_BALANCES.eth  || balances.ETH;
@@ -1455,6 +1468,7 @@ async function loadExchangeHistory() {
         if (cached && cached.rub_to_usdt) {
             rates.RUB = cached.rub_to_usdt;
             rates.EUR = cached.eur_to_usdt || rates.EUR;
+            rates.BYN = cached.byn_to_usdt || rates.BYN;
             if (cached.rates) Object.assign(rates, cached.rates);
             else {
                 if (cached.BTC) rates.BTC = cached.BTC;
@@ -1480,6 +1494,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else if (rateResult?.data) {
             rates.RUB = rateResult.data.rub_to_usdt || rates.RUB;
             rates.EUR = rateResult.data.eur_to_usdt || rates.EUR;
+            rates.BYN = rateResult.data.byn_to_usdt || rates.BYN;
         }
         updateDisplay();
 

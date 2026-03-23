@@ -37,6 +37,8 @@ const BalanceManager = {
             usdt_to_rub: payload.data.usdt_to_rub,
             eur_to_usdt: payload.data.eur_to_usdt,
             usdt_to_eur: payload.data.usdt_to_eur,
+            byn_to_usdt: payload.data.byn_to_usdt,
+            usdt_to_byn: payload.data.usdt_to_byn,
             BTC: payload.data.rates?.BTC || 0,
             ETH: payload.data.rates?.ETH || 0,
             TON: payload.data.rates?.TON || 0,
@@ -53,7 +55,7 @@ const BalanceManager = {
       if (cached) { this._rates = cached; return cached; }
     } catch(e) {}
     // Жёсткий fallback
-    this._rates = { rub_to_usdt: 0.012, usdt_to_rub: 83.33, eur_to_usdt: 1.089, usdt_to_eur: 0.9183, BTC: 84000, ETH: 3200, TON: 3.5, ts: 0 };
+    this._rates = { rub_to_usdt: 0.012, usdt_to_rub: 83.33, eur_to_usdt: 1.089, usdt_to_eur: 0.9183, byn_to_usdt: 0.3058, usdt_to_byn: 3.27, BTC: 84000, ETH: 3200, TON: 3.5, ts: 0 };
     return this._rates;
   },
 
@@ -65,7 +67,7 @@ const BalanceManager = {
       if (cached && cached.rub_to_usdt) { this._rates = cached; return cached; }
     } catch(e) {}
     // Жёсткий fallback
-    return { rub_to_usdt: 0.012, usdt_to_rub: 83.33, eur_to_usdt: 1.089, usdt_to_eur: 0.9183, BTC: 84000, ETH: 3200, TON: 3.5, ts: 0 };
+    return { rub_to_usdt: 0.012, usdt_to_rub: 83.33, eur_to_usdt: 1.089, usdt_to_eur: 0.9183, byn_to_usdt: 0.3058, usdt_to_byn: 3.27, BTC: 84000, ETH: 3200, TON: 3.5, ts: 0 };
   },
 
   /** Конвертировать RUB в USDT (≈ USD) */
@@ -77,6 +79,11 @@ const BalanceManager = {
   eurToUsd(eurAmount) {
     const r = this._ensureRates();
     return eurAmount * r.eur_to_usdt;
+  },
+  /** Конвертировать BYN в USDT (≈ USD) */
+  bynToUsd(bynAmount) {
+    const r = this._ensureRates();
+    return bynAmount * r.byn_to_usdt;
   },
   /** Получить крипто-цену в USDT */
   cryptoPrice(currency) {
@@ -108,13 +115,15 @@ const BalanceManager = {
     const balanceBtc = b('btc');
     const balanceRub = b('rub');
     const balanceEur = b('eur');
+    const balanceByn = b('byn');
     const balanceTon = b('ton');
     const balanceEth = b('eth');
 
-    // Конвертация в USD через серверные курсы (только USDT+RUB+EUR — без BTC/ETH/TON)
+    // Конвертация в USD через серверные курсы (только USDT+RUB+EUR+BYN — без BTC/ETH/TON)
     const rubInUsd = this.rubToUsd(balanceRub);
     const eurInUsd = this.eurToUsd(balanceEur);
-    const totalUsd = balanceUsdt + rubInUsd + eurInUsd;
+    const bynInUsd = this.bynToUsd(balanceByn);
+    const totalUsd = balanceUsdt + rubInUsd + eurInUsd + bynInUsd;
 
     const fmt = this.formatNumber.bind(this);
     // НЕ пишем в totalBalance / total-balance — каждая страница считает общий
@@ -139,6 +148,10 @@ const BalanceManager = {
       'bal-EUR': `${fmt(balanceEur)} €`,
       'eurBalance': `${fmt(balanceEur)} €`,
       'balanceEur': `${fmt(balanceEur)}`,
+      'bal-BYN': `${fmt(balanceByn)} Br`,
+      'bynBalance': `${fmt(balanceByn)} Br`,
+      'balanceByn': `${fmt(balanceByn)}`,
+      'userBynBalance': `${fmt(balanceByn)} Br`,
       'bal-TON': `${fmt(balanceTon, 4)} TON`,
       'tonBalance': `${fmt(balanceTon, 4)} $`,
       'bal-ETH': `${fmt(balanceEth, 6)} ETH`,
@@ -163,12 +176,14 @@ const BalanceManager = {
       btc: balanceBtc,
       rub: balanceRub,
       eur: balanceEur,
+      byn: balanceByn,
       ton: balanceTon,
       eth: balanceEth,
       totalUsd: totalUsd,
       min_deposit: parseFloat(user.min_deposit) || 0,
       min_withdraw: parseFloat(user.min_withdraw) || 0,
-      min_withdraw_rub: parseFloat(user.min_withdraw_rub) || 0
+      min_withdraw_rub: parseFloat(user.min_withdraw_rub) || 0,
+      min_withdraw_byn: parseFloat(user.min_withdraw_byn) || 0
     };
   },
 

@@ -115,7 +115,7 @@ async function getUserByTelegramId(telegramId) {
   const result = await pool.query(
     `SELECT 
       id, telegram_id, username, first_name, last_name, photo_url,
-      balance_usdt, balance_btc, balance_rub, balance_eur, balance_eth, balance_ton,
+      balance_usdt, balance_btc, balance_rub, balance_eur, balance_eth, balance_ton, balance_byn,
       verified, status, is_admin, is_blocked, manager_id, referred_by,
       created_at, updated_at
      FROM users 
@@ -133,7 +133,7 @@ async function getUserById(id) {
   const result = await pool.query(
     `SELECT 
       id, telegram_id, username, first_name, last_name, photo_url,
-      balance_usdt, balance_btc, balance_rub, balance_eur, balance_eth, balance_ton,
+      balance_usdt, balance_btc, balance_rub, balance_eur, balance_eth, balance_ton, balance_byn,
       verified, status, is_admin, is_blocked,
       created_at, updated_at
      FROM users 
@@ -283,6 +283,7 @@ function getAuthResponse(user) {
       balance_usdt: user.balance_usdt,
       balance_btc: user.balance_btc,
       balance_rub: user.balance_rub,
+      balance_byn: user.balance_byn,
       verified: user.verified,
       status: user.status,
       is_admin: user.is_admin,

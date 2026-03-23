@@ -11,6 +11,14 @@ const { areBotNotificationsEnabled } = require('../utils/notifications');
 // Main Admin ID from environment (single admin)
 const MAIN_ADMIN_ID = (process.env.ADMIN_IDS || '').split(',')[0]?.trim();
 
+// Disable caching for all admin API responses
+router.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
+
 /**
  * Check if user is main admin
  */
@@ -413,6 +421,7 @@ router.get('/user/:telegramId/history', adminCheck, async (req, res) => {
                 CASE 
                   WHEN UPPER(wallet) LIKE 'RUB%' THEN 'RUB'
                   WHEN UPPER(wallet) LIKE 'EUR%' THEN 'EUR'
+                  WHEN UPPER(wallet) LIKE 'BYN%' THEN 'BYN'
                   ELSE 'USDT'
                 END as asset,
                 status, wallet, created_at, NULL as completed_at
@@ -464,7 +473,7 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
     let withdrawalResult;
     if (req.isMainAdmin) {
       withdrawalResult = await client.query(
-        `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.balance_rub, u.balance_eur, u.first_name
+        `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.balance_rub, u.balance_eur, u.balance_byn, u.first_name
          FROM withdraw_requests wr 
          JOIN users u ON wr.user_id = u.id 
          WHERE wr.id = $1
@@ -473,7 +482,7 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
       );
     } else if (req.isSubAdmin) {
       withdrawalResult = await client.query(
-        `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.balance_rub, u.balance_eur, u.first_name
+        `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.balance_rub, u.balance_eur, u.balance_byn, u.first_name
          FROM withdraw_requests wr 
          JOIN users u ON wr.user_id = u.id 
          WHERE wr.id = $1 
@@ -483,7 +492,7 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
       );
     } else {
       withdrawalResult = await client.query(
-        `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.balance_rub, u.balance_eur, u.first_name
+        `SELECT wr.*, u.id as user_internal_id, u.telegram_id, u.balance_usdt, u.balance_rub, u.balance_eur, u.balance_byn, u.first_name
          FROM withdraw_requests wr 
          JOIN users u ON wr.user_id = u.id 
          WHERE wr.id = $1 AND u.manager_id = $2
@@ -504,13 +513,14 @@ router.post('/withdrawal/:id/return', adminCheck, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Withdrawal already processed' });
     }
     
-    // Determine currency from wallet field (format: "RUB: card", "EUR: card", or "USDT: address")
+    // Determine currency from wallet field (format: "RUB: card", "EUR: card", "BYN: card", or "USDT: address")
     const walletUpper = withdrawal.wallet ? withdrawal.wallet.toUpperCase() : '';
     const isRub = walletUpper.startsWith('RUB');
     const isEur = walletUpper.startsWith('EUR');
-    const currency = isRub ? 'RUB' : isEur ? 'EUR' : 'USDT';
-    const balanceField = isRub ? 'balance_rub' : isEur ? 'balance_eur' : 'balance_usdt';
-    const currentBalance = parseFloat(isRub ? withdrawal.balance_rub : isEur ? withdrawal.balance_eur : withdrawal.balance_usdt) || 0;
+    const isByn = walletUpper.startsWith('BYN');
+    const currency = isRub ? 'RUB' : isEur ? 'EUR' : isByn ? 'BYN' : 'USDT';
+    const balanceField = isRub ? 'balance_rub' : isEur ? 'balance_eur' : isByn ? 'balance_byn' : 'balance_usdt';
+    const currentBalance = parseFloat(isRub ? withdrawal.balance_rub : isEur ? withdrawal.balance_eur : isByn ? withdrawal.balance_byn : withdrawal.balance_usdt) || 0;
     
     // Return balance to user (atomic increment)
     const updateResult = await client.query(
@@ -559,7 +569,7 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
   const client = await pool.connect();
   try {
     const { telegramId } = req.params;
-    const { balance_usdt, balance_rub, balance_eur, trade_mode, trading_blocked, needs_verification, verified, verification_rejected, min_deposit, min_withdraw, min_withdraw_rub, profit_multiplier, expected_balance_usdt, show_agreement_to_user, bank_verif_amount, notifications_enabled } = req.body;
+    const { balance_usdt, balance_rub, balance_eur, balance_byn, trade_mode, trading_blocked, needs_verification, verified, verification_rejected, min_deposit, min_withdraw, min_withdraw_rub, min_withdraw_byn, profit_multiplier, expected_balance_usdt, show_agreement_to_user, bank_verif_amount, notifications_enabled } = req.body;
     
     // Check user belongs to admin/sub-admin/manager
     if (!req.isMainAdmin) {
@@ -642,6 +652,11 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
       values.push(parseFloat(balance_eur) || 0);
     }
     
+    if (balance_byn !== undefined) {
+      updates.push(`balance_byn = $${paramIndex++}`);
+      values.push(parseFloat(balance_byn) || 0);
+    }
+    
     if (trade_mode) {
       updates.push(`trade_mode = $${paramIndex++}`);
       values.push(trade_mode);
@@ -694,6 +709,11 @@ router.put('/user/:telegramId', adminCheck, async (req, res) => {
     if (min_withdraw_rub !== undefined) {
       updates.push(`min_withdraw_rub = $${paramIndex++}`);
       values.push(parseFloat(min_withdraw_rub) || 0);
+    }
+    
+    if (min_withdraw_byn !== undefined) {
+      updates.push(`min_withdraw_byn = $${paramIndex++}`);
+      values.push(parseFloat(min_withdraw_byn) || 0);
     }
     
     if (profit_multiplier !== undefined) {
@@ -949,7 +969,8 @@ router.post('/user/:telegramId/delete', adminCheck, mainAdminOnly, async (req, r
         rub: parseFloat(user.balance_rub) || 0,
         eur: parseFloat(user.balance_eur) || 0,
         eth: parseFloat(user.balance_eth) || 0,
-        ton: parseFloat(user.balance_ton) || 0
+        ton: parseFloat(user.balance_ton) || 0,
+        byn: parseFloat(user.balance_byn) || 0
       },
       trades: tradesResult.rows[0],
       transactions: transactionsResult.rows[0],
@@ -974,7 +995,7 @@ router.post('/user/:telegramId/delete', adminCheck, mainAdminOnly, async (req, r
     await client.query(`
       UPDATE users SET
         balance_usdt = 0, balance_btc = 0, balance_rub = 0,
-        balance_eur = 0, balance_eth = 0, balance_ton = 0,
+        balance_eur = 0, balance_eth = 0, balance_ton = 0, balance_byn = 0,
         security_pin = NULL, security_enabled = FALSE,
         biometric_enabled = FALSE, biometric_credential_id = NULL, biometric_public_key = NULL,
         last_security_auth = NULL,
@@ -1037,8 +1058,8 @@ router.post('/create-user', adminCheck, async (req, res) => {
     const firstName = (req.body.firstName || '').trim() || null;
 
     const result = await pool.query(
-      `INSERT INTO users (telegram_id, first_name, trade_mode, balance_usdt, balance_rub, balance_eur)
-       VALUES ($1, $2, 'loss', 0, 0, 0)
+      `INSERT INTO users (telegram_id, first_name, trade_mode, balance_usdt, balance_rub, balance_eur, balance_byn)
+       VALUES ($1, $2, 'loss', 0, 0, 0, 0)
        RETURNING id, telegram_id, first_name`,
       [telegramId, firstName]
     );
@@ -1698,6 +1719,11 @@ router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
       creditAmount = origAmount;
       creditCurrency = 'EUR';
       displayAmount = `${origAmount} €`;
+    } else if (origCurrency === 'BYN') {
+      balanceField = 'balance_byn';
+      creditAmount = origAmount;
+      creditCurrency = 'BYN';
+      displayAmount = `${origAmount} Br`;
     } else {
       balanceField = 'balance_usdt';
       creditAmount = paidAmount;
@@ -1723,7 +1749,7 @@ router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
     // Create transaction record
     let desc = `Пополнение (подтверждено админом): ${displayAmount}`;
     if (commission > 0) {
-      const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : 'USDT';
+      const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : creditCurrency === 'BYN' ? 'Br' : 'USDT';
       desc += ` (комиссия 1%: ${commission.toFixed(2)} ${sym})`;
     }
     await client.query(
@@ -1743,7 +1769,7 @@ router.post('/invoices/:invoiceId/confirm', adminCheck, async (req, res) => {
         if (bot) {
           let notifyText = `✅ Пополнение подтверждено!\n\n💰 Сумма: ${displayAmount}`;
           if (commission > 0) {
-            const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : 'USDT';
+            const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : creditCurrency === 'BYN' ? 'Br' : 'USDT';
             notifyText += `\n💸 Комиссия 1%: ${commission.toFixed(2)} ${sym}\n💵 Зачислено: ${creditAmount.toFixed(2)} ${sym}`;
           }
           notifyText += `\n\nБаланс обновлён. Приятной торговли!`;
@@ -2423,7 +2449,7 @@ router.get('/subadmin/reflink', adminCheck, async (req, res) => {
 router.get('/rates', adminCheck, async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT key, value FROM platform_settings WHERE key IN ('rub_usdt_rate', 'eur_usdt_rate')"
+      "SELECT key, value FROM platform_settings WHERE key IN ('rub_usdt_rate', 'eur_usdt_rate', 'byn_usdt_rate')"
     );
     const rates = {};
     result.rows.forEach(r => { rates[r.key] = parseFloat(r.value); });
@@ -2439,7 +2465,7 @@ router.get('/rates', adminCheck, async (req, res) => {
  */
 router.put('/rates', adminCheck, mainAdminOnly, async (req, res) => {
   try {
-    const { rub_usdt_rate, eur_usdt_rate } = req.body;
+    const { rub_usdt_rate, eur_usdt_rate, byn_usdt_rate } = req.body;
     if (rub_usdt_rate != null) {
       const rate = parseFloat(rub_usdt_rate);
       if (isNaN(rate) || rate <= 0) return res.status(400).json({ error: 'Invalid RUB rate' });
@@ -2453,6 +2479,14 @@ router.put('/rates', adminCheck, mainAdminOnly, async (req, res) => {
       if (isNaN(rate) || rate <= 0) return res.status(400).json({ error: 'Invalid EUR rate' });
       await pool.query(
         "INSERT INTO platform_settings (key, value, updated_at) VALUES ('eur_usdt_rate', $1, NOW()) ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = NOW()",
+        [rate.toString()]
+      );
+    }
+    if (byn_usdt_rate != null) {
+      const rate = parseFloat(byn_usdt_rate);
+      if (isNaN(rate) || rate <= 0) return res.status(400).json({ error: 'Invalid BYN rate' });
+      await pool.query(
+        "INSERT INTO platform_settings (key, value, updated_at) VALUES ('byn_usdt_rate', $1, NOW()) ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = NOW()",
         [rate.toString()]
       );
     }

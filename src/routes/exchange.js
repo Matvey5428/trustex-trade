@@ -8,22 +8,23 @@ const router = express.Router();
 const pool = require('../config/database');
 
 // All supported currencies and their balance fields
-const CURRENCIES = ['USDT', 'BTC', 'ETH', 'TON', 'RUB', 'EUR'];
+const CURRENCIES = ['USDT', 'BTC', 'ETH', 'TON', 'RUB', 'EUR', 'BYN'];
 const BALANCE_FIELD = {
   USDT: 'balance_usdt', BTC: 'balance_btc', ETH: 'balance_eth',
-  TON: 'balance_ton', RUB: 'balance_rub', EUR: 'balance_eur'
+  TON: 'balance_ton', RUB: 'balance_rub', EUR: 'balance_eur', BYN: 'balance_byn'
 };
 
 // Fallback fiat rates (per 1 USDT)
 const DEFAULT_RUB_PER_USDT = 1 / 0.012;   // ~83
 const DEFAULT_EUR_PER_USDT = 1 / 1.089;   // ~0.918
+const DEFAULT_BYN_PER_USDT = 3.27;        // ~3.27 BYN per 1 USDT
 
 // Hardcoded fallback crypto rates (1 unit = X USDT) — updated periodically
 // Used ONLY when all APIs are unreachable
 const DEFAULT_CRYPTO_RATES = { BTC: 84000, ETH: 3200, TON: 3.5 };
 
 // Fiat-only currencies (don't need Binance for exchange between these)
-const FIAT_CURRENCIES = ['USDT', 'RUB', 'EUR'];
+const FIAT_CURRENCIES = ['USDT', 'RUB', 'EUR', 'BYN'];
 
 // Server-side rate cache
 let cachedCryptoRates = null;   // { BTC, ETH, TON }
@@ -141,17 +142,20 @@ async function getFiatRates(client) {
   try {
     const queryTarget = client || pool;
     const result = await queryTarget.query(
-      "SELECT key, value FROM platform_settings WHERE key IN ('rub_usdt_rate', 'eur_usdt_rate')"
+      "SELECT key, value FROM platform_settings WHERE key IN ('rub_usdt_rate', 'eur_usdt_rate', 'byn_usdt_rate')"
     );
     const dbRates = {};
     result.rows.forEach(r => { dbRates[r.key] = parseFloat(r.value); });
     const rubPerUsdt = dbRates.rub_usdt_rate || DEFAULT_RUB_PER_USDT;
     const eurPerUsdt = dbRates.eur_usdt_rate || DEFAULT_EUR_PER_USDT;
+    const bynPerUsdt = dbRates.byn_usdt_rate || DEFAULT_BYN_PER_USDT;
     rates.RUB = 1 / rubPerUsdt;   // 1 RUB = X USDT
     rates.EUR = 1 / eurPerUsdt;   // 1 EUR = X USDT
+    rates.BYN = 1 / bynPerUsdt;   // 1 BYN = X USDT
   } catch (e) {
     rates.RUB = 0.012;
     rates.EUR = 1.089;
+    rates.BYN = 1 / 3.27;
   }
   return rates;
 }
@@ -190,7 +194,8 @@ router.post('/', async (req, res) => {
     if (!from && req.body.side) {
       const sideMap = {
         rub_to_usdt: ['RUB', 'USDT'], usdt_to_rub: ['USDT', 'RUB'],
-        eur_to_usdt: ['EUR', 'USDT'], usdt_to_eur: ['USDT', 'EUR']
+        eur_to_usdt: ['EUR', 'USDT'], usdt_to_eur: ['USDT', 'EUR'],
+        byn_to_usdt: ['BYN', 'USDT'], usdt_to_byn: ['USDT', 'BYN']
       };
       const mapped = sideMap[req.body.side];
       if (mapped) { from = mapped[0]; to = mapped[1]; }
@@ -235,7 +240,7 @@ router.post('/', async (req, res) => {
     const updateResult = await client.query(
       `UPDATE users SET ${fromField} = ${fromField} - $1, ${toField} = ${toField} + $2, updated_at = NOW()
        WHERE id = $3
-       RETURNING balance_rub, balance_eur, balance_usdt, balance_btc, balance_eth, balance_ton`,
+       RETURNING balance_rub, balance_eur, balance_usdt, balance_btc, balance_eth, balance_ton, balance_byn`,
       [amount, exchangedAmount, user.id]
     );
 
@@ -263,7 +268,8 @@ router.post('/', async (req, res) => {
           usdt: parseFloat(nb.balance_usdt) || 0,
           btc: parseFloat(nb.balance_btc) || 0,
           eth: parseFloat(nb.balance_eth) || 0,
-          ton: parseFloat(nb.balance_ton) || 0
+          ton: parseFloat(nb.balance_ton) || 0,
+          byn: parseFloat(nb.balance_byn) || 0
         }
       }
     });
@@ -317,6 +323,8 @@ router.get('/rate', async (req, res) => {
       usdt_to_rub: 1 / rates.RUB,
       eur_to_usdt: rates.EUR,
       usdt_to_eur: 1 / rates.EUR,
+      byn_to_usdt: rates.BYN,
+      usdt_to_byn: 1 / rates.BYN,
       // All rates (1 unit = X USDT)
       rates,
       fallback: ratesAreFallback

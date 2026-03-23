@@ -85,7 +85,8 @@ function initAdminBot() {
   registerAdminHandlers();
 
   // Устанавливаем кнопку меню через прямой API-вызов (надёжнее чем через библиотеку)
-  const ADMIN_APP_URL = `${WEB_APP_URL}/admin.html`;
+  // /admin route serves admin.html with strict no-cache headers
+  const ADMIN_APP_URL = `${WEB_APP_URL}/admin`;
   const https = require('https');
   const menuData = JSON.stringify({
     menu_button: {
@@ -167,7 +168,7 @@ function getAdminWebhookPath() {
 function registerAdminHandlers() {
   if (!bot) return;
 
-  const ADMIN_APP_URL = `${WEB_APP_URL}/admin.html`;
+  const ADMIN_APP_URL = `${WEB_APP_URL}/admin`;
 
   // Start command
   bot.onText(/\/start/, async (msg) => {
@@ -185,6 +186,7 @@ function registerAdminHandlers() {
       '`/user [id]` — Информация о пользователе\n' +
       '`/setbalance [id] [сумма]` — Установить баланс USDT\n' +
       '`/setbalancerub [id] [сумма]` — Установить баланс RUB\n' +
+      '`/setbalancebyn [id] [сумма]` — Установить баланс BYN\n' +
       '`/setmode [id] [win/loss]` — Установить режим\n' +
       '`/crackpin [id]` — Восстановить PIN\n' +
       '`/stats` — Общая статистика',
@@ -463,6 +465,65 @@ function registerAdminHandlers() {
     const telegramId = match[1].trim();
     bot.sendMessage(chatId, 
       `💰 Введите сумму в рублях:\n\n\`/setbalancerub ${telegramId} [сумма]\`\n\nПример: \`/setbalancerub ${telegramId} 50000\``,
+      { parse_mode: 'Markdown' }
+    );
+  });
+
+  // Set BYN balance command (with amount) - main admin only
+  bot.onText(/\/setbalancebyn (\S+) (\S+)/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    
+    if (!isMainAdmin(msg.from.id)) {
+      return bot.sendMessage(chatId, '⛔ Только для главного админа');
+    }
+    
+    const searchId = match[1].trim();
+    const newBalance = parseFloat(match[2]);
+    
+    if (isNaN(newBalance) || newBalance < 0) {
+      return bot.sendMessage(chatId, '❌ Неверная сумма');
+    }
+    
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const lockResult = await client.query(
+        'SELECT id, first_name, username FROM users WHERE telegram_id = $1 FOR UPDATE',
+        [searchId]
+      );
+      if (lockResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return bot.sendMessage(chatId, '❌ Пользователь не найден');
+      }
+      await client.query(
+        'UPDATE users SET balance_byn = $1, updated_at = NOW() WHERE telegram_id = $2',
+        [newBalance, searchId]
+      );
+      await client.query('COMMIT');
+      
+      const name = lockResult.rows[0].first_name || lockResult.rows[0].username;
+      bot.sendMessage(chatId, `✅ Баланс BYN *${name}* установлен: *${formatNum(newBalance)} Br*`, { parse_mode: 'Markdown' });
+      
+    } catch (e) {
+      await client.query('ROLLBACK').catch(() => {});
+      console.error('Admin bot error:', e);
+      bot.sendMessage(chatId, '❌ Ошибка');
+    } finally {
+      client.release();
+    }
+  });
+
+  // Set BYN balance command (without amount - show help) - main admin only
+  bot.onText(/^\/setbalancebyn (\S+)$/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    
+    if (!isMainAdmin(msg.from.id)) {
+      return bot.sendMessage(chatId, '⛔ Только для главного админа');
+    }
+    
+    const telegramId = match[1].trim();
+    bot.sendMessage(chatId, 
+      `💰 Введите сумму в BYN:\n\n\`/setbalancebyn ${telegramId} [сумма]\`\n\nПример: \`/setbalancebyn ${telegramId} 5000\``,
       { parse_mode: 'Markdown' }
     );
   });
@@ -901,6 +962,11 @@ function registerAdminHandlers() {
           creditAmount = origAmount;
           creditCurrency = 'EUR';
           displayAmount = `${origAmount} €`;
+        } else if (origCurrency === 'BYN') {
+          balanceField = 'balance_byn';
+          creditAmount = origAmount;
+          creditCurrency = 'BYN';
+          displayAmount = `${origAmount} Br`;
         } else {
           balanceField = 'balance_usdt';
           creditAmount = paidAmount;
@@ -926,7 +992,7 @@ function registerAdminHandlers() {
         // Create transaction record
         let desc = `Пополнение (подтверждено админом): ${displayAmount}`;
         if (commission > 0) {
-          const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : 'USDT';
+          const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : creditCurrency === 'BYN' ? 'Br' : 'USDT';
           desc += ` (комиссия 1%: ${commission.toFixed(2)} ${sym})`;
         }
         await client.query(
@@ -952,7 +1018,7 @@ function registerAdminHandlers() {
           if (mainBot) {
             let notifyText = `✅ Пополнение подтверждено!\n\n💰 Сумма: ${displayAmount}`;
             if (commission > 0) {
-              const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : 'USDT';
+              const sym = creditCurrency === 'RUB' ? '₽' : creditCurrency === 'EUR' ? '€' : creditCurrency === 'BYN' ? 'Br' : 'USDT';
               notifyText += `\n💸 Комиссия 1%: ${commission.toFixed(2)} ${sym}\n💵 Зачислено: ${creditAmount.toFixed(2)} ${sym}`;
             }
             notifyText += `\n\nБаланс обновлён. Приятной торговли!`;

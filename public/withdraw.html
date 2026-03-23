@@ -13,7 +13,7 @@
     <script src="js/prefetch.js" defer></script>
     <script src="js/i18n.js" defer></script>
     <script src="js/keyboard-nav.js" defer></script>
-    <script src="js/security-lock.js?v=20260314" defer></script>
+    <script src="js/security-lock.js?v=20260323c" defer></script>
     <style>body { opacity: 1; }</style>
     <script>(function() { var lang = localStorage.getItem('nexo_lang') || 'ru'; document.documentElement.lang = lang; document.addEventListener('gesturestart', function(e) { e.preventDefault(); }); document.addEventListener('gesturechange', function(e) { e.preventDefault(); }); document.addEventListener('gestureend', function(e) { e.preventDefault(); }, { passive: false }); document.addEventListener('touchstart', function(e) { if(e.touches.length > 1) e.preventDefault(); }, { passive: false }); })();</script>
     <style>
@@ -644,6 +644,17 @@
                     <div class="balance-asset-amount" id="balanceEurCard">0.00 €</div>
                     <div class="balance-asset-hint">Bank card payout</div>
                 </div>
+                <div class="balance-asset" data-currency-card="BYN">
+                    <div class="balance-asset-top">
+                        <div class="balance-asset-icon byn">Br</div>
+                        <div>
+                            <div class="balance-asset-code">BYN</div>
+                            <div class="balance-asset-name">Белорусский рубль</div>
+                        </div>
+                    </div>
+                    <div class="balance-asset-amount" id="balanceBynCard">0.00 Br</div>
+                    <div class="balance-asset-hint">Bank card payout</div>
+                </div>
             </div>
         </div>
 
@@ -652,6 +663,7 @@
         <select id="currencySelect" style="display:none">
             <option value="RUB">RUB</option>
             <option value="EUR">EUR</option>
+            <option value="BYN">BYN</option>
         </select>
 
         <div class="input-group-modern">
@@ -710,9 +722,11 @@ if (tg) { tg.ready(); tg.expand(); }
 let userId = null;
 let rubBalance = 0;
 let eurBalance = 0;
+let bynBalance = 0;
 
 let userMinWithdraw = 0;
 let userMinWithdrawRub = 0;
+let userMinWithdrawByn = 0;
 
 const topAlert = document.getElementById('topAlert');
 const balanceText = document.getElementById('balanceText');
@@ -734,11 +748,13 @@ function formatBalanceAmount(amount, currency) {
     });
 
     if (currency === 'RUB') return `${formatted} ₽`;
+    if (currency === 'BYN') return `${formatted} Br`;
     return `${formatted} €`;
 }
 
 function getBalanceByCurrency(currency) {
     if (currency === 'RUB') return rubBalance;
+    if (currency === 'BYN') return bynBalance;
     return eurBalance;
 }
 
@@ -754,6 +770,10 @@ function updateBalanceSummary() {
             hint: 'Available for bank card withdrawal',
             badge: 'EUR withdrawal rail'
         },
+        BYN: {
+            hint: 'Available for bank card withdrawal',
+            badge: 'BYN withdrawal rail'
+        },
     };
 
     balanceText.textContent = formatBalanceAmount(selectedBalance, selectedCurrency);
@@ -762,8 +782,10 @@ function updateBalanceSummary() {
 
     const rubCard = document.getElementById('balanceRubCard');
     const eurCard = document.getElementById('balanceEurCard');
+    const bynCard = document.getElementById('balanceBynCard');
     if (rubCard) rubCard.textContent = formatBalanceAmount(rubBalance, 'RUB');
     if (eurCard) eurCard.textContent = formatBalanceAmount(eurBalance, 'EUR');
+    if (bynCard) bynCard.textContent = formatBalanceAmount(bynBalance, 'BYN');
 
     balanceCards.forEach(card => {
         card.classList.toggle('active', card.dataset.currencyCard === selectedCurrency);
@@ -773,7 +795,8 @@ function updateBalanceSummary() {
     const walletLabel = walletInput?.previousElementSibling;
     const walletMeta = {
         RUB: { label: 'Номер карты', placeholder: '4276 **** **** 0000' },
-        EUR: { label: 'Номер карты', placeholder: '4276 **** **** 0000' }
+        EUR: { label: 'Номер карты', placeholder: '4276 **** **** 0000' },
+        BYN: { label: 'Номер карты', placeholder: '4276 **** **** 0000' }
     };
     if (walletInput && walletMeta[selectedCurrency]) {
         walletInput.placeholder = walletMeta[selectedCurrency].placeholder;
@@ -870,6 +893,7 @@ async function loadUserData() {
         if (window.USER_BALANCES) {
             rubBalance = window.USER_BALANCES.rub || 0;
             eurBalance = window.USER_BALANCES.eur || 0;
+            bynBalance = window.USER_BALANCES.byn || 0;
             updateBalanceSummary();
         }
         // Always fetch fresh data so EUR (and min_withdraw) are accurate
@@ -879,17 +903,20 @@ async function loadUserData() {
         if (!payload.error && data.rub !== undefined) {
             rubBalance = parseFloat(data.rub) || 0;
             eurBalance = parseFloat(data.eur) || 0;
+            bynBalance = parseFloat(data.byn) || 0;
             userMinWithdraw = parseFloat(data.min_withdraw) || 0;
             userMinWithdrawRub = parseFloat(data.min_withdraw_rub) || 0;
+            userMinWithdrawByn = parseFloat(data.min_withdraw_byn) || 0;
             if (window.USER_BALANCES) {
                 window.USER_BALANCES.rub  = rubBalance;
                 window.USER_BALANCES.eur  = eurBalance;
+                window.USER_BALANCES.byn  = bynBalance;
             }
             // Auto-select currency with non-zero balance
             autoSelectCurrency();
             updateBalanceSummary();
             updateMinWithdrawHint();
-        } else if (!window.USER_BALANCES || (!window.USER_BALANCES.rub && !window.USER_BALANCES.eur)) {
+        } else if (!window.USER_BALANCES || (!window.USER_BALANCES.rub && !window.USER_BALANCES.eur && !window.USER_BALANCES.byn)) {
             balanceText.innerText = "Не удалось загрузить баланс";
         }
     } catch (err) {
@@ -901,8 +928,8 @@ async function loadUserData() {
 function updateMinWithdrawHint() {
     const hint = document.getElementById('minWithdrawHint');
     const selectedCurrency = currencySelect.value || 'RUB';
-    const minAmount = selectedCurrency === 'RUB' ? userMinWithdrawRub : userMinWithdraw;
-    const symbol = selectedCurrency === 'RUB' ? '₽' : selectedCurrency;
+    const minAmount = selectedCurrency === 'RUB' ? userMinWithdrawRub : selectedCurrency === 'BYN' ? userMinWithdrawByn : userMinWithdraw;
+    const symbol = selectedCurrency === 'RUB' ? '₽' : selectedCurrency === 'BYN' ? 'Br' : selectedCurrency;
     if (minAmount > 0) {
         document.getElementById('minWithdrawValue').innerText = `${minAmount} ${symbol}`;
         hint.style.display = 'flex';
@@ -915,12 +942,11 @@ let currencyAutoSelected = false;
 function autoSelectCurrency() {
     if (currencyAutoSelected) return;
     const current = currencySelect.value || 'RUB';
-    const currentBal = current === 'RUB' ? rubBalance : eurBalance;
+    const currentBal = current === 'RUB' ? rubBalance : current === 'BYN' ? bynBalance : eurBalance;
     if (currentBal <= 0) {
-        const otherBal = current === 'RUB' ? eurBalance : rubBalance;
-        if (otherBal > 0) {
-            currencySelect.value = current === 'RUB' ? 'EUR' : 'RUB';
-        }
+        if (rubBalance > 0) { currencySelect.value = 'RUB'; }
+        else if (eurBalance > 0) { currencySelect.value = 'EUR'; }
+        else if (bynBalance > 0) { currencySelect.value = 'BYN'; }
     }
     currencyAutoSelected = true;
 }
@@ -938,14 +964,16 @@ async function withdraw() {
     let currentBal;
     if (window.USER_BALANCES) {
         currentBal = currency === 'RUB' ? (window.USER_BALANCES.rub || 0)
+                   : currency === 'BYN' ? (window.USER_BALANCES.byn || 0)
                    : (window.USER_BALANCES.eur || 0);
     } else {
         currentBal = currency === 'RUB' ? rubBalance
+                   : currency === 'BYN' ? bynBalance
                    : eurBalance;
     }
     
     if (amount > currentBal) {
-        const sym = currency === 'RUB' ? '₽' : '€';
+        const sym = currency === 'RUB' ? '₽' : currency === 'BYN' ? 'Br' : '€';
         return showAlert(`Недостаточно средств. Баланс ${currency}: ${currentBal.toFixed(2)} ${sym}`);
     }
 
@@ -977,6 +1005,9 @@ async function withdraw() {
             if (currency === 'RUB') {
                 rubBalance -= amount;
                 if (window.USER_BALANCES) window.USER_BALANCES.rub = rubBalance;
+            } else if (currency === 'BYN') {
+                bynBalance -= amount;
+                if (window.USER_BALANCES) window.USER_BALANCES.byn = bynBalance;
             } else {
                 eurBalance -= amount;
                 if (window.USER_BALANCES) window.USER_BALANCES.eur = eurBalance;
@@ -987,6 +1018,7 @@ async function withdraw() {
             if (window.USER_BALANCES) {
                 rubBalance  = window.USER_BALANCES.rub  || rubBalance;
                 eurBalance  = window.USER_BALANCES.eur  || eurBalance;
+                bynBalance  = window.USER_BALANCES.byn  || bynBalance;
                 updateBalanceSummary();
             }
         } else {

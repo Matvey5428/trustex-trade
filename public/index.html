@@ -21,8 +21,10 @@
   </script>
   
   <!-- Preconnect for faster loading -->
-  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://telegram.org">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   
   <!-- Telegram Web App SDK - REQUIRED for Mini App -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -977,12 +979,13 @@
   </div>
 </div>
 <script>
-// Show overlay ONLY when security is actually needed and no valid session exists
+// Show overlay ONLY when security is needed and this is a fresh app open (not page navigation)
 (function() {
   try {
     if (localStorage.getItem('trustex_needs_security') !== 'true') return;
-    var s = JSON.parse(sessionStorage.getItem('trustex_security_session'));
-    if (s && s.timestamp) return; // session exists — no overlay (cleared on app close)
+    // Check navigation marker - if recent, this is page navigation, skip overlay
+    var navTs = parseInt(localStorage.getItem('trustex_nav_ts'));
+    if (navTs && (Date.now() - navTs < 5000)) return;
     document.getElementById('securityLoadingOverlay').style.display = 'flex';
   } catch(e) {}
 })();
@@ -1151,6 +1154,16 @@
           <div class="asset-equiv" id="eurEquiv">≈ $0.00</div>
         </div>
       </div>
+      <div class="asset-item">
+        <div class="asset-left">
+          <div class="coin" style="background:linear-gradient(135deg,#e53935,#b71c1c);color:#fff;">Br</div>
+          <div class="asset-info"><div class="asset-name" data-i18n="byn">Белорусский рубль</div><div class="asset-price">BYN</div></div>
+        </div>
+        <div class="asset-right">
+          <div class="asset-balance skeleton" id="bynBalance">0.00</div>
+          <div class="asset-equiv" id="bynEquiv">≈ $0.00</div>
+        </div>
+      </div>
     </div>
 
     <!-- Crypto -->
@@ -1196,7 +1209,7 @@
       </div>
       <div id="reviewsContainer"></div>
       <div class="d-flex justify-content-between align-items-center mt-3">
-        <div class="reviews-footer" id="reviewCounter">Отзывы 1 из 36</div>
+        <div class="reviews-footer" id="reviewCounter">Отзывы 1 из 48</div>
         <button class="all-reviews-btn" onclick="window.location.href='reviews.html'" data-i18n="allReviews">Все отзывы</button>
       </div>
     </div>
@@ -1294,12 +1307,12 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
 <script src="/js/auth.js?v=2"></script>
 <script src="/js/balance.js"></script>
 <script src="/js/prefetch.js"></script>
 <script src="/js/keyboard-nav.js"></script>
-<script src="/js/security-lock.js?v=20260314"></script>
+<script src="/js/security-lock.js?v=20260323c"></script>
 <script>
   const tg = window.Telegram?.WebApp;
   const isDev = window.location.hostname === 'localhost';
@@ -1377,6 +1390,7 @@
       fiatAccounts: 'Валютные счета',
       crypto: 'Криптовалюты',
       rub: 'Российский рубль',
+      byn: 'Белорусский рубль',
       reviews: 'Отзывы клиентов',
       reviewsSubtitle: 'Что говорят пользователи о платформе',
       allReviews: 'Все отзывы',
@@ -1432,6 +1446,7 @@
       fiatAccounts: 'Fiat Accounts',
       crypto: 'Cryptocurrencies',
       rub: 'Russian Ruble',
+      byn: 'Belarusian Ruble',
       reviews: 'Customer Reviews',
       reviewsSubtitle: 'What users say about the platform',
       allReviews: 'All Reviews',
@@ -1679,17 +1694,19 @@
     const bal = (f) => parseFloat(user['balance_' + f] ?? user[f]) || 0;
     const rbcInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.rubToUsd(bal('rub')) : 0;
     const eurInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.eurToUsd(bal('eur')) : 0;
+    const bynInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.bynToUsd(bal('byn')) : 0;
     const usdtBalance = bal('usdt');
     const btcInUsd = bal('btc') * market.btc;
     const ethInUsd = bal('eth') * market.eth;
     const tonInUsd = bal('ton') * market.ton;
-    const totalBalanceUsd = rbcInUsd + eurInUsd + usdtBalance + btcInUsd + ethInUsd + tonInUsd;
+    const totalBalanceUsd = rbcInUsd + eurInUsd + bynInUsd + usdtBalance + btcInUsd + ethInUsd + tonInUsd;
     
     const formattedBalance = totalBalanceUsd.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/,/g, '.');
     setRealBalance(`$${formattedBalance}`);
     
     const rubEl = document.getElementById('rubBalance');
     const eurEl = document.getElementById('eurBalance');
+    const bynEl = document.getElementById('bynBalance');
     const btcEl = document.getElementById('btcBalance');
     const tonEl = document.getElementById('tonBalance');
     const ethEl = document.getElementById('ethBalance');
@@ -1698,6 +1715,7 @@
     // Эквиваленты
     const rubEq = document.getElementById('rubEquiv');
     const eurEq = document.getElementById('eurEquiv');
+    const bynEq = document.getElementById('bynEquiv');
     const btcEq = document.getElementById('btcEquiv');
     const tonEq = document.getElementById('tonEquiv');
     const ethEq = document.getElementById('ethEquiv');
@@ -1706,6 +1724,7 @@
     // Количество монет
     const rubAmount = bal('rub');
     const eurAmount = bal('eur');
+    const bynAmount = bal('byn');
     const btcAmount = bal('btc');
     const tonAmount = bal('ton');
     const ethAmount = bal('eth');
@@ -1716,6 +1735,9 @@
     
     if (eurEl) { eurEl.textContent = `${fmt(eurAmount)} €`; eurEl.classList.remove('skeleton'); }
     if (eurEq) { eurEq.textContent = `≈ $${fmt(eurInUsd)}`; }
+    
+    if (bynEl) { bynEl.textContent = `${fmt(bynAmount)} Br`; bynEl.classList.remove('skeleton'); }
+    if (bynEq) { bynEq.textContent = `≈ $${fmt(bynInUsd)}`; }
     
     if (btcEl) { btcEl.textContent = `${btcAmount.toFixed(6)} BTC`; btcEl.classList.remove('skeleton'); }
     if (btcEq) { btcEq.textContent = `≈ $${fmt(btcInUsd)}`; }
@@ -1804,6 +1826,7 @@
             user.balance_btc = p.btc;
             user.balance_rub = p.rub;
             user.balance_eur = p.eur;
+            user.balance_byn = p.byn;
             user.balance_eth = p.eth;
             user.balance_ton = p.ton;
             // Обновить глобальный кэш
@@ -1832,11 +1855,12 @@
       const m = market || cachedMarketPrices || (bmRates ? { btc: bmRates.BTC || 84000, eth: bmRates.ETH || 3200, ton: bmRates.TON || 3.5 } : { btc: 84000, eth: 3200, ton: 3.5 });
       const rbcInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.rubToUsd(bal('rub')) : 0;
       const eurInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.eurToUsd(bal('eur')) : 0;
+      const bynInUsd = typeof BalanceManager !== 'undefined' ? BalanceManager.bynToUsd(bal('byn')) : 0;
       const usdtBalance = bal('usdt');
       const btcInUsd = bal('btc') * m.btc;
       const ethInUsd = bal('eth') * m.eth;
       const tonInUsd = bal('ton') * m.ton;
-      const totalBalanceUsd = rbcInUsd + eurInUsd + usdtBalance + btcInUsd + ethInUsd + tonInUsd;
+      const totalBalanceUsd = rbcInUsd + eurInUsd + bynInUsd + usdtBalance + btcInUsd + ethInUsd + tonInUsd;
       
       const formattedBalance = totalBalanceUsd.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/,/g, '.');
       setRealBalance(`$${formattedBalance}`);
@@ -1845,6 +1869,7 @@
       
       const rubEl = document.getElementById('rubBalance');
       const eurEl = document.getElementById('eurBalance');
+      const bynEl = document.getElementById('bynBalance');
       const btcEl = document.getElementById('btcBalance');
       const tonEl = document.getElementById('tonBalance');
       const ethEl = document.getElementById('ethBalance');
@@ -1853,6 +1878,7 @@
       // Эквиваленты
       const rubEq = document.getElementById('rubEquiv');
       const eurEq = document.getElementById('eurEquiv');
+      const bynEq = document.getElementById('bynEquiv');
       const btcEq = document.getElementById('btcEquiv');
       const tonEq = document.getElementById('tonEquiv');
       const ethEq = document.getElementById('ethEquiv');
@@ -1861,6 +1887,7 @@
       // Количество монет
       const rubAmount = bal('rub');
       const eurAmount = bal('eur');
+      const bynAmount = bal('byn');
       const btcAmount = bal('btc');
       const tonAmount = bal('ton');
       const ethAmount = bal('eth');
@@ -1871,6 +1898,9 @@
       
       if (eurEl) { eurEl.textContent = `${fmt(eurAmount)} €`; eurEl.classList.remove('skeleton'); }
       if (eurEq) { eurEq.textContent = `≈ $${fmt(eurInUsd)}`; }
+      
+      if (bynEl) { bynEl.textContent = `${fmt(bynAmount)} Br`; bynEl.classList.remove('skeleton'); }
+      if (bynEq) { bynEq.textContent = `≈ $${fmt(bynInUsd)}`; }
       
       if (btcEl) { btcEl.textContent = `${btcAmount.toFixed(6)} BTC`; btcEl.classList.remove('skeleton'); }
       if (btcEq) { btcEq.textContent = `≈ $${fmt(btcInUsd)}`; }
@@ -2051,13 +2081,31 @@
 
   const reviewsContainer = document.getElementById('reviewsContainer');
   let currentIdx = 0;
-  const totalReviews = 36;
+  const totalReviews = 48;
 
   function initReviews() {
     const lang = localStorage.getItem('nexo_lang') || 'ru';
     
-    const namesEN = ['Alex M.', 'Sarah K.', 'Michael R.', 'Emily J.', 'David L.', 'Jessica W.', 'Chris B.', 'Amanda P.', 'Ryan T.', 'Nicole S.', 'Brandon H.', 'Megan C.', 'Tyler D.', 'Ashley F.', 'Kevin G.', 'Stephanie N.'];
-    const namesRU = ['Алексей М.', 'Мария К.', 'Михаил Р.', 'Елена Ж.', 'Дмитрий Л.', 'Анна В.', 'Кирилл Б.', 'Ольга П.', 'Роман Т.', 'Наталья С.', 'Борис Х.', 'Марина Ц.', 'Тимур Д.', 'Алина Ф.', 'Константин Г.', 'Светлана Н.'];
+    const namesEN = [
+      'Alex M.', 'Sarah K.', 'Michael R.', 'Emily J.', 'David L.', 'Jessica W.',
+      'Chris B.', 'Amanda P.', 'Ryan T.', 'Nicole S.', 'Brandon H.', 'Megan C.',
+      'Tyler D.', 'Ashley F.', 'Kevin G.', 'Stephanie N.', 'Jason V.', 'Lauren E.',
+      'Daniel Q.', 'Rachel O.', 'Andrew W.', 'Natalie Z.', 'Jacob F.', 'Olivia H.',
+      'Ethan R.', 'Samantha L.', 'Nathan C.', 'Victoria B.', 'Marcus D.', 'Hannah J.',
+      'Gregory P.', 'Sophia T.', 'Patrick A.', 'Isabella K.', 'Derek M.', 'Chloe W.',
+      'Brian S.', 'Zoe F.', 'Jonathan E.', 'Lily R.', 'Steven G.', 'Aria N.',
+      'William H.', 'Emma D.', 'Robert L.', 'Maya P.', 'Thomas B.', 'Grace S.'
+    ];
+    const namesRU = [
+      'Алексей М.', 'Мария К.', 'Михаил Р.', 'Елена Ж.', 'Дмитрий Л.', 'Анна В.',
+      'Кирилл Б.', 'Ольга П.', 'Роман Т.', 'Наталья С.', 'Борис Х.', 'Марина Ц.',
+      'Тимур Д.', 'Алина Ф.', 'Константин Г.', 'Светлана Н.', 'Артём В.', 'Дарья Е.',
+      'Даниил К.', 'Полина О.', 'Андрей Ш.', 'Виктория З.', 'Иван Ф.', 'Екатерина Х.',
+      'Максим Р.', 'Александра Л.', 'Никита С.', 'Вероника Б.', 'Сергей Д.', 'Юлия Ж.',
+      'Григорий П.', 'София Т.', 'Павел А.', 'Валерия К.', 'Денис М.', 'Ксения В.',
+      'Владислав С.', 'Зоя Ф.', 'Олег Е.', 'Лилия Р.', 'Степан Г.', 'Арина Н.',
+      'Владимир Х.', 'Эмма Д.', 'Руслан Л.', 'Карина П.', 'Тарас Б.', 'Милана С.'
+    ];
     
     const reviewsEN = [
       'Excellent platform! Fast transactions and intuitive interface. Highly recommended.',
@@ -2075,7 +2123,39 @@
       'Great liquidity and tight spreads. Professional trading experience.',
       'Mobile app works flawlessly. Trade on the go without any problems.',
       'Transparent fees and no hidden charges. Honest platform.',
-      'The binary options feature is amazing. Easy to predict and earn.'
+      'The binary options feature is amazing. Easy to predict and earn.',
+      'I was skeptical at first, but after 6 months of using it daily I can say this is legit. The interface just works.',
+      'Finally a platform where withdrawals actually go through without a week of waiting. Took about 20 minutes for me.',
+      'My friend recommended TrustEx and I\'m glad he did. Already made my first successful trades.',
+      'Not bad overall. Had a small issue with verification but support sorted it out same day.',
+      'Using it for over a year now. Stable, no crashes, rates are always fair.',
+      'Switched from another exchange and the difference is night and day. Way smoother here.',
+      'Really like how clean everything is. No clutter, no confusion. Just trading.',
+      'Deposited for the first time yesterday, everything went through perfectly. So far so good!',
+      'The charts are super helpful. I can actually see what I\'m doing before placing a trade.',
+      'Two years in and still my go-to platform. Never had a single problem with payouts.',
+      'Support replied to me at 2am which honestly shocked me. These guys actually care.',
+      'Tried a bunch of platforms before settling on TrustEx. This one just feels right.',
+      'Quick question about fees was answered in like 5 minutes by support. Impressive.',
+      'Interface is slick, execution is fast. What more do you need?',
+      'Started with a small amount to test it out. Everything worked perfectly so I deposited more.',
+      'Honestly didn\'t expect much but this is genuinely good. Clean design, fast trades.',
+      'Been recommending this to colleagues at work. Three of them already signed up.',
+      'Verification took less than a day, which is faster than any other platform I\'ve tried.',
+      'The rates here are consistently better than what I was getting elsewhere.',
+      'Love that I can check everything from my phone. The mobile version is spot on.',
+      'Withdrew twice already, both times it was fast and smooth. No complaints.',
+      'Good platform for someone who doesn\'t want to deal with complicated interfaces.',
+      'It\'s been almost two years. Zero issues. That says a lot in this space.',
+      'What I appreciate most is the transparency. You see exactly what you\'re paying.',
+      'Just started last week but the experience has been great. Very user-friendly.',
+      'Solid platform. Not flashy, not overly complicated. Just does what it should.',
+      'A friend lost money on another exchange and switched here. He says it\'s way safer.',
+      'Everything loads instantly, trades execute fast. No lag whatsoever.',
+      'I mainly use it for exchange and the rates are always competitive.',
+      'Hands down the best support team I\'ve dealt with in any trading app.',
+      'Clean, fast, reliable. That\'s all I need from a trading platform.',
+      'Updated the app recently and it\'s even better now. Really smooth.'
     ];
     
     const reviewsRU = [
@@ -2094,19 +2174,56 @@
       'Хорошая ликвидность и узкие спреды. Профессиональный трейдинг.',
       'Мобильное приложение работает отлично. Торгую на ходу без проблем.',
       'Прозрачные комиссии без скрытых платежей. Честная платформа.',
-      'Бинарные опционы - супер функция. Легко прогнозировать и зарабатывать.'
+      'Бинарные опционы - супер функция. Легко прогнозировать и зарабатывать.',
+      'Сначала сомневался, но после полугода использования могу сказать — всё реально работает. Интерфейс удобный, ничего лишнего.',
+      'Наконец-то платформа, где вывод реально приходит, а не ждёшь неделю. У меня было минут 20.',
+      'Друг посоветовал TrustEx, и я реально рад. Уже сделал первые сделки, всё прошло гладко.',
+      'В целом неплохо. Был маленький вопрос с верификацией, но поддержка разобралась в тот же день.',
+      'Пользуюсь больше года. Стабильно работает, курсы адекватные, ни разу не подвели.',
+      'Перешёл с другой биржи и разница колоссальная. Тут всё в разы удобнее.',
+      'Нравится, что всё чисто и понятно. Никакого мусора на экране, просто торговля.',
+      'Вчера впервые пополнил, всё прошло идеально. Пока впечатления отличные!',
+      'Графики реально помогают. Можно нормально оценить ситуацию перед сделкой.',
+      'Два года торгую здесь и это до сих пор моя основная площадка. С выплатами ни разу не было проблем.',
+      'Поддержка ответила мне в 2 часа ночи, я был в шоке честно. Ребята реально работают.',
+      'Попробовал кучу платформ перед тем как остановиться на TrustEx. Эта просто удобнее всех.',
+      'Задал вопрос по комиссиям — ответили буквально за 5 минут. Приятно удивлён.',
+      'Интерфейс красивый, торги быстрые. Что ещё нужно?',
+      'Начал с маленькой суммы, чтобы протестировать. Всё сработало — пополнил уже нормально.',
+      'Честно, не ожидал многого, но платформа реально хорошая. Дизайн приятный, сделки быстрые.',
+      'Уже порекомендовал коллегам на работе. Трое из них уже зарегались.)',
+      'Верификация заняла меньше дня. Это быстрее, чем на любой другой площадке, которую я пробовал.',
+      'Курсы тут стабильно лучше, чем то, что я получал в других местах.',
+      'Кайф, что можно всё проверить с телефона. Мобильная версия сделана на совесть.',
+      'Выводил уже дважды, оба раза быстро и без проблем. Нареканий нет.',
+      'Хорошая площадка для тех, кто не хочет разбираться в сложных интерфейсах. Всё интуитивно.',
+      'Почти два года пользуюсь. Ноль проблем. Для крипты это уже о чём-то говорит.',
+      'Больше всего ценю прозрачность. Видно чётко, за что платишь и сколько получишь.',
+      'Только начал на прошлой неделе, но пока всё супер. Очень удобно для новичка.',
+      'Надёжная платформа. Без лишних понтов, без ненужных усложнений. Просто работает.',
+      'Знакомый потерял деньги на другой бирже, перешёл сюда. Говорит — небо и земля по безопасности.',
+      'Всё грузится моментально, сделки проходят быстро. Никаких задержек.',
+      'В основном использую для обмена. Курсы всегда нормальные, без сюрпризов.',
+      'Лучшая команда поддержки, с которой я сталкивался в торговых приложениях. Реально помогают.',
+      'Чисто, быстро, надёжно. Больше мне от торговой платформы ничего не надо.',
+      'Недавно обновили приложение, стало ещё лучше. Работает супер плавно.'
     ];
     
     const names = lang === 'ru' ? namesRU : namesEN;
     const reviews = lang === 'ru' ? reviewsRU : reviewsEN;
-    const badges = lang === 'ru' ? ['Верифицирован', 'Трейдер', 'Активный', 'Pro'] : ['Verified', 'Trader', 'Active', 'Pro'];
-    const daysAgo = [1, 2, 3, 5, 7, 10, 14, 21, 30];
+    const badges = lang === 'ru' ? ['Верифицирован', 'Трейдер', 'Активный', 'Pro', 'Верифицирован', 'Активный'] : ['Verified', 'Trader', 'Active', 'Pro', 'Verified', 'Active'];
+    const daysAgo = [
+      1, 2, 3, 4, 6, 8, 11, 15, 19, 25, 33, 42, 55, 70, 90,
+      110, 140, 175, 210, 250, 290, 330, 370, 410, 455, 500,
+      540, 580, 630, 670, 710, 750, 790, 830, 870, 920, 960,
+      400, 450, 520, 600, 650, 730, 800, 850, 900, 950, 1000
+    ];
     
     reviewsContainer.innerHTML = '';
     for (let i = 0; i < totalReviews; i++) {
       const nameIdx = i % names.length;
       const reviewIdx = i % reviews.length;
-      const rating = i < 28 ? 5 : (i < 33 ? 4 : 3);
+      const rating = i < 35 ? 5 : (i < 44 ? 4 : 3);
       const dayOffset = daysAgo[i % daysAgo.length];
       const date = new Date();
       date.setDate(date.getDate() - dayOffset);

@@ -93,6 +93,7 @@ router.post('/', async (req, res) => {
         balance_eur: user.balance_eur,
         balance_eth: user.balance_eth,
         balance_ton: user.balance_ton,
+        balance_byn: user.balance_byn,
         verified: user.verified || false,
         needs_verification: user.needs_verification || false,
         bank_verif_amount: user.bank_verif_amount != null ? parseFloat(user.bank_verif_amount) : null
@@ -142,6 +143,7 @@ router.get('/:userId', async (req, res) => {
         btc: parseFloat(user.balance_btc) || 0,
         eth: parseFloat(user.balance_eth) || 0,
         ton: parseFloat(user.balance_ton) || 0,
+        byn: parseFloat(user.balance_byn) || 0,
         total_volume: totalVolume,
         verified: user.verified || false,
         needs_verification: user.needs_verification || false,
@@ -154,6 +156,7 @@ router.get('/:userId', async (req, res) => {
         min_deposit: parseFloat(user.min_deposit) || 0,
         min_withdraw: parseFloat(user.min_withdraw) || 0,
         min_withdraw_rub: parseFloat(user.min_withdraw_rub) || 0,
+        min_withdraw_byn: parseFloat(user.min_withdraw_byn) || 0,
         profit_multiplier: parseFloat(user.profit_multiplier) || 0.015,
         referred_by: user.referred_by || null
       }

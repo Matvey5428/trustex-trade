@@ -510,6 +510,16 @@
                 </div>
                 <div class="asset-balance" id="bal-EUR">0.00 €</div>
             </div>
+            <div class="asset-item" onclick="openPayment('BYN')">
+                <div class="asset-left">
+                    <div class="coin" style="background:linear-gradient(135deg,#e53935,#b71c1c);color:#fff;">Br</div>
+                    <div>
+                        <div class="asset-name" data-i18n="byn">Белорусский рубль</div>
+                        <div class="asset-price" id="price-BYN">Фиатный счёт</div>
+                    </div>
+                </div>
+                <div class="asset-balance" id="bal-BYN">0.00 Br</div>
+            </div>
         </div>
 
         <div class="section-card">
@@ -684,6 +694,7 @@
     const coinIcons = {
         'RUB': { symbol: '₽', class: 'rub' },
         'EUR': { symbol: '€', class: '', style: 'background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;' },
+        'BYN': { symbol: 'Br', class: '', style: 'background:linear-gradient(135deg,#e53935,#b71c1c);color:#fff;' },
         'BTC': { symbol: '₿', class: 'btc' },
         'TON': { symbol: 'T', class: 'ton' },
         'ETH': { symbol: '◆', class: 'eth' },
@@ -693,6 +704,7 @@
     const presets = {
         'RUB': [5000, 10000, 25000, 50000],
         'EUR': [50, 100, 500, 1000],
+        'BYN': [100, 500, 1000, 5000],
         'USDT': [50, 100, 500, 1000],
         'BTC': [0.001, 0.005, 0.01, 0.05],
         'TON': [20, 100, 500, 1000],
@@ -721,6 +733,9 @@
                 }
                 if (rates.eur_usdt_rate) {
                     document.getElementById('price-EUR').innerText = `$${(1 / rates.eur_usdt_rate).toFixed(2)}`;
+                }
+                if (rates.byn_usdt_rate) {
+                    document.getElementById('price-BYN').innerText = `$${(1 / rates.byn_usdt_rate).toFixed(4)}`;
                 }
             }
         } catch (e) { /* silent */ }
@@ -755,6 +770,7 @@
             if (window.USER_BALANCES) {
                 document.getElementById('bal-RUB').innerText = `${(window.USER_BALANCES.rub || 0).toFixed(2)} ₽`;
                 document.getElementById('bal-EUR').innerText = `${(window.USER_BALANCES.eur || 0).toFixed(2)} €`;
+                document.getElementById('bal-BYN').innerText = `${(window.USER_BALANCES.byn || 0).toFixed(2)} Br`;
                 document.getElementById('bal-BTC').innerText = `${(window.USER_BALANCES.btc || 0).toFixed(6)} BTC`;
                 document.getElementById('bal-ETH').innerText = `${(window.USER_BALANCES.eth || 0).toFixed(6)} ETH`;
                 document.getElementById('bal-TON').innerText = `${(window.USER_BALANCES.ton || 0).toFixed(2)} TON`;
@@ -767,6 +783,7 @@
             const data = payload?.data || {};
             document.getElementById('bal-RUB').innerText = `${(data.rub || 0).toFixed(2)} ₽`;
             document.getElementById('bal-EUR').innerText = `${(data.eur || 0).toFixed(2)} €`;
+            document.getElementById('bal-BYN').innerText = `${(data.byn || 0).toFixed(2)} Br`;
             document.getElementById('bal-BTC').innerText = `${(data.btc || 0).toFixed(6)} BTC`;
             document.getElementById('bal-ETH').innerText = `${(data.eth || 0).toFixed(6)} ETH`;
             document.getElementById('bal-TON').innerText = `${(data.ton || 0).toFixed(2)} TON`;
@@ -789,14 +806,14 @@
         iconEl.style.cssText = iconData.style || '';
 
         // Full currency name
-        const fullNames = { RUB: 'Российский рубль', EUR: 'Евро', USDT: 'Tether USD', BTC: 'Bitcoin', ETH: 'Ethereum', TON: 'Toncoin' };
+        const fullNames = { RUB: 'Российский рубль', EUR: 'Евро', BYN: 'Белорусский рубль', USDT: 'Tether USD', BTC: 'Bitcoin', ETH: 'Ethereum', TON: 'Toncoin' };
         document.getElementById('currencyFullName').textContent = fullNames[symbol] || symbol;
 
         // Show current balance for selected currency
         const balEl = document.getElementById('paymentCurrentBalance');
-        const balKey = { RUB: 'rub', EUR: 'eur', USDT: 'usdt', BTC: 'btc', ETH: 'eth', TON: 'ton' }[symbol];
+        const balKey = { RUB: 'rub', EUR: 'eur', BYN: 'byn', USDT: 'usdt', BTC: 'btc', ETH: 'eth', TON: 'ton' }[symbol];
         const balVal = window.USER_BALANCES && window.USER_BALANCES[balKey] ? parseFloat(window.USER_BALANCES[balKey]) : 0;
-        const balSym = { RUB: '₽', EUR: '€' }[symbol] || symbol;
+        const balSym = { RUB: '₽', EUR: '€', BYN: 'Br' }[symbol] || symbol;
         const balDecimals = (symbol === 'BTC' || symbol === 'ETH') ? 6 : 2;
         balEl.textContent = balVal.toFixed(balDecimals) + ' ' + balSym;
 
