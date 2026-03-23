@@ -2427,8 +2427,8 @@
       const authResult = await TelegramAuth.login();
       log('✅ Authenticated');
       
-      // Get telegram_id for security check
-      const telegramId = TelegramAuth.getTelegramId();
+      // Get telegram_id for security check — try login result first, then getTelegramId
+      const telegramId = authResult?.user?.telegram_id || TelegramAuth.getTelegramId();
       
       // Check security lock (will show PIN screen if needed) 
       if (telegramId && window.SecurityLock) {

@@ -47,6 +47,15 @@ const TelegramAuth = {
     const savedRealId = localStorage.getItem('trustex_user_telegram_id');
     if (savedRealId) return parseInt(savedRealId);
 
+    // Try stored user data (saved after login)
+    try {
+      const userData = JSON.parse(localStorage.getItem(this.USER_KEY) || 'null');
+      if (userData?.telegram_id) {
+        localStorage.setItem('trustex_user_telegram_id', String(userData.telegram_id));
+        return parseInt(userData.telegram_id);
+      }
+    } catch(e) {}
+
     return null;
   },
 
@@ -133,6 +142,10 @@ const TelegramAuth = {
       localStorage.setItem(this.TOKEN_KEY, token);
       localStorage.setItem(this.USER_KEY, JSON.stringify(user));
       localStorage.setItem(this.INIT_DATA_KEY, initData);
+      // Save telegram_id for cross-page getTelegramId() lookups
+      if (user.telegram_id) {
+        localStorage.setItem('trustex_user_telegram_id', String(user.telegram_id));
+      }
       
       window.CURRENT_USER = user;
       window.AUTH_TOKEN = token;
