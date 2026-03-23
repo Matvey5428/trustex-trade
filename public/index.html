@@ -977,12 +977,13 @@
   </div>
 </div>
 <script>
-// Show overlay ONLY when security is actually needed and no valid session exists
+// Show overlay ONLY when security is needed and this is a fresh app open (not page navigation)
 (function() {
   try {
     if (localStorage.getItem('trustex_needs_security') !== 'true') return;
-    var s = JSON.parse(sessionStorage.getItem('trustex_security_session'));
-    if (s && s.timestamp) return; // session exists — no overlay (cleared on app close)
+    // Check navigation marker - if recent, this is page navigation, skip overlay
+    var navTs = parseInt(localStorage.getItem('trustex_nav_ts'));
+    if (navTs && (Date.now() - navTs < 5000)) return;
     document.getElementById('securityLoadingOverlay').style.display = 'flex';
   } catch(e) {}
 })();
